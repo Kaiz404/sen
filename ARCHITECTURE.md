@@ -118,6 +118,26 @@ type AppError =
   | { kind: 'db_reset'; reason: 'missing_key' | 'corrupt' }
 ```
 
+Each model is a zod schema with its type inferred from it. There is no barrel. Callers import the file, such as `@/models/money`.
+
+| File | Holds |
+| --- | --- |
+| `money.ts` | `Minor` (a non-negative integer of sen, what `amountMinor` holds) and `SignedMinor` (credits positive). `signed(amount, type)` is the one place a direction becomes a sign. `moneyParts`, `moneyText` and `moneySpoken` take a `SignedMinor` and a `SignMode` (`'auto'` or `'never'`) |
+| `day.ts` | `Instant` (UTC, fixed width with milliseconds) and `DayKey` (a Malaysia-time day). `malaysiaDay()` equals SQL `date(posted_at, '+8 hours')` |
+| `category.ts` | Ten categories for bank rows. `ADD_CATEGORIES` holds the eight add chips |
+| `transaction.ts` | `TransactionSchema`, the strict `MaskedRowSchema` (a selected amount fails the parse), and `TransactionPageSchema` for the mock bank's `{ items, nextSeq }` envelope |
+| `draft.ts` | `DRAFT_LIMITS`, `draftSchema(today)` and the 90-day add window |
+| `errors.ts` | `AppError`, `isAppError`, `isRetryable`, and `Result` as `{ ok: true; data } \| { ok: false; error }`. It uses `data` because lint bans `.value` |
+| `prefs.ts` | `PREFS`, every MMKV key from DESIGN.md › Settings with its schema and default. `parsePref` never throws and falls back to the default |
+
+Money output:
+
+| Call | Result |
+| --- | --- |
+| `moneyParts(-231740)` | `{ sign: '−', currency: 'RM', whole: '2,317', fraction: '.40' }` |
+| `moneyText(-4250)` | `−RM 42.50`, with U+2212 and a thin space after RM |
+| `moneySpoken(-4250)` | `Minus 42 ringgit 50`. Digits stay ungrouped so no screen reader says "comma" |
+
 ## Data layer
 
 **Database.**
