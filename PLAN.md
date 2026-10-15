@@ -7,6 +7,7 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 - **Boxes.** One box is one unit of work. Check it only when its evidence exists, such as a passing command, a screenshot, a test name or a commit.
 - **Phases.** Each phase ends in a check an agent can run without a human. A phase doesn't start until the one before it is green.
 - **Lanes.** Lanes in the same phase run in parallel, each in its own git worktree, and touch only the folders they own.
+- **Routes and seams.** No lane edits `src/app/`. A lane that needs a new route asks the coordinator. Seam names in each feature index are frozen, and their bodies belong to the lane.
 - **Verification.** Tests alone are not enough. A phase is verified when its unit, device and perf boxes are all checked. A phase with no perf box says so.
 
 ## The checks every agent runs
@@ -52,26 +53,28 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 ## Phase 1. Contracts (serial, one agent)
 
-**Owns.** `src/models/`, `src/theme/`, `src/app/_layout.tsx` and every route file as a stub, `src/services/db/` (port, schema, migrations, the Node adapter).
+**Owns.** `src/models/`, `src/theme/`, `src/motion/`, `src/app/` (every route file, final), `src/services/db/`, `src/services/query-client.ts`, Sen's data and `SenStatic` in `src/features/sen/`, the seam files in each feature folder, and `src/features/stub/`.
 
-- [ ] zod schemas, the `Transaction` model with `source`, the money helpers (integer sen, the sign added by hand, split numerals, spoken amounts).
-- [ ] Theme tokens for light and dark from DESIGN.md, with typed Unistyles themes.
-- [ ] Motion contracts in `src/motion/`: `tokens.ts` (the canvas easing curves, springs, durations), `policy.ts` (`useMotionPolicy`, `<MotionPolicyRoot>`) and `timeline.ts` (`kf`, `useLoopClock`).
-- [ ] Sen's data in `src/features/sen/`: `channels.ts`, `poses.ts` and `art/` (geometry, `mat()`, node functions), ported from the canvas kit.
-- [ ] Every route stubbed under `Stack.Protected`, and the dev states route behind `__DEV__`.
-- [ ] Database port (`all`, `run`, `transaction`) with an expo-sqlite adapter and a `node:sqlite` adapter for Jest. Schema v1, the covering index and the `day` column.
+- [x] zod schemas, the `Transaction` model with `source`, the money helpers (integer sen, the sign added by hand, split numerals, spoken amounts). Also `day`, `draft`, `errors` and the `PREFS` table. Evidence: `src/models/*.test.ts`.
+- [x] Theme tokens for light and dark from DESIGN.md, with typed Unistyles themes and type roles. Evidence: `src/theme/theme.test.ts` (every text token at 4.5:1 or more).
+- [x] Motion contracts in `src/motion/`: `tokens.ts` (the canvas easing curves, springs, durations), `policy.tsx` (`useMotionPolicy`, `<MotionPolicyRoot>`), `timeline.ts` (`kf`, `useLoopClock`), `countdown.ts` (`useSecondsLeft`, `useCountdownProgress`, `ringOffset`, `useRevealPhase`) and `threshold.ts` (`useThreshold`). Evidence: `src/motion/*.test.tsx`.
+- [x] Sen's data in `src/features/sen/`: `channels.ts`, `poses.ts` and `art/` (geometry, `mat()`, `NODES`, `SVG_TREE`), ported from the canvas kit. Evidence: `poses.test.ts`, `art/nodes.test.ts`.
+- [x] `SenStatic` for every pose and tier, drawn from the shared node table. Evidence: `components/sen-static.test.tsx`.
+- [x] Every route stubbed under `Stack.Protected`, and the dev states route behind `__DEV__`. Evidence: `src/__tests__/guard.test.tsx`, `src/__tests__/lock-flow.test.tsx`.
+- [x] Database port (`all`, `run`, `transaction`) with an expo-sqlite adapter and a `node:sqlite` adapter for Jest. Schema v1, the covering index and the `day` column. Evidence: `src/services/db/*.test.ts`.
+- [x] Lint keeps `node:sqlite` and `db/testing` in test files and bans `withExclusiveTransactionAsync`. Evidence: each rule fired on a temporary bad import, then the file was removed.
 
 **Verify, unit.** Money, schema and migration tests pass on real SQL in Jest. Every pose has exactly one mouth and one eye state. `resolveMotion` table passes.
-**Verify, device.** Every stub route opens by deep link. Locked deep links land on Lock.
+**Verify, device.** Every stub route opens by deep link. Locked deep links land on Lock. `sen://dev/states?screen=db` shows a `cipher_version`, `user_version 1` and `day 2026-10-16`.
 **Verify, perf.** None in this phase.
 
 ## Phase 2. Foundations (three parallel lanes)
 
-**Lane 2a. Components and the states gallery.** Owns `src/components/`, `src/app/(dev)/`.
+**Lane 2a. Components and the states gallery.** Owns `src/components/` and `src/features/gallery/`.
 - [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, Countdown, and `Amount` (coins for `null`, digits otherwise).
-- [ ] `SenStatic` for every pose and size tier, shown on the states route (`?screen=sen&pose=&size=`).
+- [ ] Show every pose and tier on the gallery (`?screen=sen&pose=&size=`). Phase 1 built `SenStatic`.
 - [ ] The gallery renders any screen state from fixtures.
-- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`. Countdown maths and `ringOffset` tables.
+- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`. The Countdown label reads `0:10 LEFT` at 50 s.
 - **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
@@ -81,7 +84,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - **Unit.** Sync twice and interrupted give the same table hash. Masked results hold no amounts. Search "entral" matches a JS filter.
 - **Perf.** Jest benches on 10k rows stay inside the D20 budgets.
 
-**Lane 2c. Auth.** Owns `src/features/auth/`, the lock and welcome routes.
+**Lane 2c. Auth.** Owns `src/features/auth/`.
 - [ ] The session reducer as a pure table, the Zustand store, `useStepUp`, the AppState and idle locks, and the iOS inactive guard.
 - [ ] Welcome, the Face ID primer and the Lock screens with every error code mapped.
 - **Unit.** Every state and event pair. `BACKGROUND` during `authenticating` is ignored. Re-lock at 61 s, not 59 s.
@@ -102,14 +105,14 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 ## Phase 4. Features (four parallel lanes)
 
-**Lane 4a. Detail.** Owns `src/features/detail/`, `src/app/transaction/`.
+**Lane 4a. Detail.** Owns `src/features/detail/`.
 - [ ] Masked and revealed detail, the timeline, copy reference, share receipt (revealed only), not found.
 
-**Lane 4b. Add and delete.** Owns `src/features/add/`, `src/app/add/`.
+**Lane 4b. Add and delete.** Owns `src/features/add/`.
 - [ ] Keypad reducer, details step with the sanitiser, review, save with step-up and an idempotency key, Undo, the discard guard, delete with step-up.
 - [ ] A double-tap on Save stores one row.
 
-**Lane 4c. Settings.** Owns `src/features/settings/`, `src/app/settings/`.
+**Lane 4c. Settings.** Owns `src/features/settings/`.
 - [ ] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes.
 - [ ] Each forced fault renders its designed state.
 
@@ -143,6 +146,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 ## Phase 6. Polish (one agent)
 
 - [ ] Copy, accessibility labels, haptics, Sen's placement on every screen, dark mode check against the `SF-Dark-*` boards.
+- [ ] Delete `src/features/stub/` once nothing imports it.
 
 **Verify.** `snapshot -i` shows every designed label. Screenshots match the canvas boards side by side.
 

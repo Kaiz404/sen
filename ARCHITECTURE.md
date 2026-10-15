@@ -1,6 +1,6 @@
 # Sen architecture
 
-How Sen is built. It follows the decisions in [DECISIONS.md](DECISIONS.md), made on 2026-10-15. No code exists yet, so every path below is the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
+How Sen is built. It follows the decisions in [DECISIONS.md](DECISIONS.md), made on 2026-10-15. Phases 0 and 1 are built. Paths for later phases are the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
 
 Sen is a frontend-only, local-first app. The "bank" is an in-app mock service that syncs into an encrypted on-device database. It is built for 10,000 transactions. The brief is titled "Secure Transaction History Module", so security is the organising idea. Every layer has a security job.
 
@@ -583,6 +583,10 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Log schema rejects amounts | `features/security/activity-log.test.ts` |
 | Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `services/sanitize.test.ts` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |
+| Integer sen at the storage layer. A repeated idempotency key is refused. `day` matches `malaysiaDay` | `services/db/schema.test.ts` |
+| A masked query that selects an amount fails its parse | `services/db/rows.test.ts` |
+| A root call never lands inside an open transaction. A failed savepoint undoes only its writes | `services/db/port.test.ts` |
+| The key is the first statement on the device database | `services/db/expo.test.ts` |
 | Release config always guards screens | `features/security/screen-guard.test.ts` |
 | Selector and query benches on 10k rows within budget | `*.bench.test.ts` |
 
