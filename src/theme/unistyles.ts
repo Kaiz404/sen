@@ -1,33 +1,31 @@
 import { StyleSheet } from 'react-native-unistyles';
 
-const light = {
-  colors: {
-    canvas: '#F6F2E9',
-    paper: '#FFFDF8',
-    ink: '#17181A',
-    inkMuted: '#5F5A50',
-    lemon: '#F2DC72',
-  },
+import { dark, light } from './colors';
+
+/** DESIGN.md › Shape and parts. */
+const shape = {
+  keyBorder: 2,
+  keyShadow: 4,
+  keyRadius: 18,
+  touchMin: 44,
 } as const;
 
-const dark = {
-  colors: {
-    canvas: '#121315',
-    paper: '#1E2023',
-    ink: '#F3EEE3',
-    inkMuted: '#ABA595',
-    lemon: '#F2DC72',
-  },
-} as const;
+const lightTheme = { colors: light, shape };
+const darkTheme: typeof lightTheme = { colors: dark, shape };
 
-const themes = { light, dark };
+const themes = { light: lightTheme, dark: darkTheme };
 
+export type AppTheme = typeof lightTheme;
 type AppThemes = typeof themes;
 
 declare module 'react-native-unistyles' {
   export interface UnistylesThemes extends AppThemes {}
 }
 
+/**
+ * Adaptive by default. The Settings theme choice calls `UnistylesRuntime.setAdaptiveThemes(false)` and then
+ * `setTheme(...)`. Nothing here changes for it.
+ */
 StyleSheet.configure({
   themes,
   settings: { adaptiveThemes: true },
