@@ -34,7 +34,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | Icons | `@expo/vector-icons` (MaterialCommunityIcons) | ^15 | |
 | Formatting | `Intl` on Hermes | | Add the +/− sign by hand. Money is integer sen |
 | Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 is async and needs Node ≥ 22.13 |
-| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban, `useReducedMotion` ban, `runOnJS` ban, `'cubic-bezier('` string ban |
+| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban, `useReducedMotion` ban, `runOnJS` ban, `'cubic-bezier('` string ban, `withExclusiveTransactionAsync` ban, and `node:sqlite` or `db/testing` imports outside test files |
 | Device checks | Maestro CLI | 2.11.x | Flows, `assertScreenshot` baselines and `startRecording` videos for agent verification. Not a shipped E2E suite |
 
 **Skipped on purpose.** The reasons are in DECISIONS.md.

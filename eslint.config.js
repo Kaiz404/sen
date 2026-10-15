@@ -22,6 +22,56 @@ const sharedValueDotValue = {
   message: 'Use .get() and .set() on shared values. The React Compiler cannot see .value.',
 };
 
+const exclusiveTransaction = {
+  selector: "MemberExpression[property.name='withExclusiveTransactionAsync']",
+  message:
+    'withExclusiveTransactionAsync opens a second connection without the SQLCipher key. Use db.transaction.',
+};
+
+const restrictedImports = {
+  paths: [
+    {
+      name: 'react-native-reanimated',
+      importNames: ['useReducedMotion'],
+      message: 'Read the motion level through useMotionPolicy() from src/motion/policy.',
+    },
+    {
+      name: 'react-native-reanimated',
+      importNames: ['runOnJS'],
+      message: 'Use scheduleOnRN from react-native-worklets.',
+    },
+    {
+      name: 'react-native-worklets',
+      importNames: ['runOnJS'],
+      message: 'Use scheduleOnRN from react-native-worklets.',
+    },
+  ],
+  patterns: [
+    {
+      group: ['@/features/*/**'],
+      message: "Import another feature through its index, as '@/features/<name>'.",
+    },
+  ],
+};
+
+/** The Node adapter runs only in Jest. Metro can't bundle node:sqlite, so app code never imports it. */
+const withTestOnly = (options) => ({
+  paths: [
+    ...options.paths,
+    {
+      name: 'node:sqlite',
+      message: 'Jest only. App code opens the database through openDb from @/services/db.',
+    },
+  ],
+  patterns: [
+    ...options.patterns,
+    {
+      group: ['**/db/testing', '**/db/testing/*', './testing', './testing/*'],
+      message: 'The Node database adapter is for test files only.',
+    },
+  ],
+});
+
 module.exports = defineConfig([
   expoConfig,
   prettierConfig,
@@ -49,44 +99,30 @@ module.exports = defineConfig([
           ],
         },
       ],
-      'no-restricted-imports': [
+      'no-restricted-imports': ['error', withTestOnly(restrictedImports)],
+      'no-restricted-syntax': [
         'error',
-        {
-          paths: [
-            {
-              name: 'react-native-reanimated',
-              importNames: ['useReducedMotion'],
-              message: 'Read the motion level through useMotionPolicy() from src/motion/policy.',
-            },
-            {
-              name: 'react-native-reanimated',
-              importNames: ['runOnJS'],
-              message: 'Use scheduleOnRN from react-native-worklets.',
-            },
-            {
-              name: 'react-native-worklets',
-              importNames: ['runOnJS'],
-              message: 'Use scheduleOnRN from react-native-worklets.',
-            },
-          ],
-          patterns: [
-            {
-              group: ['@/features/*/**'],
-              message: "Import another feature through its index, as '@/features/<name>'.",
-            },
-          ],
-        },
+        rawHex,
+        cubicBezierString,
+        sharedValueDotValue,
+        exclusiveTransaction,
       ],
-      'no-restricted-syntax': ['error', rawHex, cubicBezierString, sharedValueDotValue],
     },
   },
   {
     files: ['src/theme/**'],
-    rules: { 'no-restricted-syntax': ['error', cubicBezierString, sharedValueDotValue] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        cubicBezierString,
+        sharedValueDotValue,
+        exclusiveTransaction,
+      ],
+    },
   },
   {
     files: ['src/motion/tokens.ts'],
-    rules: { 'no-restricted-syntax': ['error', rawHex, sharedValueDotValue] },
+    rules: { 'no-restricted-syntax': ['error', rawHex, sharedValueDotValue, exclusiveTransaction] },
   },
   {
     files: ['src/services/logger.ts'],
@@ -94,7 +130,14 @@ module.exports = defineConfig([
   },
   {
     files: ['**/*.test.{ts,tsx}'],
-    rules: { 'no-restricted-syntax': ['error', rawHex, cubicBezierString] },
+    rules: {
+      'no-restricted-syntax': ['error', rawHex, cubicBezierString, exclusiveTransaction],
+      'no-restricted-imports': ['error', restrictedImports],
+    },
+  },
+  {
+    files: ['src/services/db/testing/**'],
+    rules: { 'no-restricted-imports': ['error', restrictedImports] },
   },
   {
     files: ['src/app/**/*.test.{ts,tsx}'],
