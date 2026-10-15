@@ -69,11 +69,6 @@ const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as c
 const COIN = transformOrigin(PIVOT.coin);
 const CONTACT = transformOrigin(PIVOT.contact);
 
-/**
- * A memoised, hook-free drawing of one pose. It walks `treeFor(tier)` and calls each node's `read`, the
- * same functions the animated rig runs, and skips nodes at opacity 0. The body is the rig's four Views.
- * Accents are never drawn here.
- */
 export const SenStatic = memo(function SenStatic({
   pose,
   size,

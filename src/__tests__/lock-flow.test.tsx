@@ -15,7 +15,6 @@ const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 
 const APP = join(__dirname, '..', 'app');
 
-/** The real app: every route file on disk with its real screen. */
 const routes = Object.fromEntries(
   readdirSync(APP, { recursive: true, encoding: 'utf8' })
     .filter((f) => f.endsWith('.tsx'))

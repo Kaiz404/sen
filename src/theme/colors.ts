@@ -1,7 +1,3 @@
-/**
- * DESIGN.md › Colour. `deep` is the credits colour: deep green on cream, mint on dark, because deep green
- * fails 4.5:1 there. Credits read `colors.deep` in both modes with no branch.
- */
 const LIGHT = {
   canvas: '#F6F2E9',
   paper: '#FFFDF8',
@@ -16,7 +12,6 @@ const LIGHT = {
   stamp: '#8A4B12',
   pending: '#7A3F0C',
   danger: '#8A2E1F',
-  /** Text and borders on a pastel fill (a lemon key, the lilac card). Pastels don't flip in dark, so neither does this. */
   onPastel: '#17181A',
 } as const;
 
@@ -42,7 +37,6 @@ export const dark: Palette = {
   onPastel: '#17181A',
 };
 
-/** Row glyph pastels, the same in both modes. A row picks one by a stable hash of its id. */
 export const GLYPH_PASTELS = [
   '#F9D5D0',
   '#CBEBD3',
@@ -52,7 +46,6 @@ export const GLYPH_PASTELS = [
   '#D2EEEA',
 ] as const;
 
-/** Sen's own colours. Sen looks the same in light and dark, and its fills are SVG props, not styles. */
 export const SEN_COLORS = {
   face: '#F2DC72',
   rim: '#236B47',

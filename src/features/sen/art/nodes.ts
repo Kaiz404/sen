@@ -21,18 +21,12 @@ import {
 import { type Matrix, mat } from './matrix';
 
 /**
- * Every part of Sen as a table: the channels it reads and a pure worklet from those channels to its props
- * or style. `SenStatic` calls `read(frame, unit)` with a plain Frame. The rig captures exactly `channels`
- * as shared values in one `useAnimatedProps` or `useAnimatedStyle` per node and calls the same `read`, so
- * the two renderers can't drift and an idle node never re-runs.
  * Channels are declared, not discovered, because a Reanimated mapper subscribes to every shared value in
- * its closure (inferred). A mapper that closed over all 41 would wake on every frame. A test calls each
- * `read` with a recording Proxy and checks it reads exactly `channels`.
+ * its closure. A mapper that closed over all 41 would wake on every frame.
  */
 export type NodeDef<T extends 'view' | 'svg', C extends Channel, P> = {
   readonly target: T;
   readonly channels: readonly C[];
-  /** `unit` is pt per rig unit. Only `mv` uses it, because SVG nodes draw in rig units. */
   readonly read: (f: Pick<Frame, C>, unit: number) => P;
 };
 
@@ -62,11 +56,9 @@ const still = svg([], () => {
   return {};
 });
 
-/** Heads shows while cos θ ≥ 0 and tails otherwise. The edge pill shows only near edge-on. */
 const EDGE_ON = 0.2;
 
 export const NODES = {
-  // Body, four nested Animated.Views. Pivots are static `transformOrigin` values (geometry.PIVOT).
   mv: view(['mv.x', 'mv.y'], (f, unit) => {
     'worklet';
     return { transform: [{ translateX: f['mv.x'] * unit }, { translateY: f['mv.y'] * unit }] };
@@ -99,7 +91,6 @@ export const NODES = {
     'worklet';
     return { opacity: Math.cos(f['sp.th']) < 0 ? 1 : 0 };
   }),
-  /** Not in SVG_TREE: it sits outside `sp`, so the rig draws it in its own layer under `sq`. */
   edge: svg(['sp.th'], (f) => {
     'worklet';
     return { opacity: Math.abs(Math.cos(f['sp.th'])) < EDGE_ON ? 1 : 0 };
@@ -148,7 +139,6 @@ export const NODES = {
   propMagnifier: fade('prop.magnifier'),
   propPlug: fade('prop.plug'),
   propNightcap: fade('prop.nightcap'),
-  /** The shades drop in on `prop.y`, so this one node reads two channels. */
   propShades: svg(['prop.shades', 'prop.y'], (f) => {
     'worklet';
     return { opacity: f['prop.shades'], matrix: mat(0, f['prop.y'], 0, 1, 1, 0, 0) };
@@ -175,23 +165,14 @@ export const PROP_NODE: Readonly<Record<PropId, SvgNodeId>> = {
   shades: 'propShades',
 };
 
-/** One group in the drawing. Children transform with their parent. */
 export type TreeNode = {
   readonly node: SvgNodeId;
-  /** Drawn inside the node's group after its children, as kit.py draws a held prop under the paw. */
   readonly shapes?: readonly Shape[];
-  /** The group sits inside the static face clip, so the face can tuck behind the rim. */
   readonly clip?: true;
-  /** Dropped at the face tier. */
   readonly full?: true;
   readonly children?: readonly TreeNode[];
 };
 
-/**
- * Sen's drawing inside `sp`, back to front, as kit.py and MAX-Library draw it. Eyes and mouths ride in
- * `lk` inside the static clip. Worn props sit above the clip and outside `lk`, so they stay put while the
- * face slides. Held props sit in `pawR`. Both renderers walk this tree.
- */
 export const SVG_TREE: readonly TreeNode[] = [
   {
     node: 'heads',
@@ -249,7 +230,6 @@ function prune(nodes: readonly TreeNode[]): readonly TreeNode[] {
 
 const FACE_TREE = prune(SVG_TREE);
 
-/** The tree a tier draws. The face tier drops mouths, cheeks, paws and held props (kit.py `face_only`). */
 export function treeFor(tier: SenTier): readonly TreeNode[] {
   return tier === 'full' ? SVG_TREE : FACE_TREE;
 }

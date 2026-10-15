@@ -2,28 +2,16 @@ import { SEN_COLORS } from '@/theme/colors';
 
 import type { MouthId, PropId } from '../poses';
 
-/**
- * Sen's static drawing, copied from kit.py (the MAX rig), with the tails face and the edge pill from
- * MAX-Library. Rig units, origin at the face centre, y down. Nothing here moves: `nodes.ts` says how each
- * part moves.
- */
-
-/** The coin box is 600 units. The Svg draws 680, so tilts and raised paws are not clipped. */
 export const COIN_UNITS = 600;
 export const VIEWBOX_UNITS = 680;
 export const VIEWBOX = '-340 -340 680 680';
 
 export type SenTier = 'face' | 'full';
 
-/** DESIGN › Size tiers. Under 48 pt Sen draws its face and eyes only. */
 export function senTier(size: number): SenTier {
   return size < 48 ? 'face' : 'full';
 }
 
-/**
- * Layout for a Sen of `size` pt, the coin box. The Svg is `side` square and overhangs the coin box by
- * `inset` on every edge, so callers lay out by `size` alone. `unit` is pt per rig unit.
- */
 export function senBox(size: number): { side: number; inset: number; unit: number } {
   const unit = size / COIN_UNITS;
   return { side: VIEWBOX_UNITS * unit, inset: ((VIEWBOX_UNITS - COIN_UNITS) / 2) * unit, unit };
@@ -31,22 +19,17 @@ export function senBox(size: number): { side: number; inset: number; unit: numbe
 
 export type Vec = readonly [x: number, y: number];
 
-/** Body View pivots in rig units. */
 export const PIVOT = {
-  /** `rl` and `sp`: the coin centre. */
   coin: [10, 16],
-  /** `sq`: the contact point under the coin. */
   contact: [10, 278],
 } as const satisfies Record<string, Vec>;
 
-/** A pivot as a `transformOrigin` on a View that is the 680-unit box: (10, 278) is `51.47% 90.88%`. */
 export function transformOrigin([x, y]: Vec): `${number}% ${number}%` {
   const pct = (v: number) => Math.round(((v + VIEWBOX_UNITS / 2) / VIEWBOX_UNITS) * 10000) / 100;
   return `${pct(x)}% ${pct(y)}%`;
 }
 
 type Paint = {
-  /** Absent means no fill. */
   readonly fill?: string;
   readonly stroke?: string;
   readonly strokeWidth?: number;
@@ -70,10 +53,8 @@ export type Shape = Paint &
         readonly width: number;
         readonly height: number;
         readonly rx: number;
-        /** `rotate(deg cx cy)`. */
         readonly rotate?: readonly [deg: number, cx: number, cy: number];
       }
-    /** Stroked paths have round caps, as every kit.py stroke does. */
     | { readonly kind: 'path'; readonly d: string }
   );
 
@@ -87,10 +68,8 @@ const line = (d: string, strokeWidth: number): Shape => ({
 
 export const RIM: Shape = { kind: 'circle', cx: 10, cy: 16, r: 262, fill: C.rim };
 export const FACE: Shape = { kind: 'circle', cx: 0, cy: 0, r: 222, fill: C.face };
-/** The clip for `lk`. Static: the face slides and the clip stays. */
 export const FACE_CLIP = { cx: 0, cy: 0, r: 222 } as const;
 
-/** MAX-Library `.tl`: the tails face, shown while the coin spins past edge-on. */
 export const TAILS: readonly Shape[] = [
   { kind: 'circle', cx: 10, cy: 16, r: 262, fill: C.rim },
   { kind: 'circle', cx: 20, cy: 0, r: 222, fill: C.face },
@@ -98,7 +77,6 @@ export const TAILS: readonly Shape[] = [
   { kind: 'rect', x: 4, y: -84, width: 32, height: 168, rx: 16, fill: C.feature },
   { kind: 'rect', x: 4, y: -84, width: 64, height: 32, rx: 16, fill: C.feature },
 ];
-/** MAX-Library `.edge`: the pill seen edge-on. It sits outside `sp`, so the spin never squashes it. */
 export const EDGE: Shape = {
   kind: 'rect',
   x: -13,
@@ -188,7 +166,6 @@ export const PROP: Readonly<Record<PropId, readonly Shape[]>> = {
   ],
 };
 
-/** The accents layer (kit.py ACCENTS). The rig draws it while a moment plays. `SenStatic` never does. */
 export const STAR_D = 'M0 -46 Q7 -7 46 0 Q7 7 0 46 Q-7 7 -46 0 Q-7 -7 0 -46Z';
 export const ACCENT_STARS: readonly { readonly at: Vec; readonly scale: number }[] = [
   { at: [-292, -236], scale: 1 },

@@ -18,7 +18,6 @@ type Smoke =
     }
   | { readonly state: 'failed'; readonly reason: string };
 
-/** A throwaway SQLCipher file: random key, migrate, one row at 16:30Z, read back, then delete it. */
 async function runSmoke(): Promise<Smoke> {
   const hex = Array.from(getRandomValues(new Uint8Array(32)), (b) =>
     b.toString(16).padStart(2, '0'),
@@ -48,7 +47,6 @@ async function runSmoke(): Promise<Smoke> {
   }
 }
 
-/** `sen://dev/states?screen=db`: proves SQLCipher, the migration and the `day` column on the device. */
 export function DbSmoke(): ReactNode {
   const [smoke, setSmoke] = useState<Smoke>({ state: 'running' });
 

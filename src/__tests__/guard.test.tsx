@@ -10,10 +10,6 @@ import NotFound from '@/app/+not-found';
 import RootLayout from '@/app/_layout';
 import type { RouteGate } from '@/features/auth';
 
-/**
- * The route contract, frozen with `_layout.tsx`. It renders the real root layout over fake screens and
- * mocks only the seams the layout reads, so no lane's screen or store can break it and no lane edits it.
- */
 let mockGate: RouteGate = 'locked';
 jest.mock('@/features/auth', () => ({
   useRouteGate: () => mockGate,
@@ -28,10 +24,8 @@ jest.mock('@/motion/policy', () => ({
 }));
 
 const APP = join(__dirname, '..', 'app');
-/** Left out of the locked deep-link check. `+not-found` has no URL of its own, so the unknown-link tests cover it. */
-const PUBLIC = new Set(['lock', 'welcome', 'primer', 'dev/states', '+not-found']);
+const SKIP_LOCKED_LINK_CHECK = new Set(['lock', 'welcome', 'primer', 'dev/states', '+not-found']);
 
-/** Every route file on disk, as expo-router names it. A new file is covered the moment it exists. */
 const files = readdirSync(APP, { recursive: true, encoding: 'utf8' })
   .filter((f) => f.endsWith('.tsx'))
   .map((f) => relative(APP, join(APP, f)).replace(/\.tsx$/, ''));
@@ -51,7 +45,9 @@ const routes = Object.fromEntries(
 );
 
 const url = (name: string) => `/${name.replace(/(^|\/)index$/, '').replace('[id]', 'tx-1')}`;
-const protectedRoutes = files.filter((f) => !f.endsWith('_layout') && !PUBLIC.has(f));
+const protectedRoutes = files.filter(
+  (f) => !f.endsWith('_layout') && !SKIP_LOCKED_LINK_CHECK.has(f),
+);
 
 test('the route files on disk are the ones the layout declares', () => {
   expect([...files].sort()).toEqual([

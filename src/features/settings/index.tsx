@@ -6,14 +6,8 @@ import type { MotionLevel } from '@/motion/policy';
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
-/** Fails `tsc` if the stored "Sen's animations" values drift from the motion levels. */
 export type SenMotionPrefIsMotionLevel = Assert<Same<PrefValue<'senMotion'>, MotionLevel>>;
 
-/**
- * The "Sen's animations" setting, read synchronously from prefs so the first frame is already right.
- * Motion can't import services, so the root layout reads it here and passes it to `<MotionPolicyRoot>`.
- * Lane 4c reads `senMotion` through the prefs service and subscribes to changes.
- */
 export function useSenMotionPreference(): MotionLevel {
   return 'full';
 }

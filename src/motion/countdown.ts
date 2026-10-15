@@ -9,17 +9,12 @@ import {
   withTiming,
 } from 'react-native-reanimated';
 
-/** Sen glances at the ring from here, and the ring label turns urgent. */
 export const ENDING_MS = 10_000;
 
 function secondsUntil(deadline: number | null, now: number): number {
   return deadline === null ? 0 : Math.max(0, Math.ceil((deadline - now) / 1000));
 }
 
-/**
- * Whole seconds left until `deadline` (epoch ms), re-rendering once a second on a timeout aimed at the next
- * whole second, so it never drifts. `null` gives 0.
- */
 export function useSecondsLeft(deadline: number | null): number {
   const [left, setLeft] = useState(() => secondsUntil(deadline, Date.now()));
 
@@ -38,11 +33,6 @@ export function useSecondsLeft(deadline: number | null): number {
   return left;
 }
 
-/**
- * Ring progress from 1 down to 0 over the time left, linear. It uses `ReduceMotion.Never` because the ring
- * is information and runs at every motion level. It re-seeds from the wall clock on AppState `active`.
- * The ring never re-masks. The session timer does.
- */
 export function useCountdownProgress(deadline: number, totalMs: number): SharedValue<number> {
   const progress = useSharedValue(1);
 
@@ -71,13 +61,11 @@ export function useCountdownProgress(deadline: number, totalMs: number): SharedV
   return progress;
 }
 
-/** `strokeDashoffset` for a ring of circumference `c` at progress `p` (1 full, 0 empty). */
 export function ringOffset(p: number, c: number): number {
   'worklet';
   return c * (1 - p);
 }
 
-/** `'revealed'` until 10 s before `deadline`, then `'ending'`. One timeout, no ticking. */
 export function useRevealPhase(deadline: number | null): 'revealed' | 'ending' {
   const [endingFor, setEndingFor] = useState(() =>
     deadline !== null && deadline - ENDING_MS <= Date.now() ? deadline : null,

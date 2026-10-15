@@ -2,20 +2,9 @@ import { z } from 'zod';
 
 import type { Db } from './port';
 
-/**
- * One step on the ladder: the statements that take `user_version` from `version - 1` to `version`.
- * One statement per entry, because node:sqlite prepares one statement at a time. Append only: a shipped
- * step is never edited.
- */
+/** One statement per entry, because node:sqlite prepares one statement at a time. */
 export type Migration = { readonly version: number; readonly statements: readonly string[] };
 
-/**
- * Schema v1. STRICT tables refuse a float `amount_minor`. The GLOB check refuses an instant without
- * milliseconds, so text order is time order. `idem_key` exists only on manual rows and is UNIQUE, which is
- * the double-submit guard. `day` is the Malaysia-time day, generated from `posted_at`. A trigger keeps the
- * newest 50 log rows. `category` is unchecked on purpose: a row SQL accepts can still fail
- * `TransactionSchema`, and is then dropped and counted.
- */
 const V1: Migration = {
   version: 1,
   statements: [
@@ -66,7 +55,6 @@ const V1: Migration = {
 export const MIGRATIONS: readonly Migration[] = [V1];
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
-/** The file was written by a newer app. The caller resets it as `db_reset` `corrupt`. */
 export class SchemaTooNewError extends Error {
   constructor(readonly found: number) {
     super(`Database schema ${found} is newer than this app's ${SCHEMA_VERSION}.`);
@@ -82,10 +70,6 @@ export async function userVersion(db: Db): Promise<number> {
 
 export type MigrateOutcome = { readonly from: number; readonly to: number };
 
-/**
- * Brings the database up to the top of `ladder`. Each step and its `PRAGMA user_version` run in one
- * transaction, so a step that fails leaves the previous version intact. Running it again is a no-op.
- */
 export async function migrate(
   db: Db,
   ladder: readonly Migration[] = MIGRATIONS,

@@ -23,14 +23,8 @@ export type PrefKey = keyof typeof TABLE;
 export type PrefValue<K extends PrefKey> = z.infer<(typeof TABLE)[K]['schema']>;
 export type Prefs = { readonly [K in PrefKey]: PrefValue<K> };
 
-/**
- * Every MMKV `prefs` key from DESIGN.md › Settings, with its schema and default. Every reader and writer
- * goes through this table, so a value written can't drift from a value read.
- * Units: `revealSeconds` in seconds, `idleLock` and `relockAfter` in minutes (0 is right away).
- */
 export const PREFS: { readonly [K in PrefKey]: Pref<z.ZodType<PrefValue<K>>> } = TABLE;
 
-/** One stored value, parsed. Never throws: anything the schema rejects reads as the default. */
 export function parsePref<K extends PrefKey>(key: K, raw: unknown): PrefValue<K> {
   const parsed = PREFS[key].schema.safeParse(raw);
   return parsed.success ? parsed.data : PREFS[key].default;

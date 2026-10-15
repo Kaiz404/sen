@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-/** Every category a row can carry. Bank rows use all ten. */
 export const CATEGORIES = [
   'food',
   'groceries',
@@ -17,7 +16,6 @@ export const CATEGORIES = [
 export const CategorySchema = z.enum(CATEGORIES);
 export type CategoryId = z.infer<typeof CategorySchema>;
 
-/** The eight chips on SF-AddDetails, in board order. A manual row picks one of these. */
 export const ADD_CATEGORIES = [
   'food',
   'transport',

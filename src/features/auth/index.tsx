@@ -8,16 +8,8 @@ import { StubScreen } from '@/features/stub';
 import { queryClient } from '@/services/query-client';
 import { type } from '@/theme/type';
 
-/**
- * Which half of the route tree is mounted. One value, not two booleans, so "unlocked but never onboarded"
- * can't be expressed. Lane 2c derives it from the session reducer:
- *   first run, until the primer finishes  → 'welcome'
- *   locked, or authenticating to unlock   → 'locked'
- *   unlocked, revealed, stepUp            → 'unlocked'
- */
 export type RouteGate = 'welcome' | 'locked' | 'unlocked';
 
-// Phase 1 stub session: starts locked, and the stub Lock screen unlocks it. Lane 2c replaces it.
 let gate: RouteGate = 'locked';
 const listeners = new Set<() => void>();
 function setGate(next: RouteGate) {
@@ -29,15 +21,10 @@ function subscribe(notify: () => void) {
   return () => listeners.delete(notify);
 }
 
-/** The root layout's only read of the session. */
 export function useRouteGate(): RouteGate {
   return useSyncExternalStore(subscribe, () => gate);
 }
 
-/**
- * Everything whose lifetime is the session, mounted once inside the root layout: the query cache that lock
- * clears, the AppState and idle listeners, and the iOS privacy cover. Phase 1 mounts the query cache.
- */
 export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

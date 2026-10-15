@@ -6,10 +6,6 @@ import { type } from '@/theme/type';
 
 export { DbSmoke } from './db-smoke';
 
-/**
- * Phase 1 placeholder screen. It shows the route's name, so a deep-link screenshot proves which route
- * opened. Seeded feature indexes render it until their lane replaces them. Phase 6 deletes this folder.
- */
 export function StubScreen({ name, detail }: { name: string; detail?: string }): ReactNode {
   return (
     <View style={styles.screen}>

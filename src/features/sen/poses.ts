@@ -24,28 +24,19 @@ export type PropId = (typeof PROP_IDS)[number];
 
 type Vec = readonly [x: number, y: number];
 
-/**
- * A pose as kit.py writes it: one eyes kind, one mouth, at most one prop. The discrete choices are single
- * fields, so a pose can't name two mouths. `poseFrame` expands it into opacity channels.
- */
 export type PoseSpec = {
-  /** `lk` offset. */
   readonly face: Vec;
   readonly eyes: EyesKind;
   readonly mouth: MouthId;
-  /** 0 to 0.3. */
   readonly cheeks: number;
-  /** `sq.r`, degrees about the contact point (10, 278). */
   readonly lean: number;
   readonly pawL: Vec;
   readonly pawR: Vec;
-  /** The prop this pose wears by default. `<Sen prop>` overrides it. */
   readonly prop: PropId | null;
 };
 
 const rest: Vec = [0, 0];
 
-/** kit.py POSES, plus DESIGN's default props: asleep wears the nightcap, cool wears the shades. */
 export const POSE_SPECS: Readonly<Record<PoseId, PoseSpec>> = {
   idle: spec({ eyes: 'open', mouth: 'smile' }),
   masked: spec({ face: [0, 34], eyes: 'closed', mouth: 'small' }),
@@ -110,7 +101,6 @@ function eyes(l: EyeSide, r: EyeSide, happy: 0 | 1 = 0): Readonly<Record<EyeChan
   };
 }
 
-/** Each eyes kind as channel values. Worried is kit's rx 12 ry 17 eye, nudged in by 10 and down by 8. */
 export const EYES: Readonly<Record<EyesKind, Readonly<Record<EyeChannel, number>>>> = {
   open: eyes({ open: 1 }, { open: 1 }),
   closed: eyes({ shut: 1 }, { shut: 1 }),
@@ -139,10 +129,6 @@ const PROP_CHANNEL: Readonly<Record<PropId, (typeof PROP_CHANNELS)[number]>> = {
   shades: 'prop.shades',
 };
 
-/**
- * The full Frame for a pose: REST, then the spec, then the prop. `prop` undefined keeps the pose's default,
- * and `null` removes it.
- */
 export function poseFrame(pose: PoseId, prop?: PropId | null): Frame {
   const s = POSE_SPECS[pose];
   const worn = prop === undefined ? s.prop : prop;

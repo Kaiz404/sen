@@ -14,13 +14,6 @@ const sheet = {
   sheetGrabberVisible: true,
 } as const;
 
-/**
- * Every route is declared here, inside exactly one guard. A deep link to a route whose guard is false lands
- * on the first available screen (Lock, or Welcome on first run) and is not replayed after unlock.
- * `+not-found` is unlocked-only: its redirect home is a no-op while home is guarded, so a locked unknown
- * link must fall through to Lock instead.
- * `src/__tests__/guard.test.tsx` renders this file over every route file on disk and proves it.
- */
 export default function RootLayout() {
   const gate = useRouteGate();
   const motion = useSenMotionPreference();

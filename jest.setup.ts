@@ -9,7 +9,7 @@ jest.mock('react-native-svg', () => {
   return { ...svg, default: svg.Svg };
 });
 
-// ReducedMotionConfig warns on every mount outside Full. Tests mount it on purpose.
+// ReducedMotionConfig warns on every mount. Tests mount it on purpose.
 const warn = console.warn;
 jest.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
   if (String(args[0]).startsWith('[Reanimated] Reduced motion setting is overwritten')) return;
