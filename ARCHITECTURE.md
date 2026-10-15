@@ -85,9 +85,11 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | --- | --- | --- |
 | `src/models/` | zod schemas, inferred types, money helpers | Nothing |
 | `src/services/` | All I/O. Nothing unparsed leaves this layer | `models/` |
-| `src/features/` | Domain logic, hooks and screens per feature | `services/`, `models/`, `components/` |
-| `src/components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | `models/` only |
-| `src/app/` | expo-router routes only. Each renders a feature screen | `features/` |
+| `src/theme/` | Unistyles themes and tokens | Nothing |
+| `src/motion/` | Motion tokens, policy, timeline helpers | `theme/` |
+| `src/features/` | Domain logic, hooks and screens per feature | `services/`, `models/`, `components/`, `theme/`, `motion/` |
+| `src/components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | `models/`, `theme/`, `motion/` |
+| `src/app/` | expo-router routes only. Each renders a feature screen | `features/`, `components/`, `theme/`, `motion/` |
 
 **Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. Route tests are the exception. Expo Router bundles every file in `src/app/` as a route, so they live in `src/__tests__/`, and lint fails on a test file inside `src/app/`. The alias is `@/*` for `src/*`.
 
