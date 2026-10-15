@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { CategorySchema } from './category';
-import { InstantSchema } from './day';
+import { DayKeySchema, InstantSchema } from './day';
 import { MinorSchema } from './money';
 
 export const TxIdSchema = z.string().min(1).max(64).brand<'TxId'>();
@@ -31,7 +31,7 @@ export const TransactionSchema = z.object({
 });
 export type Transaction = z.infer<typeof TransactionSchema>;
 
-export const MaskedRowSchema = z.strictObject(fields);
+export const MaskedRowSchema = z.strictObject({ ...fields, day: DayKeySchema });
 export type MaskedRow = z.infer<typeof MaskedRowSchema>;
 
 export const TransactionPageSchema = z.object({

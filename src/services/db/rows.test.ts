@@ -34,8 +34,8 @@ beforeEach(async () => {
 });
 afterEach(() => db.close());
 
-const MASKED = `SELECT id, currency, type, description, merchant, category, status, posted_at, reference,
-  account_name, account_last4, source FROM tx ORDER BY posted_at DESC, id DESC`;
+const MASKED = `SELECT id, currency, type, description, merchant, category, status, posted_at, day,
+  reference, account_name, account_last4, source FROM tx ORDER BY posted_at DESC, id DESC`;
 
 test('a masked row parses with no amount, and a bad row is dropped and counted', async () => {
   expect(parseRows(await db.all(MASKED), MaskedRowSchema)).toEqual({
@@ -49,6 +49,7 @@ test('a masked row parses with no amount, and a bad row is dropped and counted',
         category: 'bills',
         status: 'pending',
         postedAt: '2026-10-14T01:00:00.000Z',
+        day: '2026-10-14',
         reference: 'TNB-88231',
         account: { name: 'Everyday Savings', last4: '4821' },
         source: 'bank',

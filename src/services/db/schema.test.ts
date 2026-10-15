@@ -130,14 +130,16 @@ describe('schema v1', () => {
     ).toEqual([{ n: 50, oldest: 'log-10', newest: 'log-59' }]);
   });
 
-  test('the keyset page query reads the covering index', async () => {
+  test('the masked keyset page searches the page index with no sort step', async () => {
     const plan = await db.all(
-      'EXPLAIN QUERY PLAN SELECT id FROM tx WHERE (posted_at, id) < (?, ?) ORDER BY posted_at DESC, id DESC LIMIT 100',
+      `EXPLAIN QUERY PLAN SELECT id, currency, type, description, merchant, category, status, posted_at, day,
+        reference, account_name, account_last4, source
+        FROM tx WHERE (posted_at, id) < (?, ?) ORDER BY posted_at DESC, id DESC LIMIT 100`,
       ['2026-10-16T00:00:00.000Z', 'z'],
     );
 
     expect(plan.map((row) => row.detail)).toEqual([
-      'SEARCH tx USING COVERING INDEX tx_by_time ((posted_at,id)<(?,?))',
+      'SEARCH tx USING INDEX tx_by_time ((posted_at,id)<(?,?))',
     ]);
   });
 });

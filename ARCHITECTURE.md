@@ -151,7 +151,7 @@ type Transaction = {
   source: 'bank' | 'manual'      // bank rows are read-only
 }
 
-type MaskedRow = Omit<Transaction, 'amountMinor'>   // what masked queries return
+type MaskedRow = Omit<Transaction, 'amountMinor'> & { day: DayKey }   // what masked queries return
 type AppError =
   | { kind: 'offline' } | { kind: 'timeout' } | { kind: 'server' }
   | { kind: 'invalid_data'; skipped: number }
@@ -165,7 +165,7 @@ Each model is a zod schema with its type inferred from it. There is no barrel. C
 | `money.ts` | `Minor` (a non-negative integer of sen, what `amountMinor` holds) and `SignedMinor` (credits positive). `signed(amount, type)` is the one place a direction becomes a sign. `moneyParts`, `moneyText` and `moneySpoken` take a `SignedMinor` and a `SignMode` (`'auto'` or `'never'`) |
 | `day.ts` | `Instant` (UTC, fixed width with milliseconds) and `DayKey` (a Malaysia-time day). `malaysiaDay()` equals SQL `date(posted_at, '+8 hours')` |
 | `category.ts` | Ten categories for bank rows. `ADD_CATEGORIES` holds the eight add chips |
-| `transaction.ts` | `TransactionSchema`, the strict `MaskedRowSchema` (a selected amount fails the parse), and `TransactionPageSchema` for the mock bank's `{ items, nextSeq }` envelope |
+| `transaction.ts` | `TransactionSchema`, the strict `MaskedRowSchema` (a selected amount fails the parse, and `day` is required for the day headers), and `TransactionPageSchema` for the mock bank's `{ items, nextSeq }` envelope |
 | `draft.ts` | `DRAFT_LIMITS`, `draftSchema(today)` and the 90-day add window |
 | `errors.ts` | `AppError`, `isAppError`, `isRetryable`, and `Result` as `{ ok: true; data } \| { ok: false; error }`. It uses `data` because lint bans `.value` |
 | `prefs.ts` | `PREFS`, every MMKV key from DESIGN.md › Settings with its schema and default. `parsePref` never throws and falls back to the default |
@@ -182,7 +182,7 @@ Money output:
 
 **Database.**
 - **The file.** One SQLCipher file, `sen.db`. Its tables are `tx`, `sync_state`, `activity_log` and `meta`.
-- **Columns.** `tx` stores `posted_at` in UTC and a `day` column in Malaysia time (UTC+8). Its covering index is `(posted_at desc, id desc)`. `search_text` is lowercased and stripped of accents at write time.
+- **Columns.** `tx` stores `posted_at` in UTC and a `day` column in Malaysia time (UTC+8). Its page index is `(posted_at desc, id desc)`. `search_text` is lowercased and stripped of accents at write time.
 - **Migrations.** `MIGRATIONS` in `services/db/schema.ts` is an append-only ladder of `{ version, statements }`. Each step runs its statements one at a time, because node:sqlite prepares one statement per call, and ends with `PRAGMA user_version = n`, all in one transaction. A failed step leaves the previous version. Running `migrate` again is a no-op. A file newer than the app throws `SchemaTooNewError`, which the caller resets as `db_reset`.
 - **The port.** The database sits behind a three-method port (`all`, `run`, `transaction`). The app uses the expo-sqlite adapter. Jest uses a `node:sqlite` adapter, so every query runs real SQL in tests (V, jest-expo stubs SQLite with no behaviour).
 
@@ -205,7 +205,7 @@ Money output:
 | `activity_log` | Security events | `meta` must be valid JSON. The `activity_log_cap` trigger keeps the newest 50 rows |
 | `meta` | Key-value app state | `STRICT` |
 
-Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query reads as a covering index, and `activity_log_by_time (at DESC, id DESC)`.
+Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query searches with no sort step, and `activity_log_by_time (at DESC, id DESC)`.
 
 **Sync (D2).**
 - **Cursor.** The mock bank serves pages ordered by a `seq` cursor.

@@ -61,7 +61,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [x] Sen's data in `src/features/sen/`: `channels.ts`, `poses.ts` and `art/` (geometry, `mat()`, `NODES`, `SVG_TREE`), ported from the canvas kit. Evidence: `poses.test.ts`, `art/nodes.test.ts`.
 - [x] `SenStatic` for every pose and tier, drawn from the shared node table. Evidence: `components/sen-static.test.tsx`.
 - [x] Every route stubbed under `Stack.Protected`, and the dev states route behind `__DEV__`. Evidence: `src/__tests__/guard.test.tsx`, `src/__tests__/lock-flow.test.tsx`.
-- [x] Database port (`all`, `run`, `transaction`) with an expo-sqlite adapter and a `node:sqlite` adapter for Jest. Schema v1, the covering index and the `day` column. Evidence: `src/services/db/*.test.ts`.
+- [x] Database port (`all`, `run`, `transaction`) with an expo-sqlite adapter and a `node:sqlite` adapter for Jest. Schema v1, the page index and the `day` column. Evidence: `src/services/db/*.test.ts`.
 - [x] Lint keeps `node:sqlite` and `db/testing` in test files and bans `withExclusiveTransactionAsync`. Evidence: each rule fired on a temporary bad import, then the file was removed.
 
 **Verify, unit.** Money, schema and migration tests pass on real SQL in Jest. Every pose has exactly one mouth and one eye state. `resolveMotion` table passes.
