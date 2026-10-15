@@ -188,6 +188,7 @@ Keep SQLCipher, masked queries and step-up. They carry the security story.
 | Emulator FPS too noisy to gate | 3 | Gate on your phone instead |
 | Maestro can't reach the emulator from WSL | 0 | Run Maestro natively on Windows against the same flows |
 | SVG `matrix` doesn't draw on device | 0 | RN `transform` array for the face slide |
+| Fabric SIGSEGV in `MountingCoordinator::pullTransaction` on the JS thread, seen once on the first dev-build launch | All | Not reproduced in 8 launches, including the same bundle-URL swap. If it recurs, pull the tombstone and check Unistyles' and Reanimated's commit hooks |
 | Reveal commit too slow on a slow phone (R3) | 3 | One animated view per amount, or mount digits for the first 12 rows first |
 | Row insert jumps with keep-scroll-position on (R2) | 3 | Turn it off, or insert only when at the top |
 | Android pull gesture fights the list (R1) | 4e | Keep `RefreshControl` |
