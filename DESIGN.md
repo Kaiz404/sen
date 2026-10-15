@@ -47,7 +47,7 @@ Rules:
 
 - **Split numerals.** Heroes set ringgit large and the sen digits under half that size: `RM 2,317` + `.40`.
 - **Credits.** Deep mint with an explicit `+`. Debits get a `−` added by hand, because Hermes `Intl` lacks `signDisplay` on iOS.
-- **Width axis on Android.** It needs static font files cut from the variable font.
+- **Width axis on Android.** Use the static Condensed ExtraBold cuts that the upstream Bricolage repo ships. Embed them with the `expo-font` config plugin.
 
 ### Shape and parts
 

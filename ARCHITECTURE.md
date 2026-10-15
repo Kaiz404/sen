@@ -1,6 +1,6 @@
 # Sen architecture
 
-How Sen is built. It is locked as of 2026-10-15. No code exists yet, so every path below is the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
+How Sen is built. The security model and threat model below stand. Storage, list, styling, state and tooling are under review in [DECISIONS.md](DECISIONS.md) for the 10,000-transaction, local-first target. Where an owner pick there differs, the pick wins and this file gets updated. No code exists yet, so every path below is the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
 
 Sen is a frontend-only app. The "bank" is an in-app mock service. The brief is titled "Secure Transaction History Module", so security is the organising idea. Every layer has a security job.
 
@@ -12,7 +12,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3, React 19, TypeScript ~6.0.3 w
 | --- | --- | --- | --- |
 | Navigation | `expo-router` | ~57.0.26 | `Stack.Protected` guards (SDK 53+, V). `redirectTo` is SDK 58 only, so `lock` is the anchor of the unprotected group |
 | Styling | `uniwind` + Tailwind v4 | 1.12.2 | Not NativeWind. `withUniwindConfig` is the outermost Metro wrapper. Import `global.css` in the root layout |
-| Biometrics | `expo-local-authentication` | ~57.0.2 | `biometricsSecurityLevel: 'strong'` (Android only, default `'weak'`, V) |
+| Biometrics | `expo-local-authentication` | ~57.0.3 | `biometricsSecurityLevel: 'strong'` (Android only, default `'weak'`, V) |
 | Server state | `@tanstack/react-query` | 5.104.x | Wire `focusManager` to AppState and `onlineManager` to `expo-network` by hand |
 | Validation | `zod` | 4.6.x | Parse at every boundary. v4 issues carry no input by default (V) |
 | Preferences | `react-native-mmkv` + `react-native-nitro-modules` | 4.3.x / ≥ 0.35 | Not bundled by SDK 57, so pin it. Needs a dev build |
@@ -28,7 +28,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3, React 19, TypeScript ~6.0.3 w
 | Icons | `@expo/vector-icons` (MaterialCommunityIcons) | ^15 | |
 | List | `SectionList` + `RefreshControl` | built in | Sticky date headers and pull-to-refresh built in. FlashList is not worth it at about 50 rows |
 | Formatting | `Intl` on Hermes | | Add the +/− sign by hand (iOS lacks `signDisplay`). Money is integer sen |
-| Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.2 / 14.1.x | RNTL v14 APIs are async and need Node ≥ 22.13 |
+| Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 APIs are async and need Node ≥ 22.13 |
 | Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | |
 
 **Skipped on purpose.**
@@ -222,12 +222,12 @@ The guard flips and expo-router removes the protected history (V). A deep link t
 - `getRandomValues(new Uint8Array(24))` encoded as base64url gives 32 ASCII characters, with 192 bits of entropy.
 - It is stored with `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`. It is readable only while the phone is unlocked and is never restored to another device (V).
 
-**Why not `requireAuthentication`.** SecureStore's own docs give three reasons (V):
-- It blocks the JS thread.
-- Keys are invalidated when biometrics change. Adding a fingerprint would silently destroy the user's data.
-- On Android, every operation needs auth.
+**Why not `requireAuthentication`.** It would bind the key to biometrics, which is stronger in theory. It is skipped for three reasons (V, expo-secure-store 57.0.4 source):
+- On Android, it prompts with `BIOMETRIC_STRONG` only and offers no device passcode fallback. The README promises that fallback.
+- Keys are invalidated when biometrics change. Enrolling a new fingerprint would silently destroy the user's data.
+- It adds a second prompt unless it replaces the unlock prompt.
 
-So the key is unlocked-device-only, and the biometric gate is the JS step-up. The README states this trade-off.
+The async read does not block the JS thread. So the key is unlocked-device-only, and the biometric gate is the JS step-up. The README states this limit.
 
 **Lifecycle**
 

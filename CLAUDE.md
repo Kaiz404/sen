@@ -4,27 +4,26 @@ Sen is a take-home assignment: a secure transaction history module in React Nati
 
 Read before working:
 - [DESIGN.md](DESIGN.md) for any UI, Sen or motion work.
-- [ARCHITECTURE.md](ARCHITECTURE.md) for any code.
+- [DECISIONS.md](DECISIONS.md) for every technical choice. A record without an owner pick is not decided. Don't build on it.
+- [PLAN.md](PLAN.md) for the build order, lanes and the checks each phase must pass.
+- [ARCHITECTURE.md](ARCHITECTURE.md) for any code. Where it conflicts with an owner pick in DECISIONS.md, the pick wins.
 - [README.md](README.md) for what the reviewer sees.
 
 ## Locked decisions
 
-Everything below is decided. Don't reopen it without the owner. Other options were tried and dropped.
+Everything below is decided. Don't reopen it without the owner. Other options were tried and dropped. Technical choices live in DECISIONS.md.
 
 | Area | Decision |
 | --- | --- |
-| Scope | Mobile frontend only. An in-app mock bank API. No backend, no Go server |
+| Scope | Mobile frontend only. An in-app mock bank API. No backend, no Go server. Local first, built for 10,000 transactions |
 | Repo | One Expo app at the repo root. No monorepo. Shares nothing with Moni (`../moni`) except copied setup patterns |
-| Platform | Expo SDK 57, RN 0.86, TypeScript strict, expo-router, Uniwind (Tailwind v4) |
+| Platform | Expo SDK 57, RN 0.86, TypeScript strict, expo-router. Styling, storage, list, state and tooling are open in DECISIONS.md |
 | Sign-in | "Continue as demo user", then device biometrics with passcode fallback. No Google sign-in, no accounts |
 | Visual direction | X1P: Bricolage Grotesque 800, receipt slips, cream, ink and pastels, masked amounts as four lemon coins |
 | Mascot | Sen the coin with hands (MAX rig). Paws never touch the face. Eyes close when masked |
 | Features | Everything in README "What it does", including manual add and delete, and the security layer |
 | Edit | No editing transactions. Delete and add again |
-| Storage | Bank data in memory only. Added rows and the activity log in an AES-256 MMKV vault, with its key in SecureStore. Prefs in plain MMKV |
 | Security | Step-up biometrics for every write, mask at the source, idle and background lock |
-| Lists | `SectionList`, not FlashList |
-| State | One typed reducer for auth and session. TanStack Query for bank data. No other store library |
 | Tests | Unit and component tests only (jest-expo, RNTL v14). No Maestro, no E2E |
 | Builds | Local Android dev builds from WSL. EAS only for the reviewer APK, built on tags |
 | Delivery | Android APK first. Source second. iOS simulator build as a bonus. No Expo Go |
@@ -61,9 +60,10 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 
 ## Git
 
-- Commit small and often. The history is part of the submission.
-- Use one logical change per commit, and make every commit build.
-- Use Conventional Commits with a scope, for example `feat(auth): add biometric lock state machine` or `chore(repo): add CI workflow`.
+- Work on `master` only. No branches, no PRs.
+- Commit small and often. The history is part of the submission. Every commit builds.
+- Messages are short and lower case, `type: what changed`. Examples: `feat: biometric lock`, `fix: reveal timer drift`, `docs: decision records`.
+- No AI attribution lines (no `Co-Authored-By`, no "Generated with") in commits.
 - Never commit secrets, `.env` files, keystores or `credentials.json`.
 
 ## Environment
@@ -75,7 +75,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 
 ## Docs
 
-- Keep four docs: README.md, DESIGN.md, ARCHITECTURE.md and CLAUDE.md.
+- Keep six docs: README.md, DESIGN.md, ARCHITECTURE.md, DECISIONS.md, PLAN.md and CLAUDE.md.
 - Update the matching doc in the same commit as the change.
 - Record decisions as current state, not history.
 - Write short declarative sentences in plain words, with no long dashes. Use tables where they help.
