@@ -125,3 +125,17 @@ test('navigating to a protected route while locked stays on Lock', async () => {
   expect(screen.getByText('screen:lock')).toBeOnTheScreen();
   expect(screen.queryByText(/Unmatched|Sitemap/)).not.toBeOnTheScreen();
 });
+
+test('in a release build the dev states link lands on Lock', async () => {
+  const dev = globalThis as unknown as { __DEV__: boolean };
+  dev.__DEV__ = false;
+  try {
+    mockGate = 'locked';
+    await renderRouter(routes, { initialUrl: '/dev/states?screen=db' });
+
+    expect(screen.getByText('screen:lock')).toBeOnTheScreen();
+    expect(screen.queryByText('screen:dev/states')).not.toBeOnTheScreen();
+  } finally {
+    dev.__DEV__ = true;
+  }
+});
