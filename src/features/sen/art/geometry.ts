@@ -39,9 +39,9 @@ export const PIVOT = {
   contact: [10, 278],
 } as const satisfies Record<string, Vec>;
 
-/** A pivot as a `transformOrigin` on a View that is the 680-unit box. */
+/** A pivot as a `transformOrigin` on a View that is the 680-unit box: (10, 278) is `51.47% 90.88%`. */
 export function transformOrigin([x, y]: Vec): `${number}% ${number}%` {
-  const pct = (v: number) => ((v + VIEWBOX_UNITS / 2) / VIEWBOX_UNITS) * 100;
+  const pct = (v: number) => Math.round(((v + VIEWBOX_UNITS / 2) / VIEWBOX_UNITS) * 10000) / 100;
   return `${pct(x)}% ${pct(y)}%`;
 }
 

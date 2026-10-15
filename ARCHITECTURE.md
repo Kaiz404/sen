@@ -365,7 +365,8 @@ Sen and every animated component follow one model. Motion is data, compiled to R
 | Accents | Separate `SenAccents` layer | Mounted only while they play |
 
 - **One public `<Sen>`.**
-  - Without an `id` it renders `SenStatic`, a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only.
+  - Without an `id` it renders `SenStatic` (`features/sen/components/sen-static.tsx`), a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only. It walks `treeFor(senTier(size))`, calls each node's `read(poseFrame(pose, prop), unit)` and skips nodes at opacity 0. Clip ids come from `useId()`. It never draws accents.
+  - Until the rig exists, `<Sen id>` also renders `SenStatic`.
   - With an `id` it renders `SenRig`, which registers with the director.
 - **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
   - `NODES` gives each part its declared channels and a worklet `read(frame, unit)`. A test calls each `read` through a recording Proxy and checks it reads exactly its channels, because a mapper wakes for every shared value it captures.
