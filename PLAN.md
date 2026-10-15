@@ -36,6 +36,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
   - [ ] Maestro CLI 2.11.x, installed per user. Its flows live in `.maestro/`.
 - [ ] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, and bans on raw hex, `.value`, `useReducedMotion`, `runOnJS` and `'cubic-bezier('` strings. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
 - [ ] Jest exactly as in ARCHITECTURE.md › Proving motion works: `jest-expo/android`, the worklets resolver, the React Compiler on, and the react-native-svg mock.
+- [ ] Maestro from WSL. One adb server on Windows (`adb -a -P 5037 nodaemon server`), WSL pointed at it with `ADB_SERVER_SOCKET=tcp:127.0.0.1:5037` (mirrored networking), and `maestro test` run from WSL, adding `--host 127.0.0.1` if needed. Fallback: install Maestro natively on Windows and run the same `.maestro/` flows.
 - [ ] A first Maestro flow that opens the app, passes Lock with `finger touch` and lands on History. Leave the emulator's animation scales on.
 - [ ] `npm run check` script, a `.githooks/pre-commit` hook set by `prepare`, and a GitHub Actions workflow for push.
 - [ ] Device bridge. One adb server shared by WSL and Windows, the emulator console token copied into WSL, the `Sen_API36` AVD created with a PIN and an enrolled fingerprint, then snapshotted.
@@ -185,6 +186,7 @@ Keep SQLCipher, masked queries and step-up. They carry the security story.
 | FlashList sticky headers jump on RN 0.86 | 3 | Switch to Legend List's SectionList |
 | Emulator fingerprint isn't Class 3 for `'strong'` | 2c | Test early. Note the result in ARCHITECTURE.md |
 | Emulator FPS too noisy to gate | 3 | Gate on your phone instead |
+| Maestro can't reach the emulator from WSL | 0 | Run Maestro natively on Windows against the same flows |
 | SVG `matrix` doesn't draw on device | 0 | RN `transform` array for the face slide |
 | Reveal commit too slow on a slow phone (R3) | 3 | One animated view per amount, or mount digits for the first 12 rows first |
 | Row insert jumps with keep-scroll-position on (R2) | 3 | Turn it off, or insert only when at the top |
