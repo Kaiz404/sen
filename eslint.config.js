@@ -1,4 +1,3 @@
-// https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const prettierConfig = require('eslint-config-prettier/flat');
@@ -96,5 +95,18 @@ module.exports = defineConfig([
   {
     files: ['**/*.test.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', rawHex, cubicBezierString] },
+  },
+  {
+    files: ['src/app/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message:
+            'Expo Router bundles every file in src/app as a route. Put route tests in src/__tests__/.',
+        },
+      ],
+    },
   },
 ]);
