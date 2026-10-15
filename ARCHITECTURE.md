@@ -143,8 +143,27 @@ Money output:
 **Database.**
 - **The file.** One SQLCipher file, `sen.db`. Its tables are `tx`, `sync_state`, `activity_log` and `meta`.
 - **Columns.** `tx` stores `posted_at` in UTC and a `day` column in Malaysia time (UTC+8). Its covering index is `(posted_at desc, id desc)`. `search_text` is lowercased and stripped of accents at write time.
-- **Migrations.** Run through `PRAGMA user_version`.
+- **Migrations.** `MIGRATIONS` in `services/db/schema.ts` is an append-only ladder of `{ version, statements }`. Each step runs its statements one at a time, because node:sqlite prepares one statement per call, and ends with `PRAGMA user_version = n`, all in one transaction. A failed step leaves the previous version. Running `migrate` again is a no-op. A file newer than the app throws `SchemaTooNewError`, which the caller resets as `db_reset`.
 - **The port.** The database sits behind a three-method port (`all`, `run`, `transaction`). The app uses the expo-sqlite adapter. Jest uses a `node:sqlite` adapter, so every query runs real SQL in tests (V, jest-expo stubs SQLite with no behaviour).
+
+**Port semantics** (`services/db/port.ts`, proven in `port.test.ts` on real SQL).
+- **One implementation.** Each adapter supplies a `Driver` (`all`, `run`, `close`). `createDb(driver)` adds the queue, transactions and savepoints once, so Jest runs the device semantics.
+- **FIFO.** Calls on a handle run in order, one at a time. A root call made while a root transaction is open waits until it settles, so it never lands inside it.
+- **Transactions.** On the root handle, `transaction(work)` is `BEGIN IMMEDIATE`, then `COMMIT`, or `ROLLBACK` and rethrow. On a `tx` it is a `SAVEPOINT`, so a helper written as `(db: Db, …)` runs alone or inside a caller's transaction, and a failed savepoint undoes only its own writes.
+- **One rule.** Inside `work`, use only `tx`. A call on the outer handle waits for `work` and never returns. A `tx` used after its scope rejects. Services take `db` as a parameter and never hold one at module scope.
+- **Rows.** `all` returns untrusted `SqlRow`s. `parseRows(rows, schema)` in `services/db/rows.ts` maps snake_case columns to the model shape (`account_*` folds into `account`) and parses each row, returning `{ rows, skipped }`. A masked query that selects `amount_minor` fails the strict `MaskedRowSchema`, so the bug is loud.
+- **Tests.** `openTestDb()` from `services/db/testing/` gives a fresh, migrated `:memory:` database. `createNodeDb()` gives one at version 0.
+
+**Schema v1.**
+
+| Table | Holds | Guards |
+| --- | --- | --- |
+| `tx` | Bank and added rows | `STRICT`, so a float amount is refused. `amount_minor > 0`. `posted_at` must match `YYYY-MM-DDTHH:MM:SS.mmmZ`, so text order is time order. `day` is `GENERATED ALWAYS AS (date(posted_at, '+8 hours')) STORED`. `idem_key` is `UNIQUE` and set only on manual rows. `category` is unchecked, so a bad row reaches zod and is counted |
+| `sync_state` | One row: the bank cursor and the last sync time | `id = 1` |
+| `activity_log` | Security events | `meta` must be valid JSON. The `activity_log_cap` trigger keeps the newest 50 rows |
+| `meta` | Key-value app state | `STRICT` |
+
+Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query reads as a covering index, and `activity_log_by_time (at DESC, id DESC)`.
 
 **Sync (D2).**
 - **Cursor.** The mock bank serves pages ordered by a `seq` cursor.
