@@ -12,5 +12,8 @@ module.exports = {
       { ...babel, caller: { ...babel.caller, platform: 'android', supportsReactCompiler: true } },
     ],
   },
-  moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
+  moduleNameMapper: {
+    '^@/assets/(.*)$': '<rootDir>/assets/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
 };
