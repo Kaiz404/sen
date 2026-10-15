@@ -23,9 +23,15 @@ const sharedValueDotValue = {
 };
 
 const exclusiveTransaction = {
-  selector: "MemberExpression[property.name='withExclusiveTransactionAsync']",
+  selector: "Identifier[name='withExclusiveTransactionAsync']",
   message:
     'withExclusiveTransactionAsync opens a second connection without the SQLCipher key. Use db.transaction.',
+};
+
+const nodeSqliteAtRuntime = {
+  selector:
+    ":matches(ImportExpression[source.value='node:sqlite'], CallExpression[callee.name='require'][arguments.0.value='node:sqlite'])",
+  message: 'Jest only. App code opens the database through openDb from @/services/db.',
 };
 
 const restrictedImports = {
@@ -106,6 +112,7 @@ module.exports = defineConfig([
         cubicBezierString,
         sharedValueDotValue,
         exclusiveTransaction,
+        nodeSqliteAtRuntime,
       ],
     },
   },
@@ -117,12 +124,21 @@ module.exports = defineConfig([
         cubicBezierString,
         sharedValueDotValue,
         exclusiveTransaction,
+        nodeSqliteAtRuntime,
       ],
     },
   },
   {
     files: ['src/motion/tokens.ts'],
-    rules: { 'no-restricted-syntax': ['error', rawHex, sharedValueDotValue, exclusiveTransaction] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        rawHex,
+        sharedValueDotValue,
+        exclusiveTransaction,
+        nodeSqliteAtRuntime,
+      ],
+    },
   },
   {
     files: ['src/services/logger.ts'],
