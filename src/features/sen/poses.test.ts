@@ -1,4 +1,4 @@
-import { CHANNELS, type Frame, MOUTH_CHANNELS, PROP_CHANNELS } from './channels';
+import { CHANNEL_KIND, CHANNELS, type Frame, MOUTH_CHANNELS, PROP_CHANNELS } from './channels';
 import { POSE_IDS, poseFrame, PROP_IDS, type PropId } from './poses';
 
 const PROP_CHOICES: (PropId | null | undefined)[] = [undefined, null, ...PROP_IDS];
@@ -51,5 +51,18 @@ test('peek closes the left eye and opens the right a crack', () => {
   const f = poseFrame('peek');
   expect([f['eyeL.shut'], f['eyeR.open'], f['eyeR.sx'], f['eyeR.sy'], f['sq.r']]).toEqual([
     1, 1, 1.05, 0.45, -2.4,
+  ]);
+});
+
+test('opacity channels fade and geometry channels spring', () => {
+  expect([
+    CHANNEL_KIND['mo.grin'],
+    CHANNEL_KIND['prop.shades'],
+    CHANNEL_KIND['eyes.happy'],
+  ]).toEqual(['fade', 'fade', 'fade']);
+  expect([CHANNEL_KIND['lk.x'], CHANNEL_KIND['prop.y'], CHANNEL_KIND['eyeL.sy']]).toEqual([
+    'spring',
+    'spring',
+    'spring',
   ]);
 });

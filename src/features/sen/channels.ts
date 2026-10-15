@@ -112,6 +112,9 @@ const FADES: ReadonlySet<Channel> = new Set<Channel>([
  * timings, and Off snaps.
  */
 export type ChannelKind = 'fade' | 'spring';
-export function channelKind(ch: Channel): ChannelKind {
-  return FADES.has(ch) ? 'fade' : 'spring';
-}
+export const CHANNEL_KIND: Readonly<Record<Channel, ChannelKind>> = Object.freeze(
+  Object.fromEntries(CHANNELS.map((ch) => [ch, FADES.has(ch) ? 'fade' : 'spring'])) as Record<
+    Channel,
+    ChannelKind
+  >,
+);
