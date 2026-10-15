@@ -34,7 +34,7 @@ Rules:
 - One loud fill per screen. Lemon or ink carries the hero.
 - Stamps are outlined ink, never filled.
 - Text contrast is at least 4.5:1. Deep mint fails on dark backgrounds, so credits use `#8ECF9D` in dark mode.
-- Tokens live in `global.css` (Uniwind). Screens use semantic names, never raw hex.
+- Tokens live in one typed Unistyles theme (`src/theme/`). Screens use semantic names, never raw hex.
 
 ### Type
 
@@ -91,7 +91,7 @@ Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it"
 | Size | Where | Drawn |
 | --- | --- | --- |
 | Under 48 pt | Header mark, toasts, app icon | Face and eyes only |
-| 48 to 120 pt | Cards, rows, sheets, the reveal ring | Full rig, ambient blink only |
+| 48 to 120 pt | Cards, sheets, the reveal ring | Full rig. Ambient blink by default. The director can still play moments such as Reveal on it |
 | Over 120 pt | Launch, welcome, lock, lockout, errors, empty states | Full rig, full motion |
 
 ### Poses
@@ -125,10 +125,10 @@ References: Phantom's onboarding (tilted mid-motion character, flat sparkle acce
 
 ### Rig for Reanimated
 
-- Body transforms run on nested `Animated.View` wrappers, outside in: `mv` (translate) › `rl` (rotate about the coin centre) › `sq` (rotate, skewX and scale about the contact point (10, 278)) › `sp` (scaleX for the edge spin).
-- Face parts are SVG `G` elements driven by `useAnimatedProps`. At most 12 animated props.
+- Body transforms run on nested `Animated.View` wrappers, outside in: `mv` (translate) › `rl` (rotate about the coin centre) › `sq` (rotate, skewX and scale about the contact point (10, 278)) › `sp` (scaleX for the edge spin). Pivots use a static `transformOrigin`.
+- Face parts are SVG `G` elements driven by `useAnimatedProps`, transformed with a worklet-computed `matrix`. Keep the number of SVG nodes changing per frame near 12, and measure it.
 - Wrap `lk` in a static `G` with `clipPath` (the face circle) so the clip stays put while the face slides.
-- `originX`/`originY` on animated SVG groups is unreliable. Use translate › transform › translate, or move the transform to the View wrapper.
+- The implementation model (channels, moments as data, the sampler) is in ARCHITECTURE.md › Motion.
 
 ```ts
 const EASE = {
@@ -191,8 +191,8 @@ const RM = { reduceMotion: ReduceMotion.System };     // spread into every confi
 ### Motion rules
 
 - **Reduced motion.**
-  - Read `useReducedMotion()` and pass `ReduceMotion.System` everywhere.
-  - Pose changes become 150 ms crossfades and blinks stay.
+  - Read the system setting live through `useMotionPolicy()`. Reanimated's `useReducedMotion()` never updates.
+  - Pose changes become 150 ms crossfades, built from the moment data, and blinks stay. The countdown ring keeps running.
   - Hops, spins, flips, rolls, wobbles, stretch and accents are dropped.
   - Haptics still fire.
   - The Settings choice "Sen's animations: Calm" does the same.
@@ -316,7 +316,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - **Stale detail.** "This transaction isn't here any more."
 
 **Background.**
-- `inactive` shows the privacy cover.
+- `inactive` shows the privacy cover on iOS. Android never emits `inactive`, so FLAG_SECURE blanks the recents view there.
 - `background` re-masks at once.
 - Returning after the "Lock again" window goes to Lock.
 - Idle past "Lock when idle" also goes to Lock.

@@ -48,11 +48,13 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 - **Writes need step-up.** Add, delete, clear log and erase go through `useStepUp`, every time, never cached.
 - **Never auto-prompt biometrics on resume.** Guard every prompt with `isAuthenticatingRef`. Lock only on `background`.
 - **Randomness.** `expo-crypto` `getRandomValues` or `randomUUID`. Never `getRandomBytes` or `Math.random` for anything security-related.
-- **Styling.** Use semantic tokens from `global.css`, never raw hex in screens. Touch targets are at least 44 pt.
+- **Styling.** Use semantic tokens from the Unistyles theme in `src/theme/`, never raw hex in screens. Touch targets are at least 44 pt.
 - **Motion.**
   - Reanimated on the UI thread.
-  - Respect reduced motion and the "Sen's animations" setting.
-  - Only one Sen animates at a time, through the `MotionDirector`.
+  - Sen's motion is data. Add or change a moment in `src/features/sen/moments/`, never as a hand-written worklet. The sampler is the test oracle.
+  - Read the motion level only through `useMotionPolicy()`, never `useReducedMotion()`. Informational timers such as the countdown ring use `ReduceMotion.Never`.
+  - Only one Sen animates at a time, through the MotionDirector. No Sen inside a list row. No animation state in list rows.
+  - Prove motion with `npm run test:motion`, then `motion:shots`. Never approve your own goldens.
 - **Versions.**
   - Install Expo packages with `npx expo install`.
   - Keep the bundled Reanimated (4.5.1), Worklets (0.10.1) and Gesture Handler (~2.32).

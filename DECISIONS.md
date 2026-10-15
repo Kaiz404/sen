@@ -37,6 +37,10 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D20 | Performance proof | Jest benches in CI, Flashlight at milestones |
 | D21 | Git and CI | `main` only, a pre-commit hook and GitHub Actions |
 | D22 | Build order | Serial scaffold and contracts, then parallel lanes |
+| D23 | Sen's motion model | Named channels, moments as data compiled to Reanimated, a pure sampler as oracle |
+| D24 | Motion levels | A live policy hook. Calm and Off compiled from the data |
+| D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
+| D26 | Motion verification | Jest with the svg mock, a dev motion lab, owner-approved goldens, frame checks |
 
 ---
 
@@ -179,7 +183,7 @@ The Bricolage condensed fonts come as static files from upstream, embedded with 
 - **Agents can build it.** The rig is code that agents can write and diff. Skia adds a new drawing API for one character. Agents can't author Rive or Lottie files, and Lottie isn't meant for UI state.
 - **One Sen at a time.** A MotionDirector reducer enforces the rule that only one Sen animates.
 
-The implementation details come from the motion research. See ARCHITECTURE.md › Motion.
+The implementation is D23 to D26 and ARCHITECTURE.md › Motion.
 
 ## D11. React Compiler: on
 
@@ -358,3 +362,62 @@ The implementation details come from the motion research. See ARCHITECTURE.md �
 - **Vertical slices rejected.** One agent per screen would edit shared files constantly and bolt security on at the end.
 
 The phases are in [PLAN.md](PLAN.md).
+
+## D23. Sen's motion model: channels and moments as data
+
+**Compared.**
+- Hand-written worklets per moment.
+- Moments as data compiled to Reanimated, with per-channel shared values.
+- One clock per Sen sampling every track.
+- Reanimated CSS animations.
+
+**Why.**
+- **Data compiled to Reanimated.**
+  - A pure sampler gives the same numbers, and it matched Reanimated to two decimals in the spike.
+  - That one function is the test oracle, the lab's freeze, and the parity check against the design canvas.
+  - Adding a moment means adding data, not new animation code.
+- **Per channel, not one clock.** Each SVG part only redraws when its own channel moves. One clock would wake every part on every frame.
+- **No CSS in the rig.** CSS animations can't move SVG groups, ignore reduced motion, and can't be seen in Jest.
+- **SVG transforms.** These use a worklet-computed `matrix`, because the native SVG components accept nothing else (V).
+
+**Cost.** A compiler of about 80 lines and a canvas import script.
+
+**Fallback.** If `matrix` doesn't draw on a device (day-1 spike), the face slide uses an RN `transform` array.
+
+## D24. Motion levels: a live policy, Calm compiled from data
+
+**Compared.**
+- Reanimated's `useReducedMotion()` with `ReduceMotion.System` everywhere (the earlier DESIGN rule).
+- A live policy hook, with Calm and Off compiled from the moment data.
+
+**Why.**
+- **Live setting.** `useReducedMotion()` is read once at startup and never updates (V).
+- **Calm.** `ReduceMotion.System` makes animations jump to their end, so DESIGN's 150 ms Calm crossfade has to come from the data.
+- **The ring.** It would empty instantly under reduced motion, so it uses `ReduceMotion.Never`.
+- **CSS transitions.** They ignore reduced motion, so components zero their duration from the same policy.
+
+## D25. Animated components: shared primitives
+
+**Compared.**
+- Each lane building its own animations.
+- Shared primitives in `src/motion/` and `src/components/`.
+
+**Why.**
+- **Shared values where Jest must prove it.** Motion that needs a test runs on shared values. That path works with fake timers. One shared value drove 20 rows with zero parent re-renders in the spike.
+- **CSS for simple presses.** Key presses and the segmented pill use CSS transitions. Jest checks their target style.
+- **Key presses.** They use Gesture Handler's `Pressable`, because RN's `Pressable` can drop presses on Android's fast animation path (V).
+- **Rows.** No row holds animation state, so recycling stays safe.
+
+## D26. Motion verification
+
+**Compared.**
+- Jest only.
+- Jest plus device video.
+- Jest plus a frozen motion lab with approved goldens, plus video frame checks.
+
+**Why.**
+- **Jest proves the numbers.** It needs one SVG mock, without which SVG motion is invisible to tests (V).
+- **The lab proves the look.** It freezes any moment at any time, so a screenshot is exact and repeatable.
+- **Video proves it moves in order.** Frames are pulled with `ffmpeg-static` and checked, with no system install (V).
+- **The owner approves.** Agents never approve their own goldens.
+- **Smoothness.** The gate is judged on release builds. Absolute FPS is trusted only on the real phone.

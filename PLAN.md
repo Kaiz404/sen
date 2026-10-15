@@ -17,6 +17,9 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 | One screen state | `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
 | A flow | `npx agent-device@0.21.28 snapshot -i`, `press`, `screenshot`, plus `adb -e emu finger touch 1` for biometrics | After any flow change |
 | Release perf | `npx expo run:android --variant release`, then `flashlight test` with `scripts/scroll.sh` | Phase 3 and phase 8 |
+| Motion logic | `npm run test:motion` (pure tables, sampler parity, compiled moment equals sampler) | Any motion change |
+| Motion stills | `npm run motion:shots <moment>`: freezes the lab at each key time and compares with the owner-approved golden | Any Sen or animated component change |
+| Motion video | `npm run motion:capture <moment> [calm]`, then `motion:frames` and a `moved` check | After stills pass |
 
 Screenshots go in `shots/`, which is git-ignored. Every perf number gets its seed size and build type written next to it.
 
@@ -30,12 +33,17 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
   - [ ] TanStack Query, zod, zustand, react-native-unistyles, react-native-nitro-modules, react-native-mmkv 4.3.x.
   - [ ] `@shopify/flash-list@2.3.3`, excluded from the install check.
   - [ ] jest-expo, RNTL 14, test-renderer.
-- [ ] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, a raw-hex ban and a `.value` ban. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
+  - [ ] Dev tools for motion evidence: `ffmpeg-static`, `pixelmatch`, `pngjs`.
+- [ ] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, and bans on raw hex, `.value`, `useReducedMotion`, `runOnJS` and `'cubic-bezier('` strings. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
+- [ ] Jest exactly as in ARCHITECTURE.md › Proving motion works: `jest-expo/android`, the worklets resolver, the React Compiler on, and the react-native-svg mock.
+- [ ] Motion scripts in `scripts/motion/` (`capture.sh`, `frames.mjs`, `compare.mjs`, `approve.mjs`) and their npm scripts.
 - [ ] `npm run check` script, a `.githooks/pre-commit` hook set by `prepare`, and a GitHub Actions workflow for push.
 - [ ] Device bridge. One adb server shared by WSL and Windows, the emulator console token copied into WSL, the `Sen_API36` AVD created with a PIN and an enrolled fingerprint, then snapshotted.
 - [ ] Spike D1. SQLCipher links: `PRAGMA cipher_version` returns a value, and the database file doesn't start with `SQLite format 3`.
 - [ ] Spike D8. Unistyles runs with Reanimated and the compiler, and a theme switch re-renders nothing.
 - [ ] Spike D16. `renderRouter` works under RNTL 14.
+- [ ] Spike D23. An `AnimatedG` driven by a worklet `matrix` draws on the emulator: the face slides and stays clipped in a frozen screenshot. If not, the face slide uses an RN `transform` array.
+- [ ] One motion test passes: a `withTiming` advanced to its midpoint, and one SVG animated prop asserted with `toHaveAnimatedProps`.
 
 **Verify, unit.** `npm run check` is green on the empty app. CI is green on GitHub.
 **Verify, device.** The first dev build installs on the emulator. A screenshot is not black. `finger touch` dismisses a test prompt.
@@ -47,21 +55,23 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 - [ ] zod schemas, the `Transaction` model with `source`, the money helpers (integer sen, the sign added by hand, split numerals, spoken amounts).
 - [ ] Theme tokens for light and dark from DESIGN.md, with typed Unistyles themes.
+- [ ] Motion contracts in `src/motion/`: `tokens.ts` (the canvas easing curves, springs, durations), `policy.ts` (`useMotionPolicy`, `<MotionPolicyRoot>`) and `timeline.ts` (`kf`, `useLoopClock`).
+- [ ] Sen's data in `src/features/sen/`: `channels.ts`, `poses.ts` and `art/` (geometry, `mat()`, node functions), ported from the canvas kit.
 - [ ] Every route stubbed under `Stack.Protected`, and the dev states route behind `__DEV__`.
 - [ ] Database port (`all`, `run`, `transaction`) with an expo-sqlite adapter and a `node:sqlite` adapter for Jest. Schema v1, the covering index and the `day` column.
 
-**Verify, unit.** Money, schema and migration tests pass on real SQL in Jest.
+**Verify, unit.** Money, schema and migration tests pass on real SQL in Jest. Every pose has exactly one mouth and one eye state. `resolveMotion` table passes.
 **Verify, device.** Every stub route opens by deep link. Locked deep links land on Lock.
 **Verify, perf.** None in this phase.
 
 ## Phase 2. Foundations (three parallel lanes)
 
 **Lane 2a. Components and the states gallery.** Owns `src/components/`, `src/app/(dev)/`.
-- [ ] Key, Segmented, ReceiptSlip (perforated top, zigzag bottom), Stamp, Tag, Toast, and `Amount` (coins for `null`, digits otherwise).
-- [ ] Sen as static poses from DESIGN.md (the rig, no motion yet).
+- [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, Countdown, and `Amount` (coins for `null`, digits otherwise).
+- [ ] `SenStatic` for every pose and size tier, plus the motion lab route `(dev)/motion` with `?pose=` and `?size=`.
 - [ ] The gallery renders any screen state from fixtures.
-- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden".
-- **Device.** Gallery screenshots of every component in light and dark.
+- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`. Countdown maths and `ringOffset` tables.
+- **Device.** Gallery screenshots of every component in light and dark. Lab screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as goldens.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [ ] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert.
@@ -81,9 +91,11 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Owns.** `src/features/transactions/` (list, view models, reveal).
 
 - [ ] `buildHistoryRows()`, FlashList with sticky day tops, memoised rows, the month card, search, All/In/Out, pull-to-refresh with Sen spinning in the header, the offline banner and the full error.
-- [ ] Reveal through the revealed-only amounts map and one shared progress value. The ring, the last 10 s and re-mask.
+- [ ] Reveal through the revealed-only amounts map and `<RevealProgressProvider>`. The ring (`useCountdownProgress`, `ReduceMotion.Never`), the last 10 s (`useRevealPhase`) and re-mask, with data removed before the coins animate.
+- [ ] Spike R2. Insert a row under Today with FlashList's keep-scroll-position on, at the top and scrolled 400 px. Pick the setting that slides the row in without a jump.
+- [ ] Spike R3. Profile the reveal commit on a release build with 10k rows. Under 50 ms on the emulator, or switch to one animated view per amount.
 
-**Verify, unit.** 10k rows mount fewer than 60 row components. The list's `data` reference survives reveal. The masked tree has no seeded amount, totals included.
+**Verify, unit.** 10k rows mount fewer than 60 row components. The list's `data` reference survives reveal. The masked tree has no seeded amount, totals included. Digit column 0 is mid-roll at 100 ms. Zero parent renders during the roll.
 **Verify, device.** Gallery states (loading, empty, offline, bad data) and the reveal flow: reveal, wait for expiry, coins come back.
 **Verify, perf.** A Flashlight run on a release build with 10k rows hits 55 FPS or more. Unlock to first paint is 500 ms or less.
 
@@ -100,13 +112,22 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [ ] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes.
 - [ ] Each forced fault renders its designed state.
 
-**Lane 4d. Sen motion.** Owns `src/features/sen/`.
-- [ ] MotionDirector reducer, the primitives, the app moments, and reduced motion and the Calm setting.
-- [ ] Only one Sen animates. Its device evidence is an `agent-device record` of unlock and reveal.
+**Lane 4d. Sen motion.** Owns `src/features/sen/` and `scripts/import-canvas-moment.mjs`. Build in this order, each step green before the next.
+- [ ] `SenRig`: four body Views plus animated SVG nodes, one channel per node, `usePose` with a parity test against `SenStatic`.
+- [ ] `sampleTrack`, `compileTrack`, `eulerSteps`, `edgeSpin`. Test: compiled equals sampled at every key time.
+- [ ] Director reducer as a table test, then its store with gates and the idle scheduler, then the two-rigs test (only one animates).
+- [ ] Import Unlock, Reveal and Re-mask from the canvas with the script. Parity tests against the board keyframes. Calm and Off forms.
+- [ ] The remaining moments, P3 down to P0, then idle and ambient loops.
+- [ ] Turn on `ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS`, rebuild, and run the smoothness gate on a looped Unlock.
+- **Device.** `motion:shots` for each moment (owner approves the first goldens), then `motion:capture` in Full and Calm. In Calm the body region must not move.
+- **Perf.** Release build, 5 plays of Unlock. Janky frames 5% or less, and no React commits during the moment.
+
+**Lane 4e. Pull-to-refresh gesture (optional).** Owns `src/features/transactions/pull/`.
+- [ ] Spike R1 first. A `Gesture.Pan` with `Gesture.Native` over FlashList pulls on `adb shell input swipe`, fires the threshold once, and five normal scrolls still scroll. If it fails, keep `RefreshControl` (cut 3).
 
 **Verify, unit.** Each lane's reducer and component tests pass.
 **Verify, device.** One agent-device flow per lane, saved as screenshots.
-**Verify, perf.** None in this phase. Phase 8 reruns phase 3's perf.
+**Verify, perf.** Lane 4d has its own gate above. Phase 8 reruns phase 3's perf.
 
 ## Phase 5. Security extras (one agent)
 
@@ -144,7 +165,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 | 2 | 3, 4 |
 | 3 | 5 to 8 |
 
-Sen motion (4d) is the most likely to overrun. It is isolated, so it can slip without blocking release.
+Sen motion (4d) is the most likely to overrun. It is isolated, and every moment is data, so moments can ship in priority order and the rest can slip without blocking release. A moment that isn't built falls back to a pose change.
 
 **Cut order if time runs short.**
 1. Activity log, clear log and erase.
@@ -164,3 +185,9 @@ Keep SQLCipher, masked queries and step-up. They carry the security story.
 | FlashList sticky headers jump on RN 0.86 | 3 | Switch to Legend List's SectionList |
 | Emulator fingerprint isn't Class 3 for `'strong'` | 2c | Test early. Note the result in ARCHITECTURE.md |
 | Emulator FPS too noisy to gate | 3 | Gate on your phone instead |
+| SVG `matrix` doesn't draw on device | 0 | RN `transform` array for the face slide |
+| Reveal commit too slow on a slow phone (R3) | 3 | One animated view per amount, or mount digits for the first 12 rows first |
+| Row insert jumps with keep-scroll-position on (R2) | 3 | Turn it off, or insert only when at the top |
+| Android pull gesture fights the list (R1) | 4e | Keep `RefreshControl` |
+| More than about 12 SVG nodes change per frame in Unlock | 4d | Measure. Move a channel to a View, or stagger the crossfades |
+| The board's 900 ms row slide-in is long for UI motion | 3 | Kept as designed. The owner can shorten it later |

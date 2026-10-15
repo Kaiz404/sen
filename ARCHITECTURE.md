@@ -34,7 +34,8 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | Icons | `@expo/vector-icons` (MaterialCommunityIcons) | ^15 | |
 | Formatting | `Intl` on Hermes | | Add the +/− sign by hand. Money is integer sen |
 | Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 is async and needs Node ≥ 22.13 |
-| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban |
+| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban, `useReducedMotion` ban, `runOnJS` ban, `'cubic-bezier('` string ban |
+| Motion evidence | `ffmpeg-static`, `pixelmatch`, `pngjs` (dev) | 5.3 / 8 / 7 | Frame extraction and image diffs with no system install (V) |
 
 **Skipped on purpose.** The reasons are in DECISIONS.md.
 
@@ -300,11 +301,146 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 
 ## Motion
 
-The detailed implementation of Sen and the animated components is in research. This section will hold the result. The fixed points so far:
-- **One renderer.** Sen is `react-native-svg` plus Reanimated (D10).
-- **One animating Sen.** A pure MotionDirector reducer decides which Sen animates.
-- **Reveal.** One shared progress value drives the coin-to-digit change. List data stays stable (D6).
-- **Reduced motion and Calm.** Both fall back to crossfades.
+Sen and every animated component follow one model. Motion is data, a pure sampler is the test oracle, and a dev-only lab freezes any moment at any time for a screenshot. The decisions are D23 to D26 in DECISIONS.md. The patterns below were proven in three Jest spikes on SDK 57 (Reanimated 4.5.1, worklets 0.10.1, react-native-svg 15.15.4, RNTL 14.1) unless marked I.
+
+### Sen's rig
+
+**Channels.**
+- Every value Sen can animate is a named numeric channel, about 40 in all: body (`mv.x`, `sq.r`, `sp.th` and so on), face slide (`lk.x`, `lk.y`), eyes, six mouth opacities, cheeks, paws and props.
+- A `Frame` is a full record of channels.
+- A pose is a partial `Frame`.
+- Discrete choices are opacity channels. Exactly one mouth is at 1, and a test checks every pose.
+
+| Node | Kind | Notes |
+| --- | --- | --- |
+| `mv`, `rl`, `sq`, `sp` | Four nested `Animated.View`s | Static `transformOrigin` for the pivots (coin centre, contact point). These take Reanimated's fast native path on Android |
+| Rim, face disc | Static SVG | |
+| Clip `G` | Static | Never animated, so the face can slide behind the rim while the clip stays put |
+| `lk`, eyes, paws | `AnimatedG` with a `matrix` computed in a worklet (`mat(tx, ty, r, sx, sy, ox, oy)`) | RNSVG native accepts only `matrix`, not `translateX` or `originX` (V, source). This avoids the pivot bug |
+| Eye open, shut, happy. Mouths. Cheeks. Props | `AnimatedG` or `AnimatedEllipse` opacity | One channel per node, so idle nodes do no work |
+| Accents | Separate `SenAccents` layer | Mounted only while they play |
+
+- **One public `<Sen>`.**
+  - Without an `id` it renders `SenStatic`, a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only.
+  - With an `id` it renders `SenRig`, which registers with the director.
+- **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
+- **Never in a row.** Sen never goes inside a FlashList row.
+- **Viewbox.** The Svg uses a 680-unit box so raised paws and tilts aren't clipped.
+
+### Moments as data
+
+```ts
+type Step = { at: number; v: number; ease?: Ease } | { at: number; v: number; spring: SpringName };
+type Track = { ch: Channel; steps: readonly Step[]; flourish?: true };   // flourish is dropped in Calm
+type Moment = { id: MomentId; priority: 0 | 1 | 2 | 3; from: PoseId; to: PoseId; dur: number;
+                tracks: readonly Track[]; marks: readonly { at: number; haptic?: HapticKind; accents?: true }[];
+                loop?: true };
+```
+
+- **Compiler.** `compileTrack` turns a track into `withSequence`, `withDelay`, `withTiming` and `withSpring` on that channel's shared value.
+- **Sampler.** `sampleTrack(track, ms)` is a pure function that returns the same number. It matched Reanimated to two decimals for timing and springs in the spike.
+- **One oracle, three jobs.** The sampler is the test oracle, the lab's seek, and the parity check against the design canvas.
+- **Generated tracks.** The Euler wobble and the edge spin come from generators (`eulerSteps`, `edgeSpin`).
+- **Marks.** Haptics and accents fire from a per-rig clock shared value through `scheduleOnRN`. They stay in step with the UI thread. `runOnJS` is deprecated.
+- **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53` and outQ `.25,.46,.45,.94`. The board and the app then draw the same curve.
+- **Canvas import.** `scripts/import-canvas-moment.mjs` turns a moment's keyframes on the design canvas into a draft `Track[]`. A parity test checks the sampler against those keyframes within 0.5 units.
+- **No CSS animation in the rig.** Reanimated CSS animations can't drive SVG group transforms, ignore reduced motion, and can't be seen in Jest. Ambient loops (blink, peek, breathe) use the same compiler with `withRepeat`.
+
+### MotionDirector
+
+A pure reducer in a Zustand store. It never touches shared values. It emits commands that a small runner applies through each rig's handle (`play`, `cancel`, `seek`).
+
+```ts
+type DirectorEvent = register | unregister | { type: 'request'; sen; moment } | { type: 'finished'; token }
+                   | { type: 'gate'; patch: Partial<{ scroll; focused; appActive }> } | { type: 'level'; level };
+type Command = { type: 'play'; sen; moment; token; level } | { type: 'cancel'; sen; settleTo: PoseId };
+export function direct(s: DirectorState, e: DirectorEvent): [DirectorState, Command[]];
+```
+
+- **Priority.** A higher priority cancels a lower one, and the cancelled Sen settles to that moment's end pose. An equal priority queues one, and a newer request replaces it. P0 is dropped.
+- **Stale finishes.** A `finished` with an old token is ignored, which guards the race with a cancelled sequence.
+- **Gates.**
+  - A closed gate cancels into the end pose. The gates are scroll, unfocused and app inactive.
+  - Pull-to-refresh is direct manipulation, so the scroll gate never blocks it.
+  - The idle scheduler is a JS timer with injected `random` and `now`.
+
+### Motion levels
+
+- **`useMotionPolicy()`.** Resolves `full`, `calm` or `off` from the "Sen's animations" setting and the system setting. System reduce turns Full into Calm.
+- **Live system setting.** It reads `AccessibilityInfo.isReduceMotionEnabled()` plus its change listener. Reanimated's `useReducedMotion()` is read once at import and never updates (V). Lint bans it.
+- **Calm.** It is compiled from the data. Flourish tracks such as hops, spins, flips and accents are dropped, and pose changes become 150 ms timings marked `ReduceMotion.Never`. Reanimated's own reduced motion would jump straight to the end (V).
+- **Off.** Poses snap and haptics still fire.
+- **`<MotionPolicyRoot>`.** Sets `ReducedMotionConfig` to `Never` in Full and `Always` otherwise. It is the live switch for every other worklet animation.
+- **CSS transitions.** They ignore reduced motion (V), so components set their duration to 0 from the policy.
+- **Informational timers.** The countdown ring keeps running in every mode, using `ReduceMotion.Never`.
+
+### Animated components
+
+Shared primitives are built once, so no agent re-implements a pattern.
+
+| Component | How it moves | Thread and renders | Test |
+| --- | --- | --- | --- |
+| Amount reveal | `<RevealProgressProvider>` holds one shared value. Each digit column has a `useAnimatedStyle` (`digitStyle(p, col)`) | UI. About 20 mounted rows render once when the amounts map arrives, then zero during the roll. The spike measured zero parent re-renders | `toHaveAnimatedStyle` at 100 ms. Commit counter |
+| Countdown ring and label | `useCountdownProgress(deadline)` with a linear `withTiming` and `ReduceMotion.Never`. The ring's offset is a pure `ringOffset()`. The label is a 1 Hz `useSecondsLeft`. `useRevealPhase` flips to `ending` at 10 s | UI ring. Only the label renders, once a second. Rows never subscribe | Pure maths test. Fake clock: `0:10 LEFT` at 50 s |
+| Press keys | Gesture Handler `Pressable` (immune to the Android fast-path press bug, V). The face slides 4 px onto a static ink shadow plate with a 90 ms CSS transition. No shadow animates | UI after one render | `pressIn` gives `translateY: 4` |
+| Segmented control | Absolute pill with a CSS transition on percent `translateX`. Nothing to measure | UI | Press "In" gives `translateX: '100%'` |
+| New row slide-in | `<EnterOnce>` mounts only for the just-added id, set by a store flag cleared at 900 ms. Recycled cells never replay it | UI | The wrapper exists for that id only |
+| Toasts, offline banner | One `<ToastHost>` at the root with module-level `FadeInDown` and `FadeOutDown`, keyed by id | UI | Undo works. Gone after 6000 ms |
+| Pull-to-refresh | Phase 1 is FlashList `refreshing` with Sen in an overlay slot. Phase 2, optional on Android, is a `Gesture.Pan` plus `Gesture.Native` with a `pull` shared value and `useThreshold` for the haptic | UI | `fireEvent(list, 'refresh')` calls the sync |
+| Skeleton | `<Bone>` with one CSS keyframe band, 1.4 s linear | UI, no renders | Pure `bandStyle(policy)` test |
+| Launch | One loop clock, `useLoopClock(4800)`. Letters, drop and fade all derive from it through `kf(t, stops, values)`. Hands off to Sen's rig. The native splash is plain ink, hidden on first layout | UI, zero renders | Fake timers at key times |
+| Theme switch | Unistyles, instant, no re-render | Native | Device render counter |
+| Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
+| Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
+
+Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.ts`, `countdown.ts`, `threshold.ts` and `timeline.ts`. The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
+
+### Proving motion works
+
+**Jest setup** (V, spike).
+
+```js
+// jest.config.js: preset 'jest-expo/android', resolver 'react-native-worklets/jest/resolver',
+// React Compiler turned on through resolveBabelOptions (jest-expo leaves it off by default)
+// jest.setup.ts
+import { setUpTests } from 'react-native-reanimated';
+setUpTests();
+jest.mock('react-native-svg', () => {
+  const svg = jest.requireActual('react-native-reanimated/src/mock-svg');
+  return { ...svg, default: svg.Svg };          // without this, SVG animated props never change in tests
+});
+```
+
+- **Resolver.** Reanimated 4.5.1 doesn't ship the `jest/resolver` its current docs name. That file arrives in 4.7.
+- **Timers.** Use `jest.useFakeTimers()` with `jest.advanceTimersByTime`. The older timer helpers are deprecated.
+- **Async APIs.** RNTL 14's `render` and `act` are async.
+- **Naming.** Don't name a file `spec.ts`, or Jest runs it as a test.
+
+| Layer | What | Command |
+| --- | --- | --- |
+| Pure | Pose invariants, `sampleTrack`, generators, director table, Calm and Off forms, countdown and reveal maths | `npm run test:motion` |
+| Parity | Sampler against the canvas keyframes | same |
+| Component | Compiled moment equals sampler at key times. Static and settled rig match. Two rigs, one animates. Calm leaves the body still | same |
+| Device, still | Lab freeze at each key time, compared with an owner-approved golden (1% pixel threshold) | `npm run motion:shots <moment>` |
+| Device, motion | Lab play, `adb shell screenrecord`, frames extracted with `ffmpeg-static`, then a "moved" check between key times | `npm run motion:capture <moment>` then `motion:frames` |
+| Device, smoothness | Release build, five plays. Janky frames 5% or less (`agent-device perf frames`). No React commits during a moment. 55 FPS judged on the real phone only | `motion:capture` with gfxinfo |
+
+**Motion lab.** `src/app/(dev)/motion.tsx`, guarded by `__DEV__`.
+- **Freeze.** `sen://dev/motion?moment=unlock&t=600` shows the moment at 600 ms, in its real host scene, with a time label.
+- **Play.** `play=1` plays the moment live.
+- **Modes and poses.** `mode=calm` and `pose=worried&size=32` cover the other cases.
+- **Clean shots.** Ambient blinks and the idle scheduler pause in the lab, so goldens are clean.
+
+**Approval.**
+- Agents never approve their own goldens. `motion:approve` runs only after the owner has seen the contact sheet.
+- A new moment with no golden posts its sheet and stops.
+- Goldens are stored per emulator.
+
+**Open risks, each with a 20-minute spike in PLAN.md.**
+- Does the SVG `matrix` prop draw on a device? The fallback is an RN `transform` array for the face slide.
+- The Android pull gesture over FlashList.
+- Inserting a row with FlashList's keep-scroll-position on.
+- The reveal commit cost on a slow phone. The fallback is one animated view per amount instead of per digit.
 
 ## Threat model
 
