@@ -5,9 +5,9 @@ type FakeNative = {
   closed: boolean;
 };
 
-const mockState: { natives: FakeNative[]; unreadable: boolean } = {
+const mockState: { natives: FakeNative[]; failure: string | null } = {
   natives: [],
-  unreadable: false,
+  failure: null,
 };
 
 jest.mock('expo-sqlite', () => {
@@ -24,8 +24,8 @@ jest.mock('expo-sqlite', () => {
         },
         getAllAsync: async (sql: string, params: (string | number | null)[]) => {
           log.statements.push(sql);
-          if (mockState.unreadable && sql.includes('sqlite_master')) {
-            throw new Error('file is not a database');
+          if (mockState.failure !== null && sql.includes('sqlite_master')) {
+            throw new Error(mockState.failure);
           }
           return real.prepare(sql).all(...params);
         },
@@ -46,7 +46,7 @@ const KEY = DbKeySchema.parse('a'.repeat(64));
 
 beforeEach(() => {
   mockState.natives = [];
-  mockState.unreadable = false;
+  mockState.failure = null;
 });
 
 test('the key is the first statement, then one read proves it, then the schema migrates', async () => {
@@ -64,7 +64,7 @@ test('the key is the first statement, then one read proves it, then the schema m
 });
 
 test('a key that cannot read the file throws DbUnreadableError and closes the handle', async () => {
-  mockState.unreadable = true;
+  mockState.failure = 'Error code 26: file is not a database';
 
   await expect(openDb(KEY)).rejects.toBeInstanceOf(DbUnreadableError);
   expect(mockState.natives[0]?.closed).toBe(true);
@@ -74,4 +74,12 @@ test('only 64 hex characters can become a key', () => {
   expect(DbKeySchema.safeParse('0f'.repeat(32)).success).toBe(true);
   expect(DbKeySchema.safeParse('0f'.repeat(31)).success).toBe(false);
   expect(DbKeySchema.safeParse(`${'0'.repeat(62)}'"`).success).toBe(false);
+});
+
+test('a busy or failing disk is not mistaken for a wrong key, so nobody resets the file', async () => {
+  mockState.failure = 'Error code 5: database is locked';
+
+  await expect(openDb(KEY)).rejects.toThrow('Error code 5: database is locked');
+  await expect(openDb(KEY)).rejects.not.toBeInstanceOf(DbUnreadableError);
+  expect(mockState.natives[0]?.closed).toBe(true);
 });

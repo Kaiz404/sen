@@ -18,6 +18,9 @@ export class DbUnreadableError extends Error {
 
 export const DB_NAME = 'sen.db';
 
+/** SQLITE_NOTADB, as expo-sqlite words it. Only a wrong key or a foreign file may trigger a reset. */
+const NOT_A_DATABASE = /Error code 26\b|file is not a database/;
+
 function driver(native: SQLiteDatabase): Driver {
   return {
     all: async (sql, params) =>
@@ -35,7 +38,10 @@ export async function openDb(key: DbKey, name: string = DB_NAME): Promise<OpenDb
     await native.getAllAsync('SELECT count(*) FROM sqlite_master', []);
   } catch (cause) {
     await native.closeAsync();
-    throw new DbUnreadableError({ cause });
+    if (cause instanceof Error && NOT_A_DATABASE.test(cause.message)) {
+      throw new DbUnreadableError({ cause });
+    }
+    throw cause;
   }
   const db = createDb(driver(native));
   try {
