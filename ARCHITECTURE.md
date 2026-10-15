@@ -350,9 +350,10 @@ Sen and every animated component follow one model. Motion is data, compiled to R
 
 **Channels.**
 - Every value Sen can animate is a named numeric channel, about 40 in all: body (`mv.x`, `sq.r`, `sp.th` and so on), face slide (`lk.x`, `lk.y`), eyes, six mouth opacities, cheeks, paws and props.
-- A `Frame` is a full record of channels.
-- A pose is a partial `Frame`.
-- Discrete choices are opacity channels. Exactly one mouth is at 1, and a test checks every pose.
+- There are 41: rig.md's 39 plus `eyeL.dy` and `eyeR.dy`, because kit.py's worried eyes drop by 8.
+- A `Frame` is a full record of channels. `REST` is derived from `CHANNELS` and the set that rests at 1.
+- A pose is a `PoseSpec` written the way kit.py writes it: one eyes kind, one mouth, at most one prop, the face offset, the lean (`sq.r` about (10, 278)) and the paws. `poseFrame(pose, prop?)` expands it into a full `Frame`. A spec can't name two mouths.
+- Discrete choices are opacity channels. Exactly one mouth is at 1 and each eye is in exactly one state, and a test checks every pose with every prop.
 
 | Node | Kind | Notes |
 | --- | --- | --- |
@@ -367,6 +368,9 @@ Sen and every animated component follow one model. Motion is data, compiled to R
   - Without an `id` it renders `SenStatic`, a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only.
   - With an `id` it renders `SenRig`, which registers with the director.
 - **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
+  - `NODES` gives each part its declared channels and a worklet `read(frame, unit)`. A test calls each `read` through a recording Proxy and checks it reads exactly its channels, because a mapper wakes for every shared value it captures.
+  - `SVG_TREE` holds nesting and draw order as data. Eyes and mouths ride in `lk`, and `lk` sits inside the static clip. Held props sit in `pawR`. The nightcap and shades sit above the clip and outside `lk`. `treeFor(tier)` drops mouths, cheeks, paws and held props at the face tier.
+  - Geometry in `art/geometry.ts` is copied from kit.py, and the tails face and edge pill from MAX-Library. The edge pill sits outside `sp`, so the rig draws it in its own layer.
 - **Never in a row.** Sen never goes inside a FlashList row.
 - **Viewbox.** The Svg uses a 680-unit box so raised paws and tilts aren't clipped.
 
