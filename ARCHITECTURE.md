@@ -391,6 +391,7 @@ export function direct(s: DirectorState, e: DirectorEvent): [DirectorState, Comm
 - **Calm.** It is compiled from the data. Flourish tracks such as hops, spins, flips and accents are dropped, and pose changes become 150 ms timings marked `ReduceMotion.Never`. Reanimated's own reduced motion would jump straight to the end (V).
 - **Off.** Poses snap and haptics still fire.
 - **`<MotionPolicyRoot>`.** Sets `ReducedMotionConfig` to `Never` in Full and `Always` otherwise. It is the live switch for every other worklet animation.
+- **Plumbing.** `src/motion/` can't import services, so the root layout reads the setting through `useSenMotionPreference()` from `@/features/settings` and passes it to `<MotionPolicyRoot preference>`. Without a root, as in a component test, `useMotionPolicy()` returns `'full'`.
 - **CSS transitions.** They ignore reduced motion (V), so components set their duration to 0 from the policy.
 - **Informational timers.** The countdown ring keeps running in every mode, using `ReduceMotion.Never`.
 
@@ -413,7 +414,7 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
 | Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
 
-Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.ts`, `countdown.ts`, `threshold.ts` and `timeline.ts`. The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
+Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, `useCountdownProgress`, `ringOffset`, `useRevealPhase`), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf`, and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
 
 ### Proving motion works
 
