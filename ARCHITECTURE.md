@@ -58,7 +58,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
  ┌──────────── src/app/ (routes, thin) ──────────────────────────┐
  │ _layout.tsx: Stack.Protected guard={unlocked}                 │
  │ lock  welcome  (index)  transaction/[id]  add/  settings/     │
- │ (dev)/states   (guard={__DEV__})                              │
+ │ dev/states     (guard={__DEV__})                              │
  └───────────────▲───────────────────────────────────────────────┘
                  │ view models. amount is null while masked
  ┌───────────────┴──────── src/features/ ────────────────────────┐
@@ -92,6 +92,46 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | `src/app/` | expo-router routes only. Each renders a feature screen | `features/`, `components/`, `theme/`, `motion/` |
 
 **Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. Route tests are the exception. Expo Router bundles every file in `src/app/` as a route, so they live in `src/__tests__/`, and lint fails on a test file inside `src/app/`. The alias is `@/*` for `src/*`.
+
+## Routes
+
+Every route file is one line that re-exports a screen from a feature index, such as `export { DetailScreen as default } from '@/features/detail'`. Route files and `_layout.tsx` are final. No lane edits `src/app/`. A lane that needs a new route asks the coordinator.
+
+| File | Screen | Guard |
+| --- | --- | --- |
+| `index.tsx` | `HistoryScreen` (transactions) | `unlocked` |
+| `transaction/[id]/index.tsx` | `DetailScreen` (detail) | `unlocked` |
+| `transaction/[id]/delete.tsx` | `DeleteSheet` (add), form sheet | `unlocked` |
+| `add/_layout.tsx` | `AddLayout` (add), full-screen modal | `unlocked` |
+| `add/index.tsx`, `add/details.tsx`, `add/review.tsx` | `AmountStep`, `DetailsStep`, `ReviewStep` (add) | `unlocked` |
+| `settings/index.tsx`, `settings/activity.tsx` | `SettingsScreen` (settings), `ActivityScreen` (activity) | `unlocked` |
+| `settings/privacy.tsx`, `sign-out.tsx`, `reset-demo.tsx` | `PrivacySheet`, `SignOutSheet`, `ResetDemoSheet` (settings), form sheets | `unlocked` |
+| `settings/erase.tsx` | `EraseSheet` (security), form sheet | `unlocked` |
+| `+not-found.tsx` | Redirects home | `unlocked` |
+| `welcome.tsx`, `primer.tsx` | `WelcomeScreen`, `PrimerScreen` (auth) | `welcome` |
+| `lock.tsx` | `LockScreen` (auth) | `locked` |
+| `dev/states.tsx` | `StatesScreen` (gallery) | `__DEV__` |
+
+**Guard contract.**
+- `useRouteGate()` from `@/features/auth` returns one of three values: `'welcome'`, `'locked'` or `'unlocked'`. One value can't express "unlocked but never onboarded". The auth lane maps its reducer onto it: `authenticating` from locked stays `'locked'`, and `revealed` and `stepUp` are `'unlocked'`.
+- `_layout.tsx` declares every route inside exactly one `Stack.Protected`, with all presentation options. A deep link whose guard is false lands on the first available screen and is not replayed after unlock.
+- `+not-found` sits in the unlocked guard. Its redirect home does nothing while home is guarded, so a locked unknown link falls through to Lock instead.
+- The dev route is `dev/states`, not `(dev)/states`, because a group name never appears in the URL. In release `__DEV__` is false, so `sen://dev/states` lands on Lock.
+- `src/__tests__/guard.test.tsx` renders the real layout over every route file on disk. A new route file is tested the moment it exists, because expo-router mounts an undeclared route outside every guard.
+
+**Seams.** The root layout reads only seams, and their names are frozen. The bodies belong to the owning lane.
+
+| Seam | From | Phase 1 body |
+| --- | --- | --- |
+| `RouteGate`, `useRouteGate`, `SessionRoot`, `LockScreen`, `WelcomeScreen`, `PrimerScreen` | `@/features/auth` | A module store that starts `'locked'`. The stub Lock calls `authenticateAsync` and unlocks. `SessionRoot` mounts the `QueryClientProvider` |
+| `useSenMotionPreference` and the settings screens | `@/features/settings` | Returns `'full'` |
+| `useScreenGuard`, `EraseSheet` | `@/features/security` | Does nothing |
+| `ToastHost` | `@/components/toast` | Renders nothing |
+| `StatesScreen` | `@/features/gallery` | `screen=db` runs the database smoke. Any other query is echoed |
+
+Placeholder screens render `StubScreen` from `src/features/stub/`, so no lane's folder hosts another lane's placeholder. Phase 6 deletes that folder.
+
+**Query client.** `services/query-client.ts` holds the one `QueryClient`, the `Register.defaultError = AppError` augmentation and the key roots `QK.tx` and `QK.revealed`.
 
 ## Models
 

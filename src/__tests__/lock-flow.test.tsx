@@ -1,37 +1,44 @@
+import { readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+import { fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import { fireEvent } from '@testing-library/react-native';
-
-import RootLayout from '@/app/_layout';
-import HistoryScreen from '@/app/history';
-import LockScreen from '@/app';
+import type { ComponentType, ReactNode } from 'react';
 
 jest.mock('expo-local-authentication', () => ({ authenticateAsync: jest.fn() }));
+// expo-router/testing-library swaps Reanimated for its mock, which has no ReducedMotionConfig.
+jest.mock('@/motion/policy', () => ({
+  MotionPolicyRoot: ({ children }: { children: ReactNode }) => children,
+}));
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 
-const routes = { _layout: RootLayout, index: LockScreen, history: HistoryScreen };
+const APP = join(__dirname, '..', 'app');
 
-test('a matched fingerprint unlocks into History', async () => {
-  authenticate.mockResolvedValue({ success: true });
+/** The real app: every route file on disk with its real screen. */
+const routes = Object.fromEntries(
+  readdirSync(APP, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.tsx'))
+    .map((f) => relative(APP, join(APP, f)).replace(/\.tsx$/, ''))
+    .map((name) => [name, jest.requireActual<{ default: ComponentType }>(`@/app/${name}`).default]),
+);
+
+test('a wrong finger stays on Lock, then a matched finger unlocks into History', async () => {
   await renderRouter(routes, { initialUrl: '/' });
+  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
 
+  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
   await fireEvent.press(screen.getByRole('button', { name: 'UNLOCK' }));
+  expect(screen.getByText('Not quite.')).toBeOnTheScreen();
+  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
 
-  expect(authenticate).toHaveBeenCalledWith({
+  authenticate.mockResolvedValueOnce({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'UNLOCK' }));
+  expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',
     biometricsSecurityLevel: 'strong',
     disableDeviceFallback: false,
   });
   expect(screen.getByText('HISTORY')).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'UNLOCK' })).not.toBeOnTheScreen();
-});
-
-test('a wrong finger stays on Lock and says so', async () => {
-  authenticate.mockResolvedValue({ success: false, error: 'authentication_failed' });
-  await renderRouter(routes, { initialUrl: '/' });
-
-  await fireEvent.press(screen.getByRole('button', { name: 'UNLOCK' }));
-
-  expect(screen.getByText('Not quite.')).toBeOnTheScreen();
-  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
 });
