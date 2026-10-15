@@ -340,6 +340,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there.
 | Sen | Sen's animations | Full · Calm · Off. System Reduce Motion forces Calm | Full | `senMotion` |
 | Sen | Haptics | Switch | On | `haptics` |
 | For reviewers | Next history request | Normal · Offline · Timeout · Server error · Bad data | Normal | `demo.next` |
+| For reviewers | Dataset size | 20 · 1k · 10k. Resets bank rows only, then syncs with a progress line | 1k | `demo.datasetSize` |
 | For reviewers | Slow network, add 3 s | Switch | Off | `demo.slow` |
 | For reviewers | New transaction on refresh | Switch | On | `demo.newOnRefresh` |
 | For reviewers | Simulate Face ID lockout | Button. Arms the next unlock to report lockout | | |
@@ -347,7 +348,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there.
 | About | How Sen keeps amounts private | Explainer sheet | | |
 | About | Source code, licences | Links | | |
 | Account | Lock now | Key | | |
-| Account | Sign out of demo | Destructive, with confirm. Destroys the vault key and clears prefs | | |
+| Account | Sign out of demo | Destructive, with confirm. Destroys the database key and clears prefs | | |
 
 Footer: `SEN 1.0.0 (1) · SIMULATED DATA`.
 

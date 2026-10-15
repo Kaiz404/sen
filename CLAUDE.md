@@ -4,9 +4,9 @@ Sen is a take-home assignment: a secure transaction history module in React Nati
 
 Read before working:
 - [DESIGN.md](DESIGN.md) for any UI, Sen or motion work.
-- [DECISIONS.md](DECISIONS.md) for every technical choice. A record without an owner pick is not decided. Don't build on it.
+- [DECISIONS.md](DECISIONS.md) for every technical choice and why it won. Don't reopen one without the owner.
 - [PLAN.md](PLAN.md) for the build order, lanes and the checks each phase must pass.
-- [ARCHITECTURE.md](ARCHITECTURE.md) for any code. Where it conflicts with an owner pick in DECISIONS.md, the pick wins.
+- [ARCHITECTURE.md](ARCHITECTURE.md) for any code.
 - [README.md](README.md) for what the reviewer sees.
 
 ## Locked decisions
@@ -17,7 +17,9 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 | --- | --- |
 | Scope | Mobile frontend only. An in-app mock bank API. No backend, no Go server. Local first, built for 10,000 transactions |
 | Repo | One Expo app at the repo root. No monorepo. Shares nothing with Moni (`../moni`) except copied setup patterns |
-| Platform | Expo SDK 57, RN 0.86, TypeScript strict, expo-router. Styling, storage, list, state and tooling are open in DECISIONS.md |
+| Platform | Expo SDK 57, RN 0.86, TypeScript strict, expo-router, React Compiler on |
+| Data | Encrypted SQLite (SQLCipher) is the source of truth. The mock bank syncs into it. TanStack Query reads it. MMKV for prefs only |
+| UI | FlashList 2.3.3, Unistyles 3, Zustand around the session reducer, react-native-svg and Reanimated for Sen |
 | Sign-in | "Continue as demo user", then device biometrics with passcode fallback. No Google sign-in, no accounts |
 | Visual direction | X1P: Bricolage Grotesque 800, receipt slips, cream, ink and pastels, masked amounts as four lemon coins |
 | Mascot | Sen the coin with hands (MAX rig). Paws never touch the face. Eyes close when masked |
@@ -25,7 +27,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 | Edit | No editing transactions. Delete and add again |
 | Security | Step-up biometrics for every write, mask at the source, idle and background lock |
 | Tests | Unit and component tests only (jest-expo, RNTL v14). No Maestro, no E2E |
-| Builds | Local Android dev builds from WSL. EAS only for the reviewer APK, built on tags |
+| Builds | Android dev builds from WSL onto the Windows emulator. EAS only for the reviewer APK, built on tags |
 | Delivery | Android APK first. Source second. iOS simulator build as a bonus. No Expo Go |
 
 **Open:**
@@ -60,7 +62,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 
 ## Git
 
-- Work on `master` only. No branches, no PRs.
+- Work on `main` only. No branches, no PRs.
 - Commit small and often. The history is part of the submission. Every commit builds.
 - Messages are short and lower case, `type: what changed`. Examples: `feat: biometric lock`, `fix: reveal timer drift`, `docs: decision records`.
 - No AI attribution lines (no `Co-Authored-By`, no "Generated with") in commits.

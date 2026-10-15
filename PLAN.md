@@ -1,6 +1,6 @@
 # Sen build plan
 
-How Sen gets built in about 3 days by coding agents, on `master` only. It assumes the recommendations in [DECISIONS.md](DECISIONS.md). Any owner pick that differs gets folded in before phase 0 starts. Development starts only on the owner's go.
+How Sen gets built in about 3 days by coding agents, on `main` only. It follows [DECISIONS.md](DECISIONS.md) and [ARCHITECTURE.md](ARCHITECTURE.md). Development starts on the owner's go.
 
 ## How to read this
 
@@ -66,7 +66,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [ ] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert.
 - [ ] Masked and revealed queries, keyset pages, month and day sums, search.
-- [ ] The vault key in SecureStore. Open, lock and close, sign-out and erase.
+- [ ] The database key in SecureStore. Open, lock and close, sign-out, erase and the missing-key reset.
 - **Unit.** Sync twice and interrupted give the same table hash. Masked results hold no amounts. Search "entral" matches a JS filter.
 - **Perf.** Jest benches on 10k rows stay inside the D20 budgets.
 
@@ -127,7 +127,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 ## Phase 7. Docs
 
 - [ ] Rewrite README run steps, the "What this does not protect against" section, the decision summary and the perf numbers with how they were measured.
-- [ ] Fold the final picks into ARCHITECTURE.md, then delete DECISIONS.md's open blanks.
+- [ ] Update ARCHITECTURE.md and DECISIONS.md wherever a fallback was taken during the build.
 
 ## Phase 8. Release
 

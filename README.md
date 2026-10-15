@@ -41,7 +41,7 @@ The 20+ simulated transactions come from an in-app mock API with realistic laten
 | --- | --- |
 | [DESIGN.md](DESIGN.md) | Visual system, Sen the mascot, motion, screens, flows, settings |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Stack, layers, state machine, storage, threat model, tests, builds |
-| [DECISIONS.md](DECISIONS.md) | Architecture decisions: options weighed, recommendations, owner picks |
+| [DECISIONS.md](DECISIONS.md) | Architecture decisions: alternatives compared and why each choice won |
 | [PLAN.md](PLAN.md) | Build order, parallel lanes and how each phase is verified |
 | [CLAUDE.md](CLAUDE.md) | Working rules for coding agents on this repo |
 

@@ -1,95 +1,94 @@
 # Sen architecture
 
-How Sen is built. The security model and threat model below stand. Storage, list, styling, state and tooling are under review in [DECISIONS.md](DECISIONS.md) for the 10,000-transaction, local-first target. Where an owner pick there differs, the pick wins and this file gets updated. No code exists yet, so every path below is the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
+How Sen is built. It follows the decisions in [DECISIONS.md](DECISIONS.md), made on 2026-10-15. No code exists yet, so every path below is the plan. Claims marked **V** were verified against a primary source on 2026-10-14 or 2026-10-15. Claims marked **I** are inferred.
 
-Sen is a frontend-only app. The "bank" is an in-app mock service. The brief is titled "Secure Transaction History Module", so security is the organising idea. Every layer has a security job.
+Sen is a frontend-only, local-first app. The "bank" is an in-app mock service that syncs into an encrypted on-device database. It is built for 10,000 transactions. The brief is titled "Secure Transaction History Module", so security is the organising idea. Every layer has a security job.
 
 ## Stack
 
-Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3, React 19, TypeScript ~6.0.3 with `strict: true`. Scaffold with `npx create-expo-app --template default@sdk-57`. Install every Expo package with `npx expo install` so versions match the SDK. Bundled versions come from https://unpkg.com/expo@57.0.28/bundledNativeModules.json (V).
+Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React 19, TypeScript ~6.0.3 with `strict: true`, React Compiler on.
+- **Scaffold.** `npx create-expo-app --template default@sdk-57`.
+- **Installs.** Every Expo package goes in with `npx expo install` so versions match the SDK.
+- **Bundled versions.** From https://unpkg.com/expo@57.0.28/bundledNativeModules.json (V).
 
 | Need | Package | Version | Notes |
 | --- | --- | --- | --- |
-| Navigation | `expo-router` | ~57.0.26 | `Stack.Protected` guards (SDK 53+, V). `redirectTo` is SDK 58 only, so `lock` is the anchor of the unprotected group |
-| Styling | `uniwind` + Tailwind v4 | 1.12.2 | Not NativeWind. `withUniwindConfig` is the outermost Metro wrapper. Import `global.css` in the root layout |
-| Biometrics | `expo-local-authentication` | ~57.0.3 | `biometricsSecurityLevel: 'strong'` (Android only, default `'weak'`, V) |
-| Server state | `@tanstack/react-query` | 5.104.x | Wire `focusManager` to AppState and `onlineManager` to `expo-network` by hand |
+| Navigation | `expo-router` | ~57.0.26 | Native stack, `Stack.Protected`, form sheets as routes (D9) |
+| Database | `expo-sqlite` with `useSQLCipher` | ~57.0.4 | Encrypted at rest (D1) |
+| Preferences | `react-native-mmkv` + `react-native-nitro-modules` | 4.3.x / ≥ 0.37.1 | Not sensitive. Synchronous read for the theme |
+| Styling | `react-native-unistyles` | 3.x | Typed tokens, theme switch without re-renders (D8) |
+| List | `@shopify/flash-list` | 2.3.3, pinned | Excluded from `expo install --check` (D7) |
+| Client state | `zustand` | 5.x | Wraps the pure session reducer (D12) |
+| Async state | `@tanstack/react-query` | 5.104.x | Reads SQL, runs sync and mutations (D2) |
 | Validation | `zod` | 4.6.x | Parse at every boundary. v4 issues carry no input by default (V) |
-| Preferences | `react-native-mmkv` + `react-native-nitro-modules` | 4.3.x / ≥ 0.35 | Not bundled by SDK 57, so pin it. Needs a dev build |
-| Vault key | `expo-secure-store` | ~57.0.4 | Keychain or Keystore |
+| Biometrics | `expo-local-authentication` | ~57.0.3 | `biometricsSecurityLevel: 'strong'` (Android only, V) |
+| Database key | `expo-secure-store` | ~57.0.4 | Keychain or Keystore |
 | Secure random | `expo-crypto` | ~57.0.4 | `getRandomValues` and `randomUUID`. Never `getRandomBytes`, which uses `Math.random` in development (V) |
-| Screen guard | `expo-screen-capture` | ~57.0.4 | Screenshot block on iOS 13+ and Android. Android FLAG_SECURE. iOS app switcher protection |
-| Network | `expo-network` | SDK 57 | Offline banner, `onlineManager` |
-| Animation | `react-native-reanimated` + `react-native-worklets` | 4.5.1 / 0.10.1 | The bundled versions. 4.7 is for SDK 58 |
-| Gestures | `react-native-gesture-handler` | ~2.32.0 | Only if gestures are used directly. Then wrap the root in `GestureHandlerRootView` |
-| Drawing | `react-native-svg` | SDK 57 | Sen |
+| Screen guard | `expo-screen-capture` | ~57.0.4 | FLAG_SECURE on Android, switcher protection on iOS |
+| Network | `expo-network` | SDK 57 | Offline banner, `onlineManager` for sync |
+| Animation | `react-native-reanimated` + `react-native-worklets` | 4.5.1 / 0.10.1 | The bundled versions |
+| Gestures | `react-native-gesture-handler` | ~2.32.0 | Root wrapped in `GestureHandlerRootView` |
+| Drawing | `react-native-svg` | 15.15.4 | Sen |
 | Haptics | `expo-haptics` | ~57.0.3 | `performAndroidHapticsAsync` on Android |
-| Fonts | `expo-font` + Bricolage Grotesque + IBM Plex Mono | | Static width-75 and width-100 cuts for Android |
+| Fonts | `expo-font` config plugin | | Static Bricolage Condensed ExtraBold and ExtraBold cuts from upstream, IBM Plex Mono |
 | Icons | `@expo/vector-icons` (MaterialCommunityIcons) | ^15 | |
-| List | `SectionList` + `RefreshControl` | built in | Sticky date headers and pull-to-refresh built in. FlashList is not worth it at about 50 rows |
-| Formatting | `Intl` on Hermes | | Add the +/− sign by hand (iOS lacks `signDisplay`). Money is integer sen |
-| Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 APIs are async and need Node ≥ 22.13 |
-| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | |
+| Formatting | `Intl` on Hermes | | Add the +/− sign by hand. Money is integer sen |
+| Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 is async and needs Node ≥ 22.13 |
+| Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban |
 
-**Skipped on purpose.**
+**Skipped on purpose.** The reasons are in DECISIONS.md.
 
-| Option | Why |
+| Option | Decision |
 | --- | --- |
-| zustand, Redux, Jotai, XState, Legend | Session state is one typed reducer. Server state is TanStack Query |
-| FlashList, Legend List | Their gains show at thousands of rows |
-| `react-native-biometrics` | Unmaintained |
-| `react-native-keychain` | Its value is biometric-bound keys, which need a backend to mean anything |
+| MMKV vault for transactions | D1 |
+| op-sqlite, TinyBase, Legend State | D1 |
+| SectionList, Legend List | D7 |
+| Uniwind, NativeWind | D8 |
+| XState, Jotai, Redux | D12 |
+| Skia, Rive, Lottie | D10 |
+| `react-native-biometrics`, `react-native-keychain` | Unmaintained, or needs a backend to mean anything |
 | Sentry, Storybook, i18n | No account to show, costly to set up, one locale |
-| Maestro, E2E | Out of scope. Unit and component tests only |
-| Expo Go | Can't run MMKV. Face ID doesn't work in it on iOS. SDK 57 leaves the store app when SDK 58 ships |
+| Maestro, E2E suite, Expo web | D18, D19 |
+| Expo Go | Can't run SQLCipher or MMKV. Face ID doesn't work in it on iOS |
 
 ## Layers
 
 ```
- ┌──────────────── app/ (routes, thin) ────────────────────────┐
- │ _layout.tsx: Stack.Protected guard={unlocked}               │
- │ lock  (index)  transaction/[id]  add/  settings/  security/ │
- └───────────────▲─────────────────────────────────────────────┘
-                 │ view models only. amount is null while masked
- ┌───────────────┴──────── features/ ──────────────────────────┐
- │ auth/         state machine, session, step-up, idle, cover  │
- │ transactions/ queries, selectors (MASK HERE), list, detail  │
- │ add/          draft reducer (memory only), keypad, review   │
- │ activity/     activity log screen                           │
- │ settings/     preferences, reviewer controls                │
- │ security/     screen guard, erase                           │
- │ sen/          mascot rig, poses, MotionDirector             │
- └───────▲──────────────────────▲──────────────────────────────┘
+ ┌──────────── src/app/ (routes, thin) ──────────────────────────┐
+ │ _layout.tsx: Stack.Protected guard={unlocked}                 │
+ │ lock  welcome  (index)  transaction/[id]  add/  settings/     │
+ │ (dev)/states  (dev)/motion   (guard={__DEV__})                │
+ └───────────────▲───────────────────────────────────────────────┘
+                 │ view models. amount is null while masked
+ ┌───────────────┴──────── src/features/ ────────────────────────┐
+ │ auth/          session reducer + store, step-up, locks, cover │
+ │ transactions/  history list, reveal, search, filters          │
+ │ detail/        detail screen, share, copy                     │
+ │ add/           draft reducer (memory only), keypad, review    │
+ │ settings/      preferences, reviewer controls                 │
+ │ security/      screen guard, activity log, erase              │
+ │ sen/           mascot rig, poses, timelines, MotionDirector   │
+ └───────▲──────────────────────▲────────────────────────────────┘
          │ typed domain objects │
- ┌───────┴──────── services/ ───┴──────────────────────────────┐
- │ bankApi (mock)  vault  activityLog  vaultKey  clock  crypto │
- │ sanitize  logger  prefs  haptics                            │
- └──▲───────────────▲───────────────▲───────────────▲──────────┘
-  ══╪═══ TRUST BOUNDARY: everything below is untrusted ══════════
-    │ PARSE (zod)   │ PARSE (zod)   │ DECRYPT      │ PARSE (zod)
- fixtures JSON   MMKV "vault"    SecureStore     MMKV "prefs"
- (bank data)     AES-256 file    vault key       theme, timers
+ ┌───────┴──────── src/services/ ───┴────────────────────────────┐
+ │ db (port + adapters)  tx-repo  sync  bank-api (mock + seed)   │
+ │ db-key  prefs  clock  crypto  sanitize  logger  haptics       │
+ └──▲───────────────▲───────────────▲───────────────▲────────────┘
+  ══╪═══ TRUST BOUNDARY: everything below is untrusted ════════════
+    │ PARSE (zod)   │ PARSE (zod)   │ KEY          │ PARSE (zod)
+ mock bank pages  SQLCipher DB    SecureStore     MMKV "prefs"
+ (seeded)         sen.db          db key          theme, timers
 ```
 
 | Layer | Owns | Imports |
 | --- | --- | --- |
-| `models/` | zod schemas and inferred types | Nothing |
-| `services/` | All I/O: mock bank API, vault, key, log, prefs, clock, crypto, logger, sanitiser. Nothing unparsed leaves this layer | `models/` |
-| `features/` | Domain logic, hooks and screens per feature | `services/`, `models/`, `components/` |
-| `components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | Nothing app-specific |
-| `app/` | expo-router routes only. Each route renders a feature screen | `features/` |
+| `src/models/` | zod schemas, inferred types, money helpers | Nothing |
+| `src/services/` | All I/O. Nothing unparsed leaves this layer | `models/` |
+| `src/features/` | Domain logic, hooks and screens per feature | `services/`, `models/`, `components/` |
+| `src/components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | `models/` only |
+| `src/app/` | expo-router routes only. Each renders a feature screen | `features/` |
 
-**Data rules**
-
-| Step | Place | Rule |
-| --- | --- | --- |
-| Parse | `services/bankApi.ts`, `vault.ts`, `prefs.ts` | Every read goes through `safeParse`. Bad records are dropped and counted |
-| Mask | `features/transactions/selectors.ts` | `toView(tx, revealed)` returns `amount: number \| null`. Components never see a `Transaction`. `Amount` renders coins for `null` |
-| Encrypt | `services/vault.ts` | MMKV AES-256 with a random key |
-| Drop on lock | `features/auth/session.tsx` | `queryClient.clear()`, drop the add draft, drop decrypted vault objects |
-| Drop on sign-out or erase | `services/vaultKey.ts` | Delete the key, then `deleteMMKV('vault')` |
-
-Honest limit: while revealed, amounts sit in JS memory and in the query cache. Masking keeps them out of the rendered tree, not out of the process.
+**Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. The alias is `@/*` for `src/*`.
 
 ## Models
 
@@ -103,36 +102,55 @@ type Transaction = {
   merchant: string
   category: CategoryId
   status: 'posted' | 'pending'
-  postedAt: string               // ISO 8601
+  postedAt: string               // ISO 8601, UTC
   reference: string
   account: { name: string; last4: string }
   source: 'bank' | 'manual'      // bank rows are read-only
 }
 
-type LoadError =
+type MaskedRow = Omit<Transaction, 'amountMinor'>   // what masked queries return
+type AppError =
   | { kind: 'offline' } | { kind: 'timeout' } | { kind: 'server' }
   | { kind: 'invalid_data'; skipped: number }
+  | { kind: 'db_reset'; reason: 'missing_key' | 'corrupt' }
 ```
 
-Unions make impossible states unrepresentable. Each screen handles every `kind`.
+## Data layer
 
-## Mock bank API
+**Database.**
+- **The file.** One SQLCipher file, `sen.db`. Its tables are `tx`, `sync_state`, `activity_log` and `meta`.
+- **Columns.** `tx` stores `posted_at` in UTC and a `day` column in Malaysia time (UTC+8). Its covering index is `(posted_at desc, id desc)`. `search_text` is lowercased and stripped of accents at write time.
+- **Migrations.** Run through `PRAGMA user_version`.
+- **The port.** The database sits behind a three-method port (`all`, `run`, `transaction`). The app uses the expo-sqlite adapter. Jest uses a `node:sqlite` adapter, so every query runs real SQL in tests (V, jest-expo stubs SQLite with no behaviour).
 
-- About 40 fixture transactions across several weeks. They use realistic Malaysian merchants, a few pending rows and a salary credit.
-- Latency is random between 300 and 900 ms. "Slow network" adds 3 s.
-- The reviewer controls in Settings force `offline`, `timeout`, `server` or bad data on the next request.
-- "New transaction on refresh" returns one new row.
-- Every response is parsed with `TransactionSchema.array()`. Bad rows become `invalid_data` with a skipped count, never a crash.
-- History merges bank rows (memory only) with vault rows (`source: 'manual'`).
+**Sync (D2).**
+- **Cursor.** The mock bank serves pages ordered by a `seq` cursor.
+- **Upsert.** `sync()` parses each page with zod and upserts it in one transaction (`INSERT … ON CONFLICT(id) DO UPDATE`). A retried or interrupted sync ends in the same state.
+- **Seed (D5).** A seeded generator (mulberry32) feeds the mock bank. The first 20 rows match the design boards. Sizes are 20, 1k (the default) and 10k.
+- **Reviewer faults.** Forced `offline`, `timeout`, `server` and bad rows hit the real sync path.
+- **Pull-to-refresh.** Runs `sync()` through a TanStack mutation. Retries cover `offline`, `timeout` and `server` once, never `invalid_data`.
 
-**Query wiring**
-- `useTransactions()` wraps `useQuery`. Its `refetch` and `isRefetching` drive `RefreshControl`.
-- Retry covers transient errors only: `(n, e) => e.kind !== 'invalid_data' && n < 2`.
-- No persisted query client. Bank data is never written to disk.
+**Reads (D3, D4).**
+- **Pages.** `useInfiniteQuery` loads keyset pages of 100 into FlashList.
+- **Totals.** The month card and day nets are plain `SUM … GROUP BY day` queries over the loaded date range.
+- **Search.** `LIKE` on `search_text`, with `%` and `_` escaped, and the input debounced with `useDeferredValue`.
+- **Freshness.** The one write module calls `invalidateQueries(['tx'])` after every commit.
 
-## Auth and session
+**Masking (D6).**
+- **Masked queries.** They return `MaskedRow` and never select `amount_minor`. Masked totals return counts only.
+- **On reveal.** One query loads `id → amountMinor` for the loaded range, keyed `['tx','revealed',…]`. Rows read it through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
+- **On re-mask.** `removeQueries(['tx','revealed'])`.
+- **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount exists in JS.
 
-One pure reducer in `features/auth/machine.ts`. It holds no timers. Effects live in hooks that dispatch events.
+## State
+
+**Session.**
+- **Reducer.** A pure reducer in `features/auth/machine.ts`, a discriminated union with an exhaustive `switch` and no timers.
+- **Store.** A Zustand store wraps it.
+- **React.** Components select narrow slices. Rows never subscribe to the session.
+- **Outside React.** Handlers such as AppState, the idle tick and lock call `store.getState()`.
+
+**Screen-local state.** Search text, filter and the add draft stay in `useState` or `useReducer` in their screen. The draft lives in memory only.
 
 ```
             UNLOCK_OK                    REVEAL_OK
@@ -152,22 +170,24 @@ One pure reducer in `features/auth/machine.ts`. It holds no timers. Effects live
 | `revealed` | `until` (epoch ms) | Same, amounts shown |
 | `stepUp` | `action`, `returnTo` | Current screen stays |
 
-**Step-up.** One hook, `useStepUp(action)`. It is never cached: every write prompts, every time.
+**Step-up.** `useStepUp(action)` returns `{ ok: true } | { ok: false; reason }`. It is never cached, so every write prompts.
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
 | `reveal` | "Reveal amounts" | `revealed{until: now + revealSeconds}` | Stay masked, silently |
-| `add` | "Save this transaction" | Vault write, log `tx.added` | "Not saved. Your draft is still here." |
-| `delete` | "Delete this transaction" | Vault delete, log `tx.deleted` | Sheet stays |
+| `add` | "Save this transaction" | DB write, log `tx.added` | "Not saved. Your draft is still here." |
+| `delete` | "Delete this transaction" | DB delete, log `tx.deleted` | Sheet stays |
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing |
-| `erase` | "Erase transactions you added" | Key destroyed, vault recreated empty, log `vault.erased` | Nothing |
+| `erase` | "Erase transactions you added" | Manual rows deleted, log `data.erased` | Nothing |
 
 Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it is logged.
 
 **`authenticateAsync` options.**
 - `biometricsSecurityLevel: 'strong'`.
-- `disableDeviceFallback: false`, so the device passcode still works. How these two combine on a phone with only weak biometrics isn't documented. Test on a device.
+- `disableDeviceFallback: false`.
 - A ref guard blocks a second prompt while one is open.
+
+How the first two combine on a phone with only weak biometrics isn't documented, so it gets tested on a device.
 
 **Error codes**
 
@@ -179,7 +199,7 @@ Undo inside the 6 s toast skips the prompt. It only reverts what the user just a
 | `not_enrolled`, `passcode_not_set` | Not set up | Explain, open device settings, passcode |
 | `not_available` | No hardware | Explain, passcode |
 | `user_fallback` | Chose passcode | Continue with fallback |
-| `timeout`, `unable_to_process`, `unknown` and others | Unknown | Generic retry |
+| Anything else | Unknown | Generic retry |
 
 **Lock triggers**
 
@@ -187,95 +207,104 @@ Undo inside the 6 s toast skips the prompt. It only reverts what the user just a
 | --- | --- |
 | Background | AppState `background` re-masks at once and stores `backgroundedAt` |
 | Return | On `active`, lock if `now − backgroundedAt > relockAfter`. Never auto-prompt |
-| Idle | `onTouchStart` on the root resets `lastTouch`. A 15 s tick compares it with `idleLock`. The tick pauses in background |
-| Reveal expiry | The same tick compares with `until` |
+| Idle | `onTouchStart` on the root resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock` and pauses in background |
+| Reveal expiry | The same tick compares with `until`. The ring animates on the UI thread |
 | Manual | "Lock now" |
 
 **The iOS inactive trap.** The Face ID sheet itself sends the app to `inactive` and back. So:
-- `isAuthenticatingRef` is set before the prompt and cleared in `finally`. AppState changes are ignored while it is set.
+- `isAuthenticatingRef` is set before the prompt and cleared in `finally`.
 - Only `background` locks or re-masks. `inactive` only shows the privacy cover.
-- The machine ignores `BACKGROUND` while in `authenticating` or `stepUp`.
+- The reducer ignores `BACKGROUND` while in `authenticating` or `stepUp`.
 
 **On `LOCK`:**
-- Clear the query cache.
-- Drop the draft and close the add modal.
-- Drop decrypted vault objects.
+- `queryClient.clear()`.
+- Close the database.
+- Drop the draft.
 - Re-mask.
 
-The guard flips and expo-router removes the protected history (V). A deep link that arrives while locked is not replayed after unlock. The user lands on History.
+Protected routes, which include every sheet and the add flow, are unmounted. A deep link that arrives while locked lands on Lock and is not replayed after unlock.
 
-## Storage
+## Errors (D15)
 
-| Store | API | Holds | Encrypted |
-| --- | --- | --- | --- |
-| `prefs` | `createMMKV({ id: 'prefs' })` | theme, `revealSeconds`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | No. Nothing sensitive |
-| `vault` | `createMMKV({ id: 'vault', encryptionKey, encryptionType: 'AES-256' })` | `tx:<id>` added rows, `log` (last 50 events), `idem:<key>`, `meta` | Yes |
-| SecureStore `sen.vaultKey.v1` | `expo-secure-store` | The vault key | Keychain or Keystore |
+**Tagged unions.**
+- Pure and service code returns a small local `Result`.
+- `queryFn` and `mutationFn` throw the tagged value.
+- `Register.defaultError` types `error` as `AppError` everywhere.
 
-**MMKV facts** (V, `react-native-mmkv@4.3.2` source).
-- **Encryption.** AES-128 is the default. The AES-256 key is at most 32 bytes, and longer keys throw.
-- **Changing keys.** `recrypt` is deprecated. Use `encrypt` and `decrypt`.
-- **Deleting.** `deleteMMKV(id)` removes a store.
-- **Tests.** Under Jest, MMKV is an in-memory mock that ignores encryption. So `vault.ts` takes a `KeyValueStore` port that tests can fake.
+**Unexpected bugs.** They reach a route `ErrorBoundary` that shows Sen and a retry and never renders `error.message`.
 
-**Key.**
-- `getRandomValues(new Uint8Array(24))` encoded as base64url gives 32 ASCII characters, with 192 bits of entropy.
-- It is stored with `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`. It is readable only while the phone is unlocked and is never restored to another device (V).
+| Source | Kind | UI |
+| --- | --- | --- |
+| Sync, no local rows | `offline`, `timeout`, `server` | Full error card with Retry |
+| Sync, local rows exist | `offline` | Calm banner over the list with the last sync time |
+| Sync, local rows exist | `timeout`, `server` | Banner, list kept, Retry |
+| Sync | `invalid_data` | List shown, "2 items couldn't be read" |
+| Database | `db_reset` | One-time notice |
 
-**Why not `requireAuthentication`.** It would bind the key to biometrics, which is stronger in theory. It is skipped for three reasons (V, expo-secure-store 57.0.4 source):
-- On Android, it prompts with `BIOMETRIC_STRONG` only and offers no device passcode fallback. The README promises that fallback.
-- Keys are invalidated when biometrics change. Enrolling a new fingerprint would silently destroy the user's data.
-- It adds a second prompt unless it replaces the unlock prompt.
+## Storage and keys
 
-The async read does not block the JS thread. So the key is unlocked-device-only, and the biometric gate is the JS step-up. The README states this limit.
+| Store | Holds | Protection |
+| --- | --- | --- |
+| `sen.db` (SQLCipher) | Bank rows, added rows, sync cursor, activity log | AES-256, whole file |
+| SecureStore `sen.dbKey.v1` | 32 random bytes as 64 hex characters, applied as a raw key (`PRAGMA key = "x'…'"`) so open skips PBKDF2 (V) | Keychain or Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY` |
+| MMKV `prefs` | theme, `revealSeconds`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
+
+**Key.** Generated with `getRandomValues`. It is readable only while the phone is unlocked and is never restored to another device (V).
+
+**Why not `requireAuthentication`.** It would bind the key to biometrics. It is skipped for three reasons (V, expo-secure-store 57.0.4 source):
+- On Android, it prompts with `BIOMETRIC_STRONG` only and offers no passcode fallback.
+- Keys die when biometrics change, so enrolling a fingerprint would destroy the user's data.
+- It doubles the prompt.
+
+The biometric gate is therefore the JS step-up. The README states this limit.
 
 **Lifecycle**
 
 | Event | What happens |
 | --- | --- |
-| First unlock | Generate and store the key, create the vault, write `meta { schema: 1, createdAt }` |
-| Unlock | Read the key, open the vault, parse every record |
-| Lock | Keep files. Drop decrypted objects |
-| Sign out | Delete the key, `deleteMMKV('vault')`, `prefs.clearAll()` |
-| Erase | Delete the key and the vault, recreate empty with a fresh key, log `vault.erased` |
-| Key missing, vault present | Backup restore or reinstall. Unreadable by design. Delete the vault, start clean, log `vault.reset_missing_key` |
-| Vault unreadable | Same, log `vault.reset_corrupt` |
-| One bad record | Drop it, count it, show "1 item couldn't be read" |
-| SecureStore write fails | Nothing stored. "Couldn't save securely." The draft stays |
-
-**Records.**
-- Every record is `{ v: 1, data }`, parsed by a `z.discriminatedUnion('v', …)`.
-- Unknown versions are dropped, not guessed.
-- JSON is parsed inside a `try`.
+| First unlock | Generate and store the key, create the database, run migrations, first sync |
+| Unlock | Read the key, open the database |
+| Lock | Close the database. Clear the query cache |
+| Sign out | Delete the key, `deleteDatabaseAsync`, `prefs.clearAll()` |
+| Erase | Step-up, then delete manual rows and log it |
+| Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` |
+| Database unreadable | Same |
+| One bad row | Drop it, count it, show "1 item couldn't be read" |
 
 **Activity log.**
-- At most 50 entries `{ id, at, code, meta? }`.
-- `code` is an enum: `unlock.ok`, `unlock.fail`, `lockout`, `reveal`, `reveal.expired`, `tx.added`, `tx.deleted`, `tx.undo`, `setting.changed`, `log.cleared`, `vault.erased`, `idle.lock` and so on.
-- The schema has no amount field, so an amount can't be logged by mistake.
-- Sign-out destroys the log with the vault. The new log starts with the next unlock.
+- At most 50 rows `{ id, at, code, meta }`.
+- `meta` is a typed union per `code` with no amount field, so an amount can't be logged.
+- Sign-out destroys the log with the database.
 
 **Backups.**
 - **Android.** `android.allowBackup: false` (its default is `true`, V).
-- **iOS.** MMKV files live in `Documents/`, which is backed up. A restored vault is ciphertext with no key, because the key is `THIS_DEVICE_ONLY`. It is wiped on first unlock (I).
+- **iOS.** A restored database has no key, because the key is `THIS_DEVICE_ONLY`. So it is reset on first unlock (I).
 
 ## Add form input
 
 | Field | Rule | Where |
 | --- | --- | --- |
 | Amount | Integer sen, 1 to 5,000,000 (RM 0.01 to RM 50,000.00) | `models/draft.ts` |
-| Keypad | Digits shift in from the right. At most 7 digits. No decimal key, so no float ever exists | `features/add/keypadReducer.ts` |
+| Keypad | Digits shift in from the right. At most 7 digits. No decimal key | `features/add/keypad-reducer.ts` |
 | Direction | `'debit' \| 'credit'`. The sign is never typed | `models/draft.ts` |
-| Description | Cleaned, then 2 to 60 characters. Cleaning means NFC, removing control, zero-width and bidi override or isolate characters, collapsing spaces and trimming | `services/sanitize.ts` |
-| Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"` | `features/add/DetailsStep.tsx` |
-| Category | Enum: food and drink, transport, bills, shopping, groceries, health, transfer, other | `models/category.ts` |
-| Date | Today back to 90 days. Never future. From `services/clock.ts` | `models/draft.ts` |
+| Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed | `services/sanitize.ts` |
+| Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"` | `features/add/details-step.tsx` |
+| Category | Enum of eight | `models/category.ts` |
+| Date | Today back to 90 days. Never future | `models/draft.ts` |
 
-**Why a custom keypad.** The system keyboard learns, suggests and syncs what you type, and third-party keyboards can send keystrokes off the device. A keypad of buttons means no amount ever reaches a keyboard. The input space is also exactly ten digits and delete.
+**Why a custom keypad.** No amount ever reaches a keyboard that learns, suggests or syncs. The input space is exactly ten digits and delete.
 
-**Idempotency.**
-- **Draft key.** The draft gets `idemKey = randomUUID()` when the modal opens. `vault.add()` returns the existing row if the key was already used.
-- **Single save.** The Save key disables, and an in-flight ref is set before the prompt.
-- **References.** Each saved row gets `SEN-M-` plus 8 characters. The characters come from `getRandomValues` over a 32-letter alphabet with no look-alike letters.
+**Double submit.**
+- **Draft key.** The draft gets an `idemKey` from `randomUUID()`, stored in a `UNIQUE` column, so a repeat save returns the existing row.
+- **Save key.** It disables before the prompt.
+
+## Motion
+
+The detailed implementation of Sen and the animated components is in research. This section will hold the result. The fixed points so far:
+- **One renderer.** Sen is `react-native-svg` plus Reanimated (D10).
+- **One animating Sen.** A pure MotionDirector reducer decides which Sen animates.
+- **Reveal.** One shared progress value drives the coin-to-digit change. List data stays stable (D6).
+- **Reduced motion and Calm.** Both fall back to crossfades.
 
 ## Threat model
 
@@ -283,76 +312,81 @@ Sen has no server. Everything it protects is on the phone.
 
 | # | Threat | Controls | Where | How a reviewer sees it |
 | --- | --- | --- | --- | --- |
-| T1 | Someone holding the unlocked phone | Lock on launch, `Stack.Protected`, step-up for every write, idle lock, re-lock after background | `app/_layout.tsx`, `features/auth/*` | Kill and reopen: Lock. Delete: Face ID every time |
-| T2 | Shoulder surfing | Masked by default, reveal times out (30 s to 2 min) | `features/transactions/selectors.ts` | The ring counts down, then coins |
-| T3 | App switcher snapshot | Privacy cover on `inactive` plus `enableAppSwitcherProtectionAsync` (iOS). FLAG_SECURE app-wide (Android) | `features/auth/PrivacyCover.tsx`, `features/security/useScreenGuard.ts` | Open recents |
-| T4 | Screenshots and recording | `usePreventScreenCapture` on sensitive screens, iOS 13+ and Android | `features/security/useScreenGuard.ts` | Screenshot on Review: blocked |
+| T1 | Someone holding the unlocked phone | Lock on launch, protected routes, step-up for every write, idle lock, re-lock after background | `app/_layout.tsx`, `features/auth/` | Kill and reopen: Lock. Delete: Face ID every time |
+| T2 | Shoulder surfing | Masked by default, reveal times out (30 s to 2 min) | `features/transactions/` | The ring counts down, then coins |
+| T3 | App switcher snapshot | Privacy cover on `inactive` plus `enableAppSwitcherProtectionAsync` (iOS). FLAG_SECURE app-wide in release builds (Android) | `features/security/` | Open recents |
+| T4 | Screenshots and recording | FLAG_SECURE in release (Android). `usePreventScreenCapture` on sensitive screens (iOS 13+). Off in dev builds so agents can screenshot, with a test that release always guards | `features/security/screen-guard.ts` | Screenshot in the release APK: blocked |
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
-| T6 | Tampered or corrupt store | zod on every vault read, drop and count, reset on unreadable vault | `services/vault.ts` | Dev menu "Corrupt vault" |
-| T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | Mask at the source. Logger takes event codes only and is a no-op in release. Clipboard gets the reference only. Cache cleared on lock | `selectors.ts`, `services/logger.ts` | No `console.` outside the logger |
-| T8 | Deep links that skip the lock | Guard re-evaluates on every navigation | `app/_layout.tsx` | `adb shell am start -d sen://transaction/x`: Lock |
-| T9 | Double submit | Idempotency key, in-flight ref, disabled key | `features/add/useSaveDraft.ts`, `services/vault.ts` | Tap Save twice fast: one row |
-| T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vaultKey.ts` | Inspect `AndroidManifest.xml` |
-| T11 | Bad data from the "API" | `TransactionSchema` parse at the boundary | `services/bankApi.ts` | Reviewer control "Bad data" |
+| T6 | Tampered or corrupt data | zod on every read, drop and count, reset on an unreadable database | `services/tx-repo.ts` | Reviewer control "Bad data" |
+| T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount in JS while masked. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only. Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
+| T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx` | `adb shell am start -d sen://transaction/x`: Lock |
+| T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
+| T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/db-key.ts` | Inspect `AndroidManifest.xml` |
+| T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
 
-**Out of scope, on purpose**
+**What this does not protect against.** The README says this in plain words.
 
 | Item | Why |
 | --- | --- |
-| Root or jailbreak detection | Easily patched, false positives, extra dependency |
-| Certificate pinning | No real server, no TLS to pin |
-| Server-side auth and tokens | No backend. Biometrics gate the UI. They don't prove identity to anyone |
-| Runtime hooking of `authenticateAsync` | The step-up result is a JS boolean. Without a server or a biometric-bound key it can be faked |
-| A rooted OS or malicious keyboard with root | Nothing an app can do |
+| A rooted or instrumented device | The step-up result is a JS boolean. A hooked runtime can skip it. A production app would bind the key to biometrics or verify a signed challenge on a server |
+| Amounts while revealed | They sit in JS memory, the share sheet and the screen reader tree. Masking protects the masked state |
+| Winding the device clock back | It extends a reveal. Background re-masks at once anyway |
+| Root or jailbreak detection, certificate pinning | Easily patched. No real server to pin |
 
-## Tests
+## Tests (D16)
 
-Unit and component tests with `jest-expo` and RNTL v14. Each security property has a test.
+Unit and component tests with `jest-expo` and RNTL v14.
+- **Ports.** Native modules sit behind small ports, with in-memory fakes in tests.
+- **Real SQL.** The database runs real SQL through the `node:sqlite` adapter.
+- **Coverage.** Thresholds apply to pure modules only.
 
 | Property | File |
 | --- | --- |
-| Masked view has no amounts (the masked list's JSON contains no amount digits) | `features/transactions/selectors.test.ts` |
-| Every state and event pair is legal. `BACKGROUND` during `authenticating` is ignored | `features/auth/machine.test.ts` |
-| Re-lock window (59 s stays, 61 s locks) with a fake clock | `features/auth/useAppStateLock.test.ts` |
-| Idle lock and reveal expiry | `features/auth/useIdleLock.test.ts` |
-| Lock drops the cache and the draft | `features/auth/session.test.tsx` |
-| Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/useStepUp.test.ts` |
-| Locked deep link renders Lock | `app/__tests__/guard.test.tsx` |
-| Idempotency, corrupt records dropped | `services/vault.test.ts` |
-| Key shape and storage options, missing key resets, erase and sign-out delete | `services/vaultKey.test.ts` |
-| Log schema rejects amounts | `services/activityLog.test.ts` |
-| Input limits, keypad cap | `models/draft.test.ts`, `features/add/keypadReducer.test.ts` |
-| Sanitiser | `services/sanitize.test.ts` |
-| zod issues carry no input | `models/transaction.test.ts` |
-| Bad fixture becomes `invalid_data` with a count | `services/bankApi.test.ts` |
-| Formatting: sign, split numerals, spoken amounts | `models/money.test.ts` |
+| No amount in JS while masked, totals included. Rendered tree has no digits | `features/transactions/masking.test.tsx` |
+| List `data` reference unchanged across reveal and hide | same |
+| 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
+| Every state and event pair. `BACKGROUND` during `authenticating` is ignored | `features/auth/machine.test.ts` |
+| Re-lock window (59 s stays, 61 s locks), idle lock, reveal expiry | `features/auth/locks.test.ts` |
+| Lock clears the cache, closes the database, drops the draft | `features/auth/session.test.ts` |
+| Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/use-step-up.test.ts` |
+| Locked deep link renders Lock | `app/guard.test.tsx` |
+| Sync twice and interrupted give the same table hash | `services/sync.test.ts` |
+| Search "entral" matches a JS filter on 10k rows | `services/tx-repo.test.ts` |
+| Seed is deterministic, valid, never in the future | `services/bank-api.test.ts` |
+| Missing key resets the database. Key shape and storage options | `services/db-key.test.ts` |
+| Log schema rejects amounts | `features/security/activity-log.test.ts` |
+| Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `services/sanitize.test.ts` |
+| Money: sign, split numerals, spoken amounts | `models/money.test.ts` |
+| Release config always guards screens | `features/security/screen-guard.test.ts` |
+| Selector and query benches on 10k rows within budget | `*.bench.test.ts` |
 
 ## Builds and delivery
 
-**Development.** Develop on WSL2 with no Mac.
-- Android dev builds run locally with `npx expo run:android`, using the SDK at `~/Android/Sdk` and JDK 17.
-- Builds install on a phone over Tailscale.
-- `ANDROID_HOME` and `adb` on `PATH` still need setting up.
+**Development (D17).**
+- **Platform.** WSL2 with no Mac.
+- **Build.** Android dev builds with `npx expo run:android`, using the SDK at `~/Android/Sdk` and JDK 17.
+- **Device.** The Windows emulator (`Sen_API36`), reached from WSL through one shared adb server.
+- **Driver (D18).** agent-device and raw adb.
+- **Real phone.** For final performance numbers and the demo.
 
 **Reviewers.**
 
 | Route | Status |
 | --- | --- |
-| Android APK from EAS Build (`preview` profile), linked from the README and a GitHub release | Primary. Real fingerprint, no account, no Metro |
+| Android APK from EAS Build (`preview` profile), linked from the README and a GitHub release | Primary |
 | Run from source on an Android emulator | Secondary |
-| iOS simulator build from EAS | Bonus for reviewers with a Mac. Needs no Apple account (V). Building it from WSL is untested, so try it early |
-| iOS device or TestFlight | No. Needs a paid Apple account |
+| iOS simulator build from EAS | Bonus for reviewers with a Mac. Untested by the author |
 | Expo Go | Not supported |
 
 **EAS.**
-- The free plan gives 15 Android and 15 iOS builds a month in a slow queue.
+- The free plan gives 15 Android builds a month.
 - Build on tags only.
-- Keep `npx expo install expo@^58 --fix` ready in case SDK 58 ships before submission.
 
 **Biometrics on emulators.**
-- **Android.** Set a PIN, enrol a fingerprint, then run `adb -e emu finger touch 1`.
-- **iOS Simulator.** Features › Face ID › Enrolled, then Matching or Non-matching.
+- **Android.** Set a PIN, enrol a fingerprint, then `adb -e emu finger touch 1`.
+- **iOS Simulator.** Features › Face ID › Enrolled.
 
-**CI.**
-- GitHub Actions on every push: `tsc --noEmit`, `expo lint` and `jest --ci`, on Node 22.13 or later.
-- An EAS Android build on a tag, using `expo/expo-github-action@v8` and `EXPO_TOKEN`.
+**CI (D21).**
+- **Every push.** GitHub Actions runs `tsc --noEmit`, `expo lint` and `jest --ci` on Node 22.13 or later.
+- **Pre-commit.** A hook in `.githooks/` runs typecheck and related tests.
+- **Tags.** An EAS Android build.
