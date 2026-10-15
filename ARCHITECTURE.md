@@ -153,6 +153,8 @@ Money output:
 - **One rule.** Inside `work`, use only `tx`. A call on the outer handle waits for `work` and never returns. A `tx` used after its scope rejects. Services take `db` as a parameter and never hold one at module scope.
 - **Rows.** `all` returns untrusted `SqlRow`s. `parseRows(rows, schema)` in `services/db/rows.ts` maps snake_case columns to the model shape (`account_*` folds into `account`) and parses each row, returning `{ rows, skipped }`. A masked query that selects `amount_minor` fails the strict `MaskedRowSchema`, so the bug is loud.
 - **Tests.** `openTestDb()` from `services/db/testing/` gives a fresh, migrated `:memory:` database. `createNodeDb()` gives one at version 0.
+- **The device adapter.** `openDb(key)` in `services/db/expo.ts` opens `sen.db`, runs `PRAGMA key = "x'<hex>'"` as the first statement, proves the key with one read (`DbUnreadableError` on failure) and migrates. `DbKey` is a zod brand that only accepts 64 hex characters, because the key is the one string interpolated into SQL.
+- **Never `withExclusiveTransactionAsync`.** It opens a second native connection without the SQLCipher key. `db.transaction` gives the same isolation on the one keyed connection. Lint bans the call.
 
 **Schema v1.**
 
