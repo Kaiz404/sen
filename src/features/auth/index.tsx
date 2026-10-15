@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { authenticateAsync } from 'expo-local-authentication';
-import { type ReactNode, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, useRef, useState, useSyncExternalStore } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -31,15 +31,22 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
 
 export function LockScreen(): ReactNode {
   const [failed, setFailed] = useState(false);
+  const isAuthenticatingRef = useRef(false);
 
   const unlock = async () => {
-    const result = await authenticateAsync({
-      promptMessage: 'Unlock Sen',
-      biometricsSecurityLevel: 'strong',
-      disableDeviceFallback: false,
-    });
-    if (result.success) setGate('unlocked');
-    else setFailed(result.error === 'authentication_failed');
+    if (isAuthenticatingRef.current) return;
+    isAuthenticatingRef.current = true;
+    try {
+      const result = await authenticateAsync({
+        promptMessage: 'Unlock Sen',
+        biometricsSecurityLevel: 'strong',
+        disableDeviceFallback: false,
+      });
+      if (result.success) setGate('unlocked');
+      else setFailed(result.error === 'authentication_failed');
+    } finally {
+      isAuthenticatingRef.current = false;
+    }
   };
 
   return (
