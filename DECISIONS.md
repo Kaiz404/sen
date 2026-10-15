@@ -32,15 +32,15 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D15 | Errors | Tagged unions, thrown only at the TanStack seam |
 | D16 | Tests | Pure table tests plus screen tests through ports, real SQL in Jest |
 | D17 | Device loop | Windows emulator bridged to WSL |
-| D18 | Device driver | agent-device plus raw adb. No biometric bypass |
+| D18 | Device driver | Maestro plus raw adb. No biometric bypass |
 | D19 | Inner loop | `npm run check` plus a dev-only states gallery. No Expo web |
 | D20 | Performance proof | Jest benches in CI, Flashlight at milestones |
 | D21 | Git and CI | `main` only, a pre-commit hook and GitHub Actions |
 | D22 | Build order | Serial scaffold and contracts, then parallel lanes |
-| D23 | Sen's motion model | Named channels, moments as data compiled to Reanimated, a pure sampler as oracle |
+| D23 | Sen's motion model | Named channels, moments as data compiled to Reanimated |
 | D24 | Motion levels | A live policy hook. Calm and Off compiled from the data |
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
-| D26 | Motion verification | Jest with the svg mock, a dev motion lab, owner-approved goldens, frame checks |
+| D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 
 ---
 
@@ -285,20 +285,24 @@ The implementation is D23 to D26 and ARCHITECTURE.md › Motion.
 
 **Setup.** One adb server for WSL and Windows, and the emulator console token copied into WSL.
 
-## D18. Device driver: agent-device plus raw adb
+## D18. Device driver: Maestro plus raw adb
 
 **Compared.**
 - agent-device.
-- Raw adb only.
 - Maestro.
+- Raw adb only.
+- Detox.
 - argent.
 
 **Why.**
-- **Built for agents.** agent-device taps by the labels a screen reader announces, so accessibility work doubles as testability.
+- **The common choice.** Maestro is Expo's documented device-testing path, and most large open-source RN apps surveyed use it: Bluesky, React Navigation, Ignite, Reanimated Carousel and Mattermost.
+- **What it gives agents.** Flows, `waitForAnimationToEnd`, screenshot baselines and screen recording in one tool.
+- **Rejected options.** agent-device is newer and less known, and its contact-sheet command is macOS-only. Detox needs a test build and native setup. argent isn't proven on Linux.
 - **Raw adb.** It covers fingerprint taps, deep links and logs.
-- **Rejected options.** Maestro's YAML would read as the E2E suite we ruled out. argent isn't proven on Linux.
 - **Real prompt.** Agents use the real biometric prompt. A bypass is the first thing a security reviewer looks for.
-- **Screen guard.** Off in dev builds and forced on in release, so agent screenshots aren't black.
+- **Screen guard.** It is off in dev builds and forced on in release, so screenshots aren't black.
+
+**Note.** This replaces the earlier "no Maestro" rule. The flows in `.maestro/` are how agents verify their work. They are not a shipped E2E suite, and the README says so.
 
 ## D19. Inner loop: `npm run check` plus a states gallery
 
@@ -372,15 +376,13 @@ The phases are in [PLAN.md](PLAN.md).
 - Reanimated CSS animations.
 
 **Why.**
-- **Data compiled to Reanimated.**
-  - A pure sampler gives the same numbers, and it matched Reanimated to two decimals in the spike.
-  - That one function is the test oracle, the lab's freeze, and the parity check against the design canvas.
-  - Adding a moment means adding data, not new animation code.
-- **Per channel, not one clock.** Each SVG part only redraws when its own channel moves. One clock would wake every part on every frame.
+- **Data is quicker to change.** Moments become data compiled into `withSequence`, `withTiming` and `withSpring`. Adding or tuning a moment means editing a table, not rewriting worklets.
+- **Per channel.** Each SVG part only redraws when its own channel moves. One clock would wake every part on every frame.
 - **No CSS in the rig.** CSS animations can't move SVG groups, ignore reduced motion, and can't be seen in Jest.
-- **SVG transforms.** These use a worklet-computed `matrix`, because the native SVG components accept nothing else (V).
+- **SVG transforms.** They use a worklet-computed `matrix`, because the native SVG components accept nothing else (V).
+- **Tests.** They assert literal values from DESIGN.md, not the compiler's own output (D26).
 
-**Cost.** A compiler of about 80 lines and a canvas import script.
+**Cost.** A compiler of about 80 lines.
 
 **Fallback.** If `matrix` doesn't draw on a device (day-1 spike), the face slide uses an RN `transform` array.
 
@@ -408,16 +410,17 @@ The phases are in [PLAN.md](PLAN.md).
 - **Key presses.** They use Gesture Handler's `Pressable`, because RN's `Pressable` can drop presses on Android's fast animation path (V).
 - **Rows.** No row holds animation state, so recycling stays safe.
 
-## D26. Motion verification
+## D26. Motion verification: the industry pattern
 
 **Compared.**
-- Jest only.
-- Jest plus device video.
-- Jest plus a frozen motion lab with approved goldens, plus video frame checks.
+- Our first plan: a time-freezing motion lab, goldens of moments mid-animation, video frames diffed with ffmpeg, and canvas parity tests.
+- What Reanimated's docs and 15 large open-source RN apps do, among them Expensify, Bluesky, Rainbow, Mattermost, React Navigation, FlashList and Reanimated itself.
 
-**Why.**
-- **Jest proves the numbers.** It needs one SVG mock, without which SVG motion is invisible to tests (V).
-- **The lab proves the look.** It freezes any moment at any time, so a screenshot is exact and repeatable.
-- **Video proves it moves in order.** Frames are pulled with `ffmpeg-static` and checked, with no system install (V).
-- **The owner approves.** Agents never approve their own goldens.
-- **Smoothness.** The gate is judged on release builds. Absolute FPS is trusted only on the real phone.
+**Why the conventional path.**
+- **Mid-animation pixels.** No surveyed app pixel-tests frames mid-animation, freezes a timeline or gates animation FPS in CI. Those parts were niche, so they are dropped.
+- **Jest.** The common ground is `setUpTests` with fake timers, and `toHaveAnimatedStyle` and `toHaveAnimatedProps` with literal values at chosen times. Motion maths goes in pure functions with literal expectations, as in Reanimated Carousel.
+- **No self-agreeing oracle.** Tests copy their numbers from DESIGN.md once instead of comparing the compiler with its own sampler.
+- **Device.** Maestro flows wait with `waitForAnimationToEnd`. Maestro `assertScreenshot` checks settled screens and poses against baselines the owner approves. This is the same baseline workflow FlashList and Chromatic use.
+- **Motion feel and smoothness.** Judged by eye. Maestro records video for the owner, and the Perf Monitor runs on a release build on the phone. Flashlight over a Maestro flow is optional, as at Bluesky and Rainbow.
+
+**Watch out.** Keep the emulator's animation scales on. Reanimated reads a zero transition scale as reduced motion, so every moment would jump to its end.

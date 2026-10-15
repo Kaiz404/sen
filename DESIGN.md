@@ -128,7 +128,7 @@ References: Phantom's onboarding (tilted mid-motion character, flat sparkle acce
 - Body transforms run on nested `Animated.View` wrappers, outside in: `mv` (translate) › `rl` (rotate about the coin centre) › `sq` (rotate, skewX and scale about the contact point (10, 278)) › `sp` (scaleX for the edge spin). Pivots use a static `transformOrigin`.
 - Face parts are SVG `G` elements driven by `useAnimatedProps`, transformed with a worklet-computed `matrix`. Keep the number of SVG nodes changing per frame near 12, and measure it.
 - Wrap `lk` in a static `G` with `clipPath` (the face circle) so the clip stays put while the face slides.
-- The implementation model (channels, moments as data, the sampler) is in ARCHITECTURE.md › Motion.
+- The implementation model (channels, moments as data) is in ARCHITECTURE.md › Motion.
 
 ```ts
 const EASE = {

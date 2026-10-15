@@ -26,7 +26,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 | Features | Everything in README "What it does", including manual add and delete, and the security layer |
 | Edit | No editing transactions. Delete and add again |
 | Security | Step-up biometrics for every write, mask at the source, idle and background lock |
-| Tests | Unit and component tests only (jest-expo, RNTL v14). No Maestro, no E2E |
+| Tests | Unit and component tests are the test suite (jest-expo, RNTL v14). Maestro flows exist only for agents to verify their work on the emulator. They are not a shipped E2E suite |
 | Builds | Android dev builds from WSL onto the Windows emulator. EAS only for the reviewer APK, built on tags |
 | Delivery | Android APK first. Source second. iOS simulator build as a bonus. No Expo Go |
 
@@ -51,10 +51,10 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 - **Styling.** Use semantic tokens from the Unistyles theme in `src/theme/`, never raw hex in screens. Touch targets are at least 44 pt.
 - **Motion.**
   - Reanimated on the UI thread.
-  - Sen's motion is data. Add or change a moment in `src/features/sen/moments/`, never as a hand-written worklet. The sampler is the test oracle.
+  - Sen's motion is data. Add or change a moment in `src/features/sen/moments/`, never as a hand-written worklet.
   - Read the motion level only through `useMotionPolicy()`, never `useReducedMotion()`. Informational timers such as the countdown ring use `ReduceMotion.Never`.
   - Only one Sen animates at a time, through the MotionDirector. No Sen inside a list row. No animation state in list rows.
-  - Prove motion with `npm run test:motion`, then `motion:shots`. Never approve your own goldens.
+  - Prove motion with `npm run test:motion` (literal values at start, midpoint and end), then the Maestro screenshot flow on settled screens. Never approve your own screenshot baselines. Keep the emulator's animation scales on.
 - **Versions.**
   - Install Expo packages with `npx expo install`.
   - Keep the bundled Reanimated (4.5.1), Worklets (0.10.1) and Gesture Handler (~2.32).

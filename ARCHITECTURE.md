@@ -35,7 +35,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | Formatting | `Intl` on Hermes | | Add the +/− sign by hand. Money is integer sen |
 | Tests | `jest-expo` + `@testing-library/react-native` | ~57.0.6 / 14.1.x | RNTL v14 is async and needs Node ≥ 22.13 |
 | Lint | ESLint 9 flat + `eslint-config-expo` + Prettier 3 | | Layer zones, no-cycle, no-console, raw-hex ban, `.value` ban, `useReducedMotion` ban, `runOnJS` ban, `'cubic-bezier('` string ban |
-| Motion evidence | `ffmpeg-static`, `pixelmatch`, `pngjs` (dev) | 5.3 / 8 / 7 | Frame extraction and image diffs with no system install (V) |
+| Device checks | Maestro CLI | 2.11.x | Flows, `assertScreenshot` baselines and `startRecording` videos for agent verification. Not a shipped E2E suite |
 
 **Skipped on purpose.** The reasons are in DECISIONS.md.
 
@@ -49,7 +49,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | Skia, Rive, Lottie | D10 |
 | `react-native-biometrics`, `react-native-keychain` | Unmaintained, or needs a backend to mean anything |
 | Sentry, Storybook, i18n | No account to show, costly to set up, one locale |
-| Maestro, E2E suite, Expo web | D18, D19 |
+| agent-device, Detox, Storybook, Expo web | D18, D19 |
 | Expo Go | Can't run SQLCipher or MMKV. Face ID doesn't work in it on iOS |
 
 ## Layers
@@ -58,7 +58,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
  ┌──────────── src/app/ (routes, thin) ──────────────────────────┐
  │ _layout.tsx: Stack.Protected guard={unlocked}                 │
  │ lock  welcome  (index)  transaction/[id]  add/  settings/     │
- │ (dev)/states  (dev)/motion   (guard={__DEV__})                │
+ │ (dev)/states   (guard={__DEV__})                              │
  └───────────────▲───────────────────────────────────────────────┘
                  │ view models. amount is null while masked
  ┌───────────────┴──────── src/features/ ────────────────────────┐
@@ -301,7 +301,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 
 ## Motion
 
-Sen and every animated component follow one model. Motion is data, a pure sampler is the test oracle, and a dev-only lab freezes any moment at any time for a screenshot. The decisions are D23 to D26 in DECISIONS.md. The patterns below were proven in three Jest spikes on SDK 57 (Reanimated 4.5.1, worklets 0.10.1, react-native-svg 15.15.4, RNTL 14.1) unless marked I.
+Sen and every animated component follow one model. Motion is data, compiled to Reanimated, and checked the way Reanimated's docs and large open-source apps check it. The decisions are D23 to D26 in DECISIONS.md. The patterns below were proven in three Jest spikes on SDK 57 (Reanimated 4.5.1, worklets 0.10.1, react-native-svg 15.15.4, RNTL 14.1) unless marked I.
 
 ### Sen's rig
 
@@ -338,17 +338,15 @@ type Moment = { id: MomentId; priority: 0 | 1 | 2 | 3; from: PoseId; to: PoseId;
 ```
 
 - **Compiler.** `compileTrack` turns a track into `withSequence`, `withDelay`, `withTiming` and `withSpring` on that channel's shared value.
-- **Sampler.** `sampleTrack(track, ms)` is a pure function that returns the same number. It matched Reanimated to two decimals for timing and springs in the spike.
-- **One oracle, three jobs.** The sampler is the test oracle, the lab's seek, and the parity check against the design canvas.
+- **Sampler.** `sampleTrack(track, ms)` is a pure function that returns the value at a time. The pose gallery uses it to draw settled poses. Tests don't use it as their oracle. They assert literal values copied once from DESIGN.md, so a wrong spec can't agree with itself.
 - **Generated tracks.** The Euler wobble and the edge spin come from generators (`eulerSteps`, `edgeSpin`).
 - **Marks.** Haptics and accents fire from a per-rig clock shared value through `scheduleOnRN`. They stay in step with the UI thread. `runOnJS` is deprecated.
 - **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53` and outQ `.25,.46,.45,.94`. The board and the app then draw the same curve.
-- **Canvas import.** `scripts/import-canvas-moment.mjs` turns a moment's keyframes on the design canvas into a draft `Track[]`. A parity test checks the sampler against those keyframes within 0.5 units.
 - **No CSS animation in the rig.** Reanimated CSS animations can't drive SVG group transforms, ignore reduced motion, and can't be seen in Jest. Ambient loops (blink, peek, breathe) use the same compiler with `withRepeat`.
 
 ### MotionDirector
 
-A pure reducer in a Zustand store. It never touches shared values. It emits commands that a small runner applies through each rig's handle (`play`, `cancel`, `seek`).
+A pure reducer in a Zustand store. It never touches shared values. It emits commands that a small runner applies through each rig's handle (`play`, `cancel`).
 
 ```ts
 type DirectorEvent = register | unregister | { type: 'request'; sen; moment } | { type: 'finished'; token }
@@ -397,7 +395,15 @@ Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier
 
 ### Proving motion works
 
-**Jest setup** (V, spike).
+This follows what Reanimated's docs and large open-source apps actually do. A survey covered 15 projects, among them Expensify, Bluesky, Rainbow, Mattermost, React Navigation, FlashList and Reanimated itself.
+- **Jest.** It checks values at chosen times.
+- **Pure functions.** Motion maths lives in plain functions tested with literal numbers.
+- **Maestro.** Flows and screenshots cover settled screens.
+- **By eye.** Motion quality and smoothness are judged on a release build on a real phone.
+
+No surveyed app pixel-tests frames mid-animation or gates animation FPS in CI, so Sen doesn't either.
+
+**Jest setup** (V, spike, and the same as Reanimated's own tests).
 
 ```js
 // jest.config.js: preset 'jest-expo/android', resolver 'react-native-worklets/jest/resolver',
@@ -407,34 +413,27 @@ import { setUpTests } from 'react-native-reanimated';
 setUpTests();
 jest.mock('react-native-svg', () => {
   const svg = jest.requireActual('react-native-reanimated/src/mock-svg');
-  return { ...svg, default: svg.Svg };          // without this, SVG animated props never change in tests
+  return { ...svg, default: svg.Svg };          // Reanimated's documented SVG mock, plus a default export
 });
 ```
 
-- **Resolver.** Reanimated 4.5.1 doesn't ship the `jest/resolver` its current docs name. That file arrives in 4.7.
-- **Timers.** Use `jest.useFakeTimers()` with `jest.advanceTimersByTime`. The older timer helpers are deprecated.
+- **Resolver.** Reanimated 4.5.1 doesn't ship the `jest/resolver` its current docs name. That file arrives in 4.7, which belongs to SDK 58.
+- **Timers.** Use `jest.useFakeTimers()` with `jest.advanceTimersByTime` or `jest.runAllTimers()`. The older timer helpers are deprecated.
 - **Async APIs.** RNTL 14's `render` and `act` are async.
-- **Naming.** Don't name a file `spec.ts`, or Jest runs it as a test.
 
-| Layer | What | Command |
+| Layer | What it proves | How |
 | --- | --- | --- |
-| Pure | Pose invariants, `sampleTrack`, generators, director table, Calm and Off forms, countdown and reveal maths | `npm run test:motion` |
-| Parity | Sampler against the canvas keyframes | same |
-| Component | Compiled moment equals sampler at key times. Static and settled rig match. Two rigs, one animates. Calm leaves the body still | same |
-| Device, still | Lab freeze at each key time, compared with an owner-approved golden (1% pixel threshold) | `npm run motion:shots <moment>` |
-| Device, motion | Lab play, `adb shell screenrecord`, frames extracted with `ffmpeg-static`, then a "moved" check between key times | `npm run motion:capture <moment>` then `motion:frames` |
-| Device, smoothness | Release build, five plays. Janky frames 5% or less (`agent-device perf frames`). No React commits during a moment. 55 FPS judged on the real phone only | `motion:capture` with gfxinfo |
+| Pure functions | Poses are valid (one mouth, one eye state). Wobble amplitudes, countdown and reveal maths, `digitStyle`, `ringOffset`, Calm and Off forms, the director's priority table | Plain Jest with literal expected numbers. This is the pattern Reanimated Carousel uses |
+| Component, values at time t | For each interaction, the animated style or SVG prop at the start, one midpoint and the end. Examples: Unlock's face slide at 0, 160 and 1350 ms; digit column 0 at 100 ms; a key at `translateY: 4` on press | `toHaveAnimatedStyle` and `toHaveAnimatedProps` with literal values, written once from DESIGN.md's tables. This is the pattern in Reanimated's docs, Mattermost and Paper |
+| Component, behaviour | Only one Sen animates. Calm leaves the body still. Rows don't re-render during a reveal. The list's data survives reveal | Jest render counters and `toHaveAnimatedStyle` |
+| Device, flows | Unlock, reveal, add, delete and settings work end to end on the emulator | Maestro flows in `.maestro/`, with `waitForAnimationToEnd` before each assertion. Fingerprint through `adb -e emu finger touch 1` |
+| Device, settled screenshots | Every pose and screen state matches its owner-approved baseline | Maestro `takeScreenshot` and `assertScreenshot`, over the dev states route (`sen://dev/states`) and the pose gallery (`sen://dev/states?screen=sen&pose=worried&size=200`). Baselines are approved by the owner, one set per emulator |
+| Device, motion feel | Each moment looks right in motion | Maestro `startRecording` and `stopRecording` produce an MP4 for the owner to watch. It is evidence, not an assertion |
+| Smoothness | No visible jank on a release build | The Perf Monitor on the owner's phone, release build. Optionally Flashlight running a Maestro flow, as Bluesky and Rainbow do |
 
-**Motion lab.** `src/app/(dev)/motion.tsx`, guarded by `__DEV__`.
-- **Freeze.** `sen://dev/motion?moment=unlock&t=600` shows the moment at 600 ms, in its real host scene, with a time label.
-- **Play.** `play=1` plays the moment live.
-- **Modes and poses.** `mode=calm` and `pose=worried&size=32` cover the other cases.
-- **Clean shots.** Ambient blinks and the idle scheduler pause in the lab, so goldens are clean.
+**Emulator animation scales.** Leave the emulator's animation scales on. Android's usual advice is to turn them off for test stability. But Reanimated 4.5.1 reads a transition scale of 0 as reduced motion, which would make every moment jump to its end (V, source).
 
-**Approval.**
-- Agents never approve their own goldens. `motion:approve` runs only after the owner has seen the contact sheet.
-- A new moment with no golden posts its sheet and stops.
-- Goldens are stored per emulator.
+**Approval.** Agents never approve their own screenshot baselines. A new screen or pose with no baseline gets its screenshot posted for the owner, and the agent stops.
 
 **Open risks, each with a 20-minute spike in PLAN.md.**
 - Does the SVG `matrix` prop draw on a device? The fallback is an RN `transform` array for the face slide.
@@ -502,7 +501,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 - **Platform.** WSL2 with no Mac.
 - **Build.** Android dev builds with `npx expo run:android`, using the SDK at `~/Android/Sdk` and JDK 17.
 - **Device.** The Windows emulator (`Sen_API36`), reached from WSL through one shared adb server.
-- **Driver (D18).** agent-device and raw adb.
+- **Driver (D18).** Maestro, plus raw adb for fingerprint taps, deep links and logs.
 - **Real phone.** For final performance numbers and the demo.
 
 **Reviewers.**

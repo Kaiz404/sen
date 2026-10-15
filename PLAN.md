@@ -15,11 +15,11 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 | --- | --- | --- |
 | Fast gate | `npm run check` (`tsc --noEmit`, `expo lint`, `jest --ci`) | Before every commit. The pre-commit hook runs typecheck and related tests |
 | One screen state | `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
-| A flow | `npx agent-device@0.21.28 snapshot -i`, `press`, `screenshot`, plus `adb -e emu finger touch 1` for biometrics | After any flow change |
+| A flow | `maestro test .maestro/<flow>.yaml`, with `adb -e emu finger touch 1` for biometrics | After any flow change |
 | Release perf | `npx expo run:android --variant release`, then `flashlight test` with `scripts/scroll.sh` | Phase 3 and phase 8 |
-| Motion logic | `npm run test:motion` (pure tables, sampler parity, compiled moment equals sampler) | Any motion change |
-| Motion stills | `npm run motion:shots <moment>`: freezes the lab at each key time and compares with the owner-approved golden | Any Sen or animated component change |
-| Motion video | `npm run motion:capture <moment> [calm]`, then `motion:frames` and a `moved` check | After stills pass |
+| Motion values | `npm run test:motion`: pure maths tables, plus `toHaveAnimatedStyle` and `toHaveAnimatedProps` at start, midpoint and end with literal values from DESIGN.md | Any motion change |
+| Settled screenshots | `maestro test .maestro/screenshots.yaml`: `assertScreenshot` on each states-route screen and pose against the owner-approved baselines | Any UI or Sen change |
+| Motion video | `maestro test .maestro/record-<moment>.yaml`: `startRecording` for the owner to watch | After the screenshots pass |
 
 Screenshots go in `shots/`, which is git-ignored. Every perf number gets its seed size and build type written next to it.
 
@@ -33,16 +33,16 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
   - [ ] TanStack Query, zod, zustand, react-native-unistyles, react-native-nitro-modules, react-native-mmkv 4.3.x.
   - [ ] `@shopify/flash-list@2.3.3`, excluded from the install check.
   - [ ] jest-expo, RNTL 14, test-renderer.
-  - [ ] Dev tools for motion evidence: `ffmpeg-static`, `pixelmatch`, `pngjs`.
+  - [ ] Maestro CLI 2.11.x, installed per user. Its flows live in `.maestro/`.
 - [ ] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, and bans on raw hex, `.value`, `useReducedMotion`, `runOnJS` and `'cubic-bezier('` strings. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
 - [ ] Jest exactly as in ARCHITECTURE.md › Proving motion works: `jest-expo/android`, the worklets resolver, the React Compiler on, and the react-native-svg mock.
-- [ ] Motion scripts in `scripts/motion/` (`capture.sh`, `frames.mjs`, `compare.mjs`, `approve.mjs`) and their npm scripts.
+- [ ] A first Maestro flow that opens the app, passes Lock with `finger touch` and lands on History. Leave the emulator's animation scales on.
 - [ ] `npm run check` script, a `.githooks/pre-commit` hook set by `prepare`, and a GitHub Actions workflow for push.
 - [ ] Device bridge. One adb server shared by WSL and Windows, the emulator console token copied into WSL, the `Sen_API36` AVD created with a PIN and an enrolled fingerprint, then snapshotted.
 - [ ] Spike D1. SQLCipher links: `PRAGMA cipher_version` returns a value, and the database file doesn't start with `SQLite format 3`.
 - [ ] Spike D8. Unistyles runs with Reanimated and the compiler, and a theme switch re-renders nothing.
 - [ ] Spike D16. `renderRouter` works under RNTL 14.
-- [ ] Spike D23. An `AnimatedG` driven by a worklet `matrix` draws on the emulator: the face slides and stays clipped in a frozen screenshot. If not, the face slide uses an RN `transform` array.
+- [ ] Spike D23. An `AnimatedG` driven by a worklet `matrix` draws on the emulator: a test screen with the face slid sideways shows it moved and still clipped. If not, the face slide uses an RN `transform` array.
 - [ ] One motion test passes: a `withTiming` advanced to its midpoint, and one SVG animated prop asserted with `toHaveAnimatedProps`.
 
 **Verify, unit.** `npm run check` is green on the empty app. CI is green on GitHub.
@@ -68,10 +68,10 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 **Lane 2a. Components and the states gallery.** Owns `src/components/`, `src/app/(dev)/`.
 - [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, Countdown, and `Amount` (coins for `null`, digits otherwise).
-- [ ] `SenStatic` for every pose and size tier, plus the motion lab route `(dev)/motion` with `?pose=` and `?size=`.
+- [ ] `SenStatic` for every pose and size tier, shown on the states route (`?screen=sen&pose=&size=`).
 - [ ] The gallery renders any screen state from fixtures.
 - **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`. Countdown maths and `ringOffset` tables.
-- **Device.** Gallery screenshots of every component in light and dark. Lab screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as goldens.
+- **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [ ] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert.
@@ -112,21 +112,21 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [ ] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes.
 - [ ] Each forced fault renders its designed state.
 
-**Lane 4d. Sen motion.** Owns `src/features/sen/` and `scripts/import-canvas-moment.mjs`. Build in this order, each step green before the next.
-- [ ] `SenRig`: four body Views plus animated SVG nodes, one channel per node, `usePose` with a parity test against `SenStatic`.
-- [ ] `sampleTrack`, `compileTrack`, `eulerSteps`, `edgeSpin`. Test: compiled equals sampled at every key time.
+**Lane 4d. Sen motion.** Owns `src/features/sen/`. Build in this order, each step green before the next.
+- [ ] `SenRig`: four body Views plus animated SVG nodes, one channel per node, and `usePose`. A test checks that a settled rig shows the same values as `SenStatic`.
+- [ ] `compileTrack`, `eulerSteps`, `edgeSpin`. Tests assert literal values (for example, wobble amplitudes 11, 7.92, 5.70).
 - [ ] Director reducer as a table test, then its store with gates and the idle scheduler, then the two-rigs test (only one animates).
-- [ ] Import Unlock, Reveal and Re-mask from the canvas with the script. Parity tests against the board keyframes. Calm and Off forms.
+- [ ] Unlock, Reveal and Re-mask as data from DESIGN.md's tables. `toHaveAnimatedStyle` and `toHaveAnimatedProps` at start, midpoint and end with literal values. Calm and Off forms.
 - [ ] The remaining moments, P3 down to P0, then idle and ambient loops.
 - [ ] Turn on `ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS`, rebuild, and run the smoothness gate on a looped Unlock.
-- **Device.** `motion:shots` for each moment (owner approves the first goldens), then `motion:capture` in Full and Calm. In Calm the body region must not move.
-- **Perf.** Release build, 5 plays of Unlock. Janky frames 5% or less, and no React commits during the moment.
+- **Device.** A Maestro flow per moment that triggers it, waits with `waitForAnimationToEnd`, then asserts the settled screen. A recording of each moment in Full and Calm goes to the owner to watch.
+- **Perf.** Release build on the owner's phone with the Perf Monitor while Unlock and Reveal play. A Jest render counter shows no React commits during a moment.
 
 **Lane 4e. Pull-to-refresh gesture (optional).** Owns `src/features/transactions/pull/`.
 - [ ] Spike R1 first. A `Gesture.Pan` with `Gesture.Native` over FlashList pulls on `adb shell input swipe`, fires the threshold once, and five normal scrolls still scroll. If it fails, keep `RefreshControl` (cut 3).
 
 **Verify, unit.** Each lane's reducer and component tests pass.
-**Verify, device.** One agent-device flow per lane, saved as screenshots.
+**Verify, device.** One Maestro flow per lane, with screenshots.
 **Verify, perf.** Lane 4d has its own gate above. Phase 8 reruns phase 3's perf.
 
 ## Phase 5. Security extras (one agent)
