@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { Stack } from 'expo-router';
-import { renderRouter, screen } from 'expo-router/testing-library';
+import { router, Stack } from 'expo-router';
+import { act, renderRouter, screen } from 'expo-router/testing-library';
 import type { ReactNode } from 'react';
 import { Text } from 'react-native';
 
@@ -118,4 +118,14 @@ test('an unknown link while unlocked goes home', async () => {
   await renderRouter(routes, { initialUrl: '/nowhere' });
 
   expect(await screen.findByText('screen:index')).toBeOnTheScreen();
+});
+
+test('navigating to a protected route while locked stays on Lock', async () => {
+  mockGate = 'locked';
+  await renderRouter(routes, { initialUrl: '/' });
+
+  await act(async () => router.push('/transaction/tx-1'));
+
+  expect(screen.getByText('screen:lock')).toBeOnTheScreen();
+  expect(screen.queryByText(/Unmatched|Sitemap/)).not.toBeOnTheScreen();
 });

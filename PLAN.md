@@ -65,7 +65,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [x] Lint keeps `node:sqlite` and `db/testing` in test files and bans `withExclusiveTransactionAsync`. Evidence: each rule fired on a temporary bad import, then the file was removed.
 
 **Verify, unit.** Money, schema and migration tests pass on real SQL in Jest. Every pose has exactly one mouth and one eye state. `resolveMotion` table passes.
-**Verify, device.** Every stub route opens by deep link. Locked deep links land on Lock. `sen://dev/states?screen=db` shows a `cipher_version`, `user_version 1` and `day 2026-10-16`.
+**Verify, device.** Every stub route opens by deep link. Locked deep links land on Lock. `sen://dev/states?screen=db` shows a `cipher_version`, `user_version 1` and `day 2026-10-16`. Passed on 2026-10-16 on `Sen_API36`: 13 protected and unknown links while locked showed Lock, every stub route opened once unlocked, a locked link was not replayed after unlock (History), and the smoke read `cipher_version 4.7.0 community`, `user_version 1`, `day 2026-10-16`.
 **Verify, perf.** None in this phase.
 
 ## Phase 2. Foundations (three parallel lanes)

@@ -78,6 +78,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
   - `scripts/emulator.sh` starts the one adb server on Windows and the `Sen_API36` emulator, waits for boot and enters the PIN. It is safe to rerun. It boots cold, because a snapshot restore once left the emulator offline.
   - `. scripts/device-env.sh` points WSL's adb at that server and Metro at `localhost`.
   - `npm start` runs Metro on `localhost`, which the emulator reaches through the `adb reverse` that `emulator.sh` sets.
+  - After route files are added or moved, restart Metro with `npx expo start --localhost --clear`. A long-running Metro once kept serving the old route tree, and every new deep link showed "Unmatched Route".
   - `scripts/unlock-flow.sh` runs the Maestro unlock flow against a running Metro. Maestro runs from WSL as is.
   - The AVD has PIN `1111` and an enrolled fingerprint. Maestro's driver won't start until the PIN has been entered once after boot.
 - Dev builds install on a phone over Tailscale.
