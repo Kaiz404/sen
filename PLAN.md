@@ -27,24 +27,24 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 **Owns.** `package.json`, the lockfile, every config file, `.github/`, `.githooks/`, `scripts/`.
 
-- [ ] Scaffold with `npx create-expo-app --template default@sdk-57` into the repo root. Keep the React Compiler and typed routes on.
-- [ ] Install every dependency the whole app needs, using `npx expo install`, so no later lane edits `package.json`.
-  - [ ] expo-sqlite with `useSQLCipher`, expo-secure-store, expo-crypto, expo-local-authentication, expo-screen-capture, expo-network, expo-haptics, expo-font, react-native-svg, Reanimated, gesture-handler.
-  - [ ] TanStack Query, zod, zustand, react-native-unistyles, react-native-nitro-modules, react-native-mmkv 4.3.x.
-  - [ ] `@shopify/flash-list@2.3.3`, excluded from the install check.
-  - [ ] jest-expo, RNTL 14, test-renderer.
-  - [ ] Maestro CLI 2.11.x, installed per user. Its flows live in `.maestro/`.
-- [ ] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, and bans on raw hex, `.value`, `useReducedMotion`, `runOnJS` and `'cubic-bezier('` strings. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
-- [ ] Jest exactly as in ARCHITECTURE.md › Proving motion works: `jest-expo/android`, the worklets resolver, the React Compiler on, and the react-native-svg mock.
-- [ ] Maestro from WSL. One adb server on Windows (`adb -a -P 5037 nodaemon server`), WSL pointed at it with `ADB_SERVER_SOCKET=tcp:127.0.0.1:5037` (mirrored networking), and `maestro test` run from WSL, adding `--host 127.0.0.1` if needed. Fallback: install Maestro natively on Windows and run the same `.maestro/` flows.
-- [ ] A first Maestro flow that opens the app, passes Lock with `finger touch` and lands on History. Leave the emulator's animation scales on.
-- [ ] `npm run check` script, a `.githooks/pre-commit` hook set by `prepare`, and a GitHub Actions workflow for push.
-- [ ] Device bridge. One adb server shared by WSL and Windows, the emulator console token copied into WSL, the `Sen_API36` AVD created with a PIN and an enrolled fingerprint, then snapshotted.
-- [ ] Spike D1. SQLCipher links: `PRAGMA cipher_version` returns a value, and the database file doesn't start with `SQLite format 3`.
-- [ ] Spike D8. Unistyles runs with Reanimated and the compiler, and a theme switch re-renders nothing.
-- [ ] Spike D16. `renderRouter` works under RNTL 14.
-- [ ] Spike D23. An `AnimatedG` driven by a worklet `matrix` draws on the emulator: a test screen with the face slid sideways shows it moved and still clipped. If not, the face slide uses an RN `transform` array.
-- [ ] One motion test passes: a `withTiming` advanced to its midpoint, and one SVG animated prop asserted with `toHaveAnimatedProps`.
+- [x] Scaffold with `npx create-expo-app --template default@sdk-57` into the repo root. Keep the React Compiler and typed routes on.
+- [x] Install every dependency the whole app needs, using `npx expo install`, so no later lane edits `package.json`.
+  - [x] expo-sqlite with `useSQLCipher`, expo-secure-store, expo-crypto, expo-local-authentication, expo-screen-capture, expo-network, expo-haptics, expo-font, react-native-svg, Reanimated, gesture-handler.
+  - [x] TanStack Query, zod, zustand, react-native-unistyles, react-native-nitro-modules, react-native-mmkv 4.3.x.
+  - [x] `@shopify/flash-list@2.3.3`, excluded from the install check.
+  - [x] jest-expo, RNTL 14, test-renderer.
+  - [x] Maestro CLI 2.11.x, installed per user. Its flows live in `.maestro/`.
+- [x] Config. Strict tsconfig with `@/*` on `src/`. ESLint zones, no-cycle, no-console, and bans on raw hex, `.value`, `useReducedMotion`, `runOnJS` and `'cubic-bezier('` strings. `android.allowBackup: false`. The Bricolage and Plex fonts through the expo-font plugin.
+- [x] Jest exactly as in ARCHITECTURE.md › Proving motion works: `jest-expo/android`, the worklets resolver, the React Compiler on, and the react-native-svg mock.
+- [x] Maestro from WSL. One adb server on Windows (`adb -a -P 5037 nodaemon server`), WSL pointed at it with `ADB_SERVER_SOCKET=tcp:127.0.0.1:5037` (mirrored networking), and `maestro test` run from WSL, adding `--host 127.0.0.1` if needed. Fallback: install Maestro natively on Windows and run the same `.maestro/` flows.
+- [x] A first Maestro flow that opens the app, passes Lock with `finger touch` and lands on History. Leave the emulator's animation scales on.
+- [x] `npm run check` script, a `.githooks/pre-commit` hook set by `prepare`, and a GitHub Actions workflow for push.
+- [x] Device bridge. One adb server shared by WSL and Windows, the emulator console token copied into WSL, the `Sen_API36` AVD created with a PIN and an enrolled fingerprint. `scripts/emulator.sh` boots it cold and enters the PIN.
+- [x] Spike D1. SQLCipher links: `PRAGMA cipher_version` returns a value, and the database file doesn't start with `SQLite format 3`.
+- [x] Spike D8. Unistyles runs with Reanimated and the compiler, and a theme switch re-renders nothing.
+- [x] Spike D16. `renderRouter` works under RNTL 14.
+- [x] Spike D23. An `AnimatedG` driven by a worklet `matrix` draws on the emulator: a test screen with the face slid sideways shows it moved and still clipped. If not, the face slide uses an RN `transform` array.
+- [x] One motion test passes: a `withTiming` advanced to its midpoint, and one SVG animated prop asserted with `toHaveAnimatedProps`.
 
 **Verify, unit.** `npm run check` is green on the empty app. CI is green on GitHub.
 **Verify, device.** The first dev build installs on the emulator. A screenshot is not black. `finger touch` dismisses a test prompt.
@@ -184,7 +184,7 @@ Keep SQLCipher, masked queries and step-up. They carry the security story.
 | Unistyles clashes with worklets or the compiler | 0 | Fall back to StyleSheet with typed tokens |
 | `renderRouter` breaks under RNTL 14 | 0 | Test the guard by rendering the layout with a fake store |
 | FlashList sticky headers jump on RN 0.86 | 3 | Switch to Legend List's SectionList |
-| Emulator fingerprint isn't Class 3 for `'strong'` | 2c | Test early. Note the result in ARCHITECTURE.md |
+| Emulator fingerprint isn't Class 3 for `'strong'` | 2c | Cleared in phase 0. The fingerprint is Class 3 |
 | Emulator FPS too noisy to gate | 3 | Gate on your phone instead |
 | Maestro can't reach the emulator from WSL | 0 | Run Maestro natively on Windows against the same flows |
 | SVG `matrix` doesn't draw on device | 0 | RN `transform` array for the face slide |

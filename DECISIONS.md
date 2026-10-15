@@ -61,7 +61,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 
 **Cost.** About half a day of schema, migration and test-adapter work.
 
-**Fallback.** If SQLCipher won't build from WSL within two hours, use MMKV with a 1k-row cap.
+**Spike.** Passed on 2026-10-16. A WSL build on the API 36 emulator reports `cipher_version` 4.7.0 community. The database file starts with random bytes, and plain SQLite refuses it with "file is not a database".
 
 ## D2. Source of truth: the local database
 
@@ -159,7 +159,7 @@ The default is 1k rows. Reviewers can switch between 20, 1k and 10k in Settings.
 
 The Bricolage condensed fonts come as static files from upstream, embedded with the expo-font plugin.
 
-**Fallback.** StyleSheet with typed tokens, if Unistyles clashes with Reanimated or the compiler.
+**Spike.** Passed on 2026-10-16. On the emulator, with Reanimated running and the compiler on, three theme switches changed the canvas from `#F6F2E9` to `#121315` while a themed component rendered once.
 
 ## D9. Navigation: sheets and the add flow are protected routes
 
@@ -268,6 +268,8 @@ The implementation is D23 to D26 and ARCHITECTURE.md › Motion.
 - **Fast and honest.** Fakes behind small ports keep tests fast without drifting from real behaviour.
 - **Real SQL in Jest.** A `node:sqlite` adapter runs real queries with no emulator.
 - **No coverage gate.** A global gate makes agents write filler tests.
+
+**Spike.** `renderRouter` works under RNTL 14 on 2026-10-16. Await it and assert on what the screen shows. Its pathname helpers are lost, because RNTL 14's `render` returns a promise and the helpers are attached to it. It also turns on fake timers.
 
 ## D17. Device loop: Windows emulator bridged to WSL
 
@@ -384,7 +386,7 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Cost.** A compiler of about 80 lines.
 
-**Fallback.** If `matrix` doesn't draw on a device (day-1 spike), the face slide uses an RN `transform` array.
+**Spike.** Passed on 2026-10-16. An `AnimatedG` driven by a worklet `matrix` slid the face sideways on the emulator, and the static clip `G` still cut it at the rim. RNSVG's `GProps` type leaves out `matrix`, so the one place that creates `AnimatedG` adds it to the props type.
 
 ## D24. Motion levels: a live policy, Calm compiled from data
 

@@ -73,7 +73,13 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 ## Environment
 
 - WSL2 on Windows. No Mac, no Xcode.
-- The Android SDK is at `~/Android/Sdk` (with NDK and build-tools) and JDK 17 is installed. `ANDROID_HOME` and `adb` on `PATH` still need setting.
+- The Android SDK is at `~/Android/Sdk` (with NDK and build-tools) and JDK 17 is installed. `~/.bashrc` sets `ANDROID_HOME` and puts `adb` on `PATH`.
+- **Device loop.**
+  - `scripts/emulator.sh` starts the one adb server on Windows and the `Sen_API36` emulator, waits for boot and enters the PIN. It is safe to rerun. It boots cold, because a snapshot restore once left the emulator offline.
+  - `. scripts/device-env.sh` points WSL's adb at that server and Metro at `localhost`.
+  - `npm start` runs Metro on `localhost`, which the emulator reaches through the `adb reverse` that `emulator.sh` sets.
+  - `scripts/unlock-flow.sh` runs the Maestro unlock flow against a running Metro. Maestro runs from WSL as is.
+  - The AVD has PIN `1111` and an enrolled fingerprint. Maestro's driver won't start until the PIN has been entered once after boot.
 - Dev builds install on a phone over Tailscale.
 - iOS is reached only through EAS cloud builds and can't be verified locally.
 

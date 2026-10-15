@@ -89,7 +89,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | `src/components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | `models/` only |
 | `src/app/` | expo-router routes only. Each renders a feature screen | `features/` |
 
-**Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. The alias is `@/*` for `src/*`.
+**Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. Route tests are the exception. Expo Router bundles every file in `src/app/` as a route, so they live in `src/__tests__/`, and lint fails on a test file inside `src/app/`. The alias is `@/*` for `src/*`.
 
 ## Models
 
@@ -420,6 +420,9 @@ jest.mock('react-native-svg', () => {
 - **Resolver.** Reanimated 4.5.1 doesn't ship the `jest/resolver` its current docs name. That file arrives in 4.7, which belongs to SDK 58.
 - **Timers.** Use `jest.useFakeTimers()` with `jest.advanceTimersByTime` or `jest.runAllTimers()`. The older timer helpers are deprecated.
 - **Async APIs.** RNTL 14's `render` and `act` are async.
+- **Unistyles.** `jest.setup.ts` imports `react-native-unistyles/mocks` and then `src/theme/unistyles.ts`.
+- **Types.** TypeScript 6 defaults `types` to none, so `tsconfig.json` lists `jest` and `node`.
+- **Renderer.** `test-renderer` 1.3.1 asks for `react-reconciler` 0.34, which needs React 19.3. An npm `overrides` entry pins it to 0.33.0 to match React 19.2.3.
 
 | Layer | What it proves | How |
 | --- | --- | --- |
@@ -436,7 +439,6 @@ jest.mock('react-native-svg', () => {
 **Approval.** Agents never approve their own screenshot baselines. A new screen or pose with no baseline gets its screenshot posted for the owner, and the agent stops.
 
 **Open risks, each with a 20-minute spike in PLAN.md.**
-- Does the SVG `matrix` prop draw on a device? The fallback is an RN `transform` array for the face slide.
 - The Android pull gesture over FlashList.
 - Inserting a row with FlashList's keep-scroll-position on.
 - The reveal commit cost on a slow phone. The fallback is one animated view per amount instead of per digit.
@@ -484,7 +486,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Re-lock window (59 s stays, 61 s locks), idle lock, reveal expiry | `features/auth/locks.test.ts` |
 | Lock clears the cache, closes the database, drops the draft | `features/auth/session.test.ts` |
 | Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/use-step-up.test.ts` |
-| Locked deep link renders Lock | `app/guard.test.tsx` |
+| Locked deep link renders Lock | `__tests__/guard.test.tsx` |
 | Sync twice and interrupted give the same table hash | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future | `services/bank-api.test.ts` |
@@ -518,7 +520,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 - Build on tags only.
 
 **Biometrics on emulators.**
-- **Android.** Set a PIN, enrol a fingerprint, then `adb -e emu finger touch 1`.
+- **Android.** Set a PIN, enrol a fingerprint, then `adb -e emu finger touch 1`. The API 36 emulator's fingerprint is Class 3 (`dumpsys fingerprint` shows strength 15), so `'strong'` passes, and the prompt still offers "Use PIN" (V, 2026-10-16).
 - **iOS Simulator.** Features › Face ID › Enrolled.
 
 **CI (D21).**
