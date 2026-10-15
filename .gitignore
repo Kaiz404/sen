@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+
+# expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# native (prebuild output)
+/ios
+/android
+*.apk
+*.aab
+*.ipa
+
+# signing and secrets
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+credentials.json
+.env
+.env*.local
+
+# metro and tooling
+.metro-health-check*
+*.tsbuildinfo
+coverage/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# os and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
