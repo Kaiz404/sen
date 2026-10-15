@@ -10,6 +10,8 @@ expo-env.d.ts
 # native (prebuild output)
 /ios
 /android
+.kotlin/
+*.orig.*
 *.apk
 *.aab
 *.ipa
@@ -40,3 +42,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# agent verification output
+shots/
