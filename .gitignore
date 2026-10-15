@@ -43,5 +43,4 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
-# agent verification output
 shots/

@@ -1,0 +1,7 @@
+appId: com.kaiz404.sen
+---
+- extendedWaitUntil:
+    visible: HISTORY
+    timeout: 10000
+- assertNotVisible: UNLOCK
+- takeScreenshot: history

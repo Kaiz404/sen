@@ -1,0 +1,12 @@
+appId: com.kaiz404.sen
+---
+- launchApp:
+    clearState: false
+- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible: UNLOCK
+    timeout: 60000
+- tapOn: UNLOCK
+- extendedWaitUntil:
+    visible: Unlock Sen
+    timeout: 10000
