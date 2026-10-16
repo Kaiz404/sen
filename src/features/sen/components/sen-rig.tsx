@@ -1,9 +1,28 @@
-import { type ComponentClass, type ReactNode, useEffect, useEffectEvent, useId, useState } from 'react';
+import {
+  type ComponentClass,
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  makeMutable,
+  ReduceMotion,
+  type SharedValue,
+  useAnimatedProps,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import Svg, { Circle, ClipPath, Defs, G, type GProps } from 'react-native-svg';
 
-import { useMotionPolicy } from '@/motion/policy';
+import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
+import { playHaptic } from '@/services/haptics';
 
 import { type Channel, type Frame } from '../channels';
 import {
@@ -17,9 +36,13 @@ import {
 } from '../art/geometry';
 import type { Matrix } from '../art/matrix';
 import { type BodyStyle, NODES, type SvgProps, type TreeNode, treeFor } from '../art/nodes';
-import { poseFrame } from '../poses';
+import { momentFinished, playMoment, registerSen } from '../director/store';
+import { ambientFor, nextBeat, transitionFor } from '../moments';
+import { poseFrame, type PoseId, type PropId } from '../poses';
 import type { SenProps } from '../sen-props';
-import { makeRig, pick, type RigValues, settle } from './rig-values';
+import { compileTrack, entry, formFor } from '../timeline/compile';
+import type { Moment } from '../timeline/types';
+import { ease, makeRig, pick, type RigValues, settle, snap, stop, wrap } from './rig-values';
 import { ShapeEl } from './shape';
 
 // RNSVG's native G takes `matrix`, but its JS props type leaves it out.
@@ -72,18 +95,116 @@ const COIN = transformOrigin(PIVOT.coin);
 const CONTACT = transformOrigin(PIVOT.contact);
 const EDGE_NODE: TreeNode = { node: 'edge', shapes: [EDGE] };
 
+/** Fires a moment's marks and its end from the UI thread, so haptics stay on the frame they belong to. */
+function runClock(clock: SharedValue<number>, m: Moment, onEnd: () => void): void {
+  let t = 0;
+  const NEVER = ReduceMotion.Never;
+  const parts = [...m.marks]
+    .sort((a, b) => a.at - b.at)
+    .map(({ at, haptic }) => {
+      const duration = at - t;
+      t = at;
+      return withTiming(at, { duration, reduceMotion: NEVER }, (done) => {
+        'worklet';
+        if (done && haptic) scheduleOnRN(playHaptic, haptic);
+      });
+    });
+  parts.push(
+    withTiming(m.dur, { duration: Math.max(0, m.dur - t), reduceMotion: NEVER }, (done) => {
+      'worklet';
+      if (done) scheduleOnRN(onEnd);
+    }),
+  );
+  clock.set(0);
+  clock.set(withSequence(NEVER, ...parts));
+}
+
+type Rest = { readonly pose: PoseId; readonly prop: PropId | null | undefined; readonly level: MotionLevel };
+
 /**
  * The animated Sen. One shared value per channel, and every part reads only its own, so a still part
- * does no work. It rests in its `pose`, and eases there when the pose changes.
+ * does no work. It rests in its `pose`. A pose change plays the moment between the two poses when
+ * there is one (TRANSITIONS), and eases there otherwise. The director decides what plays.
  */
 export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string }): ReactNode {
   const level = useMotionPolicy();
   const [rig] = useState(() => makeRig(poseFrame(pose, prop)));
+  const [clock] = useState(() => makeMutable(0));
   const clip = `sen-clip-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const { side, inset, unit } = senBox(size);
+  const rest = useRef<Rest>({ pose, prop, level });
+  const playing = useRef<{ token: number; moment: Moment } | null>(null);
+  const shown = useRef(pose);
 
-  const restIn = useEffectEvent((frame: Frame) => settle(rig, frame, level));
-  useEffect(() => restIn(poseFrame(pose, prop)), [pose, prop]);
+  useEffect(() => {
+    rest.current = { pose, prop, level };
+  });
+
+  useEffect(() => {
+    const restInPose = () => {
+      const r = rest.current;
+      settle(rig, poseFrame(r.pose, r.prop), r.level);
+    };
+    const end = (token: number) => {
+      const now = playing.current;
+      if (now?.token !== token) return;
+      playing.current = null;
+      if (!now.moment.then) {
+        const r = rest.current;
+        snap(rig, poseFrame(now.moment.to, r.prop));
+        if (now.moment.to !== r.pose) restInPose();
+      }
+      momentFinished(token);
+    };
+    return registerSen(id, {
+      play(moment, token) {
+        const r = rest.current;
+        const from = poseFrame(moment.from, r.prop);
+        const m = formFor(moment, r.level, from, poseFrame(moment.to, r.prop));
+        playing.current = { token, moment: m };
+        stop(rig);
+        cancelAnimation(clock);
+        wrap(rig);
+        for (const [ch, sv] of Object.entries(rig) as [Channel, (typeof rig)[Channel]][]) {
+          const steps = m.tracks[ch];
+          if (steps) sv.set(compileTrack(entry(steps, sv.get()), m.dur, m.loop));
+          else ease(sv, ch, from[ch], r.level);
+        }
+        if (!m.loop) runClock(clock, m, () => end(token));
+      },
+      settle() {
+        playing.current = null;
+        cancelAnimation(clock);
+        restInPose();
+      },
+    });
+  }, [id, rig, clock]);
+
+  const onPose = useEffectEvent((next: PoseId) => {
+    const was = shown.current;
+    shown.current = next;
+    const moment = was === next ? undefined : transitionFor(was, next);
+    if (moment) playMoment(id, moment);
+    else if (!playing.current) settle(rig, poseFrame(next, prop), level);
+  });
+  useEffect(() => onPose(pose), [pose, prop]);
+
+  useEffect(() => {
+    const ambient = level === 'off' ? undefined : ambientFor(pose, size);
+    if (!ambient) return;
+    let played = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      const beat = nextBeat(ambient, played, Math.random);
+      timer = setTimeout(() => {
+        played++;
+        playMoment(id, beat.moment);
+        schedule();
+      }, beat.delay);
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [id, pose, size, level]);
 
   const mv = useBody(rig, 'mv', unit);
   const rl = useBody(rig, 'rl', unit);

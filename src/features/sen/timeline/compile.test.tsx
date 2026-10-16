@@ -67,7 +67,7 @@ test('a moment that cuts in eases a channel to its first value over 80 ms instea
 });
 
 const POP: Moment = {
-  id: 'reveal',
+  id: 'glance',
   priority: 2,
   from: 'masked',
   to: 'revealed',

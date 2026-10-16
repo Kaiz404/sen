@@ -41,6 +41,12 @@ export function unwind(rig: RigValues): void {
   th.set(a > Math.PI ? a - TURN : a);
 }
 
+/** Brings the spin angle into [0, 2π), the same drawing, so a moment that turns it goes forward. */
+export function wrap(rig: RigValues): void {
+  const th = rig['sp.th'];
+  th.set(((th.get() % TURN) + TURN) % TURN);
+}
+
 export function stop(rig: RigValues): void {
   for (const ch of CHANNELS) cancelAnimation(rig[ch]);
 }

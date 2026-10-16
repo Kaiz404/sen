@@ -551,43 +551,49 @@ The rig copies the boards' structure (`design/MAX-Library.dc.html`, `design/MAX-
 
 ```ts
 type Step = { at: number; v: number; ease?: Ease } | { at: number; v: number; spring: SpringName };
-type Track = { ch: Channel; steps: readonly Step[]; flourish?: true };   // flourish is dropped in Calm
+type Steps = readonly [Step, ...Step[]];                       // never empty
 type Moment = { id: MomentId; priority: 0 | 1 | 2 | 3; from: PoseId; to: PoseId; dur: number;
-                tracks: readonly Track[]; marks: readonly { at: number; haptic?: HapticKind; accents?: true }[];
-                loop?: true };
+                tracks: Partial<Record<Channel, Steps>>;     // one track per channel
+                calm?: readonly Channel[];                    // tracks Calm keeps, such as blinks
+                marks: readonly { at: number; haptic?: HapticEvent; accents?: true }[];
+                loop?: true; then?: MomentId };
 ```
 
-- **Compiler.** `compileTrack` turns a track into `withSequence`, `withDelay`, `withTiming` and `withSpring` on that channel's shared value.
-- **Sampler.** `sampleTrack(track, ms)` is a pure function that returns the value at a time. The pose gallery uses it to draw settled poses. Tests don't use it as their oracle. They assert literal values copied once from DESIGN.md, so a wrong spec can't agree with itself.
-- **Generated tracks.** The Euler wobble and the edge spin come from generators (`eulerSteps`, `edgeSpin`).
-- **Marks.** Haptics and accents fire from a per-rig clock shared value through `scheduleOnRN`. They stay in step with the UI thread. `runOnJS` is deprecated.
-- **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53`, outQ `.25,.46,.45,.94`, inS `.12,0,.39,0` and outS `.61,1,.88,1`. The board and the app then draw the same curve.
+- **Steps.** Each step is an arrival: the channel reaches `v` at `at` ms along `ease` from the step before. A track that opens with a step at 0 jumps there. One that doesn't moves from wherever the channel is. A spring step starts at `at` and ends its track.
+- **From the boards.** A moment's tracks are a window of a board tile, `moments('.M-unlock', 0, 1370)` (`moments/build.ts`), read from `board.gen.ts`. The boards loop, so a tile can open on its loop's end state. `startFrom` holds an opening run at the app pose's value, and `settleInto` adds an ease into the end pose where the tile holds somewhere else. Each moment says which it uses.
+- **Compiler.** `compileTrack(steps, dur, loop)` (`timeline/compile.ts`) turns a track into `withSequence` of `withTiming` and `withSpring`, all `ReduceMotion.Never`. A loop pads each lap to `dur` and repeats. When a moment cuts in on another, `entry` turns an opening jump into an 80 ms ease, and later steps keep their times.
+- **Forms.** `formFor(moment, level, from, to)` is the moment at a motion level. Full is the data. Calm keeps the `calm` tracks and turns every other change between the poses into a 150 ms linear crossfade. Off snaps. Both keep the haptic marks and drop the accents.
+- **Generated tracks.** `eulerSteps` builds the Euler wobble and its clack, and `edgeSpin` the spin's 240 ms intro and its 600 ms lap. Tests check both against the board tiles that draw them.
+- **Marks.** A per-rig clock shared value runs one `withTiming` per mark and one to the end. Their callbacks fire haptics through `scheduleOnRN`, so they stay on the UI thread's frame.
+- **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53`, outQ `.25,.46,.45,.94`, inS `.12,0,.39,0` and outS `.61,1,.88,1`. The board and the app then draw the same curve. A board curve with no token stays a bezier tuple in the data.
 - **Launch curves.** MAL-Timelines adds `malSpring` `.34,1.56,.64,1` (one overshoot, `SPRING.launch` damping 12 and stiffness 180 as a spring), `handoff` `.3,1.25,.5,1`, and the hop curves `hopOut` `.2,.7,.4,1` and `hopIn` `.6,0,.8,.3`. `src/motion/tokens.ts` holds each as `BEZIER`, `EASE` (for `withTiming`), `EASE_FN` (a plain worklet function, for `kf`) and `EASE_CSS`.
-- **No CSS animation in the rig.** Reanimated CSS animations can't drive SVG group transforms, ignore reduced motion, and can't be seen in Jest. Ambient loops (blink, peek, breathe) use the same compiler with `withRepeat`.
+- **No CSS animation in the rig.** Reanimated CSS animations can't drive SVG group transforms, ignore reduced motion, and can't be seen in Jest. Ambient beats use the same compiler.
 
 ### MotionDirector
 
-A pure reducer in a Zustand store. It never touches shared values. It emits commands that a small runner applies through each rig's handle (`play`, `cancel`).
+A pure reducer, `direct(state, event, info)` in `director/reducer.ts`, behind a small module store (`director/store.ts`). It never touches shared values. It emits commands, and the store runs them through each rig's handle.
 
 ```ts
-type DirectorEvent = register | unregister | { type: 'request'; sen; moment } | { type: 'finished'; token }
-                   | { type: 'gate'; patch: Partial<{ scroll; focused; appActive }> } | { type: 'level'; level };
-type Command = { type: 'play'; sen; moment; token; level } | { type: 'cancel'; sen; settleTo: PoseId };
-export function direct(s: DirectorState, e: DirectorEvent): [DirectorState, Command[]];
+type DirectorEvent = { type: 'register' | 'unregister'; sen } | { type: 'request'; sen; moment: MomentId }
+                   | { type: 'finished'; token } | { type: 'gate'; patch: Partial<{ scroll; focused; appActive }> };
+type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };   // settle: stop and ease into its pose
 ```
 
-- **Priority.** A higher priority cancels a lower one, and the cancelled Sen settles to that moment's end pose. An equal priority queues one, and a newer request replaces it. P0 is dropped.
+- **One slot.** `playing` holds one Sen, so only one Sen ever plays a moment. `queued` holds at most one more.
+- **Priority.** A higher priority replaces what plays, and the replaced Sen settles. So does any request from the Sen that plays, and any request of the same priority that meets a loop. Another Sen at the same priority takes the queue slot, and a newer one bumps it. P0 is dropped, never queued. A lower request settles its own Sen, so a pose change still lands without its moment.
+- **Follow-ups.** A finished moment with `then` plays that moment next on the same Sen (Lockout into its breathing).
 - **Stale finishes.** A `finished` with an old token is ignored, which guards the race with a cancelled sequence.
-- **Gates.**
-  - A closed gate cancels into the end pose. The gates are scroll, unfocused and app inactive.
-  - Pull-to-refresh is direct manipulation, so the scroll gate never blocks it.
-  - The idle scheduler is a JS timer with injected `random` and `now`.
+- **Gates.** A closed gate settles whatever plays or waits. Scroll, unfocused and app inactive are the gates. `senScroll(true)` closes scroll, and `senScroll(false)` opens it 1.5 s later. Pull-to-refresh is direct manipulation, so it never closes the scroll gate.
+- **Level.** The director doesn't know the motion level. Each rig compiles the form for its own level when it plays.
+- **API.** `playMoment(senId, momentId)`, `senGate(patch)` and `senScroll(scrolling)` from `@/features/sen`. A Sen's `id` is the name other features use.
+- **Pose changes.** A rig whose `pose` changes asks for `TRANSITIONS['<from>><to>']` (`moments/index.ts`) when there is one, and eases into the pose otherwise. After a moment it snaps to the moment's end pose, which draws the same, then eases to its `pose` prop if that differs.
+- **Ambient.** A rig resting in a pose with an `AMBIENT` entry schedules its own P0 beats with a JS timer, `nextBeat(ambient, played, random)`. Idle blinks 70%, glances 20% and double-blinks 10%, every 4 to 7 s, and rests 10 to 15 s after 3 beats. Masked peeks every 6 to 9 s. Worried blinks slowly every 4 to 7 s. From 48 to 120 pt a Sen only blinks, and under 48 pt it stays still. Off schedules nothing.
 
 ### Motion levels
 
 - **`useMotionPolicy()`.** Resolves `full`, `calm` or `off` from the "Sen's animations" setting and the system setting. System reduce turns Full into Calm.
 - **Live system setting.** It reads `AccessibilityInfo.isReduceMotionEnabled()` plus its change listener. Reanimated's `useReducedMotion()` is read once at import and never updates (V). Lint bans it.
-- **Calm.** It is compiled from the data. Flourish tracks such as hops, spins, flips and accents are dropped, and pose changes become 150 ms timings marked `ReduceMotion.Never`. Reanimated's own reduced motion would jump straight to the end (V).
+- **Calm.** It is compiled from the data (`formFor`). A moment keeps only its `calm` tracks, such as blinks, so hops, spins, flips and accents go, and its pose change becomes a 150 ms timing marked `ReduceMotion.Never`. Reanimated's own reduced motion would jump straight to the end (V).
 - **Off.** Poses snap and haptics still fire.
 - **`<MotionPolicyRoot>`.** Sets `ReducedMotionConfig` to `Never` in Full and `Always` otherwise. It is the live switch for every other worklet animation.
 - **Plumbing.** `src/motion/` can't import services, so the root layout reads the setting through `useSenMotionPreference()` from `@/features/settings` and passes it to `<MotionPolicyRoot preference>`. Without a root, as in a component test, `useMotionPolicy()` returns `'full'`.
