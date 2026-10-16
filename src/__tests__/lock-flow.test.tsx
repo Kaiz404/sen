@@ -48,11 +48,11 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   expect(
     screen.getByText("Didn't match. 2 more tries before fingerprint locks."),
   ).toBeOnTheScreen();
-  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Add a transaction' })).not.toBeOnTheScreen();
 
   authenticate.mockResolvedValueOnce({ success: true });
   await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
-  expect(await screen.findByText('HISTORY')).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
   expect(authenticate).toHaveBeenCalledTimes(2);
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',
@@ -63,7 +63,7 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
 
   await act(() => lockNow());
   expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
-  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Add a transaction' })).not.toBeOnTheScreen();
 });
 
 test('the app root drops revealed amounts whenever they are hidden', async () => {
