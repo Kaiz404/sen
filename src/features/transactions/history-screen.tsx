@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { type ReactNode, useDeferredValue, useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useStore } from 'zustand';
@@ -14,12 +14,21 @@ import {
   useDbResetNotice,
 } from '@/features/auth';
 import { malaysiaDay, toInstant } from '@/models/day';
+import { DUR } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
 import { mark } from '@/services/perf';
 import type { Flow } from '@/services/tx-repo';
 
 import { historyBody, syncNotes } from './body';
-import { arrivals, bankEpoch, monthSoFarRange, syncView, useHistoryData, useSync } from './data';
+import {
+  arrivals,
+  bankEpoch,
+  clearAddedArrival,
+  monthSoFarRange,
+  syncView,
+  useHistoryData,
+  useSync,
+} from './data';
 import { HistoryView } from './history-view';
 import { clockText } from './rows';
 
@@ -44,7 +53,17 @@ export function HistoryScreen(): ReactNode {
     hidden,
   });
   const syncing = useSync(db, data.newest);
-  const arrival = useStore(arrivals, (s) => s.after);
+  const after = useStore(arrivals, (s) => s.after);
+  const added = useStore(arrivals, (s) => s.added);
+  const focused = useIsFocused();
+  // A row added on the Add screen lands while History is covered, so it slides in once History is back.
+  const arrival = { after, added: focused ? added : null };
+  const sliding = focused && added !== null;
+  useEffect(() => {
+    if (!sliding) return;
+    const timer = setTimeout(clearAddedArrival, DUR.enter);
+    return () => clearTimeout(timer);
+  }, [sliding]);
 
   const epoch = useStore(bankEpoch, (s) => s.epoch);
 

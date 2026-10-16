@@ -18,6 +18,7 @@ jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  useIsFocused: () => true,
   useLocalSearchParams: () => ({}),
 }));
 jest.mock('@/features/auth', () => ({

@@ -116,11 +116,23 @@ function hash(text: string): number {
   return Math.abs(h);
 }
 
-/** Whether a row sorts after `after`, the newest row before a refresh, and so just arrived. */
+/**
+ * The rows that slide in once. `after` is the newest row before a refresh, so every row past it is new.
+ * `added` is one row the user just added, which can be back-dated and so sort anywhere.
+ */
+export type Arrival = {
+  readonly after: { readonly postedAt: Instant; readonly id: TxId } | null;
+  readonly added: TxId | null;
+};
+
+export const NO_ARRIVAL: Arrival = { after: null, added: null };
+
 export function isArrival(
-  after: { readonly postedAt: Instant; readonly id: TxId } | null,
+  arrival: Arrival,
   row: { readonly postedAt: Instant; readonly id: TxId },
 ): boolean {
+  if (arrival.added === row.id) return true;
+  const { after } = arrival;
   if (after === null) return false;
   return row.postedAt > after.postedAt || (row.postedAt === after.postedAt && row.id > after.id);
 }

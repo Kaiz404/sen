@@ -36,14 +36,12 @@ const BIOMETRIC_ICON = {
 } as const satisfies Record<Biometric, string>;
 
 export function Header({
-  onAdd,
   inset,
   onSettings,
   onLock,
 }: {
   /** False under the sync banner, which takes the status bar inset instead. */
   readonly inset: boolean;
-  readonly onAdd: () => void;
   readonly onSettings: () => void;
   readonly onLock: () => void;
 }): ReactNode {
@@ -54,13 +52,6 @@ export function Header({
         <Text style={styles.wordmark}>Sen</Text>
       </View>
       <View style={styles.keys}>
-        <Key
-          tone="loud"
-          icon="plus"
-          label="Add"
-          accessibilityLabel="Add a transaction"
-          onPress={onAdd}
-        />
         <Key tone="paper" icon="cog" accessibilityLabel="Settings" onPress={onSettings} />
         <Key tone="paper" icon="lock-outline" accessibilityLabel="Lock Sen now" onPress={onLock} />
       </View>
@@ -122,13 +113,22 @@ export function MonthTop({
   readonly soFar: string;
   readonly compact: boolean;
 }): ReactNode {
+  if (compact)
+    return (
+      <View style={styles.monthTopCompact}>
+        <Text accessibilityRole="header" style={styles.month(true)}>
+          {month}
+        </Text>
+        <Text style={styles.account}>SAVINGS ·· 4821</Text>
+      </View>
+    );
   return (
     <View style={styles.monthTop}>
       <Text style={styles.account}>EVERYDAY SAVINGS ·· 4821</Text>
-      <Text accessibilityRole="header" style={styles.month(compact)}>
+      <Text accessibilityRole="header" style={styles.month(false)}>
         {month}
       </Text>
-      {!compact && <Text style={styles.soFar}>{soFar}</Text>}
+      <Text style={styles.soFar}>{soFar}</Text>
     </View>
   );
 }
@@ -252,29 +252,29 @@ export function MonthCard({
         sign={hero === null && flow !== 'in' ? 'never' : 'auto'}
         direction={main.direction}
       />
-      {filtered ? (
-        <View style={styles.cardLine}>
+      <View style={styles.moneyIn}>
+        <View style={styles.moneyInLabel}>
           <MaterialCommunityIcons
-            name={flow === 'in' ? 'arrow-bottom-left' : 'arrow-top-right'}
+            name={flow === 'out' ? 'arrow-top-right' : 'arrow-bottom-left'}
             size={16}
-            color={hidden ? theme.colors.onPastel : theme.colors.onLoud}
+            color={flow === 'out' ? theme.colors.plateInk : theme.colors.plateCredit}
           />
-          <Text style={styles.cardLineText(hidden)}>
-            {count === undefined ? ' ' : `${count} ${count === 1 ? 'payment' : 'payments'} ${flow}`}
+          <Text style={styles.moneyInText}>
+            {filtered
+              ? count === undefined
+                ? ' '
+                : `${count} ${count === 1 ? 'payment' : 'payments'} ${flow}`
+              : 'Money in'}
           </Text>
-          <Text style={styles.cardLineCaption(hidden)}>
+        </View>
+        {filtered ? (
+          <Text style={styles.plateCaption}>
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
-        </View>
-      ) : (
-        <View style={styles.moneyIn}>
-          <View style={styles.moneyInLabel}>
-            <MaterialCommunityIcons name="arrow-bottom-left" size={16} color={theme.colors.ink} />
-            <Text style={styles.moneyInText}>Money in</Text>
-          </View>
-          <RollAmount value={inMinor} size="card" direction="credit" />
-        </View>
-      )}
+        ) : (
+          <RollAmount value={inMinor} size="card" surface="plate" direction="credit" />
+        )}
+      </View>
       {hidden ? (
         <>
           <Key
@@ -530,6 +530,11 @@ const styles = StyleSheet.create((theme, rt) => ({
   wordmark: { ...type.words(28), color: theme.colors.ink },
   keys: { flexDirection: 'row', gap: 10 },
   monthTop: { gap: 6 },
+  monthTopCompact: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
   account: { ...type.caption(11), color: theme.colors.inkMuted },
   month: (compact: boolean) => ({
     ...type.words(compact ? 44 : 92),
@@ -576,17 +581,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     textTransform: 'uppercase',
     color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
   }),
-  cardLine: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  cardLineText: (hidden: boolean) => ({
-    fontSize: 14,
-    fontWeight: '600',
-    color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
-  }),
-  cardLineCaption: (hidden: boolean) => ({
-    ...type.caption(10),
-    marginLeft: 'auto',
-    color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
-  }),
   cardNote: { fontSize: 13, textAlign: 'center', color: theme.colors.onPastel },
   counting: { ...type.words(34), color: theme.colors.onPastel, paddingVertical: 24 },
   moneyIn: {
@@ -596,10 +590,11 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 18,
-    backgroundColor: theme.colors.paper,
+    backgroundColor: theme.colors.plate,
   },
   moneyInLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  moneyInText: { fontSize: 14, fontWeight: '600', color: theme.colors.inkMuted },
+  moneyInText: { fontSize: 14, fontWeight: '600', color: theme.colors.plateInk },
+  plateCaption: { ...type.caption(10), color: theme.colors.plateFaint },
   resultLine: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2 },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   edge: { height: 8, overflow: 'hidden' },

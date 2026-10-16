@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
-import { toast, ToastHost } from './toast';
+import { toast, ToastHost, useToastShowing } from './toast';
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(async () => {
@@ -66,4 +67,20 @@ test('hiding an old toast by its id leaves the newer one up', async () => {
   await act(async () => toast.hide(added));
 
   expect(screen.getByText('Deleted')).toBeOnTheScreen();
+});
+
+test('useToastShowing is true from show until hide', async () => {
+  function Probe() {
+    return <Text>{useToastShowing() ? 'up' : 'down'}</Text>;
+  }
+  await render(<Probe />);
+  expect(screen.getByText('down')).toBeOnTheScreen();
+
+  await act(async () => {
+    toast.show({ title: 'Added' });
+  });
+  expect(screen.getByText('up')).toBeOnTheScreen();
+
+  await act(async () => toast.hide());
+  expect(screen.getByText('down')).toBeOnTheScreen();
 });

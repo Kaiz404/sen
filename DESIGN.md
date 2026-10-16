@@ -39,6 +39,7 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 | `lemon-edge`, `lemon-plate` | `#17181A`, `#17181A` | `#F2DC72`, `#8A7A2C` | A lemon key's border and shadow plate |
 | `hero-raised` | `#26282C` | `#26282C` | A card on the hero, such as the lockout cool-down |
 | `hero-accent` | `#F5BE98` | `#F5BE98` | The accent word on the lockout hero |
+| `plate`, `plate-ink`, `plate-faint`, `plate-credit` | `#FFFDF8`, `#3F3B34`, `#5F5A50`, `#236B47` | the same | A paper plate sitting on a pastel card, such as the month card's Money in line. The pastel is the same in both modes, so the plate does not follow `paper` into dark |
 
 Row glyph pastels: `#F9D5D0`, `#CBEBD3`, `#E6DDF8`, `#F8EDBF`, `#FBDCC8`, `#D2EEEA`. Every glyph shape is a slightly different blob.
 
@@ -94,6 +95,7 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 
 | Date | Board | Override |
 | --- | --- | --- |
+| 2026-10-17 | `SF-AddNav-Options` option A | The Add key is icon only, a loud 60 × 60 "+" with the label "Add a transaction", never an "Add" word. It floats 20 from the right edge and 16 above the bottom inset on History alone, with no bar. It rises 92 pt above the undo toast on the toast's own 300 ms in and 250 ms out, instantly outside Full motion. The error screen and the search keyboard hide it. The list ends 104 pt above the inset so the last row and caption clear it. TalkBack reaches it right after the header |
 | 2026-10-17 | MAX-Moments `.M-lockout` | Sen never spins edge-on into the pill. It naps in the `asleep` pose and breathes for the whole lockout. The owner found the edge-on hold odd |
 | 2026-10-17 | MAX `.tl` | The coin back is Bunga (option B on `SF-CoinBack-Options`): a five-petal flower with a lemon eye, in a thin ring, no numeral. It replaces the plus-and-bar tails. It is symmetric, so the mirror leaves it unchanged. Currency Act 2020 s.19 rules out anything that resembles a Malaysian coin, so no numeral, no crest, no denomination |
 
@@ -305,7 +307,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, passcode, "Not you? Start again" |
 | `SF-LockStates` | Lock states | Checking, didn't match ("2 more tries"), lockout with cool-down, Face ID off, unlocked |
 | `SF-PrivacyCover` | App switcher cover | Lemon full bleed, wordmark, Sen asleep. No amounts or names |
-| `SF-History` | History, masked | Header with face-only Sen mark, "+ Add", settings and lock keys. "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
+| `SF-History` | History, masked | Header with face-only Sen mark, settings and lock keys. "+ Add" is the floating Add key (owner override below). "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
 | `SF-Reveal` | History, revealed | Ink card with Sen on top. Split numerals. "Hide amounts". The board's 60 s ring and countdown are dropped (D27) |
 | `SF-HistoryStates` | History states | Last 10 s, search results with count and total, empty search, In filter, pull-to-refresh, updated pill with new row, skeleton, offline banner over cached list, full error |
 | `SF-Detail` | Detail, masked | Receipt hero with coins, Sen peeking over the slip, status chip, reveal key, facts table, reference with Copy |

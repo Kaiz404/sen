@@ -7,12 +7,13 @@ import { EnterOnce } from '@/components/enter-once';
 import { Key } from '@/components/key';
 import type { Biometric, DbResetReason } from '@/features/auth';
 import { releaseSenScroll, Sen, senScroll } from '@/features/sen';
-import type { DayKey, Instant } from '@/models/day';
+import type { DayKey } from '@/models/day';
 import type { TxId } from '@/models/transaction';
 import { mark } from '@/services/perf';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
 import { type } from '@/theme/type';
 
+import { ADD_KEY_CLEARANCE, AddKey } from './add-key';
 import type { Banner, HistoryBody } from './body';
 import {
   DayNet,
@@ -28,7 +29,7 @@ import {
   TxRow,
 } from './parts';
 import { RevealedAmounts, type Revealed } from './reveal';
-import { type HistoryItem, isArrival, monthName, monthSoFar } from './rows';
+import { type Arrival, type HistoryItem, isArrival, monthName, monthSoFar } from './rows';
 import { EmptyHistory, FullError, NoResults, SkeletonSlips } from './states';
 
 export type HistoryActions = {
@@ -60,8 +61,8 @@ export type HistoryViewProps = {
   readonly skipped: number;
   readonly notice: DbResetReason | null;
   readonly refreshing: boolean;
-  /** The newest row before the last refresh. Rows after it slide in once. */
-  readonly arrival: { readonly postedAt: Instant; readonly id: TxId } | null;
+  /** The rows that slide in once. */
+  readonly arrival: Arrival;
   /** How many rows the last pull brought, while its pill shows. */
   readonly updated: number | null;
   readonly biometric: Biometric;
@@ -171,12 +172,8 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
             onSettings={actions.onReviewerSettings}
           />
         )}
-        <Header
-          inset={banner === null}
-          onAdd={actions.onAdd}
-          onSettings={actions.onSettings}
-          onLock={actions.onLock}
-        />
+        <Header inset={banner === null} onSettings={actions.onSettings} onLock={actions.onLock} />
+        {listShown && <AddKey onPress={actions.onAdd} />}
         {body.kind === 'failed' ? (
           <FullError
             error={body.error}
@@ -254,7 +251,11 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderColor: theme.colors.rule,
     backgroundColor: theme.colors.paper,
   },
-  footer: { paddingTop: 24, paddingBottom: rt.insets.bottom + 28, alignItems: 'center' },
+  footer: {
+    paddingTop: 24,
+    paddingBottom: rt.insets.bottom + ADD_KEY_CLEARANCE,
+    alignItems: 'center',
+  },
   footerText: { ...type.caption(11), color: theme.colors.inkMuted },
   pullSlot: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
   pill: {

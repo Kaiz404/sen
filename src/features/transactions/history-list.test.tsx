@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { BOARD_ROWS, BOARD_TODAY, manyRows } from './fixture-data';
 import { NO_ACTIONS } from './fixtures';
 import { HistoryView, type HistoryViewProps } from './history-view';
-import { buildHistoryRows } from './rows';
+import { buildHistoryRows, NO_ARRIVAL } from './rows';
 
 jest.mock('@/components/enter-once', () => {
   const { createElement } = jest.requireActual('react');
@@ -34,7 +34,7 @@ function List(props: Partial<HistoryViewProps>) {
       skipped={0}
       notice={null}
       refreshing={false}
-      arrival={null}
+      arrival={NO_ARRIVAL}
       updated={null}
       biometric="fingerprint"
       revealed={null}
@@ -58,13 +58,24 @@ test('10,000 rows mount fewer than 60 row components', async () => {
 test('only a row newer than the last refresh slides in, and none slides once the arrival clears', async () => {
   const [newest, before] = BOARD_ROWS;
 
-  await render(<List arrival={{ postedAt: before!.postedAt, id: before!.id }} />);
+  await render(
+    <List arrival={{ after: { postedAt: before!.postedAt, id: before!.id }, added: null }} />,
+  );
 
   expect(screen.getAllByTestId('enter-once')).toHaveLength(1);
   expect(within(screen.getByTestId('enter-once')).getByText(newest!.description)).toBeOnTheScreen();
 
-  await screen.rerender(<List arrival={null} />);
+  await screen.rerender(<List arrival={NO_ARRIVAL} />);
 
   expect(screen.queryAllByTestId('enter-once')).toHaveLength(0);
   expect(screen.getByText(newest!.description)).toBeOnTheScreen();
+});
+
+test('a row the user just added slides in wherever it sorts, and no other row does', async () => {
+  const added = BOARD_ROWS[2]!;
+
+  await render(<List arrival={{ after: null, added: added.id }} />);
+
+  expect(screen.getAllByTestId('enter-once')).toHaveLength(1);
+  expect(within(screen.getByTestId('enter-once')).getByText(added.description)).toBeOnTheScreen();
 });

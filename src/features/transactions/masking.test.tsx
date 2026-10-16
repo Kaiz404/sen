@@ -18,7 +18,10 @@ const mockData: unknown[] = [];
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  useIsFocused: () => true,
+}));
 jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,

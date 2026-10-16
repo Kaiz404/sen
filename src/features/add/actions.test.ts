@@ -1,4 +1,5 @@
 import type { StepUpResult } from '@/features/auth';
+import { arrivals } from '@/features/transactions';
 import { DayKeySchema, InstantSchema } from '@/models/day';
 import { type Draft, draftSchema } from '@/models/draft';
 import { TxIdSchema } from '@/models/transaction';
@@ -37,7 +38,10 @@ beforeEach(async () => {
   await sync(db, createMockBank({ now: () => NOW }).under(scenario), { now: () => NOW });
 });
 
-afterEach(() => db.close());
+afterEach(() => {
+  arrivals.setState({ after: null, added: null });
+  return db.close();
+});
 
 async function manualRows(): Promise<unknown[]> {
   return [...(await db.all("SELECT id, description FROM tx WHERE source = 'manual'"))];
@@ -49,6 +53,14 @@ test('a cancelled step-up writes nothing', async () => {
     reason: 'cancelled',
   });
   expect(await manualRows()).toEqual([]);
+});
+
+test('a saved draft is marked to slide in, and a cancelled one is not', async () => {
+  await saveDraft(db, DRAFT, cancels(), NOW);
+  expect(arrivals.getState().added).toBeNull();
+
+  await saveDraft(db, DRAFT, passes(), NOW);
+  expect(arrivals.getState().added).toBe(ADDED);
 });
 
 test('a passed step-up stores the draft once, however many times it is saved', async () => {

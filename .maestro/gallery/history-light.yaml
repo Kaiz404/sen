@@ -25,6 +25,22 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: history-masked-light
+- openLink: "sen://dev/states?screen=history&state=add-key&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-add-key-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-add-key-light
+- openLink: "sen://dev/states?screen=history&state=add-key-lifted&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-add-key-lifted-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-add-key-lifted-light
 - openLink: "sen://dev/states?screen=history&state=shown&theme=light"
 - extendedWaitUntil:
     visible:

@@ -1,12 +1,13 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
+import { toast } from '@/components/toast';
 import type { MaskedRow } from '@/models/transaction';
 import type { Flow } from '@/services/tx-repo';
 
 import type { HistoryBody } from './body';
 import { BOARD_ROWS, BOARD_TODAY, boardCounts, boardRevealed } from './fixture-data';
 import { type HistoryActions, HistoryView, type HistoryViewProps } from './history-view';
-import { buildHistoryRows } from './rows';
+import { buildHistoryRows, NO_ARRIVAL } from './rows';
 
 const noop = () => {};
 
@@ -43,12 +44,26 @@ const BASE: HistoryViewProps = {
   skipped: 0,
   notice: null,
   refreshing: false,
-  arrival: null,
+  arrival: NO_ARRIVAL,
   updated: null,
   biometric: 'faceId',
   revealed: null,
   actions: NO_ACTIONS,
 };
+
+/** History with the undo toast up, so the Add key shows lifted clear of it. */
+function WithToast(): ReactNode {
+  useEffect(() => {
+    const id = toast.show({
+      title: 'Added',
+      detail: 'Lunch with Hafiz, cash · stored encrypted',
+      action: { label: 'Undo', accessibilityLabel: 'Undo add', icon: 'undo', onPress: noop },
+      ttl: 10 * 60_000,
+    });
+    return () => toast.hide(id);
+  }, []);
+  return <HistoryView {...BASE} />;
+}
 
 const GRAB = BOARD_ROWS.filter((r) => r.description.toLowerCase().includes('grab'));
 const byFlow = (flow: Flow) =>
@@ -58,6 +73,8 @@ export const HISTORY_STATES = {
   loading: () => <HistoryView {...BASE} body={{ kind: 'loading' }} monthCounts={undefined} />,
   empty: () => <HistoryView {...BASE} body={{ kind: 'empty' }} />,
   masked: () => <HistoryView {...BASE} />,
+  'add-key': () => <HistoryView {...BASE} />,
+  'add-key-lifted': () => <WithToast />,
   shown: () => <HistoryView {...BASE} hidden={false} revealed={boardRevealed(BOARD_ROWS)} />,
   search: () => (
     <HistoryView {...BASE} search="grab" body={list(GRAB)} resultCounts={boardCounts(GRAB)} />

@@ -10,10 +10,25 @@ import {
   type SignedMinor,
   type SignMode,
 } from '@/models/money';
+import type { Palette } from '@/theme/colors';
 import { type, type TypeRole } from '@/theme/type';
 
 export type AmountSize = 'hero' | 'card' | 'row' | 'net' | 'tile';
-export type AmountSurface = 'plain' | 'pastel' | 'loud';
+export type AmountSurface = 'plain' | 'pastel' | 'plate' | 'loud';
+
+/** The ink an amount takes on the surface behind it. `plate` is the paper plate on a pastel card, in both modes. */
+export function amountInk(c: Palette, surface: AmountSurface, credit: boolean): string {
+  switch (surface) {
+    case 'loud':
+      return c.onLoud;
+    case 'pastel':
+      return c.onPastel;
+    case 'plate':
+      return credit ? c.plateCredit : c.onPastel;
+    case 'plain':
+      return credit ? c.deep : c.ink;
+  }
+}
 
 type Face = 'words' | 'numerals' | 'mono';
 
@@ -195,14 +210,7 @@ const styles = StyleSheet.create((theme) => ({
   stack: { alignItems: 'center' },
   baseline: { alignItems: 'baseline' },
   ink: (surface: AmountSurface, credit: boolean) => ({
-    color:
-      surface === 'loud'
-        ? theme.colors.onLoud
-        : surface === 'pastel'
-          ? theme.colors.onPastel
-          : credit
-            ? theme.colors.deep
-            : theme.colors.ink,
+    color: amountInk(theme.colors, surface, credit),
   }),
   maskedCurrency: { marginRight: 2 },
   heroCurrency: { marginRight: 6 },

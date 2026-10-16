@@ -14,7 +14,7 @@ import { onArrive } from '@/features/auth';
 import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
 import { type AppError, isRetryable } from '@/models/errors';
 import type { PrefValue } from '@/models/prefs';
-import type { MaskedRow } from '@/models/transaction';
+import type { MaskedRow, TxId } from '@/models/transaction';
 import { type BankScenario, createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
 import { readPref, writePref } from '@/services/prefs';
@@ -34,7 +34,7 @@ import { DUR } from '@/motion/tokens';
 
 import type { SyncView } from './body';
 import type { Revealed } from './reveal';
-import { buildHistoryRows, type HistoryRows } from './rows';
+import { type Arrival, buildHistoryRows, type HistoryRows, NO_ARRIVAL } from './rows';
 
 /** The in-app bank. Each sync reads the reviewer's `demo.*` settings once, in `readScenario`. */
 export const bank = createMockBank();
@@ -109,10 +109,19 @@ export function useHistoryPrefetch(): void {
 export type SyncTrigger = 'first' | 'pull' | 'retry';
 
 /**
- * Rows newer than `after` slide in once. The list reads this one store, so a row never holds the flag and a
- * recycled cell never replays it.
+ * Rows that slide in once: those newer than `after`, and the row `added`. The list reads this one store, so a
+ * row never holds the flag and a recycled cell never replays it.
  */
-export const arrivals = create<{ readonly after: PageCursor | null }>(() => ({ after: null }));
+export const arrivals = create<Arrival>(() => NO_ARRIVAL);
+
+/** The add flow calls this before its refetch lands. History plays the slide-in once it is on screen again. */
+export function markArrival(id: TxId): void {
+  arrivals.setState({ added: id });
+}
+
+export function clearAddedArrival(): void {
+  arrivals.setState({ added: null });
+}
 
 function cursorOf(row: MaskedRow | undefined): PageCursor | null {
   return row === undefined ? null : { postedAt: row.postedAt, id: row.id };
@@ -165,7 +174,9 @@ export function useSync(db: Db, newest: MaskedRow | undefined) {
     mutationFn: async () => {
       const result = await sync(db, bank.under(readScenario()), {
         onProgress: (received) =>
-          syncProgress.setState((s) => ({ progress: { received, total: s.progress?.total ?? null } })),
+          syncProgress.setState((s) => ({
+            progress: { received, total: s.progress?.total ?? null },
+          })),
       });
       if (!result.ok) throw result.error;
       return result.data;
@@ -206,7 +217,10 @@ export type HistoryQuery = {
 
 /** Every read the History screen makes. While `hidden`, none of them selects an amount. */
 export function useHistoryData(db: Db, { filter, month, today, hidden }: HistoryQuery) {
-  const pages = useInfiniteQuery({ ...queries.pages(db, filter), placeholderData: keepPreviousData });
+  const pages = useInfiniteQuery({
+    ...queries.pages(db, filter),
+    placeholderData: keepPreviousData,
+  });
   const syncState = useQuery(queries.syncState(db));
 
   const loaded = useMemo(() => pages.data?.pages.flatMap((page) => page.rows), [pages.data]);

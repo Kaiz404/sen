@@ -1,4 +1,5 @@
 import type { AuthFailure, StepUpResult } from '@/features/auth';
+import { markArrival } from '@/features/transactions';
 import type { Instant } from '@/models/day';
 import type { Draft } from '@/models/draft';
 import type { TxId } from '@/models/transaction';
@@ -33,6 +34,7 @@ export async function saveDraft(
   if (!auth.ok) return { kind: 'refused', reason: auth.reason };
   try {
     const { row } = await insertManual(db, draft, now);
+    markArrival(row.id);
     freshen();
     return { kind: 'saved', id: row.id };
   } catch {

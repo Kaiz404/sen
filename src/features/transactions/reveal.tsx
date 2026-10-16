@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Amount, type AmountSurface } from '@/components/amount';
+import { Amount, amountInk, type AmountSurface } from '@/components/amount';
 import type { DayKey } from '@/models/day';
 import {
   type Direction,
@@ -168,7 +168,13 @@ function Column({
 }
 
 /** A whole amount on one animated view. A list mounts many of these, and one view per digit made scrolling stall. */
-function Rolling({ label, children }: { readonly label: string; readonly children: ReactNode }): ReactNode {
+function Rolling({
+  label,
+  children,
+}: {
+  readonly label: string;
+  readonly children: ReactNode;
+}): ReactNode {
   const progress = useRevealProgress();
   const roll = useAnimatedStyle(() => digitStyle(progress.get(), 0, 1));
   return (
@@ -279,13 +285,6 @@ const styles = StyleSheet.create((theme) => ({
     transform: [{ scale }],
   }),
   ink: (surface: AmountSurface, credit: boolean) => ({
-    color:
-      surface === 'loud'
-        ? theme.colors.onLoud
-        : surface === 'pastel'
-          ? theme.colors.onPastel
-          : credit
-            ? theme.colors.deep
-            : theme.colors.ink,
+    color: amountInk(theme.colors, surface, credit),
   }),
 }));

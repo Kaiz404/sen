@@ -4,21 +4,26 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { sessionStore } from '@/features/auth/session';
+import { TxIdSchema } from '@/models/transaction';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import { readSyncState } from '@/services/sync';
 
-import { bank, resetBank, syncProgress } from './data';
+import { arrivals, bank, markArrival, resetBank, syncProgress } from './data';
 import { HistoryScreen } from './history-screen';
 
 let mockDb: OpenDb;
+let mockFocused = true;
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+  useIsFocused: () => mockFocused,
+}));
 jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
@@ -32,6 +37,8 @@ jest.mock('@/features/auth', () => ({
 const NOW = new Date('2026-10-15T06:00:00.000Z');
 
 beforeEach(async () => {
+  mockFocused = true;
+  arrivals.setState({ after: null, added: null });
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   mockPush.mockClear();
   clearPrefs();
@@ -205,4 +212,26 @@ test('the fault banner says the fault is simulated and links to the reviewer con
   );
 
   expect(mockPush).toHaveBeenCalledWith('/settings?focus=reviewers');
+});
+
+test('a row the Add flow marked keeps its slide-in until History is back in front, then drops it after 900 ms', async () => {
+  mockFocused = false;
+  const { rerender } = await renderHistory();
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+
+  await act(() => markArrival(TxIdSchema.parse('bk-3')));
+  await act(() => jest.advanceTimersByTime(2000));
+  expect(arrivals.getState().added).toBe('bk-3');
+
+  mockFocused = true;
+  await rerender(
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+    </QueryClientProvider>,
+  );
+  await act(() => jest.advanceTimersByTime(899));
+  expect(arrivals.getState().added).toBe('bk-3');
+
+  await act(() => jest.advanceTimersByTime(1));
+  expect(arrivals.getState().added).toBeNull();
 });

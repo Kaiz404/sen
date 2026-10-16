@@ -26,6 +26,10 @@ const LIGHT = {
   lemonPlate: '#17181A',
   heroRaised: '#26282C',
   heroAccent: '#F5BE98',
+  plate: '#FFFDF8',
+  plateInk: '#3F3B34',
+  plateFaint: '#5F5A50',
+  plateCredit: '#236B47',
 } as const;
 
 export type ColorToken = keyof typeof LIGHT;
@@ -61,6 +65,10 @@ export const dark: Palette = {
   lemonPlate: '#8A7A2C',
   heroRaised: '#26282C',
   heroAccent: '#F5BE98',
+  plate: '#FFFDF8',
+  plateInk: '#3F3B34',
+  plateFaint: '#5F5A50',
+  plateCredit: '#236B47',
 };
 
 export const GLYPH_PASTELS = [

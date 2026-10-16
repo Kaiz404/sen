@@ -53,8 +53,18 @@ export const toast = {
   },
 };
 
-const ENTER = FadeInDown.duration(300).easing(EASE.out);
-const EXIT = FadeOutDown.duration(250);
+export const TOAST_ENTER_MS = 300;
+export const TOAST_EXIT_MS = 250;
+/** From the screen's bottom inset to the top edge of the smallest toast: its offset plus its 64 pt row and 4 pt bar. */
+export const TOAST_RISE = 24 + 64 + 4;
+
+const ENTER = FadeInDown.duration(TOAST_ENTER_MS).easing(EASE.out);
+const EXIT = FadeOutDown.duration(TOAST_EXIT_MS);
+
+/** True from the moment a toast is shown until it is hidden, so a floating key can lift clear of it. */
+export function useToastShowing(): boolean {
+  return useToasts((s) => s.current !== null);
+}
 
 export function ToastHost(): ReactNode {
   const current = useToasts((s) => s.current);

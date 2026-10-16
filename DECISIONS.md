@@ -44,6 +44,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
+| D30 | Adding a transaction | A floating Add key on History, no bar |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
 
 ---
@@ -483,6 +484,20 @@ The phases are in [PLAN.md](PLAN.md).
 - **Backup rules.** The Android docs say that for apps targeting 12+, `allowBackup="false"` on some manufacturers' devices disables cloud backup but not device-to-device transfer, and that a missing `<device-transfer>` section means that mode copies everything (developer.android.com/identity/data/autobackup). So `plugins/with-no-backup.js` writes both rule files excluding every domain. Config plugins are the Expo route; `expo-build-properties` has no such option. `expo-secure-store` ships its own narrower rules, so its plugin runs with `configureAndroidBackup: false`.
 
 **Watch out.** react-native-screens presents formSheet and fullScreenModal above the root view, so the root cover does not hide them. The delete sheet and the add flow show amounts, so each mounts its own `PrivacyCover`. The other sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.
+
+## D30. Adding a transaction: a floating key, not a header key or a bar
+
+**Compared** (the `SF-AddNav-Options` board).
+- A. A floating Add key at the bottom right, no bar.
+- B. A two-tab bar with Add in the middle.
+- C. A thumb dock.
+- The old header key.
+
+**Why A, with the owner's change.**
+- **Reach.** The most common write sits under the right thumb. Material, Copilot Money and Buddy float the key the same way.
+- **Smallest change.** No route changes, and the header gets calmer. A bar needs a tabs route group, which the plan keeps with the coordinator, and Apple says tabs navigate rather than act.
+- **The owner's change.** The key stays a loud 60 × 60 "+" at every scroll position, with no "Add" word. The board's grow and shrink on scroll is dropped. The label "Add a transaction" is the name TalkBack and the flows use.
+- **With the toast.** Material lifts a FAB above a snackbar, so the key rises with the undo toast on the toast's own timing instead of hiding under it. A toast is one line plus a bar, so the lift is a fixed 92 pt. A two-line detail would still clear it by about 6 pt (inferred from the font sizes).
 
 ## D32. Release build: R8 minify and resource shrinking through `expo-build-properties`
 
