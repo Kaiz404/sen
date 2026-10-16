@@ -1,7 +1,7 @@
 import { Linking } from 'react-native';
 
 import { lockIfAwayTooLong } from './locks';
-import { gateOf } from './machine';
+import { gateOf, type Session } from './machine';
 import { sessionStore } from './session';
 
 export type DetailPath = `/transaction/${string}`;
@@ -16,9 +16,15 @@ export function detailPathOf(url: string): DetailPath | null {
 
 let held: DetailPath | null = null;
 
+/** Welcome and sign-out lead to a new user's first unlock, which never opens the last user's link. */
+function forNewUser(session: Session): boolean {
+  return gateOf(session) === 'welcome' || session.status === 'signingOut';
+}
+
 /** While unlocked the router opens a link itself. Otherwise the newest link wins, and a non-detail link drops it. */
 function hold(url: string | null): void {
-  if (url === null || gateOf(sessionStore.getState().session) === 'unlocked') return;
+  const { session } = sessionStore.getState();
+  if (url === null || gateOf(session) === 'unlocked' || forNewUser(session)) return;
   held = detailPathOf(url);
 }
 
@@ -29,7 +35,13 @@ export function startLinkHold(): () => void {
     lockIfAwayTooLong();
     hold(url);
   });
-  return () => subscription.remove();
+  const stopDropping = sessionStore.subscribe(({ session }) => {
+    if (forNewUser(session)) held = null;
+  });
+  return () => {
+    subscription.remove();
+    stopDropping();
+  };
 }
 
 /** The held link, once. */

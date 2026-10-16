@@ -43,7 +43,6 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
 function HeldLinkOpener(): null {
   const gate = useRouteGate();
   useEffect(() => {
-    if (gate === 'welcome') takeHeldLink();
     if (gate !== 'unlocked') return;
     const path = takeHeldLink();
     if (path !== null) router.push(path);

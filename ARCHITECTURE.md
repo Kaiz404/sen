@@ -408,7 +408,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | Running and locked (since launch, idle or Lock now) | The `url` event finds the gate locked. The router lands on Lock, and the link is held |
 | Back from the background past `relockAfter` | The `url` event runs `lockIfAwayTooLong()` before it weighs the link, so the app locks first and the link is held. Lock shows on `active`. If the router's listener runs first, it opens the receipt while the app is still in the background, and the lock unmounts it (inferred) |
 | Back from the background inside `relockAfter` | Nothing locks. The router opens the receipt, and nothing is held |
-| Welcome | A held link is dropped when the gate turns `welcome` |
+| Welcome and sign-out | Nothing is held while the gate is `welcome` or a sign-out runs, and a held link is dropped the moment either starts. This covers a link that lands on Welcome, a cold-start link that resolves before or after the launch finds no vault, and a sign-out that fails back to Lock. The next unlock is a new user's, so it never opens the last one's link |
 
 The newest link wins, and any other link drops the held one, so a link can never open a sheet or a setting after unlock. A link that arrives while unlocked is the router's alone. The detail screen still parses the id, so a stale or bad link shows not found.
 
@@ -799,7 +799,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
 | Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
-| A detail link opened while locked, or one that brings the app back past `relockAfter`, shows Lock, then that receipt over History after unlock. Inside `relockAfter` the receipt opens at once and nothing is held. Only a detail link is held, once, and never while unlocked | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
+| A detail link opened while locked, or one that brings the app back past `relockAfter`, shows Lock, then that receipt over History after unlock. Inside `relockAfter` the receipt opens at once and nothing is held. Only a detail link is held, once, and never while unlocked, on Welcome or through a sign-out | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
 | Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row. A reset while a page is in flight keeps that page out | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future. Its newest rows are the boards' | `services/seed.test.ts` |
