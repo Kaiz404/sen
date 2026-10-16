@@ -28,6 +28,7 @@ import {
   SyncBanner,
   TxRow,
 } from './parts';
+import { PullToRefresh, type PullStatus } from './pull/pull-refresh';
 import { RevealedAmounts, type Revealed } from './reveal';
 import { type Arrival, type HistoryItem, isArrival, monthName, monthSoFar } from './rows';
 import { EmptyHistory, FullError, NoResults, SkeletonSlips } from './states';
@@ -38,6 +39,8 @@ export type HistoryActions = {
   readonly onShow: () => void;
   readonly onHide: () => void;
   readonly onRefresh: () => void;
+  /** Sen has landed, so the pull gap may close. */
+  readonly onPullSettled: () => void;
   readonly onRetry: () => void;
   readonly onEndReached: () => void;
   readonly onAdd: () => void;
@@ -60,7 +63,10 @@ export type HistoryViewProps = {
   readonly banner: Banner | null;
   readonly skipped: number;
   readonly notice: DbResetReason | null;
-  readonly refreshing: boolean;
+  /** The pull gesture's state: the bank being asked, or its data back. */
+  readonly pull: PullStatus;
+  /** Draws the pull gap's Sen still, for the gallery. */
+  readonly pullStill?: boolean;
   /** The rows that slide in once. */
   readonly arrival: Arrival;
   /** How many rows the last pull brought, while its pill shows. */
@@ -182,40 +188,43 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
           />
         ) : (
           <View style={styles.listSlot}>
-            <FlashList
-              testID="history-list"
-              data={body.kind === 'list' ? body.rows.items : NO_ITEMS}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.key}
-              getItemType={(item) => item.kind}
-              stickyHeaderIndices={body.kind === 'list' ? body.rows.sticky : undefined}
-              extraData={arrival}
-              onLoad={painted}
-              ListHeaderComponent={top}
-              ListEmptyComponent={empty}
-              ListFooterComponent={
-                <View style={styles.footer}>
-                  {banner !== null && body.kind === 'list' && (
-                    <Text style={styles.footerText}>PULL DOWN TO TRY AGAIN</Text>
-                  )}
-                </View>
-              }
-              refreshing={props.refreshing}
+            <PullToRefresh
+              status={props.pull}
+              still={props.pullStill}
               onRefresh={actions.onRefresh}
-              onEndReached={actions.onEndReached}
-              onEndReachedThreshold={0.5}
-              onScrollBeginDrag={scrolling}
-              onMomentumScrollBegin={scrolling}
-              onScrollEndDrag={still}
-              onMomentumScrollEnd={still}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            />
-            {props.refreshing && (
-              <View pointerEvents="none" style={styles.pullSlot}>
-                <Sen pose="look" size={56} label="Sen, checking with your bank" />
-              </View>
-            )}
+              onSettled={actions.onPullSettled}
+            >
+              {(pullList) => (
+                <FlashList
+                  {...pullList}
+                  testID="history-list"
+                  data={body.kind === 'list' ? body.rows.items : NO_ITEMS}
+                  renderItem={renderItem}
+                  keyExtractor={(item) => item.key}
+                  getItemType={(item) => item.kind}
+                  stickyHeaderIndices={body.kind === 'list' ? body.rows.sticky : undefined}
+                  extraData={arrival}
+                  onLoad={painted}
+                  ListHeaderComponent={top}
+                  ListEmptyComponent={empty}
+                  ListFooterComponent={
+                    <View style={styles.footer}>
+                      {banner !== null && body.kind === 'list' && (
+                        <Text style={styles.footerText}>PULL DOWN TO TRY AGAIN</Text>
+                      )}
+                    </View>
+                  }
+                  onEndReached={actions.onEndReached}
+                  onEndReachedThreshold={0.5}
+                  onScrollBeginDrag={scrolling}
+                  onMomentumScrollBegin={scrolling}
+                  onScrollEndDrag={still}
+                  onMomentumScrollEnd={still}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                />
+              )}
+            </PullToRefresh>
             {props.updated !== null && (
               <View pointerEvents="none" accessibilityLiveRegion="polite" style={styles.pill}>
                 <Sen pose="happy" size={22} />
@@ -257,7 +266,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     alignItems: 'center',
   },
   footerText: { ...type.caption(11), color: theme.colors.inkMuted },
-  pullSlot: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
   pill: {
     position: 'absolute',
     top: 10,

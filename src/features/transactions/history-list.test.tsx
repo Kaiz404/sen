@@ -33,7 +33,7 @@ function List(props: Partial<HistoryViewProps>) {
       banner={null}
       skipped={0}
       notice={null}
-      refreshing={false}
+      pull="idle"
       arrival={NO_ARRIVAL}
       updated={null}
       biometric="fingerprint"

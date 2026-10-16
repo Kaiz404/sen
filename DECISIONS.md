@@ -45,6 +45,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 | D30 | Adding a transaction | A floating Add key on History, no bar |
+| D31 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
 
 ---
@@ -499,6 +500,15 @@ The phases are in [PLAN.md](PLAN.md).
 - **The owner's change.** The key stays a loud 60 × 60 "+" at every scroll position, with no "Add" word. The board's grow and shrink on scroll is dropped. The label "Add a transaction" is the name TalkBack and the flows use.
 - **With the toast.** Material lifts a FAB above a snackbar, so the key rises with the undo toast on the toast's own timing instead of hiding under it. A toast is one line plus a bar, so the lift is a fixed 92 pt. A two-line detail would still clear it by about 6 pt (inferred from the font sizes).
 
+## D31. Pull to refresh: a custom pan, with the platform control as the fallback
+
+**Compared.**
+- FlashList's `refreshing`, which is Android's `RefreshControl`. It is conventional and costs nothing, but its spinner cannot hold Sen, and the board's stretch out of the gap is impossible.
+- A `Gesture.Pan` beside the list, with the gap and Sen drawn by us.
+
+**Why the pan.** The board's pull, spin and landing are the screen's signature moment, and the pan gives direct manipulation, which DESIGN allows. The list's scroller is Gesture Handler's `ScrollView` with `simultaneousHandlers`, because a plain React Native scroller cancels a parent pan once it takes the touch. The pan pulls only while the list is at offset 0.
+
+**Risk.** Spike R1 (the pan beside FlashList on the phone, five normal scrolls still scroll) has not run. The unit tests prove the maths, the thresholds and the state changes through Gesture Handler's test driver, not the touch arbitration. If the spike fails, revert the lane's pull commit and keep `RefreshControl`.
 ## D32. Release build: R8 minify and resource shrinking through `expo-build-properties`
 
 **Compared.**

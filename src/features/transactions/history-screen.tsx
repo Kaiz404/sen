@@ -30,6 +30,7 @@ import {
   useSync,
 } from './data';
 import { HistoryView } from './history-view';
+import type { PullStatus } from './pull/pull-refresh';
 import { clockText } from './rows';
 
 const PILL_MS = 2500;
@@ -43,6 +44,7 @@ export function HistoryScreen(): ReactNode {
   const [search, setSearch] = useState('');
   const [flow, setFlow] = useState<Flow>('all');
   const [updated, setUpdated] = useState<number | null>(null);
+  const [pull, setPull] = useState<PullStatus>('idle');
   const deferredSearch = useDeferredValue(search);
 
   const today = malaysiaDay(toInstant(new Date()));
@@ -87,14 +89,22 @@ export function HistoryScreen(): ReactNode {
     return () => clearTimeout(timer);
   }, [updated]);
 
-  const refresh = (trigger: 'pull' | 'retry') =>
+  const refresh = (trigger: 'pull' | 'retry') => {
+    const pulled = trigger === 'pull';
+    if (pulled) setPull('loading');
     mutate(trigger, {
       onSuccess: (summary) => {
-        playHaptic('refreshLanded');
+        // A pull's landing moment plays the haptic itself, at the touchdown.
+        if (pulled) setPull('landed');
+        else playHaptic('refreshLanded');
         setUpdated(summary.received);
       },
-      onError: () => playHaptic('networkError'),
+      onError: () => {
+        setPull('idle');
+        playHaptic('networkError');
+      },
     });
+  };
 
   const sync = syncView(syncing);
   const body = historyBody({
@@ -117,7 +127,7 @@ export function HistoryScreen(): ReactNode {
       banner={notes.banner}
       skipped={notes.skipped + data.skipped}
       notice={notice}
-      refreshing={syncing.isPending && syncing.variables === 'pull'}
+      pull={pull}
       arrival={arrival}
       updated={updated}
       biometric={biometric}
@@ -142,6 +152,7 @@ export function HistoryScreen(): ReactNode {
           AccessibilityInfo.announceForAccessibility('Amounts hidden');
         },
         onRefresh: () => refresh('pull'),
+        onPullSettled: () => setPull('idle'),
         onRetry: () => refresh('retry'),
         onEndReached: data.loadMore,
         onAdd: () => router.push('/add'),

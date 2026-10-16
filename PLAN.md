@@ -136,7 +136,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - **Perf.** Release build on the owner's phone with the Perf Monitor while Unlock and Reveal play. A Jest render counter shows no React commits during a moment (done: `amounts.test.tsx`, "a moment plays with no React commits after it starts").
 
 **Lane 4e. Pull-to-refresh gesture (optional).** Owns `src/features/transactions/pull/`.
-- [ ] Spike R1 first. A `Gesture.Pan` with `Gesture.Native` over FlashList pulls on `adb shell input swipe`, fires the threshold once, and five normal scrolls still scroll. If it fails, keep `RefreshControl` (cut 3).
+- [ ] Spike R1 first. A `Gesture.Pan` with `Gesture.Native` over FlashList pulls on `adb shell input swipe`, fires the threshold once, and five normal scrolls still scroll. If it fails, keep `RefreshControl` (cut 3). Built and unit-tested (`pull-refresh.test.tsx`, `pull-math.test.ts`), device spike not run yet, so the box stays open.
 
 **Verify, unit.** Each lane's reducer and component tests pass.
 **Verify, device.** One Maestro flow per lane, with screenshots.

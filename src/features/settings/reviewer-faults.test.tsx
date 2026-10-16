@@ -2,6 +2,7 @@ import '@shopify/flash-list/jestSetup';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { HistoryScreen } from '@/features/transactions';
 import type { OpenDb } from '@/services/db';
@@ -51,7 +52,15 @@ async function renderBoth() {
 }
 
 const pick = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
-const pull = () => fireEvent(screen.getByTestId('history-list'), 'refresh');
+const pull = () =>
+  act(() => {
+    fireGestureHandler(getByGestureTestId('history-pull'), [
+      { translationY: 0 },
+      { translationY: 150 },
+      { translationY: 300 },
+    ]);
+    jest.advanceTimersByTime(1);
+  });
 const reads = (name: string) =>
   screen.getByRole('radio', { name }).props.accessibilityState.checked as boolean;
 const SIMULATED = { name: 'Simulated fault. Change it in Settings' };

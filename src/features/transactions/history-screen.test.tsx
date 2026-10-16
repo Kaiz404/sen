@@ -13,6 +13,8 @@ import { readSyncState } from '@/services/sync';
 
 import { arrivals, bank, markArrival, resetBank, syncProgress } from './data';
 import { HistoryScreen } from './history-screen';
+import { LAND_MS } from './pull/pull-refresh';
+import { pullDown } from './pull/testing';
 
 let mockDb: OpenDb;
 let mockFocused = true;
@@ -122,7 +124,7 @@ test('an offline fault covers one refresh: the banner shows, the fault turns its
   writePref('demo.next', 'offline');
   writePref('demo.newOnRefresh', true);
 
-  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+  await act(() => pullDown());
 
   expect(await screen.findByText("You're offline", undefined, LONG)).toBeOnTheScreen();
   expect(screen.getByText('Showing history from 2:00 pm.')).toBeOnTheScreen();
@@ -141,15 +143,16 @@ test('a fault picked while a refresh runs stays set, and the next refresh takes 
   await renderHistory();
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
 
-  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+  await act(() => pullDown());
   writePref('demo.next', 'server');
   await act(() => jest.advanceTimersByTime(3000));
   await waitFor(() => expect(syncProgress.getState().progress).toBeNull());
   expect(screen.queryByText('Something broke on our side')).not.toBeOnTheScreen();
   expect(readPref('demo.next')).toBe('server');
 
+  await act(() => jest.advanceTimersByTime(LAND_MS));
   writePref('demo.slow', false);
-  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+  await act(() => pullDown());
 
   expect(await screen.findByText('Something broke on our side', undefined, LONG)).toBeOnTheScreen();
   expect(readPref('demo.next')).toBe('normal');
@@ -205,7 +208,7 @@ test('the fault banner says the fault is simulated and links to the reviewer con
   expect(await screen.findByText('Tealive')).toBeOnTheScreen();
   writePref('demo.next', 'server');
 
-  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+  await act(() => pullDown());
   expect(await screen.findByText('Something broke on our side', undefined, LONG)).toBeOnTheScreen();
   await fireEvent.press(
     screen.getByRole('link', { name: 'Simulated fault. Change it in Settings' }),
