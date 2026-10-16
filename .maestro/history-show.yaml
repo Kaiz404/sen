@@ -1,0 +1,49 @@
+# Show and hide on the real History, starting hidden. Amounts survive a lock and unlock, and hiding brings the coins back.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: pass
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000
+- runFlow:
+    when:
+      visible: Hide amounts
+    commands:
+      - tapOn: Hide amounts
+- extendedWaitUntil:
+    visible: Show amounts
+    timeout: 5000
+- assertVisible: Amount hidden
+- takeScreenshot: shots/p3/flow-hidden
+- tapOn: Show amounts
+- extendedWaitUntil:
+    visible: Hide amounts
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible: Amount hidden
+- takeScreenshot: shots/p3/flow-shown
+- tapOn: Lock Sen now
+- extendedWaitUntil:
+    visible:
+      id: unlock
+    timeout: 10000
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible: Hide amounts
+    timeout: 30000
+- assertNotVisible: Amount hidden
+- takeScreenshot: shots/p3/flow-shown-after-unlock
+- tapOn: Hide amounts
+- extendedWaitUntil:
+    visible: Show amounts
+    timeout: 5000
+- assertVisible: Amount hidden
+- takeScreenshot: shots/p3/flow-hidden-again

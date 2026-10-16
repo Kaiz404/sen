@@ -1,0 +1,23 @@
+# Pulls History down with "New transaction on refresh" on. One new row lands, stamped with the current minute.
+# It checks the row, not the 2.5 s pill: over Tailscale the swipe alone takes Maestro 4 to 7 s.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: pass
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000
+- evalScript: "${output.minute = (function () { function clock(ms) { var d = new Date(ms + 8 * 3600000); var h = d.getUTCHours(); return (h % 12 || 12) + ':' + ('0' + d.getUTCMinutes()).slice(-2) + ' ' + (h < 12 ? 'am' : 'pm'); } return '.*(' + clock(Date.now()) + '|' + clock(Date.now() + 60000) + ')'; })()}"
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    visible: ${output.minute}
+    timeout: 15000
+- takeScreenshot: shots/p3/flow-refresh
