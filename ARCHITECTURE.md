@@ -210,22 +210,32 @@ Money output:
 Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query searches with no sort step, and `activity_log_by_time (at DESC, id DESC)`.
 
 **Sync (D2).**
-- **Cursor.** The mock bank serves pages ordered by a `seq` cursor.
-- **Upsert.** `sync()` parses each page with zod and upserts it in one transaction (`INSERT … ON CONFLICT(id) DO UPDATE`). A retried or interrupted sync ends in the same state.
-- **Seed (D5).** A seeded generator (mulberry32) feeds the mock bank. The first 20 rows match the design boards. Sizes are 20, 1k (the default) and 10k.
-- **Reviewer faults.** Forced `offline`, `timeout`, `server` and bad rows hit the real sync path.
+- **The bank.** `services/bank-api.ts` is an in-app mock with one endpoint, `fetchPage({ since, limit })`. It returns a `TransactionPageSchema` envelope whose items carry their feed `seq`, or a `Result` error of kind `offline`, `timeout` or `server`. `nextSeq` is null once a page reaches the end of the feed.
+- **Seed (D5).** `services/seed.ts` builds the feed with mulberry32 (seed 57), oldest first, so `seq` grows with time. Sizes are 20, 1k (the default) and 10k. The bank builds a size's feed at its first request and keeps it, so the pages of one sync agree.
+- **The boards' rows.** The newest 20 rows of every size are the boards' sample data: Tealive, the DuitNow from Aisyah Rahman, the Grab ride to KL Sentral, TNB electricity (RM 142.60, `FT26101400478213`), Shopee, the Touch 'n Go reload, GrabFood and the salary, then twelve rows for 1 to 12 Oct. With the boards' added row (Lunch with Hafiz, RM 42.50), 1 to 15 Oct sums to Money out RM 2,317.40 and Money in RM 6,850.00, as on SF-Reveal.
+- **Dates.** The boards' "today" is today in Malaysia once 1:15 pm (the latest board row) has passed, and yesterday before that, so no row is ever in the future. The tail walks back about three rows a day for 1k (to Nov 2025 from 15 Oct 2026) and fourteen a day for 10k (to Sep 2024), with the salary on the boards' payday each month.
+- **Reviewer faults.** The bank reads a `BankScenario` (`next`, `size`, `slow`, `newOnRefresh`) before every request. The settings lane feeds it from the `demo.*` prefs. `offline`, `timeout` and `server` fail the request. `bad_data` adds two broken rows with no `seq` to every page, so the real rows still arrive. `slow` waits 3 s before each request. `next` stays as set until something changes it.
+- **New row on refresh.** With `newOnRefresh` on, a request past the end of the feed mints one pending row at now. So each refresh after a full sync brings exactly one row.
+- **Upsert.** `sync(db, bank)` asks for pages of 500 after the saved cursor and parses each item on its own as a bank row (`source` must be `bank`). Each page upserts in chunks of 50 rows (`INSERT … ON CONFLICT(id) DO UPDATE … WHERE tx.source = 'bank'`) and saves the cursor (the highest item `seq`) and `synced_at`, all in one transaction. A sync that stops anywhere resumes from the last commit, and a second run converges on the same table. A bank row never overwrites a row added on the phone.
+- **Results.** `sync` returns a `Result`. Transport errors pass through. A body that is not a page, or a page that asks for more without moving the cursor, is `server`. Bad rows are dropped and the good ones kept, and the result is `invalid_data` with the count.
+- **Dataset switch.** `resetBankRows(db)` deletes bank rows and rewinds the cursor in one transaction. Added rows stay. The next sync loads the new size and reports `onProgress(received)` after each page.
 - **Pull-to-refresh.** Runs `sync()` through a TanStack mutation. Retries cover `offline`, `timeout` and `server` once, never `invalid_data`.
 
 **Reads (D3, D4).**
-- **Pages.** `useInfiniteQuery` loads keyset pages of 100 into FlashList.
-- **Totals.** The month card and day nets are plain `SUM … GROUP BY day` queries over the loaded date range.
-- **Search.** `LIKE` on `search_text`, with `%` and `_` escaped, and the input debounced with `useDeferredValue`.
+- **Module.** `services/tx-repo.ts`. Every function takes `db` first. A filter is `{ flow: 'all' | 'in' | 'out', search }`.
+- **Pages.** `readPage` returns keyset pages of 100, newest first, on `(posted_at, id) < cursor`. It reads one extra row, so `next` is null on the last page. `useInfiniteQuery` loads the pages into FlashList.
+- **Totals.** `readTotals` groups by `type` and `readDayNets` by `day`, newest day first, over a range of Malaysia days. The range becomes bounds on `posted_at`, so the page index serves it.
+- **Search.** `LIKE` on `search_text`, with `\`, `%` and `_` escaped. `search_text` and the query both go through `searchKey` (cleaned, accents stripped, lower case). Search matches the description only. The input is debounced with `useDeferredValue`.
+- **Detail.** `getTransaction(db, id)` is masked and `getRevealedTransaction` adds the amount. Both return null for a missing or unreadable row.
+- **Writes.** `insertManual(db, draft, now)` stores a draft as `m-<idemKey>` with a `SEN-M-` reference made from the key, at the current Malaysia time of day on the chosen day. A repeated `idemKey` writes nothing and returns the stored row with `created: false`. `deleteManual` returns `deleted`, `missing` or `read_only` (bank rows).
+- **Undo.** `deleteManual` keeps the deleted row as JSON in `meta` (`undo.deleted`), and `restoreDeleted` moves it back. Both run in SQL, so undo never brings the amount into JS. `eraseManual` deletes every added row and the undo copy.
 - **Freshness.** The one write module calls `invalidateQueries(['tx'])` after every commit.
+- **Measured.** A Jest bench on 10k rows (seed 57), `node:sqlite` on WSL, 50 runs after 5 warm-up, p95: first page 2.9 to 5.0 ms, a page after row 5,000 3.5 to 4.9 ms, month counts or sums 0.1 ms, 7-day nets 0.1 to 0.6 ms, 300 revealed amounts 1.0 to 2.2 ms, search "entral" page and count 5.7 to 6.4 ms. A full sync of 10k rows took 325 to 386 ms. These are desktop numbers, not phone numbers. On a page, the SQL alone is 0.7 to 1.2 ms at p50, so parsing 100 rows with zod is about two thirds of the time.
 
 **Masking (D6).**
-- **Masked queries.** They return `MaskedRow` and never select `amount_minor`. Masked totals return counts only.
+- **Masked queries.** `readPage`, `readTotals`, `readDayNets` and `getTransaction` never select `amount_minor`. Masked totals and day nets return counts only. Every function that returns an amount has `Revealed` in its name.
 - **Shown or hidden.** The `hideAmounts` pref decides, not the session. It survives lock and restart. Showing goes through `useStepUp('reveal')`. Hiding never prompts.
-- **On show.** One query loads `id → amountMinor` for the loaded range, keyed `['tx','revealed',…]`. Rows read it through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
+- **On show.** `readRevealedAmounts(db, { filter, through })` loads `id → amountMinor` for the loaded rows, from the newest down to the last loaded row, keyed `['tx','revealed',…]`. `readRevealedTotals` and `readRevealedDayNets` add sums and nets. Rows read the map through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
 - **On hide.** `removeQueries(['tx','revealed'])`. Lock also clears it with the whole cache.
 - **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount exists in JS.
 
@@ -338,7 +348,21 @@ Protected routes, which include every sheet and the add flow, are unmounted. A d
 | SecureStore `sen.dbKey.v1` | 32 random bytes as 64 hex characters, applied as a raw key (`PRAGMA key = "x'…'"`) so open skips PBKDF2 (V) | Keychain or Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY` |
 | MMKV `prefs` | theme, `hideAmounts`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
 
-**Key.** Generated with `getRandomValues`. It is readable only while the phone is unlocked and is never restored to another device (V).
+**Key.** 32 bytes from `expo-crypto` `getRandomValues`, stored as 64 hex characters. Read, write and delete all pass `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`, so the key is readable only while the phone is unlocked and is never restored to another device (V). A new key is stored only after its database opened, so a failed first open leaves no orphan key.
+
+**Vault.** `services/vault.ts` exposes `hasVault()` (a valid key is stored), `openVault()` and `destroyVault()`. `createVault(ports)` holds the logic. SecureStore, the database file, random bytes and prefs sit behind `VaultPorts`, so the tests run the rules on fakes.
+
+**Reset rules.**
+
+| Stored key | Opening the file | Result |
+| --- | --- | --- |
+| Valid | Opens | `opened` |
+| Missing, or not 64 hex | Opens (no file yet) | `created`, and the new key is stored |
+| Missing, or not 64 hex | `DbUnreadableError` or `SchemaTooNewError` | The file is deleted and a fresh one created with the new key. `reset`, `missing_key` |
+| Valid | `DbUnreadableError` or `SchemaTooNewError` | The file is deleted and a fresh one created with the same key. `reset`, `corrupt` |
+| Any | Any other error, such as a busy disk | Rethrown. Nothing is deleted |
+
+**Prefs.** `services/prefs.ts` keeps values as JSON strings in the MMKV instance `prefs`. Every read goes through `parsePref`, so a missing or corrupt value reads as its default. `subscribePrefs` hears every `writePref`, and every key after `clearPrefs`.
 
 **Why not `requireAuthentication`.** It would bind the key to biometrics. It is skipped for three reasons (V, expo-secure-store 57.0.4 source):
 - On Android, it prompts with `BIOMETRIC_STRONG` only and offers no passcode fallback.
@@ -354,10 +378,10 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | First unlock | Generate and store the key, create the database, run migrations, first sync |
 | Unlock | Read the key, open the database |
 | Lock | Close the database. Clear the query cache |
-| Sign out | Delete the key, `deleteDatabaseAsync`, `prefs.clearAll()` |
+| Sign out | The caller closes the database. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then delete manual rows and log it |
-| Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` |
-| Database unreadable | Same |
+| Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
+| Database unreadable or newer than the app | Same, as `corrupt` |
 | One bad row | Drop it, count it, show "1 item couldn't be read" |
 
 **Activity log.**
@@ -579,10 +603,14 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Lock clears the cache, closes the database, drops the draft | `features/auth/session.test.ts` |
 | Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/use-step-up.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
-| Sync twice and interrupted give the same table hash | `services/sync.test.ts` |
-| Search "entral" matches a JS filter on 10k rows | `services/tx-repo.test.ts` |
-| Seed is deterministic, valid, never in the future | `services/bank-api.test.ts` |
-| Missing key resets the database. Key shape and storage options | `services/vault.test.ts` |
+| Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row | `services/sync.test.ts` |
+| Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |
+| Seed is deterministic, valid, never in the future. Its newest rows are the boards' | `services/seed.test.ts` |
+| Bank paging, faults, slow mode, one new row per refresh | `services/bank-api.test.ts` |
+| Missing key resets the database, by the reset table. A busy disk wipes nothing. Key shape and storage options | `services/vault.test.ts` |
+| Prefs read back, fall back to defaults, and notify on write and clear | `services/prefs.test.ts` |
+| The logger takes an event code and nothing else | `services/logger.test.ts` |
+| Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
 | Log schema rejects amounts | `features/security/activity-log.test.ts` |
 | Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `services/sanitize.test.ts` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |
@@ -591,7 +619,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | A root call never lands inside an open transaction. A failed savepoint undoes only its writes | `services/db/port.test.ts` |
 | The key is the first statement on the device database | `services/db/expo.test.ts` |
 | Release config always guards screens | `features/security/screen-guard.test.ts` |
-| Selector and query benches on 10k rows within budget. They run alone and serially (`npm run test:bench`), because parallel workers inflate the timings | `*.bench.test.ts` |
+| Selector and query benches on 10k rows within budget. They run alone and serially (`npm run test:bench`), because parallel workers inflate the timings | `*.bench.test.ts`, `services/tx-repo.bench.test.ts` |
 
 ## Builds and delivery
 

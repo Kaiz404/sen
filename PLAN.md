@@ -78,12 +78,12 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
-- [ ] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert.
-- [ ] Masked and revealed queries, keyset pages, month and day sums, search.
-- [ ] The vault seam (`services/vault.ts`). The database key in SecureStore, open, sign-out, erase and the missing-key reset.
-- [ ] The prefs seam (`services/prefs.ts`) on MMKV, plus `logger.ts`, `sanitize.ts` and `haptics.ts`.
-- **Unit.** Sync twice and interrupted give the same table hash. Masked results hold no amounts. Search "entral" matches a JS filter.
-- **Perf.** Jest benches on 10k rows stay inside the D20 budgets.
+- [x] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert. Evidence: `services/seed.test.ts`, `services/bank-api.test.ts`, `services/sync.test.ts`.
+- [x] Masked and revealed queries, keyset pages, month and day sums, search. Evidence: `services/tx-repo.test.ts`.
+- [x] The vault seam (`services/vault.ts`). The database key in SecureStore, open, sign-out, erase and the missing-key reset. Evidence: `services/vault.test.ts` (reset table on fakes, key name and options on the SecureStore port). Erase is `eraseManual` in `services/tx-repo.ts`. Device run pending with lane 2c.
+- [x] The prefs seam (`services/prefs.ts`) on MMKV, plus `logger.ts`, `sanitize.ts` and `haptics.ts`. Evidence: `services/prefs.test.ts`, `services/logger.test.ts`, `services/sanitize.test.ts`, `services/haptics.test.ts`.
+- **Unit.** Sync twice and interrupted give the same table hash (`sync.test.ts`). Masked results hold no amounts (`tx-repo.test.ts`). Search "entral" matches a JS filter on 10k rows (`tx-repo.test.ts`, 416 rows).
+- **Perf.** Jest benches on 10k rows stay inside the D20 budgets (`services/tx-repo.bench.test.ts`, numbers in ARCHITECTURE.md › Data layer › Reads).
 
 **Lane 2c. Auth.** Owns `src/features/auth/`.
 - [ ] The session reducer as a pure table, the Zustand store holding the open database (`useDb()`), `useStepUp`, the AppState and idle locks, and the iOS inactive guard.
