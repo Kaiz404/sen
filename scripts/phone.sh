@@ -100,4 +100,19 @@ if [ "$(sha256sum "$APK" | cut -d' ' -f1)" != "$on_phone" ]; then
   adb shell cmd package compile -m speed -f "$PKG" >/dev/null
 fi
 
+# The dev client's floating gear button sits over History's lock key, so a flow's tap opens the developer menu.
+# Debug builds let run-as write the dev menu's own preferences: no gear, no menu at launch, onboarding done.
+prefs="$(sh_out run-as "$PKG" cat shared_prefs/expo.modules.devmenu.sharedpreferences.xml || true)"
+case "$prefs" in
+  *'name="showFab" value="false"'*) ;;
+  *)
+    adb shell am force-stop "$PKG"
+    printf '%s\n' "<?xml version='1.0' encoding='utf-8' standalone='yes' ?>" '<map>' \
+      '    <boolean name="isOnboardingFinished" value="true" />' \
+      '    <boolean name="showsAtLaunch" value="false" />' \
+      '    <boolean name="showFab" value="false" />' '</map>' |
+      adb shell "run-as $PKG sh -c 'cat > shared_prefs/expo.modules.devmenu.sharedpreferences.xml'"
+    ;;
+esac
+
 echo "$PHONE_ADB"
