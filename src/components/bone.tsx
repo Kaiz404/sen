@@ -2,7 +2,7 @@ import { type ReactNode, useId } from 'react';
 import { type DimensionValue, View, type ViewStyle } from 'react-native';
 import Animated, { type CSSAnimationKeyframes, type CSSStyle } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { StyleSheet, withUnistyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
 import { DUR } from '@/motion/tokens';
@@ -25,10 +25,6 @@ export function bandStyle(level: MotionLevel): CSSStyle<ViewStyle> | null {
   };
 }
 
-const ShimmerStop = withUnistyles(Stop, (theme, rt) => ({
-  stopColor: standIn(theme.colors, rt.themeName).shimmer,
-}));
-
 type BoneProps = {
   readonly width: DimensionValue;
   readonly height: number;
@@ -39,6 +35,8 @@ type BoneProps = {
 export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
   const band = bandStyle(useMotionPolicy());
   const gradient = useId();
+  const { theme, rt } = useUnistyles();
+  const shimmer = standIn(theme.colors, rt.themeName).shimmer;
   return (
     <View aria-hidden style={[styles.bone, { width, height, borderRadius: radius }]}>
       {band !== null && (
@@ -46,9 +44,9 @@ export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
           <Svg width="100%" height="100%">
             <Defs>
               <LinearGradient id={gradient} x1="0" y1="0" x2="1" y2="0">
-                <ShimmerStop offset="0.2" stopOpacity={0} />
-                <ShimmerStop offset="0.5" stopOpacity={1} />
-                <ShimmerStop offset="0.8" stopOpacity={0} />
+                <Stop offset="0.2" stopColor={shimmer} stopOpacity={0} />
+                <Stop offset="0.5" stopColor={shimmer} stopOpacity={1} />
+                <Stop offset="0.8" stopColor={shimmer} stopOpacity={0} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={`url(#${gradient})`} />
