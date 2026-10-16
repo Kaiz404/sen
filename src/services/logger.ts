@@ -10,6 +10,7 @@ const EVENTS = {
   'sync.failed.timeout': 'warn',
   'sync.failed.server': 'warn',
   'sync.failed.invalid_data': 'warn',
+  'db.close.failed': 'warn',
   'haptics.failed': 'warn',
   'guard.failed': 'warn',
 } as const satisfies Record<string, 'info' | 'warn'>;

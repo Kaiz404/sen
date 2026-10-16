@@ -237,6 +237,19 @@ test('a sign-out that fails returns to Lock and keeps nothing open', async () =>
   expect(await closed(db)).toBe('The database is closed.');
 });
 
+test('a database that fails to close does not stop sign-out', async () => {
+  const db = await openTestDb();
+  await unlockInto(db);
+  jest.spyOn(db, 'close').mockRejectedValueOnce(new Error('busy'));
+  lockNow();
+  destroyVault.mockResolvedValueOnce();
+
+  await signOut();
+
+  expect(destroyVault).toHaveBeenCalledTimes(1);
+  expect(session()).toEqual({ status: 'welcome' });
+});
+
 test('an armed lockout reports lockout once without prompting', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });

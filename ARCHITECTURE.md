@@ -485,7 +485,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | First unlock | Generate and store the key, create the database, run migrations, first sync |
 | Unlock | Read the key, open the database |
 | Lock | Close the database. Clear the query cache |
-| Sign out | The caller closes the database. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
+| Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then delete manual rows and log it |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |

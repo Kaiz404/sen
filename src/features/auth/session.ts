@@ -6,6 +6,7 @@ import { createStore } from 'zustand/vanilla';
 import { toast } from '@/components/toast';
 import type { AppError } from '@/models/errors';
 import type { OpenDb } from '@/services/db';
+import { logEvent } from '@/services/logger';
 import { endUnlock, mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
 import { destroyVault, hasVault, openVault } from '@/services/vault';
@@ -65,7 +66,7 @@ export function dispatch(event: SessionEvent): boolean {
     endUnlock();
     queryClient.clear();
     toast.hide();
-    closing = db.close();
+    closing = db.close().catch(() => logEvent('db.close.failed'));
   }
   return true;
 }
