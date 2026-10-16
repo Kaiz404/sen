@@ -148,8 +148,17 @@ const nativePorts: VaultPorts = {
         if (!(error instanceof Error && NOT_FOUND.test(error.message))) throw error;
       }
     },
-    /** expo-sqlite keeps databases in `SQLite/` under the documents directory on Android and iOS (expo-sqlite 57 native source). */
-    exists: () => new File(Paths.document, 'SQLite', DB_NAME).exists,
+    /**
+     * expo-sqlite keeps databases in `SQLite/` under the documents directory on Android and iOS (expo-sqlite 57
+     * native source). A check that throws counts as present: a false "missing" would delete a good key.
+     */
+    exists: () => {
+      try {
+        return new File(Paths.document, 'SQLite', DB_NAME).exists;
+      } catch {
+        return true;
+      }
+    },
   },
   randomBytes: (length) => getRandomValues(new Uint8Array(length)),
   clearPrefs,

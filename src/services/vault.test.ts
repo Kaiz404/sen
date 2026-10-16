@@ -301,4 +301,13 @@ describe('on the device ports', () => {
     expect(mockKeychain.has('sen.dbKey.v1')).toBe(false);
     expect(jest.mocked(File).mock.calls).toEqual([[Paths.document, 'SQLite', 'sen.db']]);
   });
+  test('a file check that throws keeps the key, so a bad check never deletes data', async () => {
+    mockKeychain.set('sen.dbKey.v1', KEY);
+    jest.mocked(File).mockImplementationOnce(() => {
+      throw new Error('FileSystem is not available');
+    });
+
+    expect(await hasVault()).toBe(true);
+    expect(mockKeychain.get('sen.dbKey.v1')).toBe(KEY);
+  });
 });
