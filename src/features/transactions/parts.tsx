@@ -426,12 +426,18 @@ const BANNER_COPY: Readonly<Record<Banner['kind'], string>> = {
   server: 'Something broke on our side',
 };
 
+/**
+ * The in-app bank fails only when a reviewer control asks it to, so the banner says so and leads back to the
+ * control.
+ */
 export function SyncBanner({
   banner,
   onRetry,
+  onSettings,
 }: {
   readonly banner: Banner;
   readonly onRetry: () => void;
+  readonly onSettings: () => void;
 }): ReactNode {
   return (
     <View testID="sync-banner" accessibilityRole="alert" style={styles.banner}>
@@ -443,6 +449,14 @@ export function SyncBanner({
             ? 'Showing what Sen saved.'
             : `Showing history from ${banner.since}.`}
         </Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Simulated fault. Change it in Settings"
+          hitSlop={12}
+          onPress={onSettings}
+        >
+          <Text style={styles.bannerLink}>Simulated · Change in Settings</Text>
+        </Pressable>
       </View>
       <Key tone="lemon" icon="refresh" label="Retry" onPress={onRetry} />
     </View>
@@ -616,6 +630,12 @@ const styles = StyleSheet.create((theme, rt) => ({
   bannerText: { flex: 1, gap: 2 },
   bannerTitle: { ...type.numerals(16), color: theme.colors.onHero },
   bannerDetail: { fontSize: 13, color: theme.colors.onHeroMuted },
+  bannerLink: {
+    ...type.mono(11, 600),
+    marginTop: 2,
+    color: theme.colors.lemon,
+    textDecorationLine: 'underline',
+  },
   note: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
   noteText: { flex: 1, fontSize: 13, color: theme.colors.inkMuted },
 }));

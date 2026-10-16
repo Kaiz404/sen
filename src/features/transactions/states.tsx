@@ -112,7 +112,7 @@ export function FullError({
         <Sen pose="worried" prop="plug" size={176} label="Sen, holding an unplugged cable" />
       </View>
       <View style={styles.failedText}>
-        <Text style={styles.caption}>{caption}</Text>
+        <Text style={styles.caption}>{`${caption} · SIMULATED`}</Text>
         <Text accessibilityRole="header" style={styles.failedTitle}>
           {title}
         </Text>

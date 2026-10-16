@@ -40,6 +40,8 @@ export type HistoryActions = {
   readonly onEndReached: () => void;
   readonly onAdd: () => void;
   readonly onSettings: () => void;
+  /** Settings scrolled to the reviewer controls, from a simulated fault. */
+  readonly onReviewerSettings: () => void;
   readonly onLock: () => void;
   readonly onOpen: (id: TxId) => void;
   readonly onDismissNotice: () => void;
@@ -161,7 +163,13 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
   return (
     <RevealedAmounts value={props.revealed}>
       <View testID="history" style={styles.screen}>
-        {banner !== null && <SyncBanner banner={banner} onRetry={actions.onRetry} />}
+        {banner !== null && (
+          <SyncBanner
+            banner={banner}
+            onRetry={actions.onRetry}
+            onSettings={actions.onReviewerSettings}
+          />
+        )}
         <Header
           inset={banner === null}
           onAdd={actions.onAdd}
@@ -169,7 +177,11 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
           onLock={actions.onLock}
         />
         {body.kind === 'failed' ? (
-          <FullError error={body.error} onRetry={actions.onRetry} onSettings={actions.onSettings} />
+          <FullError
+            error={body.error}
+            onRetry={actions.onRetry}
+            onSettings={actions.onReviewerSettings}
+          />
         ) : (
           <View style={styles.listSlot}>
             <FlashList

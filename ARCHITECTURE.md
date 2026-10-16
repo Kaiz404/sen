@@ -408,9 +408,10 @@ A deep link that arrives while locked lands on Lock and is not replayed after un
 
 | Source | Kind | UI |
 | --- | --- | --- |
-| Sync, no local rows | `offline`, `timeout`, `server` | Full error card with Retry |
+| Sync, no local rows | `offline`, `timeout`, `server` | Full error card with Retry, and a "Reviewer settings" link because the fault is simulated |
 | Sync, local rows exist | `offline` | Calm banner over the list with the last sync time |
 | Sync, local rows exist | `timeout`, `server` | Banner, list kept, Retry |
+| Any of the three | | The banner's "Simulated · Change in Settings" line and the full error's link open Settings at the reviewer controls (`/settings?focus=reviewers`) |
 | Sync | `invalid_data` | List shown, "2 items couldn't be read" |
 | Database | `db_reset` | One-time notice |
 

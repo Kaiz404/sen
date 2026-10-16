@@ -20,6 +20,7 @@ export const NO_ACTIONS: HistoryActions = {
   onEndReached: noop,
   onAdd: noop,
   onSettings: noop,
+  onReviewerSettings: noop,
   onLock: noop,
   onOpen: noop,
   onDismissNotice: noop,

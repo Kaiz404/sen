@@ -32,6 +32,7 @@ const NOW = new Date('2026-10-15T06:00:00.000Z');
 
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
+  mockPush.mockClear();
   clearPrefs();
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);
@@ -157,13 +158,28 @@ test('a bank reset runs the first sync again, even after a first sync that faile
   expect(await readSyncState(mockDb)).toEqual({ cursor: 1000, syncedAt: expect.any(String) });
 });
 
-test('a failed first load fills the screen, with Retry and a way to the reviewer settings', async () => {
+test('a failed first load fills the screen, says the fault is simulated, and links to the reviewer controls', async () => {
   writePref('demo.next', 'offline');
   await renderHistory();
 
   expect(await screen.findByText("Can't load your history", undefined, LONG)).toBeOnTheScreen();
+  expect(screen.getByText('NO CONNECTION · SIMULATED')).toBeOnTheScreen();
   expect(screen.queryByTestId('history-list')).not.toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('link', { name: 'Reviewer settings' }));
 
-  expect(mockPush).toHaveBeenCalledWith('/settings');
+  expect(mockPush).toHaveBeenCalledWith('/settings?focus=reviewers');
+});
+
+test('the fault banner says the fault is simulated and links to the reviewer controls', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  writePref('demo.next', 'server');
+
+  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+  expect(await screen.findByText('Something broke on our side', undefined, LONG)).toBeOnTheScreen();
+  await fireEvent.press(
+    screen.getByRole('link', { name: 'Simulated fault. Change it in Settings' }),
+  );
+
+  expect(mockPush).toHaveBeenCalledWith('/settings?focus=reviewers');
 });

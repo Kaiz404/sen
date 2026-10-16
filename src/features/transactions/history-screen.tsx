@@ -127,6 +127,7 @@ export function HistoryScreen(): ReactNode {
         onEndReached: data.loadMore,
         onAdd: () => router.push('/add'),
         onSettings: () => router.push('/settings'),
+        onReviewerSettings: () => router.push('/settings?focus=reviewers'),
         onLock: lockNow,
         onOpen: (id) => router.push(`/transaction/${id}`),
         onDismissNotice: dismissDbResetNotice,

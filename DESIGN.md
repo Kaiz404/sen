@@ -379,6 +379,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - **Timeout and server errors.** Each has its own copy.
 - **Bad data.** Valid rows stay, with a skipped count.
 - **Stale detail.** "This transaction isn't here any more."
+- **Simulated.** Every bank failure comes from a reviewer control, because the in-app bank never fails on its own. The banner's second line reads "Simulated · Change in Settings", and the full error's caption ends in "· SIMULATED" above its "Reviewer settings" link. Both open Settings at the reviewer controls. A fault lasts one request, so Retry recovers.
 
 **Background.**
 - `inactive` shows the privacy cover on iOS. Android never emits `inactive`, so FLAG_SECURE blanks the recents view there.
