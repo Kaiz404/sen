@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -63,7 +64,7 @@ export function PrimerView({
   onOpenSettings,
   onBack,
 }: PrimerViewProps): ReactNode {
-  const { theme } = useUnistyles();
+  const { theme, rt } = useUnistyles();
   const copy = BIOMETRIC[biometric];
   const { name, icon } = copy;
   const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
@@ -74,6 +75,8 @@ export function PrimerView({
 
   return (
     <View style={styles.screen}>
+      {/* Welcome stays mounted under the primer, and its light status bar would otherwise win. */}
+      <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Key icon="arrow-left" accessibilityLabel="Back" onPress={onBack} />
         <Text style={styles.caption}>STEP 2 OF 2</Text>
