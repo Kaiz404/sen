@@ -300,7 +300,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 88 pa
 - **Unlock.** `unlock()` prompts, then calls `openVault()`. A `reset` result leaves a `db_reset` notice that History reads with `useDbResetNotice()` and clears with `dismissDbResetNotice()`. A vault that fails to open returns to Lock with the generic error.
 - **Sign out.** `signOut()` serves Settings and "Not you? Start again" on Lock. It enters `signingOut`, waits for the database to close, calls `destroyVault()` (which also clears prefs), then shows Welcome. Only `SIGN_OUT_DONE` or `SIGN_OUT_FAIL` leaves `signingOut`, so an unlock, a lock or a tap during the erase does nothing. A failure returns to `locked{signout}` and Lock shows the generic error.
 - **Biometric name.** Copy names the device's own biometric: Face ID or Touch ID on iOS, fingerprint or face unlock on Android, from `supportedAuthenticationTypesAsync()`. `ready` is a strong biometric enrolled (`getEnrolledLevelAsync()`). When it is false, Lock and the primer open on "is off".
-- **Exports.** `useRouteGate`, `useDb`, `useStepUp`, `useAmountsHidden`, `showAmounts`, `hideAmounts`, `useDbResetNotice`, `useBiometric`, `lockNow`, `signOut`, `armLockout` (the reviewer lockout control) and `dismissDbResetNotice`. The screens export a prop-driven view next to each container (`LockView`, `PrimerView`, `WelcomeView`) for the gallery.
+- **Exports.** `useRouteGate`, `useDb`, `useStepUp`, `useAmountsHidden`, `showAmounts`, `hideAmounts`, `useDbResetNotice`, `useBiometric`, `lockNow`, `signOut`, `armLockout` (the reviewer lockout control), `dismissDbResetNotice`, and the dev-only `setAuthOverride` and `isAuthOverride`. The screens export a prop-driven view next to each container (`LockView`, `PrimerView`, `WelcomeView`) for the gallery.
 
 **Showing and hiding amounts (D27).** `features/auth/amounts.ts` owns the `hideAmounts` pref's behaviour.
 - `useAmountsHidden()` reads the pref through `useSyncExternalStore` on `subscribePrefs`, so every writer re-renders it.
@@ -327,6 +327,10 @@ The writes and logs belong to the callers. Undo inside the 6 s toast skips the p
 - `disableDeviceFallback: false`.
 - `isAuthenticatingRef` is set before the prompt and cleared in `finally`. A prompt requested while it is set resolves `cancelled`.
 
+| Module state | Values | Set by | Read by |
+| --- | --- | --- | --- |
+| `authOverride` in `prompt.ts`, dev builds only | `real` (default), `pass`, `fail`, `cancel`, `lockout`. Each stands in for the native result (`success`, `authentication_failed`, `user_cancel`, `lockout`), so the `FAILURE` table and `isAuthenticatingRef` still apply | `setAuthOverride()`, called by the gallery for `sen://dev/states?auth=<value>` | `authenticate()`, in place of `authenticateAsync`. Memory only, so a reload returns it to `real` |
+
 How the first two combine on a phone with only weak biometrics isn't documented, so it gets tested on a device.
 
 **Error codes.** The table `FAILURE` in `prompt.ts` types every `LocalAuthenticationError`, so a new code fails `tsc`. The native code is untrusted input. expo-local-authentication 57.0.3 on iOS also returns `unknown: <code>, <message>` and `missing_usage_description` (V, `LocalAuthenticationModule.swift`), so any code not in the table maps to `unknown`.
@@ -341,7 +345,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | `not_available` | `unavailable` | Explain, passcode |
 | `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown`, and any code not in the table | `unknown` | "Something went wrong." Generic retry |
 
-**Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself. "Not quite." appears on iOS, where LocalAuthentication reports the failure.
+**Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself. "Not quite." appears on iOS, where LocalAuthentication reports the failure. On Android it shows only through the dev override `auth=fail`, which `.maestro/auth-mismatch.yaml` uses.
 
 **Lock triggers** (`features/auth/locks.ts`, wired by `SessionRoot`).
 
@@ -675,6 +679,7 @@ Sen has no server. Everything it protects is on the phone.
 | T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
 | T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
 | T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
+| T12 | The dev auth override skipping biometrics | Only `sen://dev/states` sets it, and that route is mounted only under `__DEV__`. `setAuthOverride` stores and `authenticate` reads only under `__DEV__`, which a release bundle compiles to `false`: the setter becomes an empty function and the prompt function is a bare `authenticateAsync` call. Memory only | `features/auth/prompt.ts`, `features/gallery/index.tsx` | `prompt.test.ts` (a release build stores and reads no override). `npm run release:auth-check` greps a production bundle |
 
 **What this does not protect against.** The README says this in plain words.
 

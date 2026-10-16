@@ -44,7 +44,13 @@ const styles = StyleSheet.create({ root: { flex: 1 } });
 export { hideAmounts, showAmounts, useAmountsHidden } from './amounts';
 export { AUTH_STATES } from './fixtures';
 export type { LockReason, RouteGate, StepUpAction } from './machine';
-export type { AuthFailure, Biometric } from './prompt';
+export {
+  type AuthFailure,
+  type AuthOverride,
+  type Biometric,
+  isAuthOverride,
+  setAuthOverride,
+} from './prompt';
 export type { PromptView } from './prompt-view';
 export {
   armLockout,

@@ -3,6 +3,7 @@ import {
   authenticateAsync,
   getEnrolledLevelAsync,
   type LocalAuthenticationError,
+  type LocalAuthenticationResult,
   SecurityLevel,
   supportedAuthenticationTypesAsync,
 } from 'expo-local-authentication';
@@ -38,6 +39,36 @@ function failureOf(error: string): AuthFailure {
   return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
 }
 
+/** What the native prompt answers while a device flow drives the app, since no agent can press a real finger. */
+const AUTH_OVERRIDES = {
+  pass: { success: true },
+  fail: { success: false, error: 'authentication_failed' },
+  cancel: { success: false, error: 'user_cancel' },
+  lockout: { success: false, error: 'lockout' },
+} as const satisfies Readonly<Record<string, LocalAuthenticationResult>>;
+
+export type AuthOverride = keyof typeof AUTH_OVERRIDES | 'real';
+
+let authOverride: AuthOverride = 'real';
+
+export function isAuthOverride(value: string): value is AuthOverride {
+  return value === 'real' || Object.hasOwn(AUTH_OVERRIDES, value);
+}
+
+/** Dev builds only. Release builds compile `__DEV__` to false, so the override is never stored or read. */
+export function setAuthOverride(next: AuthOverride): void {
+  if (__DEV__) authOverride = next;
+}
+
+function nativePrompt(promptMessage: string): Promise<LocalAuthenticationResult> {
+  if (__DEV__ && authOverride !== 'real') return Promise.resolve(AUTH_OVERRIDES[authOverride]);
+  return authenticateAsync({
+    promptMessage,
+    biometricsSecurityLevel: 'strong',
+    disableDeviceFallback: false,
+  });
+}
+
 const isAuthenticatingRef = { current: false };
 
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
@@ -46,11 +77,7 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
   if (isAuthenticatingRef.current) return BUSY;
   isAuthenticatingRef.current = true;
   try {
-    const result = await authenticateAsync({
-      promptMessage,
-      biometricsSecurityLevel: 'strong',
-      disableDeviceFallback: false,
-    });
+    const result = await nativePrompt(promptMessage);
     return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
   } catch {
     return { ok: false, reason: 'unknown' };

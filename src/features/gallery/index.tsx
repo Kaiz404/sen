@@ -1,15 +1,23 @@
 import { Link, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode, useCallback } from 'react';
+import { type ReactNode, useCallback, useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { StyleSheet, UnistylesRuntime, useUnistyles } from 'react-native-unistyles';
 
+import { type AuthOverride, isAuthOverride, setAuthOverride } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { DbSmoke } from '@/features/stub';
 import { type } from '@/theme/type';
 
 import { PoseIndex } from './poses';
-import { type GalleryQuery, parseQuery, parseTheme, shotName, type ThemeName } from './query';
+import {
+  type GalleryQuery,
+  type Params,
+  parseQuery,
+  parseTheme,
+  shotName,
+  type ThemeName,
+} from './query';
 import { isComponent, SCREENS } from './registry';
 
 function useForcedTheme(theme: ThemeName | undefined) {
@@ -30,12 +38,28 @@ function useShotId(shot: string | undefined, theme: ThemeName | undefined): stri
   return `shot-${shot}`;
 }
 
+/** `?auth=pass` makes the next biometric prompts answer without a finger, so device flows can pass Lock. */
+function useAuthOverrideParam(params: Params): AuthOverride | undefined {
+  const auth = typeof params.auth === 'string' && isAuthOverride(params.auth) ? params.auth : undefined;
+  useEffect(() => {
+    if (auth !== undefined) setAuthOverride(auth);
+  }, [auth]);
+  return auth;
+}
+
 export function StatesScreen(): ReactNode {
   const params = useLocalSearchParams();
   const theme = parseTheme(params);
   useForcedTheme(theme);
+  const auth = useAuthOverrideParam(params);
   const focused = useIsFocused();
   const query = parseQuery(params, SCREENS);
+  if (auth !== undefined && query.kind === 'index')
+    return (
+      <View style={styles.screen}>
+        <Frame caption={`auth · ${auth}`} shotId={`auth-${auth}`} />
+      </View>
+    );
   if (query.kind === 'db') return <DbSmoke />;
   return (
     <View style={styles.screen}>
@@ -98,7 +122,7 @@ function Frame({
 }: {
   caption: string;
   shotId?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const { rt } = useUnistyles();
   return (
