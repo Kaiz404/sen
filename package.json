@@ -78,6 +78,11 @@
       "react-reconciler": "0.33.0"
     }
   },
+  "reanimated": {
+    "staticFeatureFlags": {
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+    }
+  },
   "expo": {
     "install": {
       "exclude": [
