@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { DayKeySchema } from '@/models/day';
+import { addDays, DayKeySchema } from '@/models/day';
 import { type MaskedRow, MaskedRowSchema } from '@/models/transaction';
 
 import { AmountView } from './amount-step';
@@ -87,10 +87,10 @@ function Details({
   );
 }
 
-function Review({ state }: { state: SaveState }) {
+function Review({ state, draft = DRAFT }: { state: SaveState; draft?: DraftInput }) {
   return (
     <ReviewView
-      draft={DRAFT}
+      draft={draft}
       today={TODAY}
       biometric="fingerprint"
       state={state}
@@ -130,6 +130,9 @@ export const ADD_STATES = {
   'review-ready': () => <Review state={{ kind: 'ready' }} />,
   'review-checking': () => <Review state={{ kind: 'checking' }} />,
   'review-cancelled': () => <Review state={{ kind: 'refused', reason: 'cancelled' }} />,
+  'review-date-expired': () => (
+    <Review state={{ kind: 'ready' }} draft={{ ...DRAFT, day: addDays(TODAY, -91) }} />
+  ),
   'review-failed': () => <Review state={{ kind: 'failed' }} />,
   'delete-confirm': () => <Delete phase={{ kind: 'ready' }} />,
   'delete-checking': () => <Delete phase={{ kind: 'checking' }} />,

@@ -81,6 +81,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: add-review-cancelled-light
+- openLink: "sen://dev/states?screen=add&state=review-date-expired&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-date-expired-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-date-expired-light
 - openLink: "sen://dev/states?screen=add&state=review-failed&theme=light"
 - extendedWaitUntil:
     visible:

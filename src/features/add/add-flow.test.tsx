@@ -198,6 +198,15 @@ test('a double tap on Save prompts once and stores one row, then Undo removes it
   expect(mockStepUp).toHaveBeenCalledTimes(1);
 });
 
+test('a date that left the 90-day window while reviewing says so instead of a dead Save', async () => {
+  await renderStep(<ReviewStep />, { ...FILLED, day: DayKeySchema.parse('2026-07-16') });
+
+  expect(
+    screen.getByText('That date is now more than 90 days ago. Pick another.'),
+  ).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Save with fingerprint' })).toBeDisabled();
+});
+
 test('a cancelled prompt writes nothing and keeps the draft on review', async () => {
   mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
   await renderStep(<ReviewStep />, FILLED);

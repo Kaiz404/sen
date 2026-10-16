@@ -13,6 +13,7 @@ import { type AuthFailure, type Biometric, useBiometric, useDb, useStepUp } from
 import { Sen } from '@/features/sen';
 import { CATEGORY_LABEL } from '@/models/category';
 import { type DayKey, toInstant } from '@/models/day';
+import { isInAddWindow } from '@/models/draft';
 import { minor, moneyText, signed, signedMinor } from '@/models/money';
 import type { TxId } from '@/models/transaction';
 import type { Db } from '@/services/db';
@@ -87,6 +88,14 @@ export function ReviewView({
         <StepHeader step={3} onBack={onBack} onClose={onClose} />
       </View>
       <ScrollView contentContainerStyle={styles.body}>
+        {!ready && !isInAddWindow(draft.day, today) && (
+          <Notice
+            tone="danger"
+            icon="alert-circle-outline"
+            title="Can't save this date"
+            body="That date is now more than 90 days ago. Pick another."
+          />
+        )}
         {state.kind === 'refused' && (
           <Notice
             tone="calm"
