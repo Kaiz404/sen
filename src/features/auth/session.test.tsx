@@ -18,6 +18,7 @@ import {
   useDb,
   useDbResetNotice,
 } from './session';
+import { gateOf } from './machine';
 
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
@@ -79,6 +80,40 @@ test('unlock opens the vault and hands its database to protected screens', async
 
   expect(session()).toMatchObject({ status: 'unlocked', db });
   expect((await renderHook(() => useDb())).result.current).toBe(db);
+});
+
+test('an unlock with a hold keeps Lock routed for that long, then opens History', async () => {
+  jest.useFakeTimers();
+  const db = await openTestDb();
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValueOnce({ success: true });
+  openVault.mockResolvedValueOnce({ kind: 'opened', db });
+
+  expect(await unlock(1370)).toEqual({ ok: true });
+  expect(session()).toMatchObject({ status: 'arriving', purpose: 'unlock', db });
+  expect(gateOf(session())).toBe('locked');
+  jest.advanceTimersByTime(1369);
+  expect(session().status).toBe('arriving');
+  jest.advanceTimersByTime(1);
+
+  expect(session()).toMatchObject({ status: 'unlocked', db });
+  jest.useRealTimers();
+});
+
+test('a lock while Sen plays the unlock closes the vault, and the hold ending changes nothing', async () => {
+  jest.useFakeTimers();
+  const db = await openTestDb();
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValueOnce({ success: true });
+  openVault.mockResolvedValueOnce({ kind: 'opened', db });
+  await unlock(1370);
+
+  lockNow();
+  jest.advanceTimersByTime(1370);
+
+  expect(session()).toEqual({ status: 'locked', reason: 'manual' });
+  expect(await closed(db)).toBe('The database is closed.');
+  jest.useRealTimers();
 });
 
 test('a cancelled unlock stays on Lock and leaves the vault shut', async () => {

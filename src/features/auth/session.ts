@@ -42,6 +42,7 @@ export const sessionStore = createStore<SessionStore>(() => ({
 
 let closing: Promise<void> = Promise.resolve();
 let lockoutArmed = false;
+let arrival: ReturnType<typeof setTimeout> | undefined;
 
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
 
@@ -67,7 +68,11 @@ export async function launch(): Promise<void> {
   dispatch({ type: 'LAUNCHED', hasVault: vault });
 }
 
-export async function unlock(): Promise<AuthOutcome> {
+/**
+ * Prompts, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
+ * Unlock moment, before History opens.
+ */
+export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
   if (lockoutArmed) {
@@ -85,6 +90,9 @@ export async function unlock(): Promise<AuthOutcome> {
     const opened = await openVault();
     if (opened.kind === 'reset') sessionStore.setState({ dbReset: opened.reason });
     dispatch({ type: 'UNLOCK_OK', at: Date.now(), db: opened.db });
+    clearTimeout(arrival);
+    if (arriveAfterMs === 0) dispatch({ type: 'ARRIVED' });
+    else arrival = setTimeout(() => dispatch({ type: 'ARRIVED' }), arriveAfterMs);
     return outcome;
   } catch {
     dispatch({ type: 'AUTH_FAIL' });

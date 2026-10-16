@@ -5,12 +5,24 @@ export type StepUpAction = 'reveal' | 'add' | 'delete' | 'clearLog' | 'erase';
 
 export type Unlocked = { readonly status: 'unlocked'; readonly since: number; readonly db: OpenDb };
 
+/**
+ * The check passed and the vault is open, but the screen that asked still shows while Sen plays its
+ * Unlock moment. `ARRIVED` opens History.
+ */
+type Arriving = {
+  readonly status: 'arriving';
+  readonly purpose: 'setup' | 'unlock';
+  readonly since: number;
+  readonly db: OpenDb;
+};
+
 export type Session =
   | { readonly status: 'launching' }
   | { readonly status: 'welcome' }
   | { readonly status: 'locked'; readonly reason: LockReason }
   | { readonly status: 'authenticating'; readonly purpose: 'setup' }
   | { readonly status: 'authenticating'; readonly purpose: 'unlock'; readonly reason: LockReason }
+  | Arriving
   | Unlocked
   | { readonly status: 'stepUp'; readonly action: StepUpAction; readonly returnTo: Unlocked }
   | { readonly status: 'signingOut' };
@@ -19,6 +31,7 @@ export type SessionEvent =
   | { readonly type: 'LAUNCHED'; readonly hasVault: boolean }
   | { readonly type: 'AUTH_START' }
   | { readonly type: 'UNLOCK_OK'; readonly at: number; readonly db: OpenDb }
+  | { readonly type: 'ARRIVED' }
   | { readonly type: 'AUTH_FAIL' }
   | { readonly type: 'STEP_UP_START'; readonly action: StepUpAction }
   | { readonly type: 'STEP_UP_DONE' }
@@ -43,7 +56,11 @@ export function reduce(state: Session, event: SessionEvent): Session {
 
     case 'UNLOCK_OK':
       if (state.status !== 'authenticating') return state;
-      return { status: 'unlocked', since: event.at, db: event.db };
+      return { status: 'arriving', purpose: state.purpose, since: event.at, db: event.db };
+
+    case 'ARRIVED':
+      if (state.status !== 'arriving') return state;
+      return { status: 'unlocked', since: state.since, db: state.db };
 
     case 'AUTH_FAIL':
       if (state.status !== 'authenticating') return state;
@@ -59,7 +76,7 @@ export function reduce(state: Session, event: SessionEvent): Session {
       return state.status === 'stepUp' ? state.returnTo : state;
 
     case 'LOCK':
-      if (state.status !== 'unlocked') return state;
+      if (state.status !== 'unlocked' && state.status !== 'arriving') return state;
       return { status: 'locked', reason: event.reason };
 
     case 'SIGN_OUT_START':
@@ -86,6 +103,7 @@ export function gateOf(state: Session): RouteGate {
     case 'welcome':
       return 'welcome';
     case 'authenticating':
+    case 'arriving':
       return state.purpose === 'setup' ? 'welcome' : 'locked';
     case 'launching':
     case 'locked':
@@ -100,6 +118,7 @@ export function gateOf(state: Session): RouteGate {
 export function dbOf(state: Session): OpenDb | null {
   switch (state.status) {
     case 'unlocked':
+    case 'arriving':
       return state.db;
     case 'stepUp':
       return state.returnTo.db;

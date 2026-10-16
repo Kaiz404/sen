@@ -13,6 +13,8 @@ const STATES = {
   locked: { status: 'locked', reason: 'idle' },
   setup: { status: 'authenticating', purpose: 'setup' },
   unlocking: { status: 'authenticating', purpose: 'unlock', reason: 'idle' },
+  arriving: { status: 'arriving', purpose: 'unlock', since: 2_000, db },
+  arrivingSetup: { status: 'arriving', purpose: 'setup', since: 2_000, db },
   unlocked,
   stepUp: { status: 'stepUp', action: 'delete', returnTo: unlocked },
   signingOut: { status: 'signingOut' },
@@ -24,6 +26,7 @@ const EVENTS = {
   'LAUNCHED none': { type: 'LAUNCHED', hasVault: false },
   AUTH_START: { type: 'AUTH_START' },
   UNLOCK_OK: { type: 'UNLOCK_OK', at: 2_000, db: other },
+  ARRIVED: { type: 'ARRIVED' },
   AUTH_FAIL: { type: 'AUTH_FAIL' },
   STEP_UP_START: { type: 'STEP_UP_START', action: 'reveal' },
   STEP_UP_DONE: { type: 'STEP_UP_DONE' },
@@ -47,12 +50,20 @@ const EXPECTED: Record<StateName, Partial<Record<EventName, Session>>> = {
     SIGN_OUT_START: { status: 'signingOut' },
   },
   setup: {
-    UNLOCK_OK: { status: 'unlocked', since: 2_000, db: other },
+    UNLOCK_OK: { status: 'arriving', purpose: 'setup', since: 2_000, db: other },
     AUTH_FAIL: { status: 'welcome' },
   },
   unlocking: {
-    UNLOCK_OK: { status: 'unlocked', since: 2_000, db: other },
+    UNLOCK_OK: { status: 'arriving', purpose: 'unlock', since: 2_000, db: other },
     AUTH_FAIL: { status: 'locked', reason: 'idle' },
+  },
+  arriving: {
+    ARRIVED: { status: 'unlocked', since: 2_000, db },
+    LOCK: { status: 'locked', reason: 'manual' },
+  },
+  arrivingSetup: {
+    ARRIVED: { status: 'unlocked', since: 2_000, db },
+    LOCK: { status: 'locked', reason: 'manual' },
   },
   unlocked: {
     STEP_UP_START: { status: 'stepUp', action: 'reveal', returnTo: unlocked },
@@ -87,6 +98,8 @@ test.each([
   ['locked', 'locked'],
   ['setup', 'welcome'],
   ['unlocking', 'locked'],
+  ['arriving', 'locked'],
+  ['arrivingSetup', 'welcome'],
   ['unlocked', 'unlocked'],
   ['stepUp', 'unlocked'],
   ['signingOut', 'locked'],
