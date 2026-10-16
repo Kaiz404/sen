@@ -6,8 +6,6 @@ env:
   MOMENT: unlock
   THEME: light
 ---
-- launchApp:
-    stopApp: false
 - startRecording: shots/4d/record-${MOMENT}-${THEME}
 - openLink: "sen://dev/states?screen=motion&state=${MOMENT}&theme=${THEME}"
 - extendedWaitUntil:
