@@ -37,6 +37,7 @@ import {
   MOTION_CHOICES,
   NEXT_CHOICES,
   RELOCK_CHOICES,
+  THEME_CHOICES,
 } from './copy';
 import {
   Badge,
@@ -53,7 +54,7 @@ import {
 import { usePref } from './use-pref';
 
 /** Prefs the screen writes straight through. Hiding amounts and the dataset size have their own actions. */
-export type PlainPref = Exclude<PrefKey, 'hideAmounts' | 'demo.datasetSize' | 'theme'>;
+export type PlainPref = Exclude<PrefKey, 'hideAmounts' | 'demo.datasetSize'>;
 
 export type SettingsValues = Pick<Prefs, PlainPref | 'hideAmounts' | 'demo.datasetSize'> & {
   readonly biometric: Biometric;
@@ -125,6 +126,17 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
           </View>
         </ReceiptSlip>
       </View>
+
+      <Section title="APPEARANCE">
+        <Card>
+          <ChoiceField
+            title="Theme"
+            choices={THEME_CHOICES}
+            value={values.theme}
+            onChange={(v) => onPref('theme', v)}
+          />
+        </Card>
+      </Section>
 
       <Section title="SECURITY">
         <Card>
@@ -330,6 +342,7 @@ export function SettingsScreen(): ReactNode {
     lockoutArmed,
     progress,
     hideAmounts: useAmountsHidden(),
+    theme: usePref('theme'),
     idleLock: usePref('idleLock'),
     relockAfter: usePref('relockAfter'),
     senMotion: usePref('senMotion'),
@@ -344,7 +357,7 @@ export function SettingsScreen(): ReactNode {
   const actions: SettingsActions = {
     onPref: (key, value) => {
       writePref(key, value);
-      playHaptic('segment');
+      playHaptic(key === 'theme' ? 'themeToggle' : 'segment');
     },
     onHideAmounts: (hidden) => {
       if (hidden) {

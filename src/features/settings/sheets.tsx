@@ -137,7 +137,7 @@ export function ResetDemoView({
       </Text>
       <Text style={styles.body}>
         The sample transactions start over and the reviewer controls go back to Normal. Rows you
-        added and your security choices stay.
+        added, your theme and your security choices stay.
       </Text>
       {phase === 'failed' && (
         <Text accessibilityRole="alert" style={styles.failed}>

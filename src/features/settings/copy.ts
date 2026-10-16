@@ -3,8 +3,14 @@ import type { Biometric } from '@/features/auth';
 import type { PrefValue } from '@/models/prefs';
 import type { MotionLevel } from '@/motion/policy';
 
-/** One option of a setting: the stored value and what the screen calls it. */
-export type Choice<V> = { readonly id: V; readonly label: string };
+/** One option of a setting: the stored value, what the screen calls it, and an optional icon. */
+export type Choice<V> = { readonly id: V; readonly label: string; readonly icon?: IconName };
+
+export const THEME_CHOICES: readonly Choice<PrefValue<'theme'>>[] = [
+  { id: 'light', label: 'Light', icon: 'white-balance-sunny' },
+  { id: 'dark', label: 'Dark', icon: 'weather-night' },
+  { id: 'system', label: 'System' },
+];
 
 export const IDLE_CHOICES: readonly Choice<PrefValue<'idleLock'>>[] = [
   { id: 2, label: '2 min' },

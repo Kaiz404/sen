@@ -393,6 +393,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 | Section | Control | Options | Default | Key |
 | --- | --- | --- | --- | --- |
 | Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA, Sen peeking over it | | | |
+| Appearance | Theme | Light · Dark · System, with a sun and a moon on the first two. System follows the phone | System | `theme` |
 | Security | Hide amounts | Switch. Turning it off asks for biometrics | On | `hideAmounts` |
 | Security | Lock when idle | 2 · 5 · 10 min | 5 min | `idleLock` |
 | Security | Lock again after leaving | Right away · 1 min · 5 min | 1 min | `relockAfter` |
@@ -415,7 +416,7 @@ Footer: `SEN 1.0.0 · SIMULATED DATA`.
 - "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden (D27).
 - Dataset size joins the reviewer slip.
 - History's fault states open Settings scrolled to the reviewer slip.
-- Not built: Theme (the phone's own setting decides), and the Source code and licences links (the README covers both). Security activity, Erase, and the app switcher and screenshot rows arrive with phase 5, when there is something true to show.
+- Not built: the Source code and licences links (the README covers both). Security activity, Erase, and the app switcher and screenshot rows arrive with phase 5, when there is something true to show.
 
 ## Copy and accessibility
 

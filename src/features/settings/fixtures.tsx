@@ -29,6 +29,7 @@ const DEFAULTS: SettingsValues = {
   lockoutArmed: false,
   progress: null,
   hideAmounts: PREFS.hideAmounts.default,
+  theme: PREFS.theme.default,
   idleLock: PREFS.idleLock.default,
   relockAfter: PREFS.relockAfter.default,
   senMotion: PREFS.senMotion.default,

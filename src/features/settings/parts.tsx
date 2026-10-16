@@ -171,7 +171,7 @@ export function ChoiceField<V extends string | number>({
       <Titles title={title} sub={sub} />
       <Segmented
         accessibilityLabel={title}
-        options={choices.map((c) => ({ id: String(c.id), label: c.label }))}
+        options={choices.map((c) => ({ id: String(c.id), label: c.label, icon: c.icon }))}
         value={String(value)}
         onChange={(id) => {
           const next = byId.get(id);

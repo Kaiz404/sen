@@ -2,12 +2,14 @@ import { Link, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-r
 import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useCallback, useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { StyleSheet, UnistylesRuntime, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type AuthOverride, isAuthOverride, setAuthOverride } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { DbSmoke } from '@/features/stub';
+import { readPref } from '@/services/prefs';
 import { type } from '@/theme/type';
+import { applyTheme } from '@/theme/unistyles';
 
 import { PoseIndex } from './poses';
 import {
@@ -24,9 +26,8 @@ function useForcedTheme(theme: ThemeName | undefined) {
   useFocusEffect(
     useCallback(() => {
       if (theme === undefined) return;
-      UnistylesRuntime.setAdaptiveThemes(false);
-      UnistylesRuntime.setTheme(theme);
-      return () => UnistylesRuntime.setAdaptiveThemes(true);
+      applyTheme(theme);
+      return () => applyTheme(readPref('theme'));
     }, [theme]),
   );
 }
