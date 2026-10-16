@@ -392,7 +392,7 @@ A deep link that arrives while locked lands on Lock and is not replayed after un
 
 **Key.** 32 bytes from `expo-crypto` `getRandomValues`, stored as 64 hex characters. Read, write and delete all pass `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`, so the key is readable only while the phone is unlocked and is never restored to another device (V). A new key is stored only after its database opened, so a failed first open leaves no orphan key.
 
-**Vault.** `services/vault.ts` exposes `hasVault()` (a valid key is stored), `openVault()` and `destroyVault()`. `createVault(ports)` holds the logic. SecureStore, the database file, random bytes and prefs sit behind `VaultPorts`, so the tests run the rules on fakes.
+**Vault.** `services/vault.ts` exposes `hasVault()` (a valid key and its database file both exist), `openVault()` and `destroyVault()`. `createVault(ports)` holds the logic. SecureStore, the database file, random bytes and prefs sit behind `VaultPorts`, so the tests run the rules on fakes.
 
 **Reset rules.**
 
@@ -422,6 +422,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then delete manual rows and log it |
+| Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
 | Database unreadable or newer than the app | Same, as `corrupt` |
 | One bad row | Drop it, count it, show "1 item couldn't be read" |

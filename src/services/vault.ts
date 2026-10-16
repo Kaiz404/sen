@@ -1,8 +1,10 @@
 import { getRandomValues } from 'expo-crypto';
+import { File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 
 import type { AppError } from '@/models/errors';
 import {
+  DB_NAME,
   type DbKey,
   DbKeySchema,
   DbUnreadableError,
@@ -40,6 +42,7 @@ export type VaultPorts = {
     open(key: DbKey): Promise<OpenDb>;
     /** Deletes the file. A file that isn't there is already deleted. */
     remove(): Promise<void>;
+    exists(): boolean;
   };
   readonly randomBytes: (length: number) => Uint8Array;
   readonly clearPrefs: () => void;
@@ -68,8 +71,17 @@ function newKey(randomBytes: VaultPorts['randomBytes']): DbKey {
 }
 
 export function createVault(ports: VaultPorts) {
+  /**
+   * iOS keeps Keychain items after the app is deleted, so a key whose database file is gone is left from an old
+   * install. It is deleted, and the vault counts as missing.
+   */
   async function storedKey(): Promise<DbKey | null> {
-    const parsed = DbKeySchema.safeParse(await ports.keys.read());
+    const raw = await ports.keys.read();
+    if (raw !== null && !ports.database.exists()) {
+      await ports.keys.remove();
+      return null;
+    }
+    const parsed = DbKeySchema.safeParse(raw);
     return parsed.success ? parsed.data : null;
   }
 
@@ -85,6 +97,7 @@ export function createVault(ports: VaultPorts) {
   }
 
   return {
+    /** A valid key and its database file both exist. */
     async hasVault(): Promise<boolean> {
       return (await storedKey()) !== null;
     },
@@ -135,6 +148,8 @@ const nativePorts: VaultPorts = {
         if (!(error instanceof Error && NOT_FOUND.test(error.message))) throw error;
       }
     },
+    /** expo-sqlite keeps databases in `SQLite/` under the documents directory on Android and iOS (expo-sqlite 57 native source). */
+    exists: () => new File(Paths.document, 'SQLite', DB_NAME).exists,
   },
   randomBytes: (length) => getRandomValues(new Uint8Array(length)),
   clearPrefs,

@@ -1,4 +1,5 @@
 import { getRandomValues } from 'expo-crypto';
+import { File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 
 import {
@@ -26,6 +27,15 @@ jest.mock('expo-secure-store', () => ({
     mockKeychain.delete(name);
   }),
 }));
+const mockDisk = new Set<string>();
+jest.mock('expo-file-system', () => ({
+  Paths: { document: 'file:///documents/' },
+  File: jest.fn((...parts: string[]) => ({
+    get exists() {
+      return mockDisk.has(parts.join('|'));
+    },
+  })),
+}));
 jest.mock('expo-crypto', () => ({
   getRandomValues: jest.fn((bytes: Uint8Array) => {
     bytes.forEach((_, i) => (bytes[i] = i));
@@ -43,7 +53,7 @@ const K2 = 'd'.repeat(64);
 /** What the fake random bytes 0xa0 to 0xbf become. */
 const NEW = 'a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf';
 
-type File = { key: string; version: number; generation: number };
+type DbFile = { key: string; version: number; generation: number };
 
 const handles: OpenDb[] = [];
 afterEach(async () => {
@@ -52,7 +62,7 @@ afterEach(async () => {
 });
 
 /** A keychain and a disk. A file opens only with the key that made it, as SQLCipher does. */
-function device(start: { key: string | null; file: Omit<File, 'generation'> | null }) {
+function device(start: { key: string | null; file: Omit<DbFile, 'generation'> | null }) {
   const state = {
     key: start.key,
     file: start.file && { ...start.file, generation: 1 },
@@ -92,6 +102,7 @@ function device(start: { key: string | null; file: Omit<File, 'generation'> | nu
       remove: async () => {
         state.file = null;
       },
+      exists: () => state.file !== null,
     },
     randomBytes: (length) => Uint8Array.from({ length }, (_, i) => 0xa0 + i),
     clearPrefs: () => {
@@ -104,6 +115,14 @@ function device(start: { key: string | null; file: Omit<File, 'generation'> | nu
 describe('the reset rules', () => {
   test.each([
     ['first run', null, null, { kind: 'created' }, NEW, { key: NEW, version: 1, generation: 2 }],
+    [
+      'a key left by an old install, no file',
+      K,
+      null,
+      { kind: 'created' },
+      NEW,
+      { key: NEW, version: 1, generation: 2 },
+    ],
     [
       'unlock',
       K,
@@ -178,12 +197,23 @@ describe('the reset rules', () => {
     expect([state.key, state.closed]).toEqual([null, 1]);
   });
 
-  test('hasVault is true only for a stored 64-hex key', async () => {
-    const answers = await Promise.all(
-      [null, 'not-a-key', K].map((key) => device({ key, file: null }).vault.hasVault()),
-    );
+  test.each([
+    ['no key, no file', null, null, false, null],
+    [
+      'a key that is not 64 hex, and its file',
+      'not-a-key',
+      { key: K, version: 1 },
+      false,
+      'not-a-key',
+    ],
+    ['a 64-hex key and its file', K, { key: K, version: 1 }, true, K],
+    ['a file with no key', null, { key: K, version: 1 }, false, null],
+    ['a key with no file, as after an iOS reinstall', K, null, false, null],
+  ] as const)('hasVault with %s', async (_, key, file, answer, keyAfter) => {
+    const { state, vault } = device({ key, file });
 
-    expect(answers).toEqual([false, false, true]);
+    expect(await vault.hasVault()).toBe(answer);
+    expect(state.key).toBe(keyAfter);
   });
 
   test('destroyVault deletes the key and the file and clears prefs, and can run twice', async () => {
@@ -201,12 +231,19 @@ describe('on the device ports', () => {
   const OPTIONS = { keychainAccessible: 6 };
   const KEY = Array.from({ length: 32 }, (_, i) => i.toString(16).padStart(2, '0')).join('');
 
+  const SEN_DB = [Paths.document, 'SQLite', 'sen.db'].join('|');
+
   beforeEach(() => {
     mockKeychain.clear();
+    mockDisk.clear();
     jest.mocked(openDb).mockImplementation(async () => {
+      mockDisk.add(SEN_DB);
       const db = await openTestDb();
       handles.push(db);
       return db;
+    });
+    jest.mocked(deleteDb).mockImplementation(async () => {
+      mockDisk.delete(SEN_DB);
     });
   });
 
@@ -254,5 +291,14 @@ describe('on the device ports', () => {
       );
 
     await expect(destroyVault()).rejects.toThrow('currently open');
+  });
+
+  test('a key that outlived its database file, as after an iOS reinstall, is deleted', async () => {
+    mockKeychain.set('sen.dbKey.v1', KEY);
+
+    expect(await hasVault()).toBe(false);
+
+    expect(mockKeychain.has('sen.dbKey.v1')).toBe(false);
+    expect(jest.mocked(File).mock.calls).toEqual([[Paths.document, 'SQLite', 'sen.db']]);
   });
 });
