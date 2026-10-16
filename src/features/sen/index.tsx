@@ -14,3 +14,4 @@ export { POSE_IDS, PROP_IDS, type PoseId, type PropId } from './poses';
 export { playMoment, senGate, senScroll } from './director/store';
 export { MOMENT_IDS, type MomentId } from './timeline/types';
 export { type LaunchTarget, SenLaunch } from './components/sen-launch';
+export { SEN_STATES } from './states';

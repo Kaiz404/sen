@@ -1,0 +1,20 @@
+# Plays one Sen moment from the states gallery (src/features/sen/states.tsx), records it for the
+# owner to watch, and screenshots where it settles. Not yet run on a device.
+# maestro test -e MOMENT=unlock .maestro/sen-moment.yaml
+appId: com.kaiz404.sen
+env:
+  MOMENT: unlock
+  THEME: light
+---
+- launchApp:
+    stopApp: false
+- startRecording: shots/4d/record-${MOMENT}-${THEME}
+- openLink: "sen://dev/states?screen=motion&state=${MOMENT}&theme=${THEME}"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-${MOMENT}-${THEME}
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 8000
+- stopRecording
+- takeScreenshot: shots/4d/${MOMENT}-${THEME}

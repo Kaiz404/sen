@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { ADD_STATES } from '@/features/add';
 import { AUTH_STATES } from '@/features/auth';
+import { SEN_STATES } from '@/features/sen';
 import { HISTORY_STATES } from '@/features/transactions';
 
 import { COMPONENT_STATES } from './component-states';
@@ -13,6 +14,7 @@ export const SCREENS: Readonly<Record<string, ScreenStates>> = {
   add: ADD_STATES,
   auth: AUTH_STATES,
   history: HISTORY_STATES,
+  motion: SEN_STATES,
 };
 
 export function isComponent(screen: string): boolean {

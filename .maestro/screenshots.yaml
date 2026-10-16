@@ -493,6 +493,110 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/history-updated-light
+- openLink: "sen://dev/states?screen=motion&state=launch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-launch-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-launch-light
+- openLink: "sen://dev/states?screen=motion&state=unlock&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-unlock-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-unlock-light
+- openLink: "sen://dev/states?screen=motion&state=reveal&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-reveal-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-reveal-light
+- openLink: "sen://dev/states?screen=motion&state=remask&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-remask-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-remask-light
+- openLink: "sen://dev/states?screen=motion&state=face-scan&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-face-scan-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-face-scan-light
+- openLink: "sen://dev/states?screen=motion&state=auth-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-auth-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-auth-failed-light
+- openLink: "sen://dev/states?screen=motion&state=lockout&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-lockout-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-lockout-light
+- openLink: "sen://dev/states?screen=motion&state=network-error&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-network-error-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-network-error-light
+- openLink: "sen://dev/states?screen=motion&state=refresh&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-refresh-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-refresh-light
+- openLink: "sen://dev/states?screen=motion&state=empty-search&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-empty-search-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-empty-search-light
+- openLink: "sen://dev/states?screen=motion&state=copy&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-copy-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-copy-light
+- openLink: "sen://dev/states?screen=motion&state=theme-light&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-light-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-theme-light-light
+- openLink: "sen://dev/states?screen=motion&state=theme-dark&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-dark-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-theme-dark-light
 - openLink: "sen://dev/states?screen=sen&pose=idle&size=32&theme=light"
 - extendedWaitUntil:
     visible:
@@ -1269,3 +1373,107 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/history-updated-dark
+- openLink: "sen://dev/states?screen=motion&state=launch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-launch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-launch-dark
+- openLink: "sen://dev/states?screen=motion&state=unlock&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-unlock-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-unlock-dark
+- openLink: "sen://dev/states?screen=motion&state=reveal&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-reveal-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-reveal-dark
+- openLink: "sen://dev/states?screen=motion&state=remask&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-remask-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-remask-dark
+- openLink: "sen://dev/states?screen=motion&state=face-scan&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-face-scan-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-face-scan-dark
+- openLink: "sen://dev/states?screen=motion&state=auth-failed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-auth-failed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-auth-failed-dark
+- openLink: "sen://dev/states?screen=motion&state=lockout&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-lockout-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-lockout-dark
+- openLink: "sen://dev/states?screen=motion&state=network-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-network-error-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-network-error-dark
+- openLink: "sen://dev/states?screen=motion&state=refresh&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-refresh-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-refresh-dark
+- openLink: "sen://dev/states?screen=motion&state=empty-search&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-empty-search-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-empty-search-dark
+- openLink: "sen://dev/states?screen=motion&state=copy&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-copy-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-copy-dark
+- openLink: "sen://dev/states?screen=motion&state=theme-light&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-light-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-theme-light-dark
+- openLink: "sen://dev/states?screen=motion&state=theme-dark&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-dark-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/motion-theme-dark-dark
