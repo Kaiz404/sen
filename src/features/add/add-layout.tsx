@@ -1,12 +1,21 @@
 import { randomUUID } from 'expo-crypto';
 import { Stack } from 'expo-router';
-import { createContext, type Dispatch, type ReactNode, use, useReducer } from 'react';
+import {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  use,
+  useEffect,
+  useReducer,
+  useRef,
+} from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { noteDraftDroppedByLock } from '@/features/auth';
 import { PrivacyCover } from '@/features/security';
 import { type DayKey, malaysiaDay, toInstant } from '@/models/day';
 
-import { type DraftAction, type DraftInput, draftReducer, newDraft } from './draft';
+import { type DraftAction, type DraftInput, draftReducer, hasInput, newDraft } from './draft';
 
 type DraftContextValue = {
   readonly draft: DraftInput;
@@ -27,12 +36,29 @@ export function todayInMalaysia(): DayKey {
 export function AddLayout(): ReactNode {
   return (
     <DraftProvider start={freshDraft}>
+      <DroppedDraftWatch />
       <View style={styles.fill}>
         <Stack screenOptions={{ headerShown: false }} />
         <PrivacyCover />
       </View>
     </DraftProvider>
   );
+}
+
+/** When the add flow unmounts under a lock with input typed, History owes a line about the lost draft. */
+export function DroppedDraftWatch(): null {
+  const { draft } = useDraft();
+  const typed = useRef(false);
+  useEffect(() => {
+    typed.current = hasInput(draft);
+  }, [draft]);
+  useEffect(
+    () => () => {
+      if (typed.current) noteDraftDroppedByLock();
+    },
+    [],
+  );
+  return null;
 }
 
 function freshDraft(): DraftInput {

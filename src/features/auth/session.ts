@@ -38,6 +38,8 @@ type SessionStore = {
   readonly lockoutArmed: boolean;
   /** Session-scoped (D27). Starts true at launch, so every cold start is masked, and goes true again whenever the database closes. */
   readonly amountsHidden: boolean;
+  /** A lock unmounted a half-filled add draft. History says so once after the next unlock. */
+  readonly draftDropped: boolean;
 };
 
 export const sessionStore = createStore<SessionStore>(() => ({
@@ -46,6 +48,7 @@ export const sessionStore = createStore<SessionStore>(() => ({
   dbReset: null,
   lockoutArmed: false,
   amountsHidden: true,
+  draftDropped: false,
 }));
 
 let closing: Promise<void> = Promise.resolve();
@@ -155,8 +158,21 @@ export async function signOut(): Promise<void> {
     dispatch({ type: 'SIGN_OUT_FAIL' });
     throw error;
   }
-  sessionStore.setState({ dbReset: null, lockoutArmed: false });
+  sessionStore.setState({ dbReset: null, lockoutArmed: false, draftDropped: false });
   dispatch({ type: 'SIGN_OUT_DONE' });
+}
+
+/** Called as the add flow unmounts. Only a lock leaves a draft dropped, so a close or a save sets nothing. */
+export function noteDraftDroppedByLock(): void {
+  if (sessionStore.getState().session.status === 'locked')
+    sessionStore.setState({ draftDropped: true });
+}
+
+/** True once per drop. */
+export function takeDraftDropped(): boolean {
+  const dropped = sessionStore.getState().draftDropped;
+  if (dropped) sessionStore.setState({ draftDropped: false });
+  return dropped;
 }
 
 export function dismissDbResetNotice(): void {

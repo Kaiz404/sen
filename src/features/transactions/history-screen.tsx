@@ -11,6 +11,7 @@ import {
   lockNow,
   refusalText,
   showAmounts,
+  takeDraftDropped,
   useAmountsHidden,
   useBiometric,
   useDb,
@@ -88,6 +89,11 @@ export function HistoryScreen(): ReactNode {
   useEffect(() => {
     if (unsynced) mutate('first');
   }, [unsynced, epoch, mutate]);
+
+  useEffect(() => {
+    if (takeDraftDropped())
+      toast.show({ title: 'Sen locked while you were adding.', detail: 'Nothing was saved.' });
+  }, []);
 
   useEffect(() => {
     if (updated === null) return;

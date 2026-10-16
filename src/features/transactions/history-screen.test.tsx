@@ -336,3 +336,17 @@ test('Show amounts cancelled stays silent', async () => {
   expect(shown).not.toHaveBeenCalled();
   shown.mockRestore();
 });
+
+test('History says once that a lock dropped the add draft', async () => {
+  const shown = jest.spyOn(toast, 'show');
+  sessionStore.setState({ draftDropped: true });
+
+  await renderHistory();
+
+  expect(shown).toHaveBeenCalledWith({
+    title: 'Sen locked while you were adding.',
+    detail: 'Nothing was saved.',
+  });
+  expect(sessionStore.getState().draftDropped).toBe(false);
+  shown.mockRestore();
+});

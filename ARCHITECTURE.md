@@ -399,7 +399,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - `queryClient.clear()`.
 - Hide the current toast. `<ToastHost />` sits outside the guarded routes, and the undo toast carries transaction text.
 - Close the database.
-- Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
+- Drop the draft. Protected routes, which include every sheet and the add flow, unmount. A draft with input sets `draftDropped` as the add flow unmounts under the lock, and History shows "Sen locked while you were adding. Nothing was saved." once after the next unlock.
 - Set `amountsHidden` back to true, in the same `setState` as the move. This one place covers idle, background, manual and sign-out locks. The next unlock lands masked and showing asks for biometrics again.
 
 **Held detail link** (`features/auth/held-link.ts`). A deep link that arrives while locked lands on Lock. If it is a detail link in the app's own scheme (`sen://transaction/<id>`, never `https://transaction/<id>`), its path is held, and `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home.
