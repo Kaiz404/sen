@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { AUTH_STATES } from '@/features/auth';
+import { HISTORY_STATES } from '@/features/transactions';
 
 import { COMPONENT_STATES } from './component-states';
 
@@ -9,6 +10,7 @@ export type ScreenStates = Readonly<Record<string, () => ReactNode>>;
 export const SCREENS: Readonly<Record<string, ScreenStates>> = {
   ...COMPONENT_STATES,
   auth: AUTH_STATES,
+  history: HISTORY_STATES,
 };
 
 export function isComponent(screen: string): boolean {
