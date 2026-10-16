@@ -54,3 +54,16 @@ test('a new toast replaces the current one, and the old timer cannot hide it', a
   expect(screen.queryByText('Added')).toBeNull();
   expect(screen.getByText('Deleted')).toBeOnTheScreen();
 });
+
+test('hiding an old toast by its id leaves the newer one up', async () => {
+  await render(<ToastHost />);
+  let added = 0;
+  await act(async () => {
+    added = toast.show({ title: 'Added' });
+    toast.show({ title: 'Deleted' });
+  });
+
+  await act(async () => toast.hide(added));
+
+  expect(screen.getByText('Deleted')).toBeOnTheScreen();
+});
