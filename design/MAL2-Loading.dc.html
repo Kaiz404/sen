@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MAL2 Sen is the dot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.d{font-family:'Bricolage Grotesque','Avenir Next Condensed','Arial Narrow',system-ui,sans-serif;font-weight:800;font-optical-sizing:auto}
+.cond{font-stretch:75%;text-transform:uppercase;letter-spacing:-0.005em}
+.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.A{animation-duration:4.2s;animation-iteration-count:infinite;animation-timing-function:ease-in-out;animation-fill-mode:both}
+.panel{position:absolute;inset:0;background:#17181A;overflow:hidden;animation-name:hpanel}
+@keyframes hpanel{0%,57%{clip-path:inset(0px 0px 0px 0px round 0px 0px 0px 0px);animation-timing-function:cubic-bezier(.6,0,.2,1)}74%,100%{clip-path:inset(0px 0px 406px 0px round 0px 0px 40px 40px)}}
+.wm{position:absolute;top:300px;margin:0;display:flex;align-items:baseline;gap:4px;font-size:112px;line-height:1;letter-spacing:-0.04em;color:#FFFDF8;font-stretch:100%;z-index:3;animation-name:hwm}
+@keyframes hwm{0%,57%{transform:none;opacity:1;animation-timing-function:cubic-bezier(.5,0,.8,.4)}66%,100%{transform:translateY(-56px);opacity:0}}
+.wm .l{display:inline-block;transform-origin:50% 100%}
+.dot{position:relative;display:inline-block;width:28px;height:28px}
+.dot>span{position:absolute;inset:2px;display:block;border-radius:9999px}
+.lk{opacity:0;animation-name:hlk}
+@keyframes hlk{0%,64%{opacity:0;transform:translateY(14px);animation-timing-function:cubic-bezier(.2,.8,.3,1)}78%,100%{opacity:1;transform:none}}
+.sen{position:absolute;left:204px;top:270px;width:255px;height:255px;z-index:1}
+.sen div{position:absolute;inset:0}
+.sq{transform-origin:50% 100%}
+.sv g{transform-box:fill-box;transform-origin:center}
+.chk{opacity:0}
+.dot>span.fx{position:absolute;left:14px;top:14px;width:0;height:0;overflow:visible;pointer-events:none}
+.fx>*{position:absolute;display:block}
+.sp{opacity:0;animation-name:fxsp}
+@keyframes fxsp{0%{opacity:0;transform:scale(0) rotate(-40deg);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}3.5%{opacity:1;transform:scale(1) rotate(0deg)}7%{opacity:1;transform:scale(.85) rotate(12deg)}11%,100%{opacity:0;transform:scale(0) rotate(30deg)}}
+.tk{width:4px;height:13px;margin:-6px 0 0 -2px;transform-origin:50% 100%}
+.tk>i{display:block;width:4px;height:13px;border-radius:2px;background:#FFFDF8;opacity:0;animation-name:fxtk}
+@keyframes fxtk{0%{opacity:0;transform:translateY(8px) scaleY(.2);animation-timing-function:cubic-bezier(.2,.7,.4,1)}2.5%{opacity:1;transform:translateY(0) scaleY(1)}7%,100%{opacity:0;transform:translateY(-12px) scaleY(.3)}}
+.sw path{stroke-dasharray:100 100;stroke-dashoffset:100;opacity:0;animation-name:fxsw}
+@keyframes fxsw{0%{stroke-dashoffset:100;opacity:0;animation-timing-function:cubic-bezier(.3,.6,.4,1)}1.5%{opacity:.3}10%{stroke-dashoffset:0;opacity:.3;animation-timing-function:ease-in}18%,100%{stroke-dashoffset:-100;opacity:0}}
+.sx{transform:translateX(-41px);animation-name:k2x}
+@keyframes k2x{0%{transform:translateX(-371px);animation-timing-function:cubic-bezier(.25,.6,.4,1)}9%{transform:translateX(-209px);animation-timing-function:linear}17%{transform:translateX(-143px);animation-timing-function:linear}25%{transform:translateX(-89px);animation-timing-function:linear}36%,57%{transform:translateX(-41px);animation-timing-function:cubic-bezier(.3,1.25,.5,1)}74%,100%{transform:translateX(0)}}
+.sy{transform:translateY(-27px);animation-name:k2y}
+@keyframes k2y{0%{transform:translateY(-247px);animation-timing-function:cubic-bezier(.5,0,.9,.5)}9%{transform:translateY(-111px);animation-timing-function:cubic-bezier(.2,.7,.4,1)}13%{transform:translateY(-167px);animation-timing-function:cubic-bezier(.6,0,.8,.3)}17%{transform:translateY(-88px);animation-timing-function:cubic-bezier(.2,.7,.4,1)}21%{transform:translateY(-145px);animation-timing-function:cubic-bezier(.6,0,.8,.3)}25%{transform:translateY(-88px);animation-timing-function:cubic-bezier(.2,.7,.4,1)}30%{transform:translateY(-150px);animation-timing-function:cubic-bezier(.6,0,.8,.3)}36%,46%{transform:translateY(-27px)}50%,57%{transform:translateY(-15px);animation-timing-function:cubic-bezier(.3,1.25,.5,1)}74%,100%{transform:translateY(0)}}
+.ss{transform:scale(.2);animation-name:k2s}
+@keyframes k2s{0%,25%{transform:scale(.22)}36%,46%{transform:scale(.2);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}50%,57%{transform:scale(.12);animation-timing-function:cubic-bezier(.3,1.25,.5,1)}74%,100%{transform:scale(1)}}
+.sq{animation-name:k2q}
+@keyframes k2q{0%,8.5%{transform:skewX(-6deg) scale(.94,1.08)}9.5%{transform:scale(1.18,.84)}11%,15.5%{transform:skewX(-10deg) scale(.92,1.1)}17%{transform:scale(1.18,.84)}18.5%,23.5%{transform:skewX(-10deg) scale(.92,1.1)}25%{transform:scale(1.18,.84)}27%{transform:skewX(-13deg) scale(.9,1.12)}34.5%{transform:skewX(-8deg) scale(.94,1.08)}36%{transform:scale(1.3,.7);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}40%,46%{transform:none}48%{transform:scale(1.1,.9);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}51%,100%{transform:none}}
+.er{animation-name:k2w}
+@keyframes k2w{0%,40%{transform:none}41.5%,43.5%{transform:scaleY(.12)}45%,100%{transform:none}}
+.mo{animation-name:k2m}
+@keyframes k2m{0%,37%{transform:none}40%,45%{transform:scale(1.6,1.8)}47%,100%{transform:none}}
+.chk{animation-name:k2c}
+@keyframes k2c{0%,37%{opacity:0}39%,45%{opacity:1}47%,100%{opacity:0}}
+.l1{animation-name:k2l1}.l2{animation-name:k2l2}.l3{animation-name:k2l3}
+@keyframes k2l1{0%,8.5%{transform:none}9.5%{transform:translateY(6px) scale(1.04,.94);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}13%,100%{transform:none}}
+@keyframes k2l2{0%,16.5%{transform:none}17.5%{transform:translateY(6px) scale(1.04,.94);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}21%,100%{transform:none}}
+@keyframes k2l3{0%,24.5%{transform:none}25.5%{transform:translateY(6px) scale(1.04,.94);animation-timing-function:cubic-bezier(.34,1.56,.64,1)}29%,100%{transform:none}}
+.sp1{animation-delay:1.512s}.sp2{animation-delay:1.572s}.sp3{animation-delay:1.632s}.tk1{animation-delay:1.552s}.tk2{animation-delay:1.512s}.tk3{animation-delay:1.592s}.sw path{animation-delay:1.050s}
+@media (prefers-reduced-motion: reduce){.A,.A *,.panel,.wm,.lk,.sen div,.sv g,.dot *,.fx *{animation:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F6F2E9; color: #17181A; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif">
+<span class="sr" role="status">Loading Sen</span>
+<div class="lk A" aria-hidden="true" style="position: absolute; left: 20px; right: 20px; top: 460px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 22px; background: #FFFDF8; box-shadow: inset 0 0 0 2px #8ECF9D"><span class="d" style="width: 48px; height: 48px; border-radius: 9999px; background: #C9B6F0; display: flex; align-items: center; justify-content: center; font-size: 18px; flex: none">DU</span><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700">Continue as demo user</span><span style="font-size: 13px; color: #5F5A50">No sign-up · Savings ·· 4821</span></span></div>
+<div class="d" style="height: 60px; border-radius: 20px; background: #F2DC72; border: 2px solid #17181A; box-shadow: 0 4px 0 #17181A; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 19px">Unlock with biometrics</div>
+<div class="d" style="height: 52px; border-radius: 18px; border: 2px solid #17181A; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700">Use device passcode</div>
+</div>
+<div class="panel A">
+<div class="lk A" aria-hidden="true" style="position: absolute; left: 22px; right: 22px; top: 26px; display: flex; align-items: center; justify-content: space-between"><span class="d cond" style="font-size: 30px; line-height: 1; color: #F2DC72">Sen</span><span class="mono" style="font-size: 10px; font-weight: 600; letter-spacing: 0.14em; color: #D8D2C4; border: 1.5px solid #5B5E64; border-radius: 6px; padding: 4px 8px">DEMO BUILD · SIMULATED DATA</span></div>
+<div class="lk A d cond" aria-hidden="true" style="position: absolute; left: 22px; top: 82px; font-size: 84px; line-height: 0.84; color: #FFFDF8">Your sen,<br><span style="color: #F2DC72">under</span><br>lock.</div>
+<h1 class="wm A d" style="right: 86px"><span class="l l1 A">S</span><span class="l l2 A">e</span><span class="l l3 A">n</span><span class="dot dt A" aria-hidden="true"><span class="fx" aria-hidden="true"><svg class="sw" width="1" height="1" aria-hidden="true" style="left: 0; top: 0; overflow: visible"><path class="A" pathLength="100" d="M-48 -73 Q-24 -221 0 -12" fill="none" stroke="#FFFDF8" stroke-width="9" stroke-linecap="round"></path></svg><svg class="sp A sp1" width="22" height="22" viewBox="-10 -10 20 20" aria-hidden="true" style="left: -34px; top: -30px; margin: -11px 0 0 -11px"><path d="M0 -10 Q1.6 -1.6 10 0 Q1.6 1.6 0 10 Q-1.6 1.6 -10 0 Q-1.6 -1.6 0 -10Z" fill="#F2DC72"></path></svg><svg class="sp A sp2" width="15" height="15" viewBox="-10 -10 20 20" aria-hidden="true" style="left: 30px; top: -40px; margin: -7.5px 0 0 -7.5px"><path d="M0 -10 Q1.6 -1.6 10 0 Q1.6 1.6 0 10 Q-1.6 1.6 -10 0 Q-1.6 -1.6 0 -10Z" fill="#C9B6F0"></path></svg><svg class="sp A sp3" width="11" height="11" viewBox="-10 -10 20 20" aria-hidden="true" style="left: -46px; top: 4px; margin: -5.5px 0 0 -5.5px"><path d="M0 -10 Q1.6 -1.6 10 0 Q1.6 1.6 0 10 Q-1.6 1.6 -10 0 Q-1.6 -1.6 0 -10Z" fill="#FFFDF8"></path></svg><span class="tk" aria-hidden="true" style="left: 0; top: 0; transform: rotate(-32deg) translateY(-34px)"><i class="A tk1"></i></span><span class="tk" aria-hidden="true" style="left: 0; top: 0; transform: rotate(0deg) translateY(-34px)"><i class="A tk2"></i></span><span class="tk" aria-hidden="true" style="left: 0; top: 0; transform: rotate(32deg) translateY(-34px)"><i class="A tk3"></i></span></span></span></h1>
+<div class="sen A" role="img" aria-label="Sen bounces across the letters S, e, n, lands as the period, winks, and grows into the Lock screen"><div class="sx A"><div class="sy A"><div class="ss A"><div class="sq A"><div class="sr2 A"><div class="sf A"><svg class="sv" viewBox="-280 -280 560 560" width="255" height="255" aria-hidden="true" style="display: block; overflow: visible"><circle cx="10" cy="16" r="262" fill="#236B47"></circle><circle cx="0" cy="0" r="222" fill="#F2DC72"></circle><g class="chk A"><ellipse cx="-128" cy="34" rx="28" ry="17" fill="#236B47"></ellipse><ellipse cx="128" cy="34" rx="28" ry="17" fill="#236B47"></ellipse></g><g class="fc A"><g class="el A"><ellipse cx="-72" cy="-38" rx="14" ry="20" fill="#236B47"></ellipse></g><g class="er A"><ellipse cx="72" cy="-38" rx="14" ry="20" fill="#236B47"></ellipse></g><g class="mo A"><path d="M-16 20 Q0 34 16 20" fill="none" stroke="#236B47" stroke-width="12" stroke-linecap="round"></path></g></g><g class="pl A"><ellipse cx="-106" cy="152" rx="46" ry="36" fill="#236B47"></ellipse></g><g class="pr A"><ellipse cx="106" cy="152" rx="46" ry="36" fill="#236B47"></ellipse></g></svg></div></div></div></div></div></div></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -77,6 +77,16 @@ Rules:
 
 Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`react-native-svg`) and animated with Reanimated. The idle and masked art is in `assets/brand/`.
 
+**Source of truth.** Sen's look and motion come from the canvas boards, copied into [`design/`](design/). The tables below summarise them. Where a table and a board differ, the board wins, and the table gets fixed.
+
+| Board | Holds |
+| --- | --- |
+| `design/MAX-Library.dc.html` | MAX · Motion primitives. The character sheet: rig, poses, primitives and accents |
+| `design/MAX-Moments.dc.html` | MAX · App moments, hands (interactive). Every app moment's keyframes and haptic beat |
+| `design/MAX-Spec.dc.html` | MAX · Reanimated spec |
+| `design/MAL2-Loading.dc.html`, `design/MAL-Timelines.dc.html` | MAL2 · Sen is the dot. The launch, its timeline and the handoff to Lock |
+| `design/kit.py` | Every pose as SVG, the geometry phase 1 ported |
+
 ### Anatomy
 
 Rig units: 1 unit = size / 600 pt. Origin at the face centre.
@@ -180,7 +190,7 @@ const RM = { reduceMotion: ReduceMotion.System };     // spread into every confi
 
 | Moment | Trigger | Sequence | Haptic |
 | --- | --- | --- | --- |
-| Launch | Cold start | Sen drops in as the full stop of "SEN", squashes, eyes pop open, waves, blinks. Loop until ready | None |
+| Launch | Cold start | MAL2, Sen is the dot. Sen falls onto the S, hops to the e and the n, leaps and lands as the period (squash, sparkles, ticks), winks, settles into the period, then grows into Lock's Sen while the ink panel shrinks into Lock's hero. Loop 4200 ms, handoff 2400 to 3110 ms. Wait loop: a small hop on the period. See `design/MAL-Timelines.dc.html` | Light impact at 1512 ms |
 | Idle | 4 to 7 s with no touch | Blink 70%, look with blink 20%, double blink 10%. After 3 beats, wait 10 to 15 s | None |
 | Lock, waiting | Lock screen | Masked pose. Every 6 to 9 s, eye-peek toward Unlock, blink, close | None |
 | Face ID in progress | Prompt open | Peek left and right in a 1.6 s loop | None |
@@ -240,7 +250,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 
 | Board | Screen | Key content |
 | --- | --- | --- |
-| `SF-Launch` | Launch | Ink full bleed. Sen drops in as the full stop of "SEN" |
+| `SF-Launch` | Launch | Ink full bleed with the "Sen" wordmark. The motion follows MAL2 (`design/MAL2-Loading.dc.html`), where Sen becomes the period |
 | `SF-Welcome` | Welcome (first run) | "Meet Sen." Three promises on a receipt slip. "Continue as demo user" |
 | `SF-Biometric` | Face ID primer (first run) | Explains biometrics before the OS prompt. "Turn on Face ID", "Use device passcode instead" |
 | `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, passcode, "Not you? Start again" |

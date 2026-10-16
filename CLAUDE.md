@@ -3,7 +3,7 @@
 Sen is a take-home assignment: a secure transaction history module in React Native and TypeScript. The source brief is `../take-home-assessment.md`. The reviewers judge the app, the code and the git history. The goal is to impress: premium, production ready and frontend only.
 
 Read before working:
-- [DESIGN.md](DESIGN.md) for any UI, Sen or motion work.
+- [DESIGN.md](DESIGN.md) for any UI, Sen or motion work. For Sen, also the boards in [`design/`](design/), which win over DESIGN's tables.
 - [DECISIONS.md](DECISIONS.md) for every technical choice and why it won. Don't reopen one without the owner.
 - [PLAN.md](PLAN.md) for the build order, lanes and the checks each phase must pass.
 - [ARCHITECTURE.md](ARCHITECTURE.md) for any code.

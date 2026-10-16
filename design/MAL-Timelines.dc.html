@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MAL loading timelines</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.d{font-family:'Bricolage Grotesque','Avenir Next Condensed','Arial Narrow',system-ui,sans-serif;font-weight:800;font-optical-sizing:auto}
+.cond{font-stretch:75%;text-transform:uppercase;letter-spacing:-0.005em}
+.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+.cap{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;letter-spacing:0.12em;color:#5F5A50}
+table{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:10.5px;line-height:13px}
+td{padding:3px 4px;vertical-align:top;border-top:1px dashed #D8D0BE}
+td:first-child{white-space:nowrap;font-weight:600;color:#17181A;width:62px}
+tr.hap td{background:#F2DC72;border-top-color:#F2DC72}
+.bar{position:relative;height:14px;border-radius:7px;background:#E8E1D2;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0;display:block}
+.hm{position:absolute;top:-3px;width:10px;height:10px;margin-left:-5px;transform:rotate(45deg);background:#17181A;border:2px solid #F2DC72}
+.card{background:#FFFDF8;border-radius:20px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;box-shadow:inset 0 0 0 1.5px #E2DACA}
+.note{font-size:12px;line-height:16px;color:#2E2B26;margin:0}
+.chip{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:10px;font-weight:600;letter-spacing:0.08em;border:1.5px solid #17181A;border-radius:6px;padding:2px 6px}
+</style>
+</helmet>
+<div style="width: 1400px; height: 1000px; box-sizing: border-box; background: #F6F2E9; color: #17181A; font-family: -apple-system, 'SF Pro Text', Roboto, system-ui, sans-serif; padding: 26px 28px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+  <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <span class="cap">MAL · SEN LOADING · TIMELINES FOR REANIMATED</span>
+      <h1 class="d cond" style="margin: 0; font-size: 50px; line-height: 0.9">Four launch beats, one landing.</h1>
+    </div>
+    <p class="note" style="max-width: 640px">Loop 4200 ms: story, handoff 2400–3110, then a confident hold. ms = % × 42. Board px are 390 × 844. Sen moves are offsets from its <strong>Lock pose</strong> (face centre 331, 397; face r 101; s = 1), so every concept ends at transform 0 = Lock. Spring = cubic-bezier(.34,1.56,.64,1) with one overshoot (Reanimated: withSpring damping 12, stiffness 180). Handoff = cubic-bezier(.3,1.25,.5,1).</p>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+    <section class="card" aria-label="MAL1 timeline">
+      <div style="display: flex; align-items: baseline; justify-content: space-between"><span class="d cond" style="font-size: 24px">MAL1 Coin drop</span><span class="chip">LEAD · COST M</span></div>
+      <div class="bar" aria-hidden="true"><i style="left: 0; width: 57%; background: #F2DC72"></i><i style="left: 57%; width: 17%; background: #C9B6F0"></i><span class="hm" style="left: 41%"></span></div>
+      <table>
+        <tr><td>0</td><td>Frame 0 = splash: "Sen" + empty well (paper ring) as the period. Sen hidden behind the baseline (ink floor View, z between Sen and wordmark).</td></tr>
+        <tr><td>130–380</td><td>Peek: sy +60 → −5 (spring), stretch .9/1.12; eyes up to the rim line, lean −11° toward the well, look −46,+12.</td></tr>
+        <tr><td>630–970</td><td>Hop out: squash 1.14/.86 → stretch .88/1.14 → sy −78 → lands −55 (rest 318, 342, s .42), spring squash.</td></tr>
+        <tr><td>1010–1130</td><td>Paw-l lifts, coin shows in paw (dot + 52, −39), wind-up skewX −9°.</td></tr>
+        <tr><td>1320–1720</td><td>Toss over the shoulder: skewX +13° spring. Coin x linear → 0, y −170 at 1510 (out) → 0 (in), scaleX flips ×2. Smoke swoosh draws along the arc.</td></tr>
+        <tr class="hap"><td>1722</td><td>CLINK: coin squash 1.35/.62 → spring 1; well ring 1.22; 3 sparkles + 3 ticks; letters n, e, S hop −7/−6/−5 at 40 ms stagger. Light impact.</td></tr>
+        <tr><td>1800–2400</td><td>Hold: smile + cheeks, one blink at 2140.</td></tr>
+        <tr><td>wait loop</td><td>If not ready: Sen breathes (scale 1↔1.03, 1200 ms) + blink. The period stays filled.</td></tr>
+      </table>
+    </section>
+
+    <section class="card" aria-label="MAL2 timeline">
+      <div style="display: flex; align-items: baseline; justify-content: space-between"><span class="d cond" style="font-size: 24px">MAL2 Sen is the dot</span><span class="chip">COST H</span></div>
+      <div class="bar" aria-hidden="true"><i style="left: 0; width: 57%; background: #F2DC72"></i><i style="left: 57%; width: 17%; background: #C9B6F0"></i><span class="hm" style="left: 36%"></span></div>
+      <table>
+        <tr><td>0</td><td>Frame 0 = splash: "Sen" with no period. Sen s .22 off left at (−40, 150), stretched, leaning −6°.</td></tr>
+        <tr><td>0–380</td><td>Falls onto the S top (122, 286): x out, y in. S dips 6 px, Sen squash 1.18/.84.</td></tr>
+        <tr><td>380–710</td><td>Hop to e (188, 309), apex y 230; leans −10° in flight; e dips on landing.</td></tr>
+        <tr><td>710–1050</td><td>Hop to n (242, 309), apex y 252; n dips.</td></tr>
+        <tr><td>1050–1510</td><td>Leap to the period (290, 370), apex y 250, lean −13°; swoosh trails the leap.</td></tr>
+        <tr class="hap"><td>1512</td><td>Lands as the period: squash 1.3/.7 → spring; sparkles + ticks. Light impact.</td></tr>
+        <tr><td>1720–1830</td><td>Wink: eye-r scaleY .12, cheeks and smile on.</td></tr>
+        <tr><td>1930–2100</td><td>Settles into the period: s .2 → .12, centre (290, 382).</td></tr>
+        <tr><td>wait loop</td><td>Small hop on the period, 600 ms, no haptic.</td></tr>
+      </table>
+    </section>
+
+    <section class="card" aria-label="MAL3 timeline">
+      <div style="display: flex; align-items: baseline; justify-content: space-between"><span class="d cond" style="font-size: 24px">MAL3 Euler's disk</span><span class="chip">COST L–M</span></div>
+      <div class="bar" aria-hidden="true"><i style="left: 0; width: 57%; background: #F2DC72"></i><i style="left: 57%; width: 17%; background: #C9B6F0"></i><span class="hm" style="left: 28%"></span></div>
+      <table>
+        <tr><td>0</td><td>Frame 0 = splash: "Sen" + a coin lying tilted as the period: rotate −16°, scale(.9, .6), pivot at its bottom.</td></tr>
+        <tr><td>0–1130</td><td>Wobble: 14 half-cycles, half-period 147 → 34 ms, tilt ±16° → 0, scaleX .6↔.97, scaleY .6 → .19. Pure View transforms.</td></tr>
+        <tr class="hap"><td>1176</td><td>Settles flat (scaleY .15 → spring .2); flat ripple ring ×3.2; sparkles + ticks. Light impact.</td></tr>
+        <tr><td>1430</td><td>Coin hides, Sen shows in its place at s .12, scaleY .2 (Sen is the coin's face).</td></tr>
+        <tr><td>1430–1600</td><td>Flips up (scaleY → 1, spring) and hops, apex (306, 317), leaning −11°, stretch .9/1.12; swoosh.</td></tr>
+        <tr><td>1760</td><td>Lands (318, 357), s .3, squash 1.16/.85.</td></tr>
+        <tr><td>1850–2310</td><td>Paw-r wave ×2 (±16°), blink at 2200.</td></tr>
+        <tr><td>wait loop</td><td>Replay 0–1176 (the wobble loops on its own). The most natural "still loading" of the four.</td></tr>
+      </table>
+    </section>
+
+    <section class="card" aria-label="MAL4 timeline">
+      <div style="display: flex; align-items: baseline; justify-content: space-between"><span class="d cond" style="font-size: 24px">MAL4 Piggy slot</span><span class="chip">COST M</span></div>
+      <div class="bar" aria-hidden="true"><i style="left: 0; width: 57%; background: #F2DC72"></i><i style="left: 57%; width: 17%; background: #C9B6F0"></i><span class="hm" style="left: 50%"></span></div>
+      <table>
+        <tr><td>0</td><td>Frame 0 = splash: "Sen" + a paper period with an ink slit. Sen s .22 off right (430, 367).</td></tr>
+        <tr><td>0–1010</td><td>Tiptoe in, x linear: 3 bobs of 9 px, rock ±5° and skewX 6°, paws alternate every 170 ms.</td></tr>
+        <tr><td>1130–1390</td><td>Peek: lean −22° from the feet, eyes down-left at the slot, eyes scale 1.2.</td></tr>
+        <tr><td>1430–1640</td><td>Crouch 1.15/.85, then stretch .9/1.12 with skewX 9°.</td></tr>
+        <tr><td>1600–1850</td><td>Hop over the slot, apex y 296, turning edge-on (scaleX → .14); swoosh.</td></tr>
+        <tr><td>1850–2100</td><td>Drops in edge-first (y in), s .22 → .14, hidden by the period and an ink cover View.</td></tr>
+        <tr class="hap"><td>2100</td><td>CLINK: slit closes, the period turns lemon (squash 1.3/.72 → spring), wordmark bounce 1.05/.9; sparkles + ticks. Light impact.</td></tr>
+        <tr><td>wait loop</td><td>The filled period breathes .96↔1.04, 900 ms.</td></tr>
+      </table>
+    </section>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; flex: 1 1 auto; min-height: 0">
+    <section class="card" style="background: #17181A; color: #FFFDF8; box-shadow: none" aria-label="Handoff to Lock">
+      <span class="d cond" style="font-size: 22px; color: #F2DC72">Handoff to Lock · 2400–3110 ms</span>
+      <table style="color: #FFFDF8">
+        <tr><td style="color: #F2DC72">Sen</td><td>translateX/Y → 0, scale → 1 with one overshoot. MAL2 to MAL4 grow out of the period (290, 382), only 41 px from the Lock pose.</td></tr>
+        <tr><td style="color: #F2DC72">Panel</td><td>Ink ground 844 → 438 px tall, bottom corners 0 → 40 (Lock's hero). RN: animate the hero View height + borderBottomRadius, overflow hidden.</td></tr>
+        <tr><td style="color: #F2DC72">Wordmark</td><td>2400–2770: y −56, opacity → 0 (in). MAL1's floor View fades 2400–2480.</td></tr>
+        <tr><td style="color: #F2DC72">Lock UI</td><td>2690–3280: header, title, card, buttons fade in + rise 14 px (out).</td></tr>
+        <tr><td style="color: #F2DC72">Mount</td><td>Lock is rendered under the loader from frame 0. Unmount the loader at 3110. Lock's placeholder disc must become the MA rig at the same box (right −46, bottom −64, 210 px).</td></tr>
+      </table>
+    </section>
+
+    <section class="card" aria-label="Haptics and reduced motion">
+      <span class="d cond" style="font-size: 22px">Haptic beat · reduced motion</span>
+      <p class="note"><strong>One light impact per launch</strong>, on the landing: MAL1 1722, MAL2 1512, MAL3 1176, MAL4 2100 ms. Fire it with <span class="mono">runOnJS(Haptics.impactAsync)(Light)</span> from the landing segment's withTiming callback, not a setTimeout, so it stays in sync on a dropped frame. No haptic on the handoff or in the wait loop.</p>
+      <p class="note"><strong>Sparkles, ticks, swoosh</strong> only appear on that beat: 3 four-point stars (lemon, lilac, paper) pop in with the spring over 150 ms and are gone by 460 ms. 3 paper ticks flick outward. The swoosh is a paper stroke at 30% that draws, then erases.</p>
+      <p class="note"><strong>Reduced motion</strong> (useReducedMotion): show the rest frame (the board's static pose), hold 400 ms, then a 200 ms opacity crossfade to Lock. No travel, no accents, no haptic.</p>
+    </section>
+
+    <section class="card" aria-label="Build cost">
+      <span class="d cond" style="font-size: 22px">Build cost</span>
+      <p class="note"><strong>react-native-svg:</strong> the Sen rig only (rim, face, eyes, mouth, paws, cheeks). Move, scale, lean and squash Sen on wrapping Animated.Views on the UI thread. Use useAnimatedProps on a G only for paws, eyes and the face look. Coins, the well, the slot and the floor are plain Views.</p>
+      <p class="note"><strong>Font metrics:</strong> MAL1, MAL3 and MAL4 need only the period's position (one onLayout). MAL2 needs every letter's centre and top. Cheapest for all four: outline "Sen" to SVG paths once, so the positions become constants that match the splash PNG pixel for pixel.</p>
+      <p class="note"><strong>expo-splash-screen:</strong> the static image must equal frame 0, on #17181A at the same scale and position. Call hideAsync in the loader's first onLayout. MAL2's frame 0 has no period, so it reads as unfinished on a slow device. On Android 12 and up the system splash shows only a centred icon, so use a lemon coin and crossfade it into frame 0.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1400,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
