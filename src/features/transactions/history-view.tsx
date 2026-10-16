@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { EnterOnce } from '@/components/enter-once';
 import { Key } from '@/components/key';
 import type { Biometric, DbResetReason } from '@/features/auth';
-import { Sen } from '@/features/sen';
+import { Sen, senScroll } from '@/features/sen';
 import type { DayKey, Instant } from '@/models/day';
 import type { TxId } from '@/models/transaction';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
@@ -190,6 +190,10 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
               onRefresh={actions.onRefresh}
               onEndReached={actions.onEndReached}
               onEndReachedThreshold={0.5}
+              onScrollBeginDrag={scrolling}
+              onMomentumScrollBegin={scrolling}
+              onScrollEndDrag={still}
+              onMomentumScrollEnd={still}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             />
@@ -214,6 +218,10 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
     </RevealedAmounts>
   );
 }
+
+/** Sen holds still while the list moves, and for 1.5 s after it stops (DESIGN › Motion rules). */
+const scrolling = () => senScroll(true);
+const still = () => senScroll(false);
 
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },

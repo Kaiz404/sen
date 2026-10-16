@@ -320,6 +320,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - Lint bans `writePref('hideAmounts', …)` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
 - `SessionRoot` runs `dropRevealedOnHide()`. Whenever the pref reads hidden after a change, from any writer including `clearPrefs`, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
 - Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
+- The month card's Sen (`id="month"`) rests `masked` or `revealed` with the pref, so showing plays Reveal and hiding plays Re-mask. Reveal's success haptic comes from the moment at 200 ms, not the screen. "Hide amounts" fires the light `hideNow` haptic itself, as DESIGN says.
 
 **Sen on Lock and the primer.** Each screen names its Sen to the director (`lock`, `primer`; Lock's napping Sen shares `lock`, since the two never show together). `usePromptMoments(sen, kind, answers)` in `screens/prompt-moments.ts` plays from the view's state as it moves.
 
@@ -606,7 +607,7 @@ type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };  
 - **Follow-ups.** A finished moment with `then` plays that moment next on the same Sen (Lockout into its breathing).
 - **Stop.** `stop` settles the Sen if it plays and promotes the queue, or empties the queue slot if that Sen waits there. Loops end this way when their screen state moves on, such as the Face ID scan after a cancel.
 - **Stale finishes.** A `finished` with an old token is ignored, which guards the race with a cancelled sequence.
-- **Gates.** A closed gate settles whatever plays or waits. Scroll, unfocused and app inactive are the gates. `senScroll(true)` closes scroll, and `senScroll(false)` opens it 1.5 s later. Pull-to-refresh is direct manipulation, so it never closes the scroll gate.
+- **Gates.** A closed gate settles whatever plays or waits. Scroll, unfocused and app inactive are the gates. `senScroll(true)` closes scroll, and `senScroll(false)` opens it 1.5 s later. History's list calls it from its drag and momentum events. Pull-to-refresh is direct manipulation, so it never closes the scroll gate. `useSenAppGate()`, called by the root layout, closes `appActive` in the background only, because iOS reports `inactive` while the Face ID sheet is up and Lock's Sen scans under it. No screen sets `focused` yet: it is one gate for every Sen, so an unfocused History would also stop Detail's Sen.
 - **Level.** The director doesn't know the motion level. Each rig compiles the form for its own level when it plays.
 - **API.** `playMoment(senId, momentId)`, `stopMoment(senId)`, `senGate(patch)` and `senScroll(scrolling)` from `@/features/sen`. A Sen's `id` is the name other features use.
 - **Pose changes.** A rig whose `pose` changes asks for `TRANSITIONS['<from>><to>']` (`moments/index.ts`) when there is one, and eases into the pose otherwise. After a moment it snaps to the moment's end pose, which draws the same, then eases to its `pose` prop if that differs.

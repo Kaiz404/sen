@@ -68,6 +68,9 @@ export function Header({
   );
 }
 
+/** The month card's Sen. Showing amounts plays Reveal on it, hiding plays Re-mask. */
+const MONTH_SEN = 'month';
+
 export function MonthTop({
   month,
   soFar,
@@ -198,6 +201,7 @@ export function MonthCard({
     >
       <View style={styles.cardSen}>
         <Sen
+          id={MONTH_SEN}
           pose={hidden ? 'masked' : 'revealed'}
           size={92}
           label={hidden ? 'Sen, eyes closed while amounts are hidden' : 'Sen, eyes open'}

@@ -6,6 +6,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { ToastHost } from '@/components/toast';
 import { SessionRoot, useRouteGate } from '@/features/auth';
 import { useScreenGuard } from '@/features/security';
+import { useSenAppGate } from '@/features/sen';
 import { useSenMotionPreference } from '@/features/settings';
 import { MotionPolicyRoot } from '@/motion/policy';
 
@@ -20,6 +21,7 @@ export default function RootLayout() {
   const motion = useSenMotionPreference();
   const { rt } = useUnistyles();
   useScreenGuard();
+  useSenAppGate();
 
   return (
     <GestureHandlerRootView style={styles.root}>

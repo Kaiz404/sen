@@ -1,7 +1,8 @@
 import { act, render, screen, within } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 
 import { playMoment, senGate } from '../director/store';
-import { Sen } from '../index';
+import { Sen, useSenAppGate } from '../index';
 
 const hidden = { includeHiddenElements: true };
 const prop = (sen: string, node: string, key: 'matrix' | 'opacity') =>
@@ -162,4 +163,24 @@ test('after three idle beats Sen rests 10 s, and a moment of its own starts the 
   expect(await blinksBetween(19900, 20300, 16300)).toBe(true);
   expect(await blinksBetween(23900, 24300, 20300)).toBe(false);
   jest.restoreAllMocks();
+});
+
+test('in the background nothing plays, and back in front Sen moves again', async () => {
+  function Gated() {
+    useSenAppGate();
+    return <TwoSens />;
+  }
+  await render(<Gated />);
+  const appGoes = (state: 'background' | 'inactive' | 'active') =>
+    act(() => jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state));
+
+  await appGoes('background');
+  await act(() => playMoment('a', 'glance'));
+  await at(300);
+  expect(faceX('a')).toBe(0);
+
+  await appGoes('inactive');
+  await act(() => playMoment('a', 'glance'));
+  await at(300);
+  expect(faceX('a')).toBe(-22);
 });
