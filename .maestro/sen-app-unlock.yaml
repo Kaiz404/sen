@@ -1,0 +1,26 @@
+# A passing check plays Unlock on Lock's Sen, which holds Lock with "Unlocked" until it lands, then
+# History opens. Records the moment. Written, not yet run on a device.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: pass
+- extendedWaitUntil:
+    notVisible:
+      id: launch
+    timeout: 10000
+- startRecording: shots/motion/record-unlock
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible: Unlocked
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: history
+    timeout: 15000
+- stopRecording
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/motion/unlock-settled

@@ -1,0 +1,21 @@
+# Cold start plays MAL2 over Lock, then Lock takes over with its masked Sen. Records the launch for
+# the owner to watch. Written, not yet run on a device.
+appId: com.kaiz404.sen
+---
+- stopApp
+- startRecording: shots/motion/record-launch
+- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible:
+      id: launch
+    timeout: 120000
+- extendedWaitUntil:
+    notVisible:
+      id: launch
+    timeout: 10000
+- stopRecording
+- assertVisible:
+    id: unlock|continue
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/motion/launch-settled

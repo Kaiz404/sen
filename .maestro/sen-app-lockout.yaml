@@ -1,0 +1,23 @@
+# The phone's lockout spins the napping Sen edge-on, then it breathes through the cool-down.
+# Records the spin and a few breaths. Written, not yet run on a device.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: lockout
+- extendedWaitUntil:
+    notVisible:
+      id: launch
+    timeout: 10000
+- startRecording: shots/motion/record-lockout
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible: Too many tries.
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "0:2[01]"
+    timeout: 15000
+- stopRecording
+- takeScreenshot: shots/motion/lockout-breathing

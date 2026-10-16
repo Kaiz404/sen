@@ -1,0 +1,43 @@
+# Show amounts plays Reveal on the month card's Sen, and Hide amounts plays Re-mask. Records both
+# and screenshots each settled card. Written, not yet run on a device.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: pass
+- extendedWaitUntil:
+    notVisible:
+      id: launch
+    timeout: 10000
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: month-card
+    timeout: 30000
+- runFlow:
+    when:
+      visible: Hide amounts
+    commands:
+      - tapOn: Hide amounts
+      - waitForAnimationToEnd:
+          timeout: 3000
+- startRecording: shots/motion/record-reveal
+- tapOn: Show amounts
+- extendedWaitUntil:
+    visible: Hide amounts
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 4000
+- stopRecording
+- takeScreenshot: shots/motion/reveal-settled
+- startRecording: shots/motion/record-remask
+- tapOn: Hide amounts
+- extendedWaitUntil:
+    visible: Show amounts
+    timeout: 5000
+- waitForAnimationToEnd:
+    timeout: 4000
+- stopRecording
+- takeScreenshot: shots/motion/remask-settled
