@@ -6,6 +6,9 @@ module.exports = {
   preset: 'jest-expo/android',
   resolver: 'react-native-worklets/jest/resolver',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  // Motion tests are CPU-bound. Workers past the physical core count add no throughput and only
+  // stretch each test toward the 5 s timeout.
+  maxWorkers: '50%',
   // jest-expo's list plus FlashList, which ships untranspiled ES modules.
   transformIgnorePatterns: [
     '/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@shopify/flash-list))',

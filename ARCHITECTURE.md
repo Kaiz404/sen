@@ -722,6 +722,7 @@ jest.mock('react-native-svg', () => {
 ```
 
 - **Resolver.** Reanimated 4.5.1 doesn't ship the `jest/resolver` its current docs name. That file arrives in 4.7, which belongs to SDK 58.
+- **Workers.** `jest.config.js` sets `maxWorkers: '50%'`, one worker per physical core on a hyperthreaded host. Jest's default of one worker per logical CPU less one gave no faster runs here, and the slowest tests ran at up to 4 s against the 5 s timeout. They are slow because the worklets mock fires `requestAnimationFrame` through `setTimeout(0)`, so fake time runs one frame per millisecond, and the motion tests' literal values depend on that schedule. The worker count only decides how many test files run at once, so it changes no test's result.
 - **Timers.** Use `jest.useFakeTimers()` with `jest.advanceTimersByTime` or `jest.runAllTimers()`. The older timer helpers are deprecated.
 - **Async APIs.** RNTL 14's `render` and `act` are async.
 - **Unistyles.** `jest.setup.ts` imports `react-native-unistyles/mocks` and then calls `configureThemes('system')`, so no test file touches MMKV before it can mock it. `features/settings/theme.test.tsx` loads the real boot module. The mock's `setTheme` does nothing, so that test stands in a runtime that follows Unistyles' native rules.
