@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { ToastHost } from '@/components/toast';
 import { SessionRoot, useRouteGate } from '@/features/auth';
@@ -17,12 +18,14 @@ const sheet = {
 export default function RootLayout() {
   const gate = useRouteGate();
   const motion = useSenMotionPreference();
+  const { rt } = useUnistyles();
   useScreenGuard();
 
   return (
     <GestureHandlerRootView style={styles.root}>
       <MotionPolicyRoot preference={motion}>
         <SessionRoot>
+          <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Protected guard={gate === 'unlocked'}>
               <Stack.Screen name="index" />
