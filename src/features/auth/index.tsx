@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { type ReactNode, useEffect } from 'react';
 import { View } from 'react-native';
@@ -7,9 +8,10 @@ import { StyleSheet } from 'react-native-unistyles';
 import { queryClient } from '@/services/query-client';
 
 import { dropRevealedOnHide } from './amounts';
+import { startLinkHold, takeHeldLink } from './held-link';
 import { startLockTriggers, touch } from './locks';
 import { LaunchCover } from './screens/launch-cover';
-import { launch } from './session';
+import { launch, useRouteGate } from './session';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -18,9 +20,11 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
     void launch();
     const stopLocks = startLockTriggers();
     const stopDropping = dropRevealedOnHide();
+    const stopLinks = startLinkHold();
     return () => {
       stopLocks();
       stopDropping();
+      stopLinks();
     };
   }, []);
 
@@ -28,10 +32,23 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
     <QueryClientProvider client={queryClient}>
       <View style={styles.root} onTouchStart={touch}>
         {children}
+        <HeldLinkOpener />
         <LaunchCover />
       </View>
     </QueryClientProvider>
   );
+}
+
+/** Opens a detail link that arrived while locked once the unlock lands, over History, so Back goes home. */
+function HeldLinkOpener(): null {
+  const gate = useRouteGate();
+  useEffect(() => {
+    if (gate === 'welcome') takeHeldLink();
+    if (gate !== 'unlocked') return;
+    const path = takeHeldLink();
+    if (path !== null) router.push(path);
+  }, [gate]);
+  return null;
 }
 
 const styles = StyleSheet.create({ root: { flex: 1 } });

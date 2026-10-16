@@ -114,7 +114,7 @@ Every route file is one line that re-exports a screen from a feature index, such
 
 **Guard contract.**
 - `useRouteGate()` from `@/features/auth` returns one of three values: `'welcome'`, `'locked'` or `'unlocked'`. One value can't express "unlocked but never onboarded". The auth lane maps its reducer onto it: `authenticating` from locked stays `'locked'`, and `stepUp` is `'unlocked'`.
-- `_layout.tsx` declares every route inside exactly one `Stack.Protected`, with all presentation options. A deep link whose guard is false lands on the first available screen and is not replayed after unlock.
+- `_layout.tsx` declares every route inside exactly one `Stack.Protected`, with all presentation options. A deep link whose guard is false lands on the first available screen. Only a detail link is held and opened after unlock (On `LOCK` below).
 - `+not-found` sits in the unlocked guard. Its redirect home does nothing while home is guarded, so a locked unknown link falls through to Lock instead.
 - The dev route is `dev/states`, not `(dev)/states`, because a group name never appears in the URL. In release `__DEV__` is false, so `sen://dev/states` lands on Lock.
 - `src/__tests__/guard.test.tsx` renders the real layout over every route file on disk. A new route file is tested the moment it exists, because expo-router mounts an undeclared route outside every guard.
@@ -398,7 +398,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
 - Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.
 
-A deep link that arrives while locked lands on Lock and is not replayed after unlock.
+A deep link that arrives while locked lands on Lock. If it is a detail link (`sen://transaction/<id>`), `features/auth/held-link.ts` holds its path, from `Linking.getInitialURL()` on a cold start or the `url` event in a running app. `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home. The newest link wins, and any other link drops the held one, so a link can never open a sheet or a setting after unlock. A link that arrives while unlocked is the router's alone. Welcome drops a held link. The detail screen still parses the id, so a stale or bad link shows not found.
 
 ## Errors (D15)
 
@@ -749,7 +749,7 @@ Sen has no server. Everything it protects is on the phone.
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
 | T6 | Tampered or corrupt data | zod on every read, drop and count, reset on an unreadable database | `services/tx-repo.ts` | Reviewer control "Bad data" |
 | T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount from the database in JS while masked. The mock bank's feed, which stands in for a server, does hold amounts in JS. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only, marked sensitive (D28). Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
-| T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx` | `adb shell am start -d sen://transaction/x`: Lock |
+| T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx`, `features/auth/held-link.ts` | `adb shell am start -d sen://transaction/x`: Lock, then that receipt after unlock |
 | T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
 | T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
 | T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
@@ -786,6 +786,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
 | Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
+| A detail link opened while locked shows Lock, then that receipt over History after unlock. Only a detail link is held, once, and never while unlocked | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
 | Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row. A reset while a page is in flight keeps that page out | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future. Its newest rows are the boards' | `services/seed.test.ts` |

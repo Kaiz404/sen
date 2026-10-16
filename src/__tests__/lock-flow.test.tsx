@@ -5,8 +5,11 @@ import { act, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
+import { Linking } from 'react-native';
 
 import { hideAmounts, lockNow } from '@/features/auth';
+import { InstantSchema, malaysiaDay } from '@/models/day';
+import { draftSchema } from '@/models/draft';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { writePref } from '@/services/prefs';
@@ -71,6 +74,39 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   expect(screen.queryByRole('button', { name: 'Add a transaction' })).not.toBeOnTheScreen();
 });
 
+test('a detail link opened while locked shows Lock, then opens that receipt over History once unlocked', async () => {
+  const vault = await openTestDb();
+  const now = InstantSchema.parse(new Date().toISOString());
+  const key = '7f3c2a10-4b5d-4e6f-8a9b-0c1d2e3f4a5b';
+  const draft = draftSchema(malaysiaDay(now)).parse({
+    idemKey: key,
+    amountMinor: 4250,
+    direction: 'debit',
+    description: 'Lunch with Hafiz, cash',
+    category: 'food',
+    day: malaysiaDay(now),
+  });
+  await TxRepo.insertManual(vault, draft, now);
+  writePref('demo.datasetSize', 20);
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: vault });
+  jest.spyOn(Linking, 'getInitialURL').mockResolvedValueOnce(`sen://transaction/m-${key}`);
+  await renderRouter(routes, { initialUrl: `/transaction/m-${key}` });
+
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+  expect(screen.queryByText('Lunch with Hafiz, cash')).not.toBeOnTheScreen();
+
+  authenticate.mockResolvedValueOnce({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+
+  expect(await screen.findByText('RESIT', {}, { timeout: 3000 })).toBeOnTheScreen();
+  expect(await screen.findByText(/^Added on this phone, /)).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Back to history' }));
+  expect(await screen.findByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
+
+  await act(() => lockNow());
+});
+
 test('the app root drops revealed amounts whenever they are hidden', async () => {
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
   await renderRouter(routes, { initialUrl: '/' });
@@ -97,7 +133,9 @@ test('History’s first page is read as the unlock passes, while Lock holds for 
 
   expect(screen.getByRole('button', { name: 'Unlocked' })).toBeDisabled();
   expect(screen.queryByTestId('history')).not.toBeOnTheScreen();
-  expect(readPage.mock.calls).toEqual([[vault, { filter: { flow: 'all', search: '' }, after: null }]]);
+  expect(readPage.mock.calls).toEqual([
+    [vault, { filter: { flow: 'all', search: '' }, after: null }],
+  ]);
 
   screen.unmount();
   readPage.mockRestore();

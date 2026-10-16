@@ -111,7 +111,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Lane 4a. Detail.** Owns `src/features/detail/`.
 - [x] Masked and revealed detail with every field the model holds, delete for added rows only, not found for a missing, deleted or malformed id, and a read error with Retry. Unit evidence: `features/detail/detail-screen.test.tsx` (no amount in the tree or the cache while hidden, show and hide, a deleted row turns into not found), `features/detail/receipt.test.ts`, and the `detail` gallery states in `gallery.test.tsx`. Device evidence is not taken yet: `.maestro/gallery/detail-{light,dark}.yaml` have not run.
 - [x] Copy reference, marked sensitive on the clipboard through the local module `modules/sen-clipboard` (D28). Unit evidence: `services/clipboard.test.ts`, `features/detail/detail-screen.test.tsx` ("Copy puts the reference…", "a copy that fails…"). Autolinking finds the module (`npx expo-modules-autolinking resolve`). The native code needs a rebuild and has not run on the phone.
-- [ ] A detail link opened while locked opens after unlock.
+- [x] A detail link opened while locked goes through Lock, then opens after unlock. Unit evidence: `__tests__/lock-flow.test.tsx` ("a detail link opened while locked…", real routes and session), `features/auth/held-link.test.ts`. Device evidence is not taken yet (`adb shell am start -d sen://transaction/<id>` while locked).
 - [ ] The status timeline on shown bank receipts.
 - [ ] Share receipt, shown amounts only.
 
