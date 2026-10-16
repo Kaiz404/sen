@@ -25,7 +25,7 @@ export type BankScenario = {
   readonly newOnRefresh: boolean;
 };
 
-export const SLOW_MS = 3000;
+const SLOW_MS = 3000;
 
 const FAILURE: { readonly [K in BankScenario['next']]: BankFailure | null } = {
   normal: null,

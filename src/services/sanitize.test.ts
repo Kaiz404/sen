@@ -7,7 +7,7 @@ test.each([
   ['drops zero-width characters inside a word', 'Lu​nch wi‍th Ha﻿fiz', 'Lunch with Hafiz'],
   ['drops bidi overrides and isolates', '‮zifaH‬ ⁦cash⁩ ‏ok', 'zifaH cash ok'],
   ['composes to NFC', 'Café Mahsuri', 'Café Mahsuri'],
-  ['keeps ordinary punctuation and emoji', "Teh tarik & roti, 2x 🍵", "Teh tarik & roti, 2x 🍵"],
+  ['keeps ordinary punctuation and emoji', 'Teh tarik & roti, 2x 🍵', 'Teh tarik & roti, 2x 🍵'],
 ])('sanitizeDescription %s', (_, raw, clean) => {
   expect(sanitizeDescription(raw)).toBe(clean);
 });

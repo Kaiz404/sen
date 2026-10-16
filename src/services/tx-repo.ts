@@ -26,7 +26,6 @@ import { DEMO_ACCOUNT } from './seed';
 
 export const PAGE_SIZE = 100;
 
-/** The All, In and Out control. */
 export type Flow = 'all' | 'in' | 'out';
 export type TxFilter = { readonly flow: Flow; readonly search: string };
 export const NO_FILTER: TxFilter = { flow: 'all', search: '' };
@@ -51,7 +50,7 @@ const FLOW: { readonly [F in Flow]: Clause | null } = {
   out: { sql: "type = 'debit'", params: [] },
 };
 
-export function escapeLike(text: string): string {
+function escapeLike(text: string): string {
   return text.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
@@ -189,7 +188,6 @@ function daysSql(query: DaysQuery, select: string) {
   return [`SELECT ${select} FROM tx ${w.sql} GROUP BY day ORDER BY day DESC`, w.params] as const;
 }
 
-/** Rows per day, newest day first. */
 export async function readDayNets(db: Db, query: DaysQuery): Promise<readonly MaskedDay[]> {
   return DayRows.parse(await db.all(...daysSql(query, 'day, count(*) AS count')));
 }
@@ -238,7 +236,7 @@ const DAY_MS = 24 * 60 * MINUTE_MS;
 const OFFSET_MS = 8 * 60 * MINUTE_MS;
 
 /** A row added for a past day takes the current Malaysia time of day on that day, so it is never in the future. */
-export function postedAtFor(day: DayKey, now: Instant): Instant {
+function postedAtFor(day: DayKey, now: Instant): Instant {
   const timeOfDay = (Date.parse(now) + OFFSET_MS) % DAY_MS;
   return toInstant(new Date(Date.parse(`${day}T00:00:00.000Z`) - OFFSET_MS + timeOfDay));
 }

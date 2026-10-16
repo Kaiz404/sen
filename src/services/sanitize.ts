@@ -4,7 +4,7 @@ const WHITESPACE = /\s/g;
 const CONTROL = /[\u0000-\u001F\u007F-\u009F]/g;
 const COMBINING_MARKS = /[̀-ͯ]/g;
 
-/** Explicit ranges instead of `\p{…}`, so the rules read the same on Hermes and Node. */
+/** Explicit ranges instead of `\p{…}`, so the rules never depend on the engine's Unicode tables. */
 export function sanitizeDescription(raw: string): string {
   return raw
     .normalize('NFC')

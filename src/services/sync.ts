@@ -9,7 +9,7 @@ import type { Db, SqlValue } from './db';
 import { logEvent } from './logger';
 import { searchKey } from './sanitize';
 
-export const SYNC_PAGE_SIZE = 500;
+const SYNC_PAGE_SIZE = 500;
 
 const BankRowSchema = TransactionSchema.extend({ source: z.literal('bank') });
 const SeqSchema = z.object({ seq: z.number().int().positive() });

@@ -160,7 +160,7 @@ const MINUTE_MS = 60_000;
 const MALAYSIA_OFFSET_MINUTES = 8 * 60;
 
 /** mulberry32, a small seeded generator. Demo data only, never anything secret. */
-export function mulberry32(seed: number): () => number {
+function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
