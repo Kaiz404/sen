@@ -1,7 +1,8 @@
 import { Link, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
+import { StyleSheet, UnistylesRuntime, useUnistyles } from 'react-native-unistyles';
 
 import { Sen } from '@/features/sen';
 import { DbSmoke } from '@/features/stub';
@@ -97,8 +98,11 @@ function Frame({
   shot?: string;
   children: ReactNode;
 }) {
+  const { rt } = useUnistyles();
   return (
     <View testID={shot && `shot-${shot}`} style={styles.frame}>
+      {/* A hero screen under the gallery, such as Welcome, would otherwise keep its light status bar. */}
+      <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <Text style={styles.caption}>{caption}</Text>
       <View style={styles.stage}>{children}</View>
     </View>
