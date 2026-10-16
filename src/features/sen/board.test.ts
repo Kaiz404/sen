@@ -73,33 +73,17 @@ test('a slice rebases its window to 0 and holds the value from before it', () =>
   ]);
 });
 
-test('board tracks keep only rig channels that change inside the window', () => {
-  const tracks = boardTracks(BOARDS['MAX-Moments']['.M-reveal'], { to: 760 });
+test('board tracks keep every rig channel, and a value that never changes becomes one step at 0', () => {
+  const reveal = boardTracks(BOARDS['MAX-Moments']['.M-reveal'], { to: 760 });
+  const fail = boardTracks(BOARDS['MAX-Moments']['.M-face.ph-fail'], { to: 1850 });
 
-  expect(Object.keys(tracks).sort()).toEqual(
-    [
-      'ck.op',
-      'elb.op',
-      'elb.sx',
-      'elb.sy',
-      'elc.op',
-      'erb.op',
-      'erb.sx',
-      'erb.sy',
-      'erc.op',
-      'lk.x',
-      'lk.y',
-      'mo.grin',
-      'mo.small',
-      'mv.y',
-      'pl.s',
-      'pl.x',
-      'pl.y',
-      'pr.s',
-      'pr.x',
-      'pr.y',
-      'sq.sx',
-      'sq.sy',
-    ].sort(),
-  );
+  expect(reveal['mv.x']).toEqual([{ at: 0, v: 0 }]);
+  expect(reveal['mv.y']).toEqual([
+    { at: 0, v: 0 },
+    { at: 160, v: 0 },
+    { at: 280, v: -22, ease: 'outQ' },
+    { at: 380, v: 0, ease: 'inQ' },
+  ]);
+  expect(fail['elb.sx']).toEqual([{ at: 0, v: 0.9 }]);
+  expect('dots.op' in reveal).toBe(false);
 });

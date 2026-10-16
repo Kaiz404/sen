@@ -49,3 +49,23 @@ export function without(tracks: Tracks, channels: readonly Channel[]): Tracks {
   for (const ch of channels) delete out[ch];
   return out;
 }
+
+/** The closing run held at `v` instead, for a tile whose loop returns to a lean the app pose lacks. */
+export function endAt(steps: Steps, v: number): Steps {
+  const last = steps[steps.length - 1]!.v;
+  let i = steps.length;
+  while (i > 0 && steps[i - 1]!.v === last) i--;
+  const hold = (s: Step, j: number): Step => (j >= i ? { ...s, v } : s);
+  const [head, ...rest] = steps;
+  return [hold(head, 0), ...rest.map((s, j) => hold(s, j + 1))];
+}
+
+/** Every track later by `ms`, so a tile can start after an opening the app adds. */
+export function shift(tracks: Tracks, ms: number): Tracks {
+  const out: Partial<Record<Channel, Steps>> = {};
+  for (const [ch, steps] of Object.entries(tracks) as [Channel, Steps][]) {
+    const [head, ...rest] = steps;
+    out[ch] = [{ ...head, at: head.at + ms }, ...rest.map((s) => ({ ...s, at: s.at + ms }))];
+  }
+  return out;
+}
