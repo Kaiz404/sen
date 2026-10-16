@@ -18,8 +18,11 @@ export class DbUnreadableError extends Error {
 
 export const DB_NAME = 'sen.db';
 
-/** SQLITE_NOTADB, as expo-sqlite words it. Only a wrong key or a foreign file may trigger a reset. */
-const NOT_A_DATABASE = /Error code 26\b|file is not a database/;
+/**
+ * SQLITE_NOTADB (26) and SQLITE_CORRUPT (11), as expo-sqlite words them. Only a wrong key, a foreign file or a damaged
+ * file may trigger a reset.
+ */
+const NOT_A_DATABASE = /Error code (?:26|11)\b|file is not a database|disk image is malformed/;
 
 function driver(native: SQLiteDatabase): Driver {
   return {

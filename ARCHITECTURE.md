@@ -494,7 +494,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Erase | Step-up, then `eraseManual` deletes the added rows. The vault, key and prefs stay (D31) |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
-| Database unreadable or newer than the app | Same, as `corrupt` |
+| Database unreadable or newer than the app | Same, as `corrupt`. Unreadable means SQLite code 26 (wrong key, foreign file) or 11 (damaged page) |
 | One bad row | Drop it, count it, show "1 item couldn't be read" |
 
 **Activity log (D31).**

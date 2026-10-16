@@ -70,6 +70,13 @@ test('a key that cannot read the file throws DbUnreadableError and closes the ha
   expect(mockState.natives[0]?.closed).toBe(true);
 });
 
+test('a damaged page (code 11) reads as unreadable, so the vault resets instead of looping', async () => {
+  mockState.failure = 'Error code 11: database disk image is malformed';
+
+  await expect(openDb(KEY)).rejects.toBeInstanceOf(DbUnreadableError);
+  expect(mockState.natives[0]?.closed).toBe(true);
+});
+
 test('only 64 hex characters can become a key', () => {
   expect(DbKeySchema.safeParse('0f'.repeat(32)).success).toBe(true);
   expect(DbKeySchema.safeParse('0f'.repeat(31)).success).toBe(false);
