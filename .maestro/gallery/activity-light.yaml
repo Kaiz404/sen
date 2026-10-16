@@ -1,0 +1,59 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=activity&state=list&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-list-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-list-light
+- openLink: "sen://dev/states?screen=activity&state=empty&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-empty-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-empty-light
+- openLink: "sen://dev/states?screen=activity&state=loading&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-loading-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-loading-light
+- openLink: "sen://dev/states?screen=activity&state=failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-failed-light
+- openLink: "sen://dev/states?screen=activity&state=clearing&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-clearing-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-clearing-light
+- openLink: "sen://dev/states?screen=activity&state=clear-refused&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-clear-refused-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-clear-refused-light
+- openLink: "sen://dev/states?screen=activity&state=clear-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-activity-clear-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: activity-clear-failed-light

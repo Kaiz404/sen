@@ -14,6 +14,18 @@ const EVENTS = {
   'sync.failed.invalid_data': 'warn',
   'db.close.failed': 'warn',
   'haptics.failed': 'warn',
+  'auth.unlocked': 'info',
+  'auth.failed': 'info',
+  'lock.locked': 'info',
+  'amounts.revealed': 'info',
+  'amounts.hidden': 'info',
+  'tx.added': 'info',
+  'tx.deleted': 'info',
+  'tx.undone': 'info',
+  'settings.weakened': 'info',
+  'demo.reset': 'info',
+  'log.cleared': 'info',
+  'activity.write_failed': 'warn',
   'guard.failed': 'warn',
 } as const satisfies Record<string, 'info' | 'warn'>;
 

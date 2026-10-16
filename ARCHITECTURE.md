@@ -350,13 +350,13 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
-| `reveal` | "Show amounts" | `showAmounts()` sets `amountsHidden: false` | Stay hidden, silently |
-| `add` | "Save this transaction" | DB write. The `tx.added` log entry waits for the activity log (phase 5) | "Not saved. Your draft is still here." |
-| `delete` | "Delete this transaction" | DB delete. The `tx.deleted` log entry waits for the activity log (phase 5) | Sheet stays, silently. Any other failure says "Nothing was deleted." |
-| `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing |
-| `erase` | "Erase transactions you added" | Manual rows deleted, log `data.erased` | Nothing |
+| `reveal` | "Show amounts" | `showAmounts()` sets `amountsHidden: false`, then an `amounts.revealed` entry | Stay hidden, silently |
+| `add` | "Save this transaction" | DB write, then a `tx.added` entry (only for a new row, not a repeated save) | "Not saved. Your draft is still here." |
+| `delete` | "Delete this transaction" | DB delete, then a `tx.deleted` entry | Sheet stays, silently. Any other failure says "Nothing was deleted." |
+| `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing. A mismatch says "The log is as it was." |
+| `erase` | "Erase everything on this phone" | The sign-out wipe: database closed, key, file and prefs deleted, Welcome shown | The sheet stays. A mismatch says "Nothing was erased." |
 
-The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it is logged.
+The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it logs `tx.undone`. A step-up that reads `mismatch` or `lockout` logs `auth.failed`. A cancel logs nothing. A step-up that ends in a lock that arrived during the prompt returns `cancelled` and logs no failed check, whatever the prompt answered. The lock is the event, and it logs `lock.locked` when it applies.
 
 **`authenticateAsync` options.** One path, `authenticate()` in `features/auth/prompt.ts`, serves unlock and step-up.
 - `biometricsSecurityLevel: 'strong'`.
@@ -491,16 +491,20 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Unlock | Read the key, open the database |
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
-| Erase | Step-up, then delete manual rows and log it |
+| Erase | Step-up, then the sign-out wipe. The vault, key and prefs are gone, and Welcome shows (D28) |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
 | Database unreadable or newer than the app | Same, as `corrupt` |
 | One bad row | Drop it, count it, show "1 item couldn't be read" |
 
-**Activity log.**
-- At most 50 rows `{ id, at, code, meta }`.
-- `meta` is a typed union per `code` with no amount field, so an amount can't be logged.
-- Sign-out destroys the log with the database.
+**Activity log (D28).**
+- **Rows.** At most 50 `{ id, at, code, meta }`, kept by the `activity_log_cap` trigger. `id` is the time plus a counter, so events that share a millisecond keep their order.
+- **The shape.** `models/activity.ts` holds `ActivityEventSchema`, a strict union per `code`. No code has a numeric amount field and an extra key is refused on write and on read. A row that no longer parses is skipped and counted.
+- **Codes.** `auth.unlocked`, `auth.failed` (`mismatch` or `lockout`), `lock.locked` (`idle`, `background` or `manual`), `amounts.revealed`, `amounts.hidden`, `tx.added`, `tx.deleted`, `tx.undone` (`add` or `delete`), `settings.weakened` (the idle or leave window got longer), `demo.reset` and `log.cleared`. Each is also a logger code, checked by a type.
+- **Writing.** `services/activity-log.ts` holds `insert`, `readActivity`, `clearActivity` and a recorder. `record(db, event)` writes at once. `record(null, event)` holds the event (at most 50) for `flush(db)`, which `unlock()` runs after the vault opens. `settled()` resolves when every write has finished, and a lock waits for it before it closes the database. A failed write logs `activity.write_failed` and never throws to the caller.
+- **Callers.** The session store records unlocks, failed checks, locks and holds. A lock is recorded in `dispatch`'s close path when it applies, so a lock that waited for a step-up prompt logs once, after the prompt. `showAmounts` and `hideAmounts` record reveals and hides (a hide only when amounts were showing). The add actions record add, delete and both undos with the description. Settings records a longer idle or leave window and a demo reset.
+- **Reading.** `ActivityScreen` reads the log with TanStack Query (`['activity']`, refetched on mount), groups it by Malaysia day, and clears it behind `clearLog` step-up.
+- **Gone with the vault.** Sign-out and erase destroy the log and drop any held events.
 
 **Backups.**
 - **Android.** `android.allowBackup: false` (its default is `true`, V). On Android 12+ some devices still run device-to-device transfer with it, so `plugins/with-no-backup.js` also writes `sen_data_extraction_rules.xml` (`<cloud-backup>` and `<device-transfer>`) and `sen_backup_rules.xml` (Android 11 and lower), each excluding every domain, and points the manifest at them. `expo-secure-store` runs with `configureAndroidBackup: false` so its narrower rules don't compete. A native rebuild with prebuild applies it.
@@ -822,7 +826,11 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Choosing Dark switches the live theme at once and saves it. System follows the phone, light or dark. Sign out returns to System. A saved choice is in the theme settings before the first screen loads | `features/settings/theme.test.tsx` |
 | The logger takes an event code and nothing else | `services/logger.test.ts` |
 | Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
-| Log schema rejects amounts | `features/security/activity-log.test.ts` |
+| Log schema rejects amounts. An amount forced into an event never reaches the table. The log keeps the newest 50, orders events within one millisecond, holds events while locked and clears to one entry | `models/activity.test.ts`, `services/activity-log.test.ts` |
+| An unlock, a wrong finger, a lock, a reveal and a hide are logged. A failed unlock is held until the vault opens. A cancel logs nothing. Sign-out drops held events | `features/auth/activity.test.tsx` |
+| Add, delete and both undos log the description and no amount. A repeated save logs once. A refused action logs nothing | `features/add/actions.test.ts` |
+| The screen reads the log as day slips, clears it behind the check, and recovers from an unreadable log | `features/activity/activity-screen.test.tsx`, `features/activity/days.test.ts` |
+| Erase leaves no key, file or prefs and shows Welcome. A mismatch or cancel erases nothing. A disk that fails mid-wipe lands on Lock and the wipe can finish | `__tests__/erase-flow.test.tsx` |
 | Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `features/add/draft.test.ts`, `services/sanitize.test.ts` |
 | A double tap on Save prompts once and stores one row. Cancel writes nothing. A write that committed but failed stores no second row on Retry. Undo of an add or a delete never prompts. Delete refuses bank rows before the prompt. The description field has the private input props and shows the cleaned text | `features/add/actions.test.ts`, `features/add/add-flow.test.tsx`, `features/add/delete-sheet.test.tsx` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |

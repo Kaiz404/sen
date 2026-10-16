@@ -6,8 +6,10 @@ import { disarmLockout, useLockoutArmed } from '@/features/auth';
 import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { activity, readActivity } from '@/services/activity-log';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 
+import { weakening } from './actions';
 import { useSenMotionPreference } from './index';
 import { SettingsScreen } from './settings-screen';
 
@@ -256,4 +258,45 @@ test('on iOS the security card says a cover with Sen asleep draws in the app swi
       'Block screenshots and recording. Every screen in Sen, iOS 13+. ALWAYS ON',
     ),
   ).toBeOnTheScreen();
+});
+
+test('Security has rows for the activity log and for erasing everything, each opening its screen', async () => {
+  await renderSettings();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Security activity' }));
+  expect(mockPush).toHaveBeenLastCalledWith('/settings/activity');
+  expect(screen.getByText('Last 50 events, on this phone')).toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Erase everything on this phone' }));
+  expect(mockPush).toHaveBeenLastCalledWith('/settings/erase');
+  expect(screen.getByText('Fingerprint and confirm. Destroys the vault key')).toBeOnTheScreen();
+});
+
+describe('a security setting that gets weaker', () => {
+  test.each([
+    ['idleLock', 5, 10, { code: 'settings.weakened', setting: 'idleLock', minutes: 10 }],
+    ['relockAfter', 1, 5, { code: 'settings.weakened', setting: 'relockAfter', minutes: 5 }],
+    ['relockAfter', 1, 0, null],
+    ['idleLock', 5, 2, null],
+    ['idleLock', 5, 5, null],
+    ['haptics', true, false, null],
+  ] as const)('%s from %s to %s is %j', (key, from, to, expected) => {
+    expect(weakening(key, from, to)).toEqual(expected);
+  });
+});
+
+test('choosing a longer idle lock is logged, a shorter one is not', async () => {
+  activity.discard();
+  writePref('idleLock', 5);
+  await renderSettings();
+
+  await fireEvent.press(screen.getByRole('radio', { name: '2 min' }));
+  await fireEvent.press(screen.getByRole('radio', { name: '10 min' }));
+  activity.flush(mockDb);
+  await activity.settled();
+
+  const log = await readActivity(mockDb);
+  expect(log.entries.map((e) => e.event)).toEqual([
+    { code: 'settings.weakened', setting: 'idleLock', minutes: 10 },
+  ]);
 });

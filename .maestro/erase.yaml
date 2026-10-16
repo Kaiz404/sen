@@ -1,0 +1,21 @@
+# Not run yet: needs a device. Settings > Erase everything on this phone > Erase asks for the check, then
+# Welcome shows. A new set-up starts from nothing: History has the sample rows and the log has one unlock.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- tapOn: Settings
+- scrollUntilVisible:
+    element: Erase everything on this phone
+    direction: DOWN
+    centerElement: true
+- tapOn: Erase everything on this phone
+- extendedWaitUntil:
+    visible: Erase everything on this phone?
+    timeout: 10000
+- takeScreenshot: shots/activity/erase-sheet
+- tapOn: Erase with fingerprint
+- extendedWaitUntil:
+    visible:
+      id: continue
+    timeout: 30000
+- takeScreenshot: shots/activity/erase-done

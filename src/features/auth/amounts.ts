@@ -2,7 +2,7 @@ import { useStore } from 'zustand';
 
 import { QK, queryClient } from '@/services/query-client';
 
-import { sessionStore } from './session';
+import { recordActivity, sessionStore } from './session';
 import { stepUp, type StepUpResult } from './use-step-up';
 
 export function useAmountsHidden(): boolean {
@@ -11,12 +11,17 @@ export function useAmountsHidden(): boolean {
 
 export async function showAmounts(): Promise<StepUpResult> {
   const outcome = await stepUp('reveal');
-  if (outcome.ok) sessionStore.setState({ amountsHidden: false });
+  if (outcome.ok) {
+    sessionStore.setState({ amountsHidden: false });
+    recordActivity({ code: 'amounts.revealed' });
+  }
   return outcome;
 }
 
 export function hideAmounts(): void {
+  const wasShowing = !sessionStore.getState().amountsHidden;
   sessionStore.setState({ amountsHidden: true });
+  if (wasShowing) recordActivity({ code: 'amounts.hidden' });
 }
 
 export function dropRevealedOnHide(): () => void {

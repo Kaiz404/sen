@@ -3,6 +3,7 @@ import { arrivals } from '@/features/transactions';
 import { DayKeySchema, InstantSchema } from '@/models/day';
 import { type Draft, draftSchema } from '@/models/draft';
 import { TxIdSchema } from '@/models/transaction';
+import { activity, readActivity } from '@/services/activity-log';
 import { createMockBank } from '@/services/bank-api';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
@@ -130,4 +131,37 @@ test('a delete with step-up removes the row, and undo restores the same row with
 
   expect(await undoDelete(db, ADDED)).toBe(true);
   expect(await getTransaction(db, ADDED)).toEqual(before);
+});
+
+describe('security activity', () => {
+  const events = async () => (await readActivity(db)).entries.map((e) => e.event).reverse();
+
+  test('add, delete and both undos are logged with the description and no amount', async () => {
+    const saved = await saveDraft(db, DRAFT, passes(), NOW);
+    expect(saved).toEqual({ kind: 'saved', id: ADDED });
+    await deleteRow(db, ADDED, passes());
+    await undoDelete(db, ADDED);
+    await undoAdd(db, ADDED);
+    await activity.settled();
+
+    expect(await events()).toEqual([
+      { code: 'tx.added', label: 'Lunch with Hafiz, cash' },
+      { code: 'tx.deleted', label: 'Lunch with Hafiz, cash' },
+      { code: 'tx.undone', of: 'delete', label: 'Lunch with Hafiz, cash' },
+      { code: 'tx.undone', of: 'add', label: 'Lunch with Hafiz, cash' },
+    ]);
+    const dump = JSON.stringify(await db.all('SELECT * FROM activity_log'));
+    expect(dump).not.toMatch(/4250|42\.50|amount/i);
+  });
+
+  test('a repeated save logs once, and a refused or failed action logs nothing', async () => {
+    await saveDraft(db, DRAFT, passes(), NOW);
+    await saveDraft(db, DRAFT, passes(), NOW);
+    await saveDraft(db, { ...DRAFT, idemKey: DRAFT.idemKey.replace('7f', '8f') }, cancels(), NOW);
+    await deleteRow(db, BANK, passes());
+    await deleteRow(db, ADDED, cancels());
+    await activity.settled();
+
+    expect((await events()).map((e) => e.code)).toEqual(['tx.added']);
+  });
 });

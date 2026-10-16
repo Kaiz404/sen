@@ -4,7 +4,9 @@ import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 
 import { toast } from '@/components/toast';
+import type { ActivityEvent } from '@/models/activity';
 import type { AppError } from '@/models/errors';
+import { activity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
 import { logEvent } from '@/services/logger';
 import { endUnlock, mark } from '@/services/perf';
@@ -56,6 +58,12 @@ let arrival: ReturnType<typeof setTimeout> | undefined;
 
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
 
+/** A wrong finger or a lockout is a security event. A cancel, a missing sensor or an error is not. */
+export function noteFailedCheck(outcome: AuthOutcome): void {
+  if (!outcome.ok && (outcome.reason === 'mismatch' || outcome.reason === 'lockout'))
+    recordActivity({ code: 'auth.failed', reason: outcome.reason });
+}
+
 /** Returns whether the event applied. */
 export function dispatch(event: SessionEvent): boolean {
   const prev = sessionStore.getState().session;
@@ -67,11 +75,18 @@ export function dispatch(event: SessionEvent): boolean {
 
   if (closes) {
     endUnlock();
+    if (next.status === 'locked' && next.reason !== 'launch' && next.reason !== 'signout')
+      activity.record(db, { code: 'lock.locked', reason: next.reason });
     queryClient.clear();
     toast.hide();
     closing = db.close().catch(() => logEvent('db.close.failed'));
   }
   return true;
+}
+
+/** Records into the open vault, or holds the event for the next unlock when there is none. */
+export function recordActivity(event: ActivityEvent): void {
+  activity.record(dbOf(sessionStore.getState().session), event);
 }
 
 export async function launch(): Promise<void> {
@@ -89,6 +104,7 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
   if (sessionStore.getState().lockoutArmed) {
     sessionStore.setState({ lockoutArmed: false });
+    recordActivity({ code: 'auth.failed', reason: 'lockout' });
     return { ok: false, reason: 'lockout' };
   }
 
@@ -96,6 +112,7 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
   const outcome = await authenticate('Unlock Sen');
   if (!outcome.ok) {
     dispatch({ type: 'AUTH_FAIL' });
+    noteFailedCheck(outcome);
     return outcome;
   }
   mark('unlock.ok');
@@ -105,6 +122,8 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
     if (opened.kind === 'reset') sessionStore.setState({ dbReset: opened.reason });
     dispatch({ type: 'UNLOCK_OK', at: Date.now(), db: opened.db });
     mark('arriving');
+    activity.flush(opened.db);
+    activity.record(opened.db, { code: 'auth.unlocked' });
     clearTimeout(arrival);
     const arrive = () => {
       dispatch({ type: 'ARRIVED' });
@@ -159,6 +178,7 @@ export async function signOut(): Promise<void> {
     throw error;
   }
   sessionStore.setState({ dbReset: null, lockoutArmed: false, draftDropped: false });
+  activity.discard();
   dispatch({ type: 'SIGN_OUT_DONE' });
 }
 

@@ -74,6 +74,7 @@ export {
   lockNow,
   noteDraftDroppedByLock,
   onArrive,
+  recordActivity,
   signOut,
   takeDraftDropped,
   useBiometric,

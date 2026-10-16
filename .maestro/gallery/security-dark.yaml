@@ -9,3 +9,35 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: security-privacy-cover-dark
+- openLink: "sen://dev/states?screen=security&state=erase&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-security-erase-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: security-erase-dark
+- openLink: "sen://dev/states?screen=security&state=erase-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-security-erase-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: security-erase-checking-dark
+- openLink: "sen://dev/states?screen=security&state=erase-refused&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-security-erase-refused-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: security-erase-refused-dark
+- openLink: "sen://dev/states?screen=security&state=erase-erasing&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-security-erase-erasing-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: security-erase-erasing-dark

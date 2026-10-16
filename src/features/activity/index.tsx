@@ -1,7 +1,2 @@
-import type { ReactNode } from 'react';
-
-import { StubScreen } from '@/features/stub';
-
-export function ActivityScreen(): ReactNode {
-  return <StubScreen name="ACTIVITY" />;
-}
+export { ActivityScreen } from './activity-screen';
+export { ACTIVITY_STATES } from './fixtures';

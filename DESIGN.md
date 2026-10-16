@@ -424,7 +424,9 @@ Footer: `SEN 1.0.0 · SIMULATED DATA`.
 - "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden or until Sen locks (D27). The switch reads On after every unlock.
 - Dataset size joins the reviewer slip.
 - History's fault states open Settings scrolled to the reviewer slip.
-- Not built: the Source code and licences links (the README covers both). Security activity and Erase arrive with phase 5. The app switcher and screenshot rows are built, as ALWAYS ON info rows.
+- Not built: the Source code and licences links (the README covers both). The app switcher and screenshot rows are built, as ALWAYS ON info rows.
+- Security activity and Erase are Security rows. Erase reads "Erase everything on this phone" (D28), not the board's "Erase transactions I added", because it wipes the vault, key and prefs.
+- Security activity: "Reveal time changed" and "Amounts hidden (timeout)" become "Lock when idle changed to 10 min" and "Amounts hidden", because amounts stay shown until hidden (D27). "Signed out" is not logged (D28).
 
 ## Copy and accessibility
 

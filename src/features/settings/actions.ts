@@ -1,6 +1,8 @@
 import { disarmLockout } from '@/features/auth';
 import { resetBank } from '@/features/transactions';
-import { PREFS, type PrefValue } from '@/models/prefs';
+import type { ActivityEvent } from '@/models/activity';
+import { PREFS, type PrefKey, type PrefValue } from '@/models/prefs';
+import { activity } from '@/services/activity-log';
 import type { Db } from '@/services/db';
 import { writePref } from '@/services/prefs';
 
@@ -21,4 +23,13 @@ export async function resetDemo(db: Db): Promise<void> {
     writePref('demo.newOnRefresh', PREFS['demo.newOnRefresh'].default);
     disarmLockout();
   });
+  activity.record(db, { code: 'demo.reset' });
+}
+
+/** A longer idle or leave-time window leaves the phone open for longer, so it is a security event. */
+export function weakening(key: PrefKey, from: unknown, to: unknown): ActivityEvent | null {
+  if ((key !== 'idleLock' && key !== 'relockAfter') || typeof from !== 'number') return null;
+  if (typeof to !== 'number' || to <= from) return null;
+  const parsed = PREFS[key].schema.safeParse(to);
+  return parsed.success ? { code: 'settings.weakened', setting: key, minutes: parsed.data } : null;
 }

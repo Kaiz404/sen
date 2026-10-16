@@ -1,0 +1,40 @@
+# Not run yet: needs a device. A wrong finger at Lock, a match, then Settings > Security activity lists both,
+# with no amount anywhere. Clear log asks for the check and leaves the one entry that says so.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: fail
+- tapOn:
+    id: unlock
+- openLink: sen://dev/states?auth=pass
+- extendedWaitUntil:
+    visible:
+      id: auth-pass
+    timeout: 15000
+- back
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000
+- tapOn: Settings
+- scrollUntilVisible:
+    element: Security activity
+    direction: DOWN
+    centerElement: true
+- tapOn: Security activity
+- extendedWaitUntil:
+    visible: Unlocked with fingerprint
+    timeout: 10000
+- assertVisible: Fingerprint didn’t match
+- assertNotVisible: RM.*
+- takeScreenshot: shots/activity/log
+- tapOn: Clear log
+- extendedWaitUntil:
+    visible: Log cleared
+    timeout: 10000
+- assertNotVisible: Unlocked with fingerprint
+- takeScreenshot: shots/activity/cleared

@@ -1,6 +1,6 @@
 import type { StepUpAction } from './machine';
 import { authenticate, type AuthOutcome } from './prompt';
-import { dispatch, sessionStore } from './session';
+import { dispatch, noteFailedCheck, sessionStore } from './session';
 
 export type StepUpResult = AuthOutcome;
 
@@ -9,7 +9,7 @@ const PROMPT: Readonly<Record<StepUpAction, string>> = {
   add: 'Save this transaction',
   delete: 'Delete this transaction',
   clearLog: 'Clear security activity',
-  erase: 'Erase transactions you added',
+  erase: 'Erase everything on this phone',
 };
 
 const CANCELLED: StepUpResult = { ok: false, reason: 'cancelled' };
@@ -22,6 +22,7 @@ export async function stepUp(action: StepUpAction): Promise<StepUpResult> {
   const outcome = await authenticate(PROMPT[action]);
   dispatch({ type: 'STEP_UP_DONE' });
   if (sessionStore.getState().session.status !== 'unlocked') return CANCELLED;
+  noteFailedCheck(outcome);
   return outcome;
 }
 

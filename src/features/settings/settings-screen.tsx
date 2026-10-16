@@ -13,6 +13,7 @@ import {
   disarmLockout,
   hideAmounts,
   lockNow,
+  recordActivity,
   refusalText,
   showAmounts,
   useAmountsHidden,
@@ -25,10 +26,10 @@ import { type SyncProgress, useSyncProgress } from '@/features/transactions';
 import type { PrefKey, Prefs, PrefValue } from '@/models/prefs';
 import { capital } from '@/models/text';
 import { playHaptic } from '@/services/haptics';
-import { writePref } from '@/services/prefs';
+import { readPref, writePref } from '@/services/prefs';
 import { type } from '@/theme/type';
 
-import { switchDataset } from './actions';
+import { switchDataset, weakening } from './actions';
 import {
   BIOMETRIC_ICON,
   BIOMETRIC_NAME,
@@ -71,6 +72,8 @@ export type SettingsActions = {
   readonly onLockout: () => void;
   readonly onResetDemo: () => void;
   readonly onPrivacy: () => void;
+  readonly onActivity: () => void;
+  readonly onErase: () => void;
   readonly onLockNow: () => void;
   readonly onSignOut: () => void;
   readonly onBack: () => void;
@@ -195,6 +198,21 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
             {...CAPTURE_ROW[Platform.OS === 'ios' ? 'ios' : 'android']}
             chip={{ icon: 'cellphone-screenshot', pastel: PASTEL.peach }}
             badge="ALWAYS ON"
+          />
+          <Dash />
+          <NavRow
+            title="Security activity"
+            sub="Last 50 events, on this phone"
+            chip={{ icon: 'history', pastel: PASTEL.sea }}
+            onPress={actions.onActivity}
+          />
+          <Dash />
+          <NavRow
+            title="Erase everything on this phone"
+            sub={`${capital(name)} and confirm. Destroys the vault key`}
+            chip={{ icon: 'delete-forever-outline', pastel: PASTEL.rose }}
+            onPress={actions.onErase}
+            danger
           />
         </Card>
       </Section>
@@ -383,7 +401,9 @@ export function SettingsScreen(): ReactNode {
 
   const actions: SettingsActions = {
     onPref: (key, value) => {
+      const weakened = weakening(key, readPref(key), value);
       writePref(key, value);
+      if (weakened !== null) recordActivity(weakened);
       playHaptic(key === 'theme' ? 'themeToggle' : 'segment');
     },
     onHideAmounts: (hidden) => {
@@ -428,6 +448,8 @@ export function SettingsScreen(): ReactNode {
     },
     onResetDemo: () => router.push('/settings/reset-demo'),
     onPrivacy: () => router.push('/settings/privacy'),
+    onActivity: () => router.push('/settings/activity'),
+    onErase: () => router.push('/settings/erase'),
     onLockNow: lockNow,
     onSignOut: () => router.push('/settings/sign-out'),
     onBack: () => router.back(),
