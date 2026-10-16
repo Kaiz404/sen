@@ -1,6 +1,7 @@
-# Not run yet: needs a device. On History, unlocked. Close with input asks before it drops the draft.
+# Not run yet: needs a device. Unlocks to History first. Close with input asks before it drops the draft.
 appId: com.kaiz404.sen
 ---
+- runFlow: subflows/at-history.yaml
 - extendedWaitUntil:
     visible: Add a transaction
     timeout: 20000

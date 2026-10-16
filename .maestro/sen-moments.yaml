@@ -1,56 +1,69 @@
-# Every Sen moment in turn through sen-moment.yaml, on the light theme. Not yet run on a device.
+# Every Sen moment in turn through subflows/moment.yaml, on the light theme. Not yet run on a device.
 # maestro test .maestro/sen-moments.yaml
 appId: com.kaiz404.sen
 ---
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: launch
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: unlock
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: reveal
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: remask
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: face-scan
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: auth-failed
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: lockout
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: network-error
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: refresh
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: empty-search
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: copy
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: theme-light
 - runFlow:
-    file: sen-moment.yaml
+    file: subflows/moment.yaml
     env:
+      THEME: light
       MOMENT: theme-dark

@@ -1,10 +1,8 @@
 # Plays one Sen moment from the states gallery (src/features/sen/states.tsx), records it for the
 # owner to watch, and screenshots where it settles. Not yet run on a device.
-# maestro test -e MOMENT=unlock .maestro/sen-moment.yaml
+# The caller passes MOMENT and THEME. A default here would win over the caller's runFlow env.
+# maestro test -e MOMENT=unlock -e THEME=light .maestro/subflows/moment.yaml
 appId: com.kaiz404.sen
-env:
-  MOMENT: unlock
-  THEME: light
 ---
 - startRecording: shots/4d/record-${MOMENT}-${THEME}
 - openLink: "sen://dev/states?screen=motion&state=${MOMENT}&theme=${THEME}"

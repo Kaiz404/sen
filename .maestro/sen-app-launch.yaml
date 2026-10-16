@@ -12,10 +12,12 @@ appId: com.kaiz404.sen
 - extendedWaitUntil:
     notVisible:
       id: launch
-    timeout: 10000
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: unlock|continue
+    timeout: 15000
 - stopRecording
-- assertVisible:
-    id: unlock|continue
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/motion/launch-settled

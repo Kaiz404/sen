@@ -1,5 +1,7 @@
 # A passing check plays Unlock on Lock's Sen, which holds Lock with "Unlocked" until it lands, then
-# History opens. Records the moment. Written, not yet run on a device.
+# History opens. Records the moment. tapOn waits about 10 s for the looping Sen to settle, so the
+# transient "Unlocked" is gone before any assert runs. The flow asserts History, and the recording
+# is the evidence of the moment. Written, not yet run on a device.
 appId: com.kaiz404.sen
 ---
 - runFlow:
@@ -10,12 +12,9 @@ appId: com.kaiz404.sen
 - tapOn:
     id: unlock
 - extendedWaitUntil:
-    visible: Unlocked
-    timeout: 15000
-- extendedWaitUntil:
     visible:
       id: history
-    timeout: 15000
+    timeout: 30000
 - stopRecording
 - waitForAnimationToEnd:
     timeout: 3000

@@ -1,7 +1,8 @@
-# Not run yet: needs a device. On History, unlocked. Adds RM 42.50 "Lunch with Hafiz, cash" and leaves the
-# step-up prompt up for `adb -e emu finger touch 1`. Then run add-saved.yaml.
+# Not run yet: needs a device. Unlocks to History first through the pass override, which also answers the
+# step-up prompt. Adds RM 42.50 "Lunch with Hafiz, cash" and saves it. Then run add-saved.yaml.
 appId: com.kaiz404.sen
 ---
+- runFlow: subflows/at-history.yaml
 - extendedWaitUntil:
     visible: Add a transaction
     timeout: 20000
