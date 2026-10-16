@@ -146,7 +146,8 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 **Owns.** `src/features/security/`, `src/features/activity/`.
 
-- [ ] The screen guard (off in dev builds, forced on in release, with a test), the privacy cover, the activity log (cut first if late) and erase.
+- [x] The screen guard (off in dev builds, forced on in release, `screen-guard.test.tsx`), the privacy cover (`privacy-cover.test.tsx`) and the backup rules (`plugins/with-no-backup.test.ts`). Device checks are open.
+- [ ] Open in this phase: the activity log (cut first if late) and erase.
 
 **Verify, unit.** The release config always guards. The log schema rejects amounts.
 **Verify, device.** The recents view shows the cover. A release build's screenshot of History is black.

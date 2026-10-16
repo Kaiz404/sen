@@ -16,7 +16,10 @@ jest.mock('@/features/auth', () => ({
   SessionRoot: ({ children }: { children: ReactNode }) => children,
 }));
 jest.mock('@/features/settings', () => ({ useSenMotionPreference: () => 'full' }));
-jest.mock('@/features/security', () => ({ useScreenGuard: () => undefined }));
+jest.mock('@/features/security', () => ({
+  useScreenGuard: () => undefined,
+  PrivacyCover: () => null,
+}));
 jest.mock('@/features/transactions', () => ({ useHistoryPrefetch: () => undefined }));
 jest.mock('@/components/toast', () => ({ ToastHost: () => null }));
 

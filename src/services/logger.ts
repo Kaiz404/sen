@@ -11,6 +11,7 @@ const EVENTS = {
   'sync.failed.server': 'warn',
   'sync.failed.invalid_data': 'warn',
   'haptics.failed': 'warn',
+  'guard.failed': 'warn',
 } as const satisfies Record<string, 'info' | 'warn'>;
 
 export type LogCode = keyof typeof EVENTS;

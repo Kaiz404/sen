@@ -41,7 +41,8 @@ const config: ExpoConfig = {
     'expo-router',
     ['expo-splash-screen', { backgroundColor: INK, image: './assets/images/splash-blank.png' }],
     ['expo-sqlite', { useSQLCipher: true }],
-    'expo-secure-store',
+    ['expo-secure-store', { configureAndroidBackup: false }],
+    './plugins/with-no-backup',
     [
       'expo-local-authentication',
       { faceIDPermission: 'Sen uses Face ID to unlock and to confirm changes.' },

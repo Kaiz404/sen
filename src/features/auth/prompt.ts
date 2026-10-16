@@ -71,6 +71,9 @@ function nativePrompt(promptMessage: string): Promise<LocalAuthenticationResult>
 
 const isAuthenticatingRef = { current: false };
 
+/** True while the system biometric sheet is up, which iOS reports to the app as `inactive`. */
+export const isAuthenticating = (): boolean => isAuthenticatingRef.current;
+
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 
 export async function authenticate(promptMessage: string): Promise<AuthOutcome> {

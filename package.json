@@ -70,6 +70,7 @@
     "device:verify": "scripts/verify-device.sh",
     "device:shots": "scripts/verify-device.sh --shots",
     "release:auth-check": "scripts/check-release-auth.sh",
+    "release:guard-check": "scripts/check-release-guard.sh",
     "icons": "node scripts/icons.mjs"
   },
   "private": true,

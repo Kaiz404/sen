@@ -455,3 +455,18 @@ The phases are in [PLAN.md](PLAN.md).
 - **iOS.** iOS has no sensitive flag. The module writes the item local only, so Universal Clipboard doesn't send it to other devices, and it expires after two minutes (inferred: not built on a Mac).
 
 **Cost.** One native rebuild. A build without the module reports a failed copy and points at the reference, which is selectable, so nothing breaks.
+
+## D28. Screen guard, privacy cover and backup rules
+
+**Compared.**
+- Guard only unlocked screens, or guard the whole app in release builds.
+- On iOS, the native blur of `enableAppSwitcherProtectionAsync`, or the board's JS cover with Sen.
+- For Android backups, `allowBackup: false` alone, or also `dataExtractionRules` and `fullBackupContent`.
+- The rules through a repo config plugin, or an existing package.
+
+**Chosen.**
+- **Whole app in release.** `preventScreenCaptureAsync` runs from the root layout and again on every return to the foreground, because a recreated Android Activity loses FLAG_SECURE. Guarding only unlocked screens leaves a gap when the lock state changes and gains nothing, since Lock shows no data. Dev builds stay open so agents can screenshot.
+- **JS cover on iOS only.** The expo native blur starts on `willResignActive`, which also fires while the Face ID sheet is up, so it would blur every unlock. The cover skips `inactive` while `isAuthenticating()`, and always covers `background`. The secure canvas from the guard is the native layer under it (inferred to blank the switcher snapshot, unverified without a Mac). Android needs no JS cover: FLAG_SECURE blanks recents, and Android emits no `inactive`.
+- **Backup rules.** The Android docs say that for apps targeting 12+, `allowBackup="false"` on some manufacturers' devices disables cloud backup but not device-to-device transfer, and that a missing `<device-transfer>` section means that mode copies everything (developer.android.com/identity/data/autobackup). So `plugins/with-no-backup.ts` writes both rule files excluding every domain. Config plugins are the Expo route; `expo-build-properties` has no such option. `expo-secure-store` ships its own narrower rules, so its plugin runs with `configureAndroidBackup: false`.
+
+**Watch out.** A native formSheet draws above the root view, so the cover does not hide an open sheet. Sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.

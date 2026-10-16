@@ -190,3 +190,16 @@ test('the sheets open as their routes', async () => {
     ['/settings/sign-out'],
   ]);
 });
+
+test('the security card says the app switcher and screenshots are covered, always', async () => {
+  await renderSettings();
+
+  expect(
+    screen.getByLabelText(
+      'Hide Sen in the app switcher. A cover with Sen asleep, no amounts. ALWAYS ON',
+    ),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText('Block screenshots on sensitive screens. iOS 13+ and Android. ALWAYS ON'),
+  ).toBeOnTheScreen();
+});

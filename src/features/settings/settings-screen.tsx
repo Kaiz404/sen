@@ -169,6 +169,20 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
             chip={{ icon: BIOMETRIC_ICON[values.biometric], pastel: PASTEL.mint }}
             badge="ALWAYS ON"
           />
+          <Dash />
+          <InfoRow
+            title="Hide Sen in the app switcher"
+            sub="A cover with Sen asleep, no amounts"
+            chip={{ icon: 'cellphone-lock', pastel: PASTEL.lilac }}
+            badge="ALWAYS ON"
+          />
+          <Dash />
+          <InfoRow
+            title="Block screenshots on sensitive screens"
+            sub="iOS 13+ and Android"
+            chip={{ icon: 'cellphone-screenshot', pastel: PASTEL.peach }}
+            badge="ALWAYS ON"
+          />
         </Card>
       </Section>
 

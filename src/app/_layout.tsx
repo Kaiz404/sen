@@ -5,7 +5,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { ToastHost } from '@/components/toast';
 import { SessionRoot, useRouteGate } from '@/features/auth';
-import { useScreenGuard } from '@/features/security';
+import { PrivacyCover, useScreenGuard } from '@/features/security';
 import { useSenAppGate } from '@/features/sen';
 import { useSenMotionPreference } from '@/features/settings';
 import { useHistoryPrefetch } from '@/features/transactions';
@@ -56,6 +56,7 @@ export default function RootLayout() {
             </Stack.Protected>
           </Stack>
           <ToastHost />
+          <PrivacyCover />
         </SessionRoot>
       </MotionPolicyRoot>
     </GestureHandlerRootView>

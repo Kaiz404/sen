@@ -60,6 +60,7 @@ export {
   type AuthFailure,
   type AuthOverride,
   type Biometric,
+  isAuthenticating,
   isAuthOverride,
   setAuthOverride,
 } from './prompt';
