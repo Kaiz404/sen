@@ -347,8 +347,8 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | Trigger | Mechanism |
 | --- | --- |
 | Background | AppState `background` stores `backgroundedAt`, every time. It does not hide amounts (D27) |
-| Return | On `active`, lock if `now − backgroundedAt > relockAfter`. Never auto-prompt |
-| Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`. The tick skips while backgrounded, and `active` restarts the count |
+| Return | On `active`, lock if `now − backgroundedAt > relockAfter`, or if `now` is before `backgroundedAt` because the clock was set back. Never auto-prompt |
+| Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`, and a `lastTouch` in the future (a clock set back) counts as idle. The tick skips while backgrounded, and `active` restarts the count |
 | Manual | "Lock now" calls `lockNow()` |
 
 **The iOS inactive trap.** The Face ID sheet itself sends the app to `inactive` and back. So:

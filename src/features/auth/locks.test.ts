@@ -4,7 +4,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import type { PrefKey, Prefs } from '@/models/prefs';
 import type { OpenDb } from '@/services/db';
 
-import { startLockTriggers, touch } from './locks';
+import { startLockTriggers, TICK_MS, touch } from './locks';
 import type { Session } from './machine';
 import { sessionStore } from './session';
 import { stepUp } from './use-step-up';
@@ -126,5 +126,27 @@ test('time in the background does not count as idle', () => {
   expect(status()).toEqual({ status: 'unlocked', since: 0, db });
 
   jest.advanceTimersByTime(MINUTE);
+  expect(status()).toEqual({ status: 'locked', reason: 'idle' });
+});
+
+test('a clock set back while away locks on return', () => {
+  start({ status: 'unlocked', since: 0, db });
+
+  jest.setSystemTime(10 * MINUTE);
+  appGoes('background');
+  jest.setSystemTime(5 * MINUTE);
+  appGoes('active');
+
+  expect(status()).toEqual({ status: 'locked', reason: 'background' });
+});
+
+test('a clock set back while in use counts as idle on the next tick', () => {
+  start({ status: 'unlocked', since: 0, db });
+
+  jest.advanceTimersByTime(4 * MINUTE);
+  touch();
+  jest.setSystemTime(MINUTE);
+  jest.advanceTimersByTime(TICK_MS);
+
   expect(status()).toEqual({ status: 'locked', reason: 'idle' });
 });

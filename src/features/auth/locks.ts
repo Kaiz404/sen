@@ -17,7 +17,7 @@ export function touch(): void {
 /**
  * Only `background` starts the re-lock window, because iOS sends `inactive` while the Face ID sheet is up. A
  * prompt still open on return (the Android passcode screen leaves the app) does not lock, because the reducer
- * ignores `LOCK` while a prompt holds.
+ * ignores `LOCK` while a prompt holds. A clock set back reads as past every limit.
  */
 function onAppState(state: AppStateStatus): void {
   const now = Date.now();
@@ -25,7 +25,7 @@ function onAppState(state: AppStateStatus): void {
     backgroundedAt = now;
   } else if (state === 'active' && backgroundedAt !== null) {
     const away = now - backgroundedAt;
-    if (away > readPref('relockAfter') * MINUTE) {
+    if (away < 0 || away > readPref('relockAfter') * MINUTE) {
       dispatch({ type: 'LOCK', reason: 'background' });
     }
     backgroundedAt = null;
@@ -36,7 +36,7 @@ function onAppState(state: AppStateStatus): void {
 function onTick(): void {
   if (backgroundedAt !== null) return;
   const idle = Date.now() - lastTouch;
-  if (idle >= readPref('idleLock') * MINUTE) {
+  if (idle < 0 || idle >= readPref('idleLock') * MINUTE) {
     dispatch({ type: 'LOCK', reason: 'idle' });
   }
 }
