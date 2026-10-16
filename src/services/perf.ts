@@ -3,6 +3,12 @@ import { logTiming, type UnlockMark } from './logger';
 let origin: number | null = null;
 const seen = new Set<UnlockMark>();
 
+/** Ends the unlock being timed, so later marks (a gallery History, the next cold launch) log nothing. */
+export function endUnlock(): void {
+  origin = null;
+  seen.clear();
+}
+
 /**
  * Logs how long after `unlock.ok` a step ran, once per unlock. Marks before `unlock.ok` are ignored, so a
  * cold launch, a gallery state and a Jest render log nothing. Dev builds only.

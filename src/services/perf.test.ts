@@ -1,5 +1,5 @@
 import { logTiming } from './logger';
-import { mark } from './perf';
+import { endUnlock, mark } from './perf';
 
 jest.mock('./logger', () => ({ logTiming: jest.fn() }));
 
@@ -8,17 +8,11 @@ beforeEach(() => {
   now = 1000;
   jest.spyOn(performance, 'now').mockImplementation(() => now);
   jest.mocked(logTiming).mockClear();
+  endUnlock();
 });
 afterEach(() => jest.restoreAllMocks());
 
 const logged = () => jest.mocked(logTiming).mock.calls;
-
-test('the gallery and a cold launch draw History with no unlock, and log nothing', () => {
-  mark('history.mounted');
-  mark('history.painted');
-
-  expect(logged()).toEqual([]);
-});
 
 test('each step logs its time since the biometric prompt passed', () => {
   mark('unlock.ok');
@@ -66,4 +60,19 @@ test('a release build logs nothing', () => {
     (globalThis as unknown as { __DEV__: boolean }).__DEV__ = dev;
   }
   expect(logged()).toEqual([]);
+});
+
+test('the gallery and a cold launch draw History with no unlock, and log nothing', () => {
+  mark('history.mounted');
+  mark('history.painted');
+
+  expect(logged()).toEqual([]);
+});
+
+test('marks after an unlock has ended log nothing', () => {
+  mark('unlock.ok');
+  endUnlock();
+  mark('history.painted');
+
+  expect(logged()).toEqual([['unlock.ok', 0]]);
 });
