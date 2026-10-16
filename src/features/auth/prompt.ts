@@ -110,12 +110,20 @@ export function biometricOf(
   return face && !finger ? 'face' : 'fingerprint';
 }
 
-export type BiometricSupport = { readonly kind: Biometric; readonly ready: boolean };
+/** What the phone has enrolled: no screen lock, a passcode only, or strong biometrics. */
+export type EnrolledLevel = 'none' | 'passcode' | 'strong';
+
+export type BiometricSupport = { readonly kind: Biometric; readonly level: EnrolledLevel };
+
+function levelOf(level: SecurityLevel): EnrolledLevel {
+  if (level >= SecurityLevel.BIOMETRIC_STRONG) return 'strong';
+  return level === SecurityLevel.NONE ? 'none' : 'passcode';
+}
 
 export async function detectBiometric(): Promise<BiometricSupport> {
   const [types, level] = await Promise.all([
     supportedAuthenticationTypesAsync().catch(() => []),
     getEnrolledLevelAsync().catch(() => SecurityLevel.NONE),
   ]);
-  return { kind: biometricOf(Platform.OS, types), ready: level >= SecurityLevel.BIOMETRIC_STRONG };
+  return { kind: biometricOf(Platform.OS, types), level: levelOf(level) };
 }

@@ -47,7 +47,7 @@ type SessionStore = {
 
 export const sessionStore = createStore<SessionStore>(() => ({
   session: INITIAL,
-  biometric: { kind: biometricOf(Platform.OS, []), ready: true },
+  biometric: { kind: biometricOf(Platform.OS, []), level: 'strong' },
   dbReset: null,
   lockoutArmed: false,
   amountsHidden: true,
@@ -104,7 +104,7 @@ export async function launch(): Promise<void> {
 export async function refreshBiometric(): Promise<void> {
   const next = await detectBiometric();
   const prev = sessionStore.getState().biometric;
-  if (next.kind !== prev.kind || next.ready !== prev.ready)
+  if (next.kind !== prev.kind || next.level !== prev.level)
     sessionStore.setState({ biometric: next });
 }
 

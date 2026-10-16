@@ -62,7 +62,7 @@ beforeEach(() => {
   sessionStore.setState({
     ...sessionStore.getInitialState(),
     session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'fingerprint', ready: true },
+    biometric: { kind: 'fingerprint', level: 'strong' },
   });
   jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db });
 });

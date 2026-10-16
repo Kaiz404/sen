@@ -48,8 +48,8 @@ export function PrimerScreen(): ReactNode {
   const support = useBiometric();
   const status = useSessionStatus();
   const level = useMotionPolicy();
-  const [view, setView] = useState(() => initialView(support.ready));
-  useEffect(() => setView((prev) => afterRecheck(prev, support.ready)), [support.ready]);
+  const [view, setView] = useState(() => initialView(support.level));
+  useEffect(() => setView((prev) => afterRecheck(prev, support.level)), [support.level]);
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';
   usePromptMoments(PRIMER_SEN, prompt, ANSWERS);
@@ -95,7 +95,7 @@ export function PrimerView({
   const shown: PrimerState =
     state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
   const notice = noticeOf(shown, copy, secondsLeft);
-  const settings = shown.kind === 'off' && shown.canOpenSettings;
+  const settings = shown.kind === 'noLock' || (shown.kind === 'off' && shown.canOpenSettings);
   const unlocked = shown.kind === 'unlocked';
 
   return (
@@ -205,6 +205,8 @@ function noticeOf(
       return triesLeftText(state.triesLeft, name);
     case 'lockout':
       return `Too many tries. ${name} is back in ${clock(secondsLeft)}, or use your device passcode now.`;
+    case 'noLock':
+      return 'Set a screen lock to use Sen.';
     case 'off':
       return state.canOpenSettings
         ? `${title} is off. Turn it on in your phone's settings, or use your passcode.`

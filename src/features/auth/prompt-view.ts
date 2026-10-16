@@ -1,6 +1,6 @@
 import type { StoreCause } from '@/services/store-fault';
 
-import type { AuthFailure } from './prompt';
+import type { AuthFailure, EnrolledLevel } from './prompt';
 import type { UnlockOutcome } from './session';
 
 export type PromptView =
@@ -8,6 +8,8 @@ export type PromptView =
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
   | { readonly kind: 'lockout'; readonly until: number }
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
+  /** The phone has no screen lock, so there is no passcode to fall back on and nothing for Sen to ask. */
+  | { readonly kind: 'noLock' }
   | { readonly kind: 'error' }
   /** The vault would not open. `failures` counts opens in a row, and a reset is offered from the second. */
   | { readonly kind: 'store'; readonly cause: StoreCause; readonly failures: number };
@@ -18,13 +20,25 @@ export const LOCKOUT_MS = 30_000;
 
 export const IDLE: PromptView = { kind: 'idle' };
 
-export function initialView(ready: boolean): PromptView {
-  return ready ? IDLE : { kind: 'off', canOpenSettings: true };
+export function initialView(level: EnrolledLevel): PromptView {
+  switch (level) {
+    case 'strong':
+      return IDLE;
+    case 'passcode':
+      return { kind: 'off', canOpenSettings: true };
+    case 'none':
+      return { kind: 'noLock' };
+  }
 }
 
-/** The app came back to the front. A view that says biometrics are off follows what the phone says now. */
-export function afterRecheck(prev: PromptView, ready: boolean): PromptView {
-  return prev.kind === 'off' ? initialView(ready) : prev;
+/**
+ * The app came back to the front. A view about what the phone has set up follows what the phone says now. A
+ * mismatch, lockout or store view stays, since those describe an attempt.
+ */
+export function afterRecheck(prev: PromptView, level: EnrolledLevel): PromptView {
+  return prev.kind === 'idle' || prev.kind === 'off' || prev.kind === 'noLock'
+    ? initialView(level)
+    : prev;
 }
 
 export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number): PromptView {

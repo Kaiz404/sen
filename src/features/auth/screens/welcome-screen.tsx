@@ -12,13 +12,18 @@ import type { LaunchTarget } from '@/features/sen';
 import { type } from '@/theme/type';
 
 import { reportLaunchTarget, useLaunchDone } from '../launch';
-import { Hero } from './parts';
+import { useBiometric } from '../session';
+import { openLockScreenSettings } from './device-settings';
+import { Hero, Notice } from './parts';
 
 export function WelcomeScreen(): ReactNode {
   const router = useRouter();
   const launched = useLaunchDone();
+  const noLock = useBiometric().level === 'none';
   return (
     <WelcomeView
+      noLock={noLock}
+      onOpenLockSettings={openLockScreenSettings}
       greeting={launched}
       onContinue={() => router.push('/primer')}
       onLaunchTarget={reportLaunchTarget}
@@ -40,6 +45,9 @@ const PROMISES: readonly Pledge[] = [
 
 type WelcomeViewProps = {
   readonly onContinue: () => void;
+  /** The phone has no screen lock, so the one key goes to the lock-screen settings. */
+  readonly noLock?: boolean;
+  readonly onOpenLockSettings: () => void;
   /** Sen waves hello. False while the launch hands off into it, which ends on Sen idle. */
   readonly greeting?: boolean;
   readonly onLaunchTarget?: (target: LaunchTarget) => void;
@@ -47,6 +55,8 @@ type WelcomeViewProps = {
 
 export function WelcomeView({
   onContinue,
+  noLock = false,
+  onOpenLockSettings,
   greeting = true,
   onLaunchTarget,
 }: WelcomeViewProps): ReactNode {
@@ -90,18 +100,37 @@ export function WelcomeView({
           </View>
         </ReceiptSlip>
         <View style={styles.cta}>
-          <Key
-            testID="continue"
-            tone="lemon"
-            size="xlarge"
-            icon="chevron-right"
-            iconPosition="end"
-            label="Continue as demo user"
-            onPress={onContinue}
-          />
-          <Text style={styles.small}>
-            No sign-up. You get Everyday Savings ·· 4821 with two weeks of made-up spending.
-          </Text>
+          {noLock ? (
+            <>
+              <Notice text="Set a screen lock to use Sen." />
+              <Key
+                testID="continue"
+                tone="lemon"
+                size="xlarge"
+                icon="cog"
+                label="Open lock-screen settings"
+                onPress={onOpenLockSettings}
+              />
+              <Text style={styles.small}>
+                Sen keeps amounts behind your phone's own lock. Set one, then come back.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Key
+                testID="continue"
+                tone="lemon"
+                size="xlarge"
+                icon="chevron-right"
+                iconPosition="end"
+                label="Continue as demo user"
+                onPress={onContinue}
+              />
+              <Text style={styles.small}>
+                No sign-up. You get Everyday Savings ·· 4821 with two weeks of made-up spending.
+              </Text>
+            </>
+          )}
         </View>
       </View>
     </View>

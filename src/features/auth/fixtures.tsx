@@ -16,6 +16,7 @@ function Lock({ state }: { state: LockState }) {
       biometric={BIOMETRIC}
       onUnlock={noop}
       onOpenSettings={noop}
+      onOpenLockSettings={noop}
       onStartAgain={noop}
       onReset={noop}
     />
@@ -40,7 +41,8 @@ function Lockout() {
 }
 
 export const AUTH_STATES = {
-  welcome: () => <WelcomeView onContinue={noop} />,
+  welcome: () => <WelcomeView onContinue={noop} onOpenLockSettings={noop} />,
+  'welcome-no-lock': () => <WelcomeView noLock onContinue={noop} onOpenLockSettings={noop} />,
   'primer-ready': () => <Primer state={{ kind: 'idle' }} />,
   'primer-off': () => <Primer state={{ kind: 'off', canOpenSettings: true }} />,
   'lock-idle': () => <Lock state={{ kind: 'idle' }} />,
@@ -48,6 +50,7 @@ export const AUTH_STATES = {
   'lock-mismatch': () => <Lock state={{ kind: 'mismatch', triesLeft: 2 }} />,
   'lock-lockout': () => <Lockout />,
   'lock-off': () => <Lock state={{ kind: 'off', canOpenSettings: true }} />,
+  'lock-no-lock': () => <Lock state={{ kind: 'noLock' }} />,
   'lock-unavailable': () => <Lock state={{ kind: 'off', canOpenSettings: false }} />,
   'lock-error': () => <Lock state={{ kind: 'error' }} />,
   'lock-store': () => <Lock state={{ kind: 'store', cause: 'store', failures: 1 }} />,

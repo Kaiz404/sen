@@ -24,7 +24,7 @@ import type { Biometric } from '../prompt';
 import { afterRecheck, afterUnlock, canReset, initialView, type PromptView } from '../prompt-view';
 import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
-import { openDeviceSettings } from './device-settings';
+import { openDeviceSettings, openLockScreenSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
 import { NOT_ASKED, type Prompt, type PromptAnswers, usePromptMoments } from './prompt-moments';
 
@@ -52,6 +52,7 @@ export type LockViewProps = {
   readonly biometric: Biometric;
   readonly onUnlock: () => void;
   readonly onOpenSettings: () => void;
+  readonly onOpenLockSettings: () => void;
   readonly onStartAgain: () => void;
   readonly onReset: () => void;
   /** The cold-start launch hands off into this screen's Sen. */
@@ -62,8 +63,8 @@ export function LockScreen(): ReactNode {
   const support = useBiometric();
   const status = useSessionStatus();
   const level = useMotionPolicy();
-  const [view, setView] = useState(() => initialView(support.ready));
-  useEffect(() => setView((prev) => afterRecheck(prev, support.ready)), [support.ready]);
+  const [view, setView] = useState(() => initialView(support.level));
+  useEffect(() => setView((prev) => afterRecheck(prev, support.level)), [support.level]);
   // Holds "checking" until the answer lands, so the view never flashes idle in between.
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';
@@ -107,6 +108,7 @@ export function LockScreen(): ReactNode {
       biometric={support.kind}
       onUnlock={onUnlock}
       onOpenSettings={openDeviceSettings}
+      onOpenLockSettings={openLockScreenSettings}
       onStartAgain={onStartAgain}
       onReset={onReset}
       onLaunchTarget={reportLaunchTarget}
@@ -119,6 +121,7 @@ export function LockView({
   biometric,
   onUnlock,
   onOpenSettings,
+  onOpenLockSettings,
   onStartAgain,
   onReset,
   onLaunchTarget,
@@ -199,6 +202,17 @@ export function LockView({
             <NoteCard
               icon="cellphone"
               text="Either way, nothing leaves this phone. Sen never sees your face or passcode."
+            />
+          </>
+        );
+      case 'noLock':
+        return (
+          <>
+            <ProfileRow />
+            {unlockKey('Open lock-screen settings', 'cog', onOpenLockSettings)}
+            <NoteCard
+              icon="cellphone"
+              text="Sen never sees your face, fingerprint or passcode. Your phone checks, and Sen only hears yes or no."
             />
           </>
         );
@@ -346,6 +360,11 @@ const HERO: Readonly<
     title: ['Not', 'quite.'],
     body: "That didn't look like you. Sen is still keeping amounts hidden.",
     sen: { pose: 'worried', label: "Sen, worried after it didn't match" },
+  }),
+  noLock: () => ({
+    title: ['Set a', 'screen lock.'],
+    body: "Set a screen lock to use Sen. Your phone's lock is what keeps your money private.",
+    sen: { pose: 'shrug', label: 'Sen, shrugging because the phone has no screen lock' },
   }),
   off: ({ title }) => ({
     title: [title, 'is off.'],

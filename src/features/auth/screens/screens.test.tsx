@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 
 import { clearPrefs } from '@/services/prefs';
 import * as Vault from '@/services/vault';
@@ -8,6 +8,7 @@ import * as Vault from '@/services/vault';
 import { sessionStore } from '../session';
 import { LockScreen } from './lock-screen';
 import { PrimerScreen } from './primer-screen';
+import { WelcomeScreen } from './welcome-screen';
 
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
@@ -18,7 +19,7 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ back: jest.fn() }) }));
 
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const session = () => sessionStore.getState().session;
-const fingerprint = { kind: 'fingerprint', ready: true } as const;
+const fingerprint = { kind: 'fingerprint', level: 'strong' } as const;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -59,7 +60,7 @@ test('a lockout counts down, then offers the fingerprint again', async () => {
 test('with no fingerprint enrolled, Lock says it is off and offers settings and the passcode', async () => {
   sessionStore.setState({
     session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'fingerprint', ready: false },
+    biometric: { kind: 'fingerprint', level: 'passcode' },
   });
 
   await render(<LockScreen />);
@@ -138,7 +139,7 @@ describe('a vault that will not open', () => {
 test('turning the fingerprint on in settings clears the off view when the app comes back', async () => {
   sessionStore.setState({
     session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'fingerprint', ready: false },
+    biometric: { kind: 'fingerprint', level: 'passcode' },
   });
   await render(<LockScreen />);
   expect(screen.getByRole('header', { name: 'Fingerprint is off.' })).toBeOnTheScreen();
@@ -147,6 +148,43 @@ test('turning the fingerprint on in settings clears the off view when the app co
 
   expect(screen.getByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
+});
+
+describe('a phone with no screen lock', () => {
+  const noLock = { kind: 'fingerprint', level: 'none' } as const;
+  beforeEach(() => {
+    jest.spyOn(Linking, 'sendIntent').mockResolvedValue(undefined);
+  });
+
+  test('Lock asks for a screen lock with one key to its settings and no passcode key', async () => {
+    sessionStore.setState({ session: { status: 'locked', reason: 'launch' }, biometric: noLock });
+    await render(<LockScreen />);
+
+    expect(screen.getByRole('header', { name: 'Set a screen lock.' })).toBeOnTheScreen();
+    expect(screen.getByText(/^Set a screen lock to use Sen\./)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Use device passcode' })).not.toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Open lock-screen settings' }));
+    expect(Linking.sendIntent).toHaveBeenCalledWith('android.app.action.SET_NEW_PASSWORD');
+  });
+
+  test('setting one and coming back clears the message', async () => {
+    sessionStore.setState({ session: { status: 'locked', reason: 'launch' }, biometric: noLock });
+    await render(<LockScreen />);
+
+    await act(() => sessionStore.setState({ biometric: fingerprint }));
+
+    expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
+  });
+
+  test('Welcome swaps Continue for the same key', async () => {
+    sessionStore.setState({ session: { status: 'welcome' }, biometric: noLock });
+    await render(<WelcomeScreen />);
+
+    expect(screen.getByText('Set a screen lock to use Sen.')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Open lock-screen settings' })).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Continue as demo user' })).not.toBeOnTheScreen();
+  });
 });
 
 test('a cancelled prompt returns to Lock without a message', async () => {

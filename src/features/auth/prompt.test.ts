@@ -1,10 +1,12 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 
-import { authenticate, isAuthOverride, setAuthOverride } from './prompt';
+import { authenticate, detectBiometric, isAuthOverride, setAuthOverride } from './prompt';
 
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
+  getEnrolledLevelAsync: jest.fn(),
+  supportedAuthenticationTypesAsync: jest.fn(async () => []),
 }));
 
 const authenticateAsync = jest.mocked(LocalAuthentication.authenticateAsync);
@@ -57,7 +59,13 @@ describe('the dev auth override', () => {
 
     expect(await authenticate('Unlock Sen')).toEqual({ ok: false, reason: 'cancelled' });
     expect(authenticateAsync.mock.calls).toEqual([
-      [{ promptMessage: 'Unlock Sen', biometricsSecurityLevel: 'strong', disableDeviceFallback: false }],
+      [
+        {
+          promptMessage: 'Unlock Sen',
+          biometricsSecurityLevel: 'strong',
+          disableDeviceFallback: false,
+        },
+      ],
     ]);
   });
 
@@ -95,4 +103,14 @@ describe('the dev auth override', () => {
   ])('%s parses as an override: %s', (value, expected) => {
     expect(isAuthOverride(value)).toBe(expected);
   });
+});
+
+test.each([
+  ['no screen lock', LocalAuthentication.SecurityLevel.NONE, 'none'],
+  ['a passcode only', LocalAuthentication.SecurityLevel.SECRET, 'passcode'],
+  ['strong biometrics', LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG, 'strong'],
+])('%s maps to its enrolled level', async (_, level, expected) => {
+  jest.mocked(LocalAuthentication.getEnrolledLevelAsync).mockResolvedValueOnce(level);
+
+  expect((await detectBiometric()).level).toBe(expected);
 });

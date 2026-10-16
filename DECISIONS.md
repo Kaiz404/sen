@@ -42,6 +42,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
+| D28 | A phone with no screen lock | Sen refuses to run and points to the lock-screen settings. No Sen PIN |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 | D31 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase deletes only the rows the user added, behind step-up |
@@ -458,6 +459,25 @@ The phases are in [PLAN.md](PLAN.md).
 **History.**
 - 2026-10-16. First answer: one saved setting, shown until hidden, surviving lock and restart. Reason: one value instead of a session state plus a preference, and no timer.
 - 2026-10-17. Reopened by the owner. The brief says masked by default, and a reviewer relaunching must see masked. Changed to session state. The saved setting and its "survives lock" tests were removed.
+
+## D28. A phone with no screen lock: refuse and point to settings
+
+**Compared.**
+- A Sen PIN as a fallback, only for phones with no screen lock.
+- A Sen PIN for everyone, in place of the device passcode.
+- Refuse to run until the phone has a screen lock, and open the lock-screen settings in one tap.
+
+**Why refuse.**
+- **Conventional.** Banking apps (Malaysian banks, Revolut) refuse to run on a phone with no device lock. The sign-in decision is "device biometrics with passcode fallback", and a phone with no lock has no fallback to use.
+- **Hardware-enforced attempts.** The OS and the secure hardware count wrong tries and impose the lockout. A Sen PIN would be checked in JS, so the attempt limit and its storage would be ours to get right, and a copied app data folder could try PINs without limit.
+- **Less to build.** A PIN means setup, change, forgot and its own lockout screens. The brief asks for device biometrics.
+
+**What it does.**
+- **Detection.** `getEnrolledLevelAsync` returns `NONE`. `detectBiometric` maps it to the enrolled level `none`.
+- **Lock and Welcome.** Both show "Set a screen lock to use Sen" with one key, "Open lock-screen settings". Android sends the `android.app.action.SET_NEW_PASSWORD` intent. iOS opens Sen's page in Settings.
+- **Return.** The app re-reads the level each time it becomes active, so the message clears once a lock exists.
+
+**Cost.** A reviewer's emulator needs a PIN, as the API 36 AVD already has.
 
 ## D29. Copy reference: a local module marks the clip sensitive
 

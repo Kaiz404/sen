@@ -191,10 +191,10 @@ test('coming back to the app re-reads whether the fingerprint is on', async () =
     .mocked(LocalAuthentication.getEnrolledLevelAsync)
     .mockResolvedValue(LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG);
   start({ status: 'locked', reason: 'launch' });
-  sessionStore.setState({ biometric: { kind: 'fingerprint', ready: false } });
+  sessionStore.setState({ biometric: { kind: 'fingerprint', level: 'none' } });
 
   appGoes('active');
   await jest.advanceTimersByTimeAsync(0);
 
-  expect(sessionStore.getState().biometric).toEqual({ kind: 'fingerprint', ready: true });
+  expect(sessionStore.getState().biometric).toEqual({ kind: 'fingerprint', level: 'strong' });
 });

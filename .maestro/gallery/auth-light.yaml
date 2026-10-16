@@ -9,6 +9,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-welcome-light
+- openLink: "sen://dev/states?screen=auth&state=welcome-no-lock&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-no-lock-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-welcome-no-lock-light
 - openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=light"
 - extendedWaitUntil:
     visible:
@@ -65,6 +73,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-off-light
+- openLink: "sen://dev/states?screen=auth&state=lock-no-lock&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-no-lock-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-no-lock-light
 - openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=light"
 - extendedWaitUntil:
     visible:
