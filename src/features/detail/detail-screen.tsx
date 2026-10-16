@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Share } from 'react-native';
 
 import { toast } from '@/components/toast';
 
@@ -15,6 +15,7 @@ import {
 } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import type { Revealed } from '@/features/transactions';
+import { signed } from '@/models/money';
 import { type TxId, TxIdSchema } from '@/models/transaction';
 import { copySensitive } from '@/services/clipboard';
 import { playHaptic } from '@/services/haptics';
@@ -22,6 +23,7 @@ import { QK } from '@/services/query-client';
 import { getRevealedTransaction, getTransaction } from '@/services/tx-repo';
 
 import { type DetailBody, DetailView } from './detail-view';
+import { shareText } from './receipt';
 
 export const detailKeys = {
   row: (id: TxId | null) => [...QK.tx, 'detail', id] as const,
@@ -112,6 +114,13 @@ export function DetailScreen(): ReactNode {
           if (id !== null) router.push(`/transaction/${id}/delete`);
         },
         onRetry: () => void row.refetch(),
+        onShare: () => {
+          if (row.data == null || revealed === null || amount.data == null) return;
+          const message = shareText(row.data, signed(amount.data, row.data.type));
+          Share.share({ message }).catch(() =>
+            toast.show({ title: 'Couldn’t open sharing', detail: 'Nothing was shared.' }),
+          );
+        },
         onCopy: () => {
           if (row.data != null) void copy(row.data.reference);
         },

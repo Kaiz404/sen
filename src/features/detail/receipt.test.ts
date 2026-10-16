@@ -1,6 +1,14 @@
+import { signedMinor } from '@/models/money';
 import { type MaskedRow, MaskedRowSchema } from '@/models/transaction';
 
-import { addedText, heroCaption, paymentSteps, receiptFacts, stampDate } from './receipt';
+import {
+  addedText,
+  heroCaption,
+  paymentSteps,
+  receiptFacts,
+  shareText,
+  stampDate,
+} from './receipt';
 
 const TNB: MaskedRow = MaskedRowSchema.parse({
   id: 'bk-1',
@@ -83,4 +91,22 @@ test('a pending bank payment tracks Authorised, Pending and Posted; posted and a
   ]);
   expect(paymentSteps(SALARY)).toBeNull();
   expect(paymentSteps(MaskedRowSchema.parse({ ...LUNCH, status: 'pending' }))).toBeNull();
+});
+
+test('the share text is the board’s plain receipt, and an added row names itself once', () => {
+  expect(shareText(TNB, signedMinor(-14260))).toBe(
+    [
+      'Sen receipt',
+      'TNB electricity · Tenaga Nasional Berhad',
+      '−RM\u2009142.60 · Pending',
+      'Wed 14 Oct 2026, 6:20 pm',
+      'Everyday Savings ·· 4821',
+      'Debit, money out · Bills & utilities',
+      'Ref FT26101400478213',
+    ].join('\n'),
+  );
+  expect(shareText(LUNCH, signedMinor(-4250)).split('\n').slice(1, 3)).toEqual([
+    'Lunch with Hafiz, cash',
+    '−RM\u200942.50 · Posted',
+  ]);
 });

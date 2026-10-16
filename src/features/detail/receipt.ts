@@ -1,6 +1,7 @@
 import { clockText } from '@/features/transactions';
 import { CATEGORY_LABEL } from '@/models/category';
 import type { DayKey } from '@/models/day';
+import { moneyText, type SignedMinor } from '@/models/money';
 import type { MaskedRow } from '@/models/transaction';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -91,4 +92,20 @@ export function paymentSteps(row: MaskedRow): readonly PaymentStep[] | null {
     { label: 'Pending', state: 'now', caption: 'NOW' },
     { label: 'Posted', state: 'next', caption: 'NEXT' },
   ];
+}
+
+/**
+ * The plain text the share sheet gets: no image, no link, no balance. It takes the amount, so a receipt can't be
+ * shared while hidden.
+ */
+export function shareText(row: MaskedRow, amount: SignedMinor): string {
+  return [
+    'Sen receipt',
+    row.merchant === row.description ? row.description : `${row.description} · ${row.merchant}`,
+    `${moneyText(amount)} · ${statusText(row)}`,
+    dateTime(row),
+    `${row.account.name} ·· ${row.account.last4}`,
+    `${typeText(row)} · ${CATEGORY_LABEL[row.category]}`,
+    `Ref ${row.reference}`,
+  ].join('\n');
 }

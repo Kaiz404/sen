@@ -46,6 +46,7 @@ export type DetailActions = {
   readonly onDelete: () => void;
   readonly onRetry: () => void;
   readonly onCopy: () => void;
+  readonly onShare: () => void;
 };
 
 export type DetailViewProps = {
@@ -90,7 +91,12 @@ export function DetailView({
               onShow={actions.onShow}
               onCopy={actions.onCopy}
             />
-            <Footer row={body.row} biometric={biometric} onDelete={actions.onDelete} />
+            <Footer
+              row={body.row}
+              biometric={biometric}
+              onShare={actions.onShare}
+              onDelete={actions.onDelete}
+            />
           </>
         )}
       </ScrollView>
@@ -328,25 +334,44 @@ function Source({ row }: { readonly row: MaskedRow }) {
 function Footer({
   row,
   biometric,
+  onShare,
   onDelete,
 }: {
   readonly row: MaskedRow;
   readonly biometric: Biometric;
+  readonly onShare: () => void;
   readonly onDelete: () => void;
 }) {
-  if (row.source !== 'manual') return null;
+  const shareable = useAmountView(row.id) !== null;
   return (
     <View style={styles.footer}>
-      <Key
-        tone="danger"
-        size="large"
-        icon="delete-outline"
-        label="Delete transaction"
-        onPress={onDelete}
-      />
-      <Text style={styles.note}>
-        {`Asks for ${BIOMETRIC[biometric].name} first. You can undo for 6 seconds after.`}
-      </Text>
+      {shareable ? (
+        <Key
+          tone="lemon"
+          size="large"
+          icon="share-variant"
+          label="Share receipt"
+          onPress={onShare}
+        />
+      ) : (
+        <Text style={styles.note}>
+          Show amounts to share this receipt. Sen never shares hidden amounts.
+        </Text>
+      )}
+      {row.source === 'manual' && (
+        <>
+          <Key
+            tone="danger"
+            size="large"
+            icon="delete-outline"
+            label="Delete transaction"
+            onPress={onDelete}
+          />
+          <Text style={styles.note}>
+            {`Asks for ${BIOMETRIC[biometric].name} first. You can undo for 6 seconds after.`}
+          </Text>
+        </>
+      )}
     </View>
   );
 }
@@ -575,7 +600,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     textAlign: 'center',
     color: theme.colors.inkMuted,
   },
-  footer: { gap: 6 },
+  footer: { marginTop: 'auto', gap: 8 },
   boneFact: { flexDirection: 'row', justifyContent: 'space-between' },
   finding: {
     ...type.caption(11),

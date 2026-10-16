@@ -16,6 +16,7 @@ const NO_ACTIONS: DetailActions = {
   onDelete: noop,
   onRetry: noop,
   onCopy: noop,
+  onShare: noop,
 };
 
 const ACCOUNT = { name: 'Everyday Savings', last4: '4821' };

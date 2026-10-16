@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { Share } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import { DayKeySchema, InstantSchema } from '@/models/day';
@@ -235,4 +236,34 @@ test('a copy that fails says so and points at the selectable reference', async (
   expect(await screen.findByText('Couldn’t copy')).toBeOnTheScreen();
   expect(screen.getByText('Press and hold the reference to copy it.')).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Reference copied' })).not.toBeOnTheScreen();
+});
+
+test('Share receipt is offered only while shown, and hands the share sheet plain text', async () => {
+  const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
+  await renderDetail(tnb);
+
+  expect(
+    await screen.findByText('Show amounts to share this receipt. Sen never shares hidden amounts.'),
+  ).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Share receipt' })).not.toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Show amounts' }));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Share receipt' }));
+
+  expect(share.mock.calls).toEqual([
+    [
+      {
+        message: [
+          'Sen receipt',
+          'TNB electricity · Tenaga Nasional Berhad',
+          '−RM\u2009142.60 · Pending',
+          'Wed 14 Oct 2026, 6:20 pm',
+          'Everyday Savings ·· 4821',
+          'Debit, money out · Bills & utilities',
+          'Ref FT26101400478213',
+        ].join('\n'),
+      },
+    ],
+  ]);
+  share.mockRestore();
 });
