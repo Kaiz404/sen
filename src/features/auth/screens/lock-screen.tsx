@@ -4,7 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
-import { Sen, type SenProps, UNLOCK_HOLD } from '@/features/sen';
+import { type LaunchTarget, Sen, type SenProps, UNLOCK_HOLD } from '@/features/sen';
 import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
@@ -14,6 +14,7 @@ import { amountsNote, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from
 import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
+import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
@@ -45,6 +46,8 @@ export type LockViewProps = {
   readonly onUnlock: () => void;
   readonly onOpenSettings: () => void;
   readonly onStartAgain: () => void;
+  /** The cold-start launch hands off into this screen's Sen. */
+  readonly onLaunchTarget?: (target: LaunchTarget) => void;
 };
 
 export function LockScreen(): ReactNode {
@@ -84,6 +87,7 @@ export function LockScreen(): ReactNode {
       onUnlock={onUnlock}
       onOpenSettings={openDeviceSettings}
       onStartAgain={onStartAgain}
+      onLaunchTarget={reportLaunchTarget}
     />
   );
 }
@@ -95,6 +99,7 @@ export function LockView({
   onUnlock,
   onOpenSettings,
   onStartAgain,
+  onLaunchTarget,
 }: LockViewProps): ReactNode {
   const copy = BIOMETRIC[biometric];
   const { name, icon } = copy;
@@ -192,7 +197,12 @@ export function LockView({
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <Hero kind="lock" {...hero} sen={{ ...hero.sen, id: LOCK_SEN }} />
+      <Hero
+        kind="lock"
+        {...hero}
+        sen={{ ...hero.sen, id: LOCK_SEN }}
+        onLaunchTarget={onLaunchTarget}
+      />
       <View style={styles.actions}>
         {body}
         <TextLink

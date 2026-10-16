@@ -27,14 +27,16 @@ function Launch({
   ready,
   onDone,
   level = 'full',
+  rest = 'masked',
 }: {
   ready: boolean;
   onDone: () => void;
   level?: MotionLevel;
+  rest?: 'masked' | 'idle';
 }) {
   return (
     <MotionPolicyRoot preference={level}>
-      <SenLaunch target={TARGET} ready={ready} onDone={onDone} />
+      <SenLaunch target={TARGET} rest={rest} ready={ready} onDone={onDone} />
     </MotionPolicyRoot>
   );
 }
@@ -108,6 +110,23 @@ test('the handoff grows Sen into Lock’s Sen, eyes shut, as the panel shrinks i
   expect(rig('elc').opacity).toBe(1);
   expect(rig('lk').matrix[5]).toBe(34);
   expect(onDone).not.toHaveBeenCalled();
+  await at(3276 - 3108 + 20);
+  expect(onDone).toHaveBeenCalledTimes(1);
+});
+
+test('handing off into Welcome, Sen grows into its idle Sen with its eyes open and smiling', async () => {
+  const onDone = jest.fn();
+  await render(<Launch ready rest="idle" onDone={onDone} />);
+
+  await at(3108);
+  expect([sen().translateX, sen().translateY, sen().scale]).toEqual([0, 0, 1]);
+  expect(rig('elb').opacity).toBe(1);
+  expect(rig('elc').opacity).toBe(0);
+  expect(rig('erb').matrix[3]).toBe(1);
+  expect(rig('lk').matrix[5]).toBe(0);
+  expect(rig('mo-smile').opacity).toBe(1);
+  expect(rig('ck').opacity).toBe(0);
+  expect(rig('mo').matrix.slice(0, 4)).toEqual([1, 0, 0, 1]);
   await at(3276 - 3108 + 20);
   expect(onDone).toHaveBeenCalledTimes(1);
 });

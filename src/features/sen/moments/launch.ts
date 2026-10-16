@@ -74,23 +74,38 @@ const wink: readonly BoardStep[] = [
   [CLOSE + 90, 0.15, 'inQ'],
 ];
 
-/** The rig channels the launch moves, each read off the launch clock. Every other channel rests idle. */
-export const LAUNCH_RIG: Readonly<Partial<Record<Channel, Keyframes>>> = {
+/** MAL2's own rig tracks: the squash, the wink, the mouth and the cheeks. */
+const MAL2_RIG: Readonly<Partial<Record<Channel, Keyframes>>> = {
   'sq.k': k('sq.k'),
   'sq.sx': k('sq.sx'),
   'sq.sy': k('sq.sy'),
   'mo.sx': k('mo.sx'),
   'mo.sy': k('mo.sy'),
   'ck.op': k('chk.op'),
-  'erb.sy': keyframesOf(wink),
-  'elb.sy': keyframesOf(bridge.eyeSqueeze),
-  'elb.op': keyframesOf(bridge.openEye),
-  'erb.op': keyframesOf(bridge.openEye),
-  'elc.op': keyframesOf(bridge.shutEye),
-  'erc.op': keyframesOf(bridge.shutEye),
-  'lk.y': keyframesOf(bridge.tuck),
-  'mo.smile': keyframesOf(bridge.smile),
-  'mo.small': keyframesOf(bridge.small),
+  'erb.sy': k('er.sy'),
+};
+
+/**
+ * The rig channels the launch moves, each read off the launch clock, by the pose the screen's Sen
+ * rests in. Lock's rests masked, so the eyes shut inside the handoff. Welcome's starts idle, as MAL2
+ * ends. Every other channel rests idle.
+ */
+export const LAUNCH_RIG: Readonly<
+  Record<'masked' | 'idle', Readonly<Partial<Record<Channel, Keyframes>>>>
+> = {
+  idle: MAL2_RIG,
+  masked: {
+    ...MAL2_RIG,
+    'erb.sy': keyframesOf(wink),
+    'elb.sy': keyframesOf(bridge.eyeSqueeze),
+    'elb.op': keyframesOf(bridge.openEye),
+    'erb.op': keyframesOf(bridge.openEye),
+    'elc.op': keyframesOf(bridge.shutEye),
+    'erc.op': keyframesOf(bridge.shutEye),
+    'lk.y': keyframesOf(bridge.tuck),
+    'mo.smile': keyframesOf(bridge.smile),
+    'mo.small': keyframesOf(bridge.small),
+  },
 };
 
 const letter = (n: 1 | 2 | 3) => ({ y: k(`l${n}.y`), sx: k(`l${n}.sx`), sy: k(`l${n}.sy`) });

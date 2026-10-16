@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { IconName } from '@/components/key';
-import { Sen, type SenProps } from '@/features/sen';
+import { type LaunchTarget, Sen, type SenProps } from '@/features/sen';
 import { type } from '@/theme/type';
 
 export type { IconName };
@@ -19,12 +19,26 @@ type HeroProps = {
   readonly title: readonly [string, string];
   readonly body: string;
   readonly sen?: Omit<SenProps, 'size'>;
+  /** Hears where the hero draws its Sen, in window points. The hero sits at the window's top left. */
+  readonly onLaunchTarget?: (target: LaunchTarget) => void;
 };
 
-export function Hero({ kind, title, body, sen }: HeroProps): ReactNode {
+export function Hero({ kind, title, body, sen, onLaunchTarget }: HeroProps): ReactNode {
   const layout = HERO[kind];
+  const { size, right, bottom } = layout.sen;
   return (
-    <View style={[styles.hero, { gap: layout.gap }]}>
+    <View
+      testID="hero"
+      style={[styles.hero, { gap: layout.gap }]}
+      onLayout={
+        onLaunchTarget &&
+        (({ nativeEvent: { layout: box } }) =>
+          onLaunchTarget({
+            sen: { x: box.width - right - size, y: box.height - bottom - size, size },
+            heroHeight: box.height,
+          }))
+      }
+    >
       <Brand />
       <Text
         accessibilityRole="header"

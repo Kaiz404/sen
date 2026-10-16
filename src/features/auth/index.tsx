@@ -3,19 +3,17 @@ import * as SplashScreen from 'expo-splash-screen';
 import { type ReactNode, useEffect } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { useStore } from 'zustand';
 
 import { queryClient } from '@/services/query-client';
 
 import { dropRevealedOnHide } from './amounts';
 import { startLockTriggers, touch } from './locks';
-import { launch, sessionStore } from './session';
+import { LaunchCover } from './screens/launch-cover';
+import { launch } from './session';
 
 void SplashScreen.preventAutoHideAsync();
 
 export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
-  const launching = useStore(sessionStore, (s) => s.session.status === 'launching');
-
   useEffect(() => {
     void launch();
     const stopLocks = startLockTriggers();
@@ -26,14 +24,11 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
     };
   }, []);
 
-  useEffect(() => {
-    if (!launching) SplashScreen.hide();
-  }, [launching]);
-
   return (
     <QueryClientProvider client={queryClient}>
       <View style={styles.root} onTouchStart={touch}>
         {children}
+        <LaunchCover />
       </View>
     </QueryClientProvider>
   );

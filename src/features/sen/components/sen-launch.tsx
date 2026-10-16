@@ -52,6 +52,8 @@ export type LaunchTarget = {
 
 type Props = {
   readonly target: LaunchTarget;
+  /** The pose the screen's Sen rests in under the loader: Lock's masked, or Welcome's idle. */
+  readonly rest: keyof typeof LAUNCH_RIG;
   /** Lock is ready to take over. Until then Sen hops on the period. */
   readonly ready: boolean;
   /** The loader has handed off to Lock and can unmount. */
@@ -64,20 +66,19 @@ const at = (k: Keyframes, t: number) => {
   return kf(t, k.stops, k.values, k.eases);
 };
 
-const RIG_KEYS = Object.keys(LAUNCH_RIG) as Channel[];
 /** The calm launch shows this frame: Sen settled into the period, the wordmark whole. */
 const REST_MS = STORY_MS;
 const CALM_HOLD_MS = 400;
 const CALM_FADE_MS = 200;
 
 /**
- * MAL2, "Sen is the dot". Mounted over Lock, which renders underneath from the first frame. Sen
+ * MAL2, "Sen is the dot". Mounted over Lock or Welcome, which renders underneath from the first frame. Sen
  * falls onto the S, hops across the letters, lands as the period with a light haptic, winks, then
  * grows into Lock's Sen while the ink panel shrinks into Lock's hero. Every part reads one clock `t`,
  * so nothing re-renders while it plays. Calm and Off show the rest frame, hold it 400 ms and cross
  * fade to Lock in 200 ms, with no travel, accents or haptic.
  */
-export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
+export function SenLaunch({ target, rest, ready, onDone }: Props): ReactNode {
   const level = useMotionPolicy();
   const calm = level !== 'full';
   const { width, height } = useWindowDimensions();
@@ -87,6 +88,8 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
   const fade = useSharedValue(1);
   const [rig] = useState(() => makeRig(poseFrame('idle')));
   const phase = useRef<'story' | 'waiting' | 'handoff'>('story');
+  const [tracks] = useState(() => LAUNCH_RIG[rest]);
+  const [keys] = useState(() => Object.keys(tracks) as Channel[]);
 
   const { size } = target.sen;
   const k = (size * (222 / 600)) / BOARD_FACE_R;
@@ -158,7 +161,7 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
   useAnimatedReaction(
     () => t.get(),
     (now) => {
-      for (const ch of RIG_KEYS) rig[ch].set(at(LAUNCH_RIG[ch]!, now));
+      for (const ch of keys) rig[ch].set(at(tracks[ch]!, now));
     },
   );
 
@@ -200,6 +203,7 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
 
   return (
     <View
+      testID="launch"
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel="Loading Sen"

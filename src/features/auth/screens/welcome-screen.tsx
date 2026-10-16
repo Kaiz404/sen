@@ -8,13 +8,22 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Amount } from '@/components/amount';
 import { type IconName, Key } from '@/components/key';
 import { ReceiptSlip } from '@/components/receipt-slip';
+import type { LaunchTarget } from '@/features/sen';
 import { type } from '@/theme/type';
 
+import { reportLaunchTarget, useLaunchDone } from '../launch';
 import { Hero } from './parts';
 
 export function WelcomeScreen(): ReactNode {
   const router = useRouter();
-  return <WelcomeView onContinue={() => router.push('/primer')} />;
+  const launched = useLaunchDone();
+  return (
+    <WelcomeView
+      greeting={launched}
+      onContinue={() => router.push('/primer')}
+      onLaunchTarget={reportLaunchTarget}
+    />
+  );
 }
 
 type Pledge = {
@@ -29,7 +38,18 @@ const PROMISES: readonly Pledge[] = [
   { tile: 'mint', icon: 'cellphone', text: 'Everything stays on this phone.' },
 ];
 
-export function WelcomeView({ onContinue }: { readonly onContinue: () => void }): ReactNode {
+type WelcomeViewProps = {
+  readonly onContinue: () => void;
+  /** Sen waves hello. False while the launch hands off into it, which ends on Sen idle. */
+  readonly greeting?: boolean;
+  readonly onLaunchTarget?: (target: LaunchTarget) => void;
+};
+
+export function WelcomeView({
+  onContinue,
+  greeting = true,
+  onLaunchTarget,
+}: WelcomeViewProps): ReactNode {
   const { theme } = useUnistyles();
   return (
     <View style={styles.screen}>
@@ -38,7 +58,8 @@ export function WelcomeView({ onContinue }: { readonly onContinue: () => void })
         kind="welcome"
         title={['Meet', 'Sen.']}
         body="A coin that keeps its eyes shut on your money until you ask."
-        sen={{ pose: 'happy', label: 'Sen, waving hello' }}
+        sen={{ id: 'welcome', pose: greeting ? 'happy' : 'idle', label: 'Sen, waving hello' }}
+        onLaunchTarget={onLaunchTarget}
       />
       <View style={styles.actions}>
         <ReceiptSlip>
