@@ -71,40 +71,40 @@ test.each([
   'a first sync that fails %s is tried %i times, then shows "%s"',
   async (next, calls, title, timeout) => {
     writePref('demo.next', next);
-    const fetchPage = jest.spyOn(bank, 'fetchPage');
+    const requests = jest.spyOn(bank, 'under');
 
     await renderHistory();
 
     expect(await screen.findByRole('header', { name: title }, { timeout })).toBeOnTheScreen();
-    expect(fetchPage).toHaveBeenCalledTimes(calls);
-    fetchPage.mockRestore();
+    expect(requests).toHaveBeenCalledTimes(calls);
+    requests.mockRestore();
   },
 );
 
 test('a simulated timeout keeps the skeleton for its 8 s deadline before the error shows', async () => {
   writePref('demo.next', 'timeout');
-  const fetchPage = jest.spyOn(bank, 'fetchPage');
+  const requests = jest.spyOn(bank, 'under');
   await renderHistory();
-  await waitFor(() => expect(fetchPage).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(requests).toHaveBeenCalledTimes(1));
 
   await act(() => jest.advanceTimersByTime(7500));
   expect(screen.queryByText('Taking too long')).not.toBeOnTheScreen();
   await act(() => jest.advanceTimersByTime(500));
 
   expect(await screen.findByText('Taking too long')).toBeOnTheScreen();
-  fetchPage.mockRestore();
+  requests.mockRestore();
 });
 
 test('bad rows are counted and never retried, and the good rows show', async () => {
   writePref('demo.next', 'bad_data');
-  const fetchPage = jest.spyOn(bank, 'fetchPage');
+  const requests = jest.spyOn(bank, 'under');
 
   await renderHistory();
 
   expect(await screen.findByText("2 items couldn't be read", undefined, LONG)).toBeOnTheScreen();
   expect(screen.getByText('Tealive')).toBeOnTheScreen();
-  expect(fetchPage).toHaveBeenCalledTimes(1);
-  fetchPage.mockRestore();
+  expect(requests).toHaveBeenCalledTimes(1);
+  requests.mockRestore();
 });
 
 test('an offline fault covers one refresh: the banner shows, the fault turns itself off, and Retry recovers', async () => {

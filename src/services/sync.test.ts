@@ -25,8 +25,7 @@ afterEach(async () => {
 });
 
 function mockBank(scenario: Partial<BankScenario> = {}, now: () => Instant = () => NOW) {
-  const live = { ...NORMAL, ...scenario };
-  return { bank: createMockBank({ scenario: () => live, now, wait: async () => {} }), live };
+  return createMockBank({ now, wait: async () => {} }).under({ ...NORMAL, ...scenario });
 }
 
 const options = { now: () => LATER };
@@ -63,7 +62,7 @@ test('a full sync stores every row once and saves the cursor and time', async ()
   const db = await freshDb();
   const progress: number[] = [];
 
-  const result = await sync(db, mockBank().bank, {
+  const result = await sync(db, mockBank(), {
     ...options,
     onProgress: (n) => progress.push(n),
   });
@@ -76,17 +75,17 @@ test('a full sync stores every row once and saves the cursor and time', async ()
 
 test('sync twice and sync interrupted end with the same table hash', async () => {
   const once = await freshDb();
-  await sync(once, mockBank().bank, options);
+  await sync(once, mockBank(), options);
 
   const twice = await freshDb();
-  const { bank } = mockBank();
+  const bank = mockBank();
   await sync(twice, bank, options);
   const again = await sync(twice, bank, options);
 
   const interrupted = await freshDb();
-  const dropped = await sync(interrupted, dropsAfter(mockBank().bank, 1), options);
+  const dropped = await sync(interrupted, dropsAfter(mockBank(), 1), options);
   const halfway = [(await readSyncState(interrupted)).cursor, await count(interrupted)];
-  const resumed = await sync(interrupted, mockBank().bank, options);
+  const resumed = await sync(interrupted, mockBank(), options);
 
   expect(again).toEqual(ok({ received: 0, cursor: 1000 }));
   expect(dropped).toEqual({ ok: false, error: { kind: 'offline' } });
@@ -114,21 +113,20 @@ test('a write that fails halfway through a page keeps none of that page', async 
       ),
   };
 
-  await expect(sync(flaky, mockBank().bank, options)).rejects.toThrow('disk I/O error');
+  await expect(sync(flaky, mockBank(), options)).rejects.toThrow('disk I/O error');
   expect([await count(db), (await readSyncState(db)).cursor]).toEqual([500, 500]);
 
-  await sync(db, mockBank().bank, options);
+  await sync(db, mockBank(), options);
   const clean = await freshDb();
-  await sync(clean, mockBank().bank, options);
+  await sync(clean, mockBank(), options);
   expect(await tableHash(db)).toBe(await tableHash(clean));
 });
 
 test('with new rows on, each refresh brings exactly one pending row', async () => {
   const db = await freshDb();
-  const { bank, live } = mockBank();
-  await sync(db, bank, options);
+  await sync(db, mockBank(), options);
 
-  live.newOnRefresh = true;
+  const bank = mockBank({ newOnRefresh: true });
   const first = await sync(db, bank, options);
   const second = await sync(db, bank, options);
 
@@ -149,7 +147,7 @@ test.each(['offline', 'timeout', 'server'] as const)(
   async (kind) => {
     const db = await freshDb();
 
-    expect(await sync(db, mockBank({ next: kind }).bank, options)).toEqual({
+    expect(await sync(db, mockBank({ next: kind }), options)).toEqual({
       ok: false,
       error: { kind },
     });
@@ -160,7 +158,7 @@ test.each(['offline', 'timeout', 'server'] as const)(
 test('bad rows are dropped and counted, and the good rows are kept', async () => {
   const db = await freshDb();
 
-  const result = await sync(db, mockBank({ next: 'bad_data', size: 20 }).bank, options);
+  const result = await sync(db, mockBank({ next: 'bad_data', size: 20 }), options);
 
   expect(result).toEqual({ ok: false, error: { kind: 'invalid_data', skipped: 2 } });
   expect([await count(db), (await readSyncState(db)).cursor]).toEqual([20, 20]);
@@ -211,7 +209,7 @@ test('a bank row can never overwrite or pose as a row added on the phone', async
 
 test('a pending row the bank sends again as posted is updated in place', async () => {
   const db = await freshDb();
-  const { bank } = mockBank({ size: 20 });
+  const bank = mockBank({ size: 20 });
   await sync(db, bank, options);
   const first = await bank.fetchPage({ since: 19, limit: 1 });
   const tealive = first.ok ? (first.data as { items: Record<string, unknown>[] }).items[0] : null;
@@ -230,13 +228,11 @@ test('a pending row the bank sends again as posted is updated in place', async (
 test('a dataset switch drops bank rows and the cursor, keeps added rows, and syncs the new size', async () => {
   const db = await freshDb();
   await db.run(MANUAL);
-  const { bank, live } = mockBank();
-  await sync(db, bank, options);
+  await sync(db, mockBank(), options);
 
   await resetBankRows(db);
   const emptied = [await count(db), await readSyncState(db)];
-  live.size = 20;
-  const result = await sync(db, bank, options);
+  const result = await sync(db, mockBank({ size: 20 }), options);
 
   expect(emptied).toEqual([1, { cursor: 0, syncedAt: null }]);
   expect(result).toEqual(ok({ received: 20, cursor: 20 }));
@@ -247,7 +243,7 @@ test('a dataset switch drops bank rows and the cursor, keeps added rows, and syn
 
 test('a reset that lands while the first page is in flight keeps that page out of the new table', async () => {
   const db = await freshDb();
-  const { bank } = mockBank({ size: 1000 });
+  const bank = mockBank({ size: 1000 });
   let resetting: Promise<void> = Promise.resolve();
   const resetMidPage: BankApi = {
     fetchPage: async (request) => {
@@ -262,14 +258,12 @@ test('a reset that lands while the first page is in flight keeps that page out o
 
   expect(stale).toEqual(ok({ received: 0, cursor: 0 }));
   expect([await count(db), await readSyncState(db)]).toEqual([0, { cursor: 0, syncedAt: null }]);
-  expect(await sync(db, mockBank({ size: 20 }).bank, options)).toEqual(
-    ok({ received: 20, cursor: 20 }),
-  );
+  expect(await sync(db, mockBank({ size: 20 }), options)).toEqual(ok({ received: 20, cursor: 20 }));
 });
 
 test('search text is the cleaned, lower-cased description', async () => {
   const db = await freshDb();
-  await sync(db, mockBank({ size: 20 }).bank, options);
+  await sync(db, mockBank({ size: 20 }), options);
 
   expect(await db.all("SELECT search_text FROM tx WHERE id = 'bk-20'")).toEqual([
     { search_text: 'tealive' },

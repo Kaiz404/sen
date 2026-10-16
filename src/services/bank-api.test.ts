@@ -8,12 +8,11 @@ const NORMAL: BankScenario = { next: 'normal', size: 1000, slow: false, newOnRef
 function bank(patch: Partial<BankScenario> = {}, clock: { now: Instant } = { now: NOW }) {
   const waits: number[] = [];
   const api = createMockBank({
-    scenario: () => ({ ...NORMAL, ...patch }),
     now: () => clock.now,
     wait: async (ms) => {
       waits.push(ms);
     },
-  });
+  }).under({ ...NORMAL, ...patch });
   return { api, waits };
 }
 

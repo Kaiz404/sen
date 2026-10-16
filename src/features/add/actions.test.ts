@@ -34,7 +34,7 @@ let db: OpenDb;
 beforeEach(async () => {
   db = await openTestDb();
   const scenario = { next: 'normal', size: 20, slow: false, newOnRefresh: false } as const;
-  await sync(db, createMockBank({ scenario: () => scenario, now: () => NOW }), { now: () => NOW });
+  await sync(db, createMockBank({ now: () => NOW }).under(scenario), { now: () => NOW });
 });
 
 afterEach(() => db.close());

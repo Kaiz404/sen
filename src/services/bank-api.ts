@@ -59,13 +59,19 @@ const BAD_ROWS: readonly unknown[] = [
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-export function createMockBank(options: {
-  readonly scenario: () => BankScenario;
-  readonly now?: () => Instant;
-  readonly wait?: (ms: number) => Promise<void>;
-  readonly seed?: number;
-}): BankApi {
-  const { scenario, now = () => toInstant(new Date()), wait = sleep, seed = SEED } = options;
+export type MockBank = {
+  /** The bank as one request sees it. Every page answers under `scenario`, so a sync is one scenario throughout. */
+  under(scenario: BankScenario): BankApi;
+};
+
+export function createMockBank(
+  options: {
+    readonly now?: () => Instant;
+    readonly wait?: (ms: number) => Promise<void>;
+    readonly seed?: number;
+  } = {},
+): MockBank {
+  const { now = () => toInstant(new Date()), wait = sleep, seed = SEED } = options;
   const feeds = new Map<DatasetSize, readonly BankRow[]>();
   const feed = (size: DatasetSize) => {
     const known = feeds.get(size);
@@ -76,24 +82,25 @@ export function createMockBank(options: {
   };
 
   return {
-    async fetchPage({ since, limit }) {
-      const { next, size, slow, newOnRefresh } = scenario();
-      if (slow) await wait(SLOW_MS);
-      const failure = FAILURE[next];
-      if (failure !== null) {
-        if (failure.afterMs > 0) await wait(failure.afterMs);
-        return err(failure.error);
-      }
+    under: ({ next, size, slow, newOnRefresh }) => ({
+      async fetchPage({ since, limit }) {
+        if (slow) await wait(SLOW_MS);
+        const failure = FAILURE[next];
+        if (failure !== null) {
+          if (failure.afterMs > 0) await wait(failure.afterMs);
+          return err(failure.error);
+        }
 
-      const rows = feed(size);
-      const served =
-        since < rows.length
-          ? rows.slice(since, since + limit)
-          : newOnRefresh
-            ? [mintRow(since + 1, now(), seed)]
-            : [];
-      const items = next === 'bad_data' ? [...served, ...BAD_ROWS] : served;
-      return ok({ items, nextSeq: since + limit < rows.length ? since + limit : null });
-    },
+        const rows = feed(size);
+        const served =
+          since < rows.length
+            ? rows.slice(since, since + limit)
+            : newOnRefresh
+              ? [mintRow(since + 1, now(), seed)]
+              : [];
+        const items = next === 'bad_data' ? [...served, ...BAD_ROWS] : served;
+        return ok({ items, nextSeq: since + limit < rows.length ? since + limit : null });
+      },
+    }),
   };
 }

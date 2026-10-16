@@ -36,7 +36,7 @@ const OCTOBER = { from: day('2026-10-01'), to: day('2026-10-15') };
 async function seeded(size: BankScenario['size']): Promise<OpenDb> {
   const db = await openTestDb();
   const scenario: BankScenario = { next: 'normal', size, slow: false, newOnRefresh: false };
-  await sync(db, createMockBank({ scenario: () => scenario, now: () => NOW }), { now: () => NOW });
+  await sync(db, createMockBank({ now: () => NOW }).under(scenario), { now: () => NOW });
   return db;
 }
 

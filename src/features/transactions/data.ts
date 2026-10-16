@@ -15,7 +15,7 @@ import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day'
 import { type AppError, isRetryable } from '@/models/errors';
 import type { PrefValue } from '@/models/prefs';
 import type { MaskedRow } from '@/models/transaction';
-import { createMockBank } from '@/services/bank-api';
+import { type BankScenario, createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
 import { readPref, writePref } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
@@ -36,15 +36,17 @@ import type { SyncView } from './body';
 import type { Revealed } from './reveal';
 import { buildHistoryRows, type HistoryRows } from './rows';
 
-/** The in-app bank. It reads the reviewer's `demo.*` settings before every request. */
-export const bank = createMockBank({
-  scenario: () => ({
+/** The in-app bank. Each sync reads the reviewer's `demo.*` settings once, in `readScenario`. */
+export const bank = createMockBank();
+
+function readScenario(): BankScenario {
+  return {
     next: readPref('demo.next'),
     size: readPref('demo.datasetSize'),
     slow: readPref('demo.slow'),
     newOnRefresh: readPref('demo.newOnRefresh'),
-  }),
-});
+  };
+}
 
 export const historyKeys = {
   pages: (filter: TxFilter) => [...QK.tx, 'pages', filter] as const,
@@ -158,7 +160,7 @@ export function useSync(db: Db, newest: MaskedRow | undefined) {
       return readPref('demo.next');
     },
     mutationFn: async () => {
-      const result = await sync(db, bank, {
+      const result = await sync(db, bank.under(readScenario()), {
         onProgress: (received) =>
           syncProgress.setState((s) => ({ progress: { received, total: s.progress?.total ?? null } })),
       });

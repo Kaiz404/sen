@@ -159,3 +159,28 @@ test('a dataset switch shows its progress line until the new rows are in', async
   ).toBeOnTheScreen();
   expect((await readSyncState(mockDb)).cursor).toBe(1000);
 });
+
+test('a fault picked while a two-page load runs leaves that load whole, and the next pull takes it', async () => {
+  await renderBoth();
+  await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
+  await fireEvent.press(screen.getByRole('radio', { name: '1k' }));
+  expect(await screen.findByText('Loading 0 of 1,000 rows…', undefined, LONG)).toBeOnTheScreen();
+
+  await pick('Server error 500');
+  await act(() => jest.advanceTimersByTime(3000));
+  expect(await screen.findByText('Loading 500 of 1,000 rows…', undefined, LONG)).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(3000));
+
+  expect(
+    await screen.findByText('Reloads the bank rows. Rows you added stay.', undefined, LONG),
+  ).toBeOnTheScreen();
+  expect((await readSyncState(mockDb)).cursor).toBe(1000);
+  expect(screen.queryByText('Something broke on our side')).not.toBeOnTheScreen();
+  expect(reads('Server error 500')).toBe(true);
+
+  await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
+  await pull();
+
+  expect(await screen.findByText('Something broke on our side', undefined, LONG)).toBeOnTheScreen();
+  expect(reads('Normal')).toBe(true);
+});

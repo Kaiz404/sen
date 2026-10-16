@@ -44,7 +44,7 @@ const bankRows = async () =>
 
 test('reset demo data puts every reviewer control back, keeps security choices, and reloads from row zero', async () => {
   const size = { next: 'normal', size: 20, slow: false, newOnRefresh: false } as const;
-  await sync(mockDb, createMockBank({ scenario: () => size }));
+  await sync(mockDb, createMockBank().under(size));
   writePref('demo.next', 'server');
   writePref('demo.datasetSize', 10000);
   writePref('demo.slow', true);

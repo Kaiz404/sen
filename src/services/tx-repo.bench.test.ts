@@ -37,7 +37,7 @@ beforeAll(async () => {
   db = await openTestDb();
   const scenario: BankScenario = { next: 'normal', size: 10000, slow: false, newOnRefresh: false };
   const started = process.hrtime.bigint();
-  await sync(db, createMockBank({ scenario: () => scenario, now: () => NOW }), { now: () => NOW });
+  await sync(db, createMockBank({ now: () => NOW }).under(scenario), { now: () => NOW });
   syncMs = Number(process.hrtime.bigint() - started) / 1e6;
   const row5000 = await getTransaction(db, TxIdSchema.parse('bk-5000'));
   midway = { postedAt: row5000!.postedAt, id: row5000!.id };
