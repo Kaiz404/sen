@@ -2,19 +2,14 @@
 appId: com.kaiz404.sen
 ---
 - launchApp:
-    clearState: false
-- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
-- extendedWaitUntil:
-    visible:
-      id: unlock
-    timeout: 120000
+    stopApp: false
 - tapOn:
     point: 50%,40%
 - openLink: "sen://dev/states?screen=amount&state=masked&theme=light"
 - extendedWaitUntil:
     visible:
       id: shot-amount-masked-light
-    timeout: 15000
+    timeout: 120000
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/amount-masked-light

@@ -28,9 +28,9 @@ export function shots(screens: Readonly<Record<string, ScreenStates>>): Shot[] {
 
 export function screenshotFlow(list: readonly Shot[]): string {
   const steps = list.map(
-    (s) =>
+    (s, i) =>
       `- openLink: "${s.link}"\n` +
-      `- extendedWaitUntil:\n    visible:\n      id: shot-${s.name}\n    timeout: 15000\n` +
+      `- extendedWaitUntil:\n    visible:\n      id: shot-${s.name}\n    timeout: ${i === 0 ? 120000 : 15000}\n` +
       `- waitForAnimationToEnd:\n    timeout: 3000\n` +
       `- takeScreenshot: shots/2a/${s.name}\n`,
   );
@@ -38,11 +38,9 @@ export function screenshotFlow(list: readonly Shot[]): string {
     '# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.\n',
     'appId: com.kaiz404.sen\n',
     '---\n',
-    '- launchApp:\n    clearState: false\n',
-    '- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081\n',
-    '- extendedWaitUntil:\n    visible:\n      id: unlock\n    timeout: 120000\n',
-    // A tap leaves Android's keyboard mode, which otherwise paints a focus highlight on the first key. It lands
-    // on Lock's hero, which has nothing to press.
+    // The gallery opens while locked, so the flow reuses the running app instead of a slow cold start.
+    '- launchApp:\n    stopApp: false\n',
+    // A tap leaves Android's keyboard mode, which otherwise paints a focus highlight on the first key.
     '- tapOn:\n    point: 50%,40%\n',
     ...steps,
   ].join('');
