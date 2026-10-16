@@ -14,7 +14,7 @@ type StampProps = {
   readonly accessibilityLabel?: string;
 };
 
-/** A round rubber stamp: outlined, never filled, set at a slant. */
+/** A round rubber stamp with a double ring: outlined, never filled, set at a slant. */
 export function Stamp({ caption, word, date, accessibilityLabel }: StampProps): ReactNode {
   const spoken = accessibilityLabel !== undefined;
   return (
@@ -25,8 +25,15 @@ export function Stamp({ caption, word, date, accessibilityLabel }: StampProps): 
       aria-hidden={!spoken}
       style={styles.stamp}
     >
-      <Text style={[styles.small, styles.caption]}>{caption}</Text>
-      <Text style={styles.word}>{word}</Text>
+      <View style={styles.innerRing} />
+      <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.small, styles.caption]}>
+        {caption}
+      </Text>
+      <View style={styles.rules}>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={styles.word}>
+          {word}
+        </Text>
+      </View>
       <Text style={styles.small}>{date}</Text>
     </View>
   );
@@ -39,24 +46,33 @@ const styles = StyleSheet.create((theme) => ({
     width: SIZE,
     height: SIZE,
     borderRadius: SIZE / 2,
-    borderWidth: 8.5,
+    borderWidth: 3,
     borderColor: theme.colors.stamp,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.94,
     transform: [{ rotate: '-11deg' }],
   },
+  innerRing: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    right: 3,
+    bottom: 3,
+    borderRadius: SIZE / 2,
+    borderWidth: 1.5,
+    borderColor: theme.colors.stamp,
+  },
   small: { ...type.mono(9, 600), color: theme.colors.stamp },
-  caption: { letterSpacing: 1.26 },
-  word: {
-    ...type.words(24),
-    lineHeight: 24,
-    color: theme.colors.stamp,
+  caption: { letterSpacing: 0.9, maxWidth: 60 },
+  rules: {
+    maxWidth: 74,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginVertical: 2,
     borderTopWidth: 2,
     borderBottomWidth: 2,
     borderColor: theme.colors.stamp,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginVertical: 3,
   },
+  word: { ...type.words(24), lineHeight: 22, color: theme.colors.stamp },
 }));
