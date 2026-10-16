@@ -2,7 +2,6 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { readPref } from '@/services/prefs';
 
-import { isAuthenticatingRef } from './prompt';
 import { dispatch } from './session';
 
 export const TICK_MS = 15_000;
@@ -16,15 +15,17 @@ export function touch(): void {
 }
 
 /**
- * Only `background` starts the re-lock window. iOS sends `inactive` while the Face ID sheet is up, and a prompt
- * that leaves the app (the Android passcode screen on older versions) must not count as leaving either.
+ * Only `background` starts the re-lock window, because iOS sends `inactive` while the Face ID sheet is up. A
+ * prompt still open on return (the Android passcode screen leaves the app) does not lock, because the reducer
+ * ignores `LOCK` while a prompt holds.
  */
 function onAppState(state: AppStateStatus): void {
   const now = Date.now();
   if (state === 'background') {
-    if (!isAuthenticatingRef.current) backgroundedAt = now;
+    backgroundedAt = now;
   } else if (state === 'active' && backgroundedAt !== null) {
-    if (now - backgroundedAt > readPref('relockAfter') * MINUTE) {
+    const away = now - backgroundedAt;
+    if (away > readPref('relockAfter') * MINUTE) {
       dispatch({ type: 'LOCK', reason: 'background' });
     }
     backgroundedAt = null;
@@ -34,7 +35,8 @@ function onAppState(state: AppStateStatus): void {
 
 function onTick(): void {
   if (backgroundedAt !== null) return;
-  if (Date.now() - lastTouch >= readPref('idleLock') * MINUTE) {
+  const idle = Date.now() - lastTouch;
+  if (idle >= readPref('idleLock') * MINUTE) {
     dispatch({ type: 'LOCK', reason: 'idle' });
   }
 }

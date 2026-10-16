@@ -346,15 +346,14 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 
 | Trigger | Mechanism |
 | --- | --- |
-| Background | AppState `background` stores `backgroundedAt`, unless a prompt is up. It does not hide amounts (D27) |
+| Background | AppState `background` stores `backgroundedAt`, every time. It does not hide amounts (D27) |
 | Return | On `active`, lock if `now − backgroundedAt > relockAfter`. Never auto-prompt |
 | Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`. The tick skips while backgrounded, and `active` restarts the count |
 | Manual | "Lock now" calls `lockNow()` |
 
 **The iOS inactive trap.** The Face ID sheet itself sends the app to `inactive` and back. So:
-- `isAuthenticatingRef` is set before the prompt and cleared in `finally`.
 - Only `background` starts the re-lock window. `inactive` only shows the privacy cover, which the security feature owns.
-- A `background` while a prompt is up is ignored, so a passcode screen that leaves the app does not count as leaving.
+- A prompt still open on `active`, such as a passcode screen that leaves the app, does not lock, because the reducer ignores `LOCK` while it holds. A prompt the OS cancelled on the way out, such as Home on a step-up sheet, leaves the window running.
 - The reducer ignores `LOCK` while in `authenticating` or `stepUp`, so an idle tick never cuts a prompt short.
 
 **On `LOCK`:**

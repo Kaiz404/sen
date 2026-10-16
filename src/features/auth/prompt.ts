@@ -42,8 +42,8 @@ function failureOf(error: string): AuthFailure {
   return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
 }
 
-/** Set before the prompt opens and cleared in `finally`. AppState reads it so the prompt's own focus loss never locks. */
-export const isAuthenticatingRef = { current: false };
+/** Set before the prompt opens and cleared in `finally`, so a second prompt never opens over the first. */
+const isAuthenticatingRef = { current: false };
 
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 

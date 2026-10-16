@@ -73,7 +73,7 @@ test('inactive alone never starts the re-lock window', () => {
   expect(status()).toEqual({ status: 'unlocked', since: 0, db });
 });
 
-test('leaving the app while a prompt is up does not lock', async () => {
+test('a prompt still up on return does not lock, as when a passcode screen leaves the app', async () => {
   start({ status: 'unlocked', since: 0, db });
   let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
   authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
@@ -81,11 +81,26 @@ test('leaving the app while a prompt is up does not lock', async () => {
   const confirmed = stepUp('delete');
   appGoes('background');
   jest.advanceTimersByTime(2 * MINUTE);
+  appGoes('active');
   answer({ success: true });
+
   expect(await confirmed).toEqual({ ok: true });
+  expect(status()).toEqual({ status: 'unlocked', since: 0, db });
+});
+
+test('Home on a step-up prompt cancels it, and a long time away still locks', async () => {
+  start({ status: 'unlocked', since: 0, db });
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+
+  const confirmed = stepUp('delete');
+  appGoes('background');
+  answer({ success: false, error: 'system_cancel' });
+  expect(await confirmed).toEqual({ ok: false, reason: 'cancelled' });
+  jest.advanceTimersByTime(2 * MINUTE);
   appGoes('active');
 
-  expect(status()).toEqual({ status: 'unlocked', since: 0, db });
+  expect(status()).toEqual({ status: 'locked', reason: 'background' });
 });
 
 test('five idle minutes lock, and a touch starts the count again', () => {
