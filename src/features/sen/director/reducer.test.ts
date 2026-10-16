@@ -30,7 +30,12 @@ const req = (sen: string, moment: MomentId): DirectorEvent => ({ type: 'request'
 const two = [reg('a'), reg('b')];
 
 test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']]>([
-  ['an idle director plays a request', [...two, req('a', 'glance')], [{ type: 'play', sen: 'a', moment: 'glance', token: 1 }], { sen: 'a', moment: 'glance', token: 1 }],
+  [
+    'an idle director plays a request',
+    [...two, req('a', 'glance')],
+    [{ type: 'play', sen: 'a', moment: 'glance', token: 1 }],
+    { sen: 'a', moment: 'glance', token: 1 },
+  ],
   ['an unregistered Sen is ignored', [req('a', 'glance')], [], null],
   [
     'a higher priority replaces the playing Sen, which settles',
@@ -47,7 +52,18 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
     [{ type: 'settle', sen: 'b' }],
     { sen: 'a', moment: 'slowBlink', token: 1 },
   ],
-  ['P0 is dropped while anything plays', [...two, req('a', 'glance'), req('b', 'blink')], [], { sen: 'a', moment: 'glance', token: 1 }],
+  [
+    'a lower priority from the playing Sen is dropped, and its moment plays on to the end',
+    [...two, req('a', 'slowBlink'), req('a', 'glance')],
+    [],
+    { sen: 'a', moment: 'slowBlink', token: 1 },
+  ],
+  [
+    'P0 is dropped while anything plays',
+    [...two, req('a', 'glance'), req('b', 'blink')],
+    [],
+    { sen: 'a', moment: 'glance', token: 1 },
+  ],
   [
     'the playing Sen replaces its own moment at the same priority',
     [...two, req('a', 'glance'), req('a', 'glance')],
@@ -81,8 +97,18 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
     [{ type: 'settle', sen: 'a' }],
     null,
   ],
-  ['a request through a closed gate settles its Sen', [...two, { type: 'gate', patch: { focused: false } }, req('a', 'glance')], [{ type: 'settle', sen: 'a' }], null],
-  ['P0 through a closed gate does nothing', [...two, { type: 'gate', patch: { appActive: false } }, req('a', 'blink')], [], null],
+  [
+    'a request through a closed gate settles its Sen',
+    [...two, { type: 'gate', patch: { focused: false } }, req('a', 'glance')],
+    [{ type: 'settle', sen: 'a' }],
+    null,
+  ],
+  [
+    'P0 through a closed gate does nothing',
+    [...two, { type: 'gate', patch: { appActive: false } }, req('a', 'blink')],
+    [],
+    null,
+  ],
   [
     'unregistering the playing Sen promotes the queued one',
     [...two, req('a', 'glance'), req('b', 'glance'), { type: 'unregister', sen: 'a' }],
@@ -100,10 +126,21 @@ test('the same priority from another Sen waits in one slot, and the newest takes
   expect(none).toEqual([]);
   expect(queued.queued).toEqual({ sen: 'b', moment: 'glance' });
 
-  const [bumped, settle] = run([...two, reg('c'), req('a', 'glance'), req('b', 'glance'), req('c', 'glance')]);
+  const [bumped, settle] = run([
+    ...two,
+    reg('c'),
+    req('a', 'glance'),
+    req('b', 'glance'),
+    req('c', 'glance'),
+  ]);
   expect(settle).toEqual([{ type: 'settle', sen: 'b' }]);
   expect(bumped.queued).toEqual({ sen: 'c', moment: 'glance' });
 
-  const [, next] = run([...two, req('a', 'glance'), req('b', 'glance'), { type: 'finished', token: 1 }]);
+  const [, next] = run([
+    ...two,
+    req('a', 'glance'),
+    req('b', 'glance'),
+    { type: 'finished', token: 1 },
+  ]);
   expect(next).toEqual([{ type: 'play', sen: 'b', moment: 'glance', token: 2 }]);
 });

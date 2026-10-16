@@ -10,7 +10,11 @@ export type MomentInfo = (id: MomentId) => {
 };
 
 /** Every gate open means Sen may move: no scroll in flight, the screen focused, the app active. */
-export type Gate = { readonly scroll: boolean; readonly focused: boolean; readonly appActive: boolean };
+export type Gate = {
+  readonly scroll: boolean;
+  readonly focused: boolean;
+  readonly appActive: boolean;
+};
 
 type Playing = { readonly sen: SenId; readonly moment: MomentId; readonly token: number };
 type Queued = { readonly sen: SenId; readonly moment: MomentId };
@@ -33,7 +37,12 @@ export type DirectorEvent =
 
 /** `settle` stops whatever the Sen plays and eases it to the pose it rests in. */
 export type Command =
-  | { readonly type: 'play'; readonly sen: SenId; readonly moment: MomentId; readonly token: number }
+  | {
+      readonly type: 'play';
+      readonly sen: SenId;
+      readonly moment: MomentId;
+      readonly token: number;
+    }
   | { readonly type: 'settle'; readonly sen: SenId };
 
 export const INITIAL: DirectorState = {
@@ -63,7 +72,8 @@ function next(s: DirectorState): Result {
 
 /**
  * The MotionDirector. A higher priority replaces what plays, and so does any request from the Sen
- * that plays it, or one that meets a loop. Another Sen at the same priority waits in the one queue
+ * that plays it, or one that meets a loop. A lower one from the playing Sen is dropped, and the moment
+ * ends by resting that Sen in its pose. Another Sen at the same priority waits in the one queue
  * slot, and the newest wins it. P0 never waits. A Sen whose request can't play settles into its pose.
  */
 export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Result {
@@ -90,7 +100,7 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
       if (p > now.priority || (p === now.priority && (same || now.loop))) {
         return play(s, e.sen, e.moment, same ? [] : [{ type: 'settle', sen: s.playing.sen }]);
       }
-      if (p === 0) return [s, []];
+      if (p === 0 || same) return [s, []];
       if (p === now.priority) {
         const bumped = s.queued && s.queued.sen !== e.sen ? s.queued.sen : null;
         return [
