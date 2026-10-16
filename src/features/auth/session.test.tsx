@@ -9,6 +9,7 @@ import * as Vault from '@/services/vault';
 
 import {
   armLockout,
+  disarmLockout,
   dismissDbResetNotice,
   launch,
   lockNow,
@@ -243,4 +244,14 @@ test('an armed lockout reports lockout once without prompting', async () => {
   expect(await unlock()).toEqual({ ok: false, reason: 'lockout' });
   expect(authenticate).not.toHaveBeenCalled();
   expect(await unlock()).toEqual({ ok: false, reason: 'cancelled' });
+});
+
+test('a disarmed lockout lets the next unlock prompt for real', async () => {
+  const db = await openTestDb();
+  armLockout();
+  disarmLockout();
+
+  expect(await unlockInto(db)).toEqual({ ok: true });
+  expect(authenticate).toHaveBeenCalledTimes(1);
+  expect(session().status).toBe('unlocked');
 });

@@ -32,16 +32,18 @@ type SessionStore = {
   readonly session: Session;
   readonly biometric: BiometricSupport;
   readonly dbReset: DbResetReason | null;
+  /** The reviewer control "Simulate lockout": the next unlock reports lockout without prompting. */
+  readonly lockoutArmed: boolean;
 };
 
 export const sessionStore = createStore<SessionStore>(() => ({
   session: INITIAL,
   biometric: { kind: biometricOf(Platform.OS, []), ready: true },
   dbReset: null,
+  lockoutArmed: false,
 }));
 
 let closing: Promise<void> = Promise.resolve();
-let lockoutArmed = false;
 let arrival: ReturnType<typeof setTimeout> | undefined;
 
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
@@ -75,8 +77,8 @@ export async function launch(): Promise<void> {
 export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
-  if (lockoutArmed) {
-    lockoutArmed = false;
+  if (sessionStore.getState().lockoutArmed) {
+    sessionStore.setState({ lockoutArmed: false });
     return { ok: false, reason: 'lockout' };
   }
 
@@ -111,8 +113,17 @@ export function lockNow(): void {
   dispatch({ type: 'LOCK', reason: 'manual' });
 }
 
+/** It can only make an unlock fail. Nothing here passes a check. */
 export function armLockout(): void {
-  lockoutArmed = true;
+  sessionStore.setState({ lockoutArmed: true });
+}
+
+export function disarmLockout(): void {
+  sessionStore.setState({ lockoutArmed: false });
+}
+
+export function useLockoutArmed(): boolean {
+  return useStore(sessionStore, (s) => s.lockoutArmed);
 }
 
 /**

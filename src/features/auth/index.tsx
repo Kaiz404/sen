@@ -50,6 +50,7 @@ export type { PromptView } from './prompt-view';
 export {
   armLockout,
   type DbResetReason,
+  disarmLockout,
   dismissDbResetNotice,
   lockNow,
   onArrive,
@@ -57,6 +58,7 @@ export {
   useBiometric,
   useDb,
   useDbResetNotice,
+  useLockoutArmed,
   useRouteGate,
 } from './session';
 export { type StepUpResult, useStepUp } from './use-step-up';
