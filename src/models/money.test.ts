@@ -63,18 +63,18 @@ describe('moneyText', () => {
 
 describe('moneySpoken', () => {
   test.each([
-    [-4250, 'Minus 42 ringgit 50'],
+    [-4250, 'Minus 42 ringgit 50 sen'],
     [35000, 'Plus 350 ringgit'],
     [-50, 'Minus 50 sen'],
     [0, '0 ringgit'],
-    [-231740, 'Minus 2317 ringgit 40'],
-    [101, 'Plus 1 ringgit 1'],
+    [-231740, 'Minus 2317 ringgit 40 sen'],
+    [101, 'Plus 1 ringgit 1 sen'],
   ])('%i is read as "%s"', (sen, words) => {
     expect(moneySpoken(signedMinor(sen))).toBe(words);
   });
 
   test('never reads the magnitude only', () => {
-    expect(moneySpoken(signedMinor(-4250), 'never')).toBe('42 ringgit 50');
+    expect(moneySpoken(signedMinor(-4250), 'never')).toBe('42 ringgit 50 sen');
   });
 });
 

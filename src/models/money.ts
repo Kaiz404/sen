@@ -67,7 +67,7 @@ export function moneySpoken(value: SignedMinor, sign: SignMode = 'auto'): string
       ? `${sen} sen`
       : sen === 0
         ? `${ringgit} ringgit`
-        : `${ringgit} ringgit ${sen}`;
+        : `${ringgit} ringgit ${sen} sen`;
   const s = signOf(value, sign);
   if (s === '') return words;
   return `${s === '+' ? 'Plus' : 'Minus'} ${words}`;

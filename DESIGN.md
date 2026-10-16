@@ -413,6 +413,6 @@ Footer: `SEN 1.0.0 (1) · SIMULATED DATA`.
 - **Masked amounts.**
   - The container is labelled "Amount hidden", with the hint "Double tap to reveal with Face ID".
   - The coins are hidden from screen readers.
-- **Revealed amounts.** Spoken as words, such as "Minus 42 ringgit 50".
+- **Revealed amounts.** Spoken as words, such as "Minus 42 ringgit 50 sen". The sen always gets its unit, so "42 ringgit 5 sen" never reads as 42.50.
 - **Announcements.** Reveal and re-mask are announced with `AccessibilityInfo.announceForAccessibility`.
 - **Semantics.** Real buttons and switches with labels. Icon-only buttons get a label.

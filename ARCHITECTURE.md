@@ -178,7 +178,7 @@ Money output:
 | --- | --- |
 | `moneyParts(-231740)` | `{ sign: '−', currency: 'RM', whole: '2,317', fraction: '.40' }` |
 | `moneyText(-4250)` | `−RM 42.50`, with U+2212 and a thin space after RM |
-| `moneySpoken(-4250)` | `Minus 42 ringgit 50`. Digits stay ungrouped so no screen reader says "comma" |
+| `moneySpoken(-4250)` | `Minus 42 ringgit 50 sen`. The sen always gets its unit. Digits stay ungrouped so no screen reader says "comma" |
 
 ## Data layer
 

@@ -22,7 +22,7 @@ test('a masked hero can show the direction without the digits', async () => {
 test('a revealed debit splits the sen digits and speaks the amount in words', async () => {
   await render(<Amount value={signedMinor(-4250)} size="row" />);
 
-  const amount = screen.getByLabelText('Minus 42 ringgit 50');
+  const amount = screen.getByLabelText('Minus 42 ringgit 50 sen');
   expect(amount).toHaveTextContent('−RM 42.50');
   expect(screen.getByText('.50')).toBeOnTheScreen();
 });
@@ -31,5 +31,5 @@ test('a revealed hero sets the currency apart from the digits', async () => {
   await render(<Amount value={signedMinor(231740)} size="hero" />);
 
   expect(screen.getByText('+RM')).toBeOnTheScreen();
-  expect(screen.getByLabelText('Plus 2317 ringgit 40')).toHaveTextContent('+RM2,317.40');
+  expect(screen.getByLabelText('Plus 2317 ringgit 40 sen')).toHaveTextContent('+RM2,317.40');
 });
