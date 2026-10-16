@@ -22,3 +22,8 @@ test('a press calls onPress once', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Lock Sen now' }));
   expect(onPress).toHaveBeenCalledTimes(1);
 });
+
+test('a disabled key tells screen readers it is disabled', async () => {
+  await render(<Key label="Checking it's you" tone="lemon" disabled onPress={() => {}} />);
+  expect(screen.getByRole('button', { name: "Checking it's you" })).toBeDisabled();
+});
