@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Profiler } from 'react';
 import { getAnimatedStyle } from 'react-native-reanimated';
 
@@ -63,4 +63,29 @@ test('hiding drops the digits at once', async () => {
 
   expect(screen.queryAllByTestId('digit-column')).toHaveLength(0);
   expect(screen.getByLabelText('Amount hidden')).toBeOnTheScreen();
+});
+
+const layout = (width: number, height: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height } } });
+
+async function hero(content: number, box: number) {
+  await render(
+    <RevealedAmounts value={SHOWN}>
+      <RollAmount value={signedMinor(-245210)} size="hero" />
+    </RevealedAmounts>,
+  );
+  await fireEvent(screen.getByTestId('fit-box'), 'layout', layout(box, 120));
+  await fireEvent(screen.getByTestId('fit-content'), 'layout', layout(content, 100));
+}
+
+test('a hero wider than the card scales down to fit, and its box shrinks with it', async () => {
+  await hero(400, 300);
+  expect(screen.getByLabelText('Minus 2452 ringgit 10 sen')).toBeOnTheScreen();
+  expect(screen.getByTestId('fit-content')).toHaveStyle({ transform: [{ scale: 0.75 }] });
+  expect(screen.getByTestId('fit-box')).toHaveStyle({ height: 75 });
+});
+
+test('a hero that fits keeps its size', async () => {
+  await hero(280, 300);
+  expect(screen.getByTestId('fit-content')).toHaveStyle({ transform: [{ scale: 1 }] });
+  expect(screen.getByTestId('fit-box')).toHaveStyle({ height: 100 });
 });

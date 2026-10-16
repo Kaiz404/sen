@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, use, useEffect } from 'react';
+import { createContext, type ReactNode, use, useEffect, useState } from 'react';
 import { type StyleProp, Text, type TextStyle, View } from 'react-native';
 import Animated, {
   ReduceMotion,
@@ -192,7 +192,7 @@ export function RollAmount({
   const lead = `${parts.sign}${parts.currency}`;
   const chars = [...parts.whole, ...parts.fraction];
   const cols = chars.length + 1;
-  return (
+  const amount = (
     <View
       accessible
       accessibilityRole="text"
@@ -214,10 +214,44 @@ export function RollAmount({
       ))}
     </View>
   );
+  return size === 'hero' ? <FitWidth>{amount}</FitWidth> : amount;
+}
+
+type Size = { readonly width: number; readonly height: number };
+
+/** Scales a hero amount down to the card's width, so the sen digits of a large total never clip. */
+export function FitWidth({ children }: { readonly children: ReactNode }): ReactNode {
+  const [box, setBox] = useState(0);
+  const [content, setContent] = useState<Size | null>(null);
+  const scale = content !== null && box > 0 && content.width > box ? box / content.width : 1;
+  return (
+    <View
+      testID="fit-box"
+      onLayout={(e) => setBox(e.nativeEvent.layout.width)}
+      style={styles.fitBox(content === null ? undefined : content.height * scale)}
+    >
+      <View
+        testID="fit-content"
+        onLayout={(e) => setContent(e.nativeEvent.layout)}
+        style={styles.fitContent(scale)}
+      >
+        {children}
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create((theme) => ({
   row: { flexDirection: 'row', alignItems: 'baseline' },
+  fitBox: (height: number | undefined) => ({
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height,
+  }),
+  fitContent: (scale: number) => ({
+    transformOrigin: 'left bottom',
+    transform: [{ scale }],
+  }),
   ink: (surface: AmountSurface, credit: boolean) => ({
     color:
       surface === 'loud'
