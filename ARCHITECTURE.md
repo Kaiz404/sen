@@ -696,9 +696,10 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | No amount in JS while masked, totals included. Rendered tree has no digits | `features/transactions/masking.test.tsx` |
 | List `data` reference unchanged across reveal and hide | same |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
-| Every state and event pair. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
-| Re-lock window (59 s stays, 61 s locks), idle lock | `features/auth/locks.test.ts` |
-| Lock clears the cache and closes the database | `features/auth/session.test.ts` |
+| Every state and event pair, `signingOut` included. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
+| Re-lock window (59 s stays, 61 s locks), idle lock. Home on a step-up prompt still locks. A clock set back locks, away and idle | `features/auth/locks.test.ts` |
+| Lock clears the cache, closes the database and hides the toast. An unlock during sign-out opens no prompt, and sign-out ends on Welcome | `features/auth/session.test.tsx` |
+| A native auth error outside the typed union maps to `unknown` | `features/auth/prompt.test.ts` |
 | Unlock opens History, and a lock unmounts it, which drops the draft with every protected route | `__tests__/lock-flow.test.tsx` |
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
 | Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
@@ -707,7 +708,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future. Its newest rows are the boards' | `services/seed.test.ts` |
 | Bank paging, faults, slow mode, one new row per refresh | `services/bank-api.test.ts` |
-| Missing key resets the database, by the reset table. A busy disk wipes nothing. Key shape and storage options | `services/vault.test.ts` |
+| Missing key resets the database, by the reset table. A busy disk wipes nothing. A key without its database file counts as no vault and is deleted, and a file check that throws keeps the key. Key shape and storage options | `services/vault.test.ts` |
 | Prefs read back, fall back to defaults, and notify on write and clear | `services/prefs.test.ts` |
 | The logger takes an event code and nothing else | `services/logger.test.ts` |
 | Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
