@@ -60,7 +60,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:motion": "jest src/motion src/features/sen src/components",
-    "check": "tsc --noEmit && expo lint && jest --ci",
+    "test:bench": "jest --ci --runInBand --passWithNoTests --testPathIgnorePatterns /node_modules/ --testPathPattern '\\.bench\\.test\\.ts$'",
+    "check": "tsc --noEmit && expo lint && jest --ci && npm run test:bench",
     "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write ."
   },

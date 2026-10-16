@@ -14,7 +14,7 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 
 | Check | Command | When |
 | --- | --- | --- |
-| Fast gate | `npm run check` (`tsc --noEmit`, `expo lint`, `jest --ci`) | Before every commit. The pre-commit hook runs typecheck and related tests |
+| Fast gate | `npm run check` (`tsc --noEmit`, `expo lint`, `jest --ci`, then the benches serially with `npm run test:bench`) | Before every commit. The pre-commit hook runs typecheck and related tests |
 | One screen state | `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
 | A flow | `maestro test .maestro/<flow>.yaml`, with `adb -e emu finger touch 1` for biometrics | After any flow change |
 | Release perf | `npx expo run:android --variant release`, then `flashlight test` with `scripts/scroll.sh` | Phase 3 and phase 8 |

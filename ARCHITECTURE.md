@@ -591,7 +591,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | A root call never lands inside an open transaction. A failed savepoint undoes only its writes | `services/db/port.test.ts` |
 | The key is the first statement on the device database | `services/db/expo.test.ts` |
 | Release config always guards screens | `features/security/screen-guard.test.ts` |
-| Selector and query benches on 10k rows within budget | `*.bench.test.ts` |
+| Selector and query benches on 10k rows within budget. They run alone and serially (`npm run test:bench`), because parallel workers inflate the timings | `*.bench.test.ts` |
 
 ## Builds and delivery
 
