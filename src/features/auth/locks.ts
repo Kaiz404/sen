@@ -16,18 +16,26 @@ export function touch(): void {
 
 const clockSetBack = (elapsed: number) => elapsed < 0;
 
+/**
+ * Locks if the app has been in the background past the re-lock window. Runs on `active`, and earlier for a
+ * link, because both platforms deliver the link before the app turns active.
+ */
+export function lockIfAwayTooLong(): void {
+  if (backgroundedAt === null) return;
+  const away = Date.now() - backgroundedAt;
+  if (clockSetBack(away) || away > readPref('relockAfter') * MINUTE) {
+    dispatch({ type: 'LOCK', reason: 'background' });
+  }
+}
+
 /** Only `background` starts the re-lock window, because iOS sends `inactive` while the Face ID sheet is up. */
 function onAppState(state: AppStateStatus): void {
-  const now = Date.now();
   if (state === 'background') {
-    backgroundedAt = now;
+    backgroundedAt = Date.now();
   } else if (state === 'active' && backgroundedAt !== null) {
-    const away = now - backgroundedAt;
-    if (clockSetBack(away) || away > readPref('relockAfter') * MINUTE) {
-      dispatch({ type: 'LOCK', reason: 'background' });
-    }
+    lockIfAwayTooLong();
     backgroundedAt = null;
-    lastTouch = now;
+    lastTouch = Date.now();
   }
 }
 

@@ -1,5 +1,6 @@
 import { Linking } from 'react-native';
 
+import { lockIfAwayTooLong } from './locks';
 import { gateOf } from './machine';
 import { sessionStore } from './session';
 
@@ -24,7 +25,10 @@ function hold(url: string | null): void {
 /** Holds a detail link that opens the app while it is locked, from a cold start or a running app. */
 export function startLinkHold(): () => void {
   void Linking.getInitialURL().then(hold, () => {});
-  const subscription = Linking.addEventListener('url', ({ url }) => hold(url));
+  const subscription = Linking.addEventListener('url', ({ url }) => {
+    lockIfAwayTooLong();
+    hold(url);
+  });
   return () => subscription.remove();
 }
 

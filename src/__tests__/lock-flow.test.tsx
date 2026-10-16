@@ -5,7 +5,14 @@ import { act, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
-import { Linking } from 'react-native';
+import type * as ExpoLinking from 'expo-linking';
+import {
+  AppState,
+  type AppStateStatus,
+  type EmitterSubscription,
+  Linking,
+  type NativeEventSubscription,
+} from 'react-native';
 
 import { hideAmounts, lockNow } from '@/features/auth';
 import { InstantSchema, malaysiaDay } from '@/models/day';
@@ -103,6 +110,106 @@ test('a detail link opened while locked shows Lock, then opens that receipt over
   expect(await screen.findByText(/^Added on this phone, /)).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Back to history' }));
   expect(await screen.findByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
+
+  await act(() => lockNow());
+});
+
+type UrlListener = (event: { url: string }) => void;
+
+/** Routes `url` and AppState events to every listener, the router's included, as the OS delivers them. */
+function deliverLikeTheOs() {
+  const urls = new Set<UrlListener>();
+  const states = new Set<(state: AppStateStatus) => void>();
+  const listen = (_type: string, listener: UrlListener) => {
+    urls.add(listener);
+    return { remove: () => urls.delete(listener) } as unknown as EmitterSubscription;
+  };
+  jest.spyOn(Linking, 'addEventListener').mockImplementation(listen);
+  jest
+    .spyOn(jest.requireMock<typeof ExpoLinking>('expo-linking'), 'addEventListener')
+    .mockImplementation(listen);
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+    states.add(listener);
+    return { remove: () => states.delete(listener) } as unknown as NativeEventSubscription;
+  });
+  return {
+    open: (url: string) => urls.forEach((listener) => listener({ url })),
+    appGoes: (state: AppStateStatus) => states.forEach((listener) => listener(state)),
+  };
+}
+
+async function unlockedOnHistoryWithLunch(): Promise<string> {
+  const vault = await openTestDb();
+  const now = InstantSchema.parse(new Date().toISOString());
+  const key = '2b9e4c61-0a7d-4f3e-9c8b-5d6e7f8a9b0c';
+  const draft = draftSchema(malaysiaDay(now)).parse({
+    idemKey: key,
+    amountMinor: 4250,
+    direction: 'debit',
+    description: 'Lunch with Hafiz, cash',
+    category: 'food',
+    day: malaysiaDay(now),
+  });
+  await TxRepo.insertManual(vault, draft, now);
+  writePref('demo.datasetSize', 20);
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  // A lock closes the database. The app opens a new one per unlock, so this one in-memory copy stays open.
+  const reopened = { ...vault, close: async () => undefined };
+  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: reopened });
+  await renderRouter(routes, { initialUrl: '/' });
+  await unlockToHistory();
+  return `sen://transaction/m-${key}`;
+}
+
+async function unlockToHistory() {
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+  authenticate.mockResolvedValueOnce({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  expect(
+    await screen.findByRole('button', { name: 'Add a transaction' }, { timeout: 3000 }),
+  ).toBeOnTheScreen();
+}
+
+async function awayFor(os: ReturnType<typeof deliverLikeTheOs>, ms: number, url: string) {
+  const left = Date.now();
+  await act(() => os.appGoes('background'));
+  const now = jest.spyOn(Date, 'now').mockReturnValue(left + ms);
+  await act(async () => os.open(url));
+  await act(() => os.appGoes('active'));
+  now.mockRestore();
+}
+
+test('a detail link that brings the app back after the re-lock window shows Lock, then that receipt over History', async () => {
+  const os = deliverLikeTheOs();
+  const link = await unlockedOnHistoryWithLunch();
+
+  await awayFor(os, 61_000, link);
+
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+  expect(screen.queryByText('Lunch with Hafiz, cash')).not.toBeOnTheScreen();
+  authenticate.mockResolvedValueOnce({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  expect(await screen.findByText('RESIT', {}, { timeout: 3000 })).toBeOnTheScreen();
+  expect(await screen.findByText(/^Added on this phone, /)).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Back to history' }));
+  expect(await screen.findByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
+
+  await act(() => lockNow());
+});
+
+test('a detail link that brings the app back inside the re-lock window opens that receipt, and nothing is held for later', async () => {
+  const os = deliverLikeTheOs();
+  const link = await unlockedOnHistoryWithLunch();
+
+  await awayFor(os, 30_000, link);
+
+  expect(await screen.findByText('RESIT')).toBeOnTheScreen();
+  expect(await screen.findByText(/^Added on this phone, /)).toBeOnTheScreen();
+  expect(screen.queryByRole('header', { name: 'Welcome back.' })).not.toBeOnTheScreen();
+
+  await act(() => lockNow());
+  await unlockToHistory();
+  expect(screen.queryByText('RESIT')).not.toBeOnTheScreen();
 
   await act(() => lockNow());
 });

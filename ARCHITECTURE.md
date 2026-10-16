@@ -384,7 +384,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | Trigger | Mechanism |
 | --- | --- |
 | Background | AppState `background` stores `backgroundedAt`, every time. It does not hide amounts (D27) |
-| Return | On `active`, lock if `now − backgroundedAt > relockAfter`, or if `now` is before `backgroundedAt` because the clock was set back. Never auto-prompt |
+| Return | `lockIfAwayTooLong()` locks if `now − backgroundedAt > relockAfter`, or if `now` is before `backgroundedAt` because the clock was set back. It runs on `active`, and before that on a `url` event, because both platforms deliver a link before the app turns active (inferred: Android calls `onNewIntent` before `onResume`, iOS `openURL` before `didBecomeActive`). Never auto-prompt |
 | Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`, and a `lastTouch` in the future (a clock set back) counts as idle. The tick skips while backgrounded, and `active` restarts the count |
 | Manual | "Lock now" calls `lockNow()` |
 
@@ -400,7 +400,17 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
 - Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.
 
-A deep link that arrives while locked lands on Lock. If it is a detail link (`sen://transaction/<id>`), `features/auth/held-link.ts` holds its path, from `Linking.getInitialURL()` on a cold start or the `url` event in a running app. `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home. The newest link wins, and any other link drops the held one, so a link can never open a sheet or a setting after unlock. A link that arrives while unlocked is the router's alone. Welcome drops a held link. The detail screen still parses the id, so a stale or bad link shows not found.
+**Held detail link** (`features/auth/held-link.ts`). A deep link that arrives while locked lands on Lock. If it is a detail link (`sen://transaction/<id>`), its path is held, and `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home.
+
+| Case | What happens |
+| --- | --- |
+| Cold start with a vault | `Linking.getInitialURL()` gives the link. The router lands on Lock, the link is held, and the receipt opens after unlock |
+| Running and locked (since launch, idle or Lock now) | The `url` event finds the gate locked. The router lands on Lock, and the link is held |
+| Back from the background past `relockAfter` | The `url` event runs `lockIfAwayTooLong()` before it weighs the link, so the app locks first and the link is held. Lock shows on `active`. If the router's listener runs first, it opens the receipt while the app is still in the background, and the lock unmounts it (inferred) |
+| Back from the background inside `relockAfter` | Nothing locks. The router opens the receipt, and nothing is held |
+| Welcome | A held link is dropped when the gate turns `welcome` |
+
+The newest link wins, and any other link drops the held one, so a link can never open a sheet or a setting after unlock. A link that arrives while unlocked is the router's alone. The detail screen still parses the id, so a stale or bad link shows not found.
 
 ## Errors (D15)
 
@@ -751,7 +761,7 @@ Sen has no server. Everything it protects is on the phone.
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
 | T6 | Tampered or corrupt data | zod on every read, drop and count, reset on an unreadable database | `services/tx-repo.ts` | Reviewer control "Bad data" |
 | T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount from the database in JS while masked. The mock bank's feed, which stands in for a server, does hold amounts in JS. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only, marked sensitive (D28). Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
-| T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx`, `features/auth/held-link.ts` | `adb shell am start -d sen://transaction/x`: Lock, then that receipt after unlock |
+| T8 | Deep links that skip the lock | Protected routes are not mounted while locked. A link that brings the app back past `relockAfter` locks it before the link is weighed | `app/_layout.tsx`, `features/auth/held-link.ts`, `features/auth/locks.ts` | `adb shell am start -d sen://transaction/x`: Lock, then that receipt after unlock |
 | T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
 | T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
 | T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
@@ -789,7 +799,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
 | Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
-| A detail link opened while locked shows Lock, then that receipt over History after unlock. Only a detail link is held, once, and never while unlocked | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
+| A detail link opened while locked, or one that brings the app back past `relockAfter`, shows Lock, then that receipt over History after unlock. Inside `relockAfter` the receipt opens at once and nothing is held. Only a detail link is held, once, and never while unlocked | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
 | Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row. A reset while a page is in flight keeps that page out | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future. Its newest rows are the boards' | `services/seed.test.ts` |
