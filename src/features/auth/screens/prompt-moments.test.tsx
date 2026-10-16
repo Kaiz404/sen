@@ -29,6 +29,17 @@ const node = (sen: string, part: string) =>
     .jestAnimatedProps.value;
 const face = (sen: string) => (node(sen, 'lk').matrix as number[]).slice(4);
 const eye = (sen: string) => (node(sen, 'elb').matrix as number[]).slice(0, 4);
+const transform = (sen: string, part: string) =>
+  Object.assign(
+    {},
+    ...(within(screen.getByTestId(`sen-rig-${sen}`, hidden)).getByTestId(`sen-${part}`, hidden)
+      .props.jestAnimatedStyle.value.transform as object[]),
+  ) as { scaleX: number; scaleY: number };
+const spin = (sen: string) => transform(sen, 'sp').scaleX;
+const squash = (sen: string) => {
+  const { scaleX, scaleY } = transform(sen, 'sq');
+  return [Math.round(scaleX * 1000) / 1000, Math.round(scaleY * 1000) / 1000];
+};
 const at = async (ms: number) => act(() => jest.advanceTimersByTime(ms));
 
 /** A prompt the test answers by hand, as the phone's sheet would. */
@@ -121,24 +132,54 @@ test('cancelling the passcode during a lockout keeps the napping Sen still, with
 
   expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
   expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
-  const spin = within(screen.getByTestId('sen-rig-lock', hidden)).getByTestId('sen-sp', hidden);
-  expect((spin.props.jestAnimatedStyle.value.transform as { scaleX: number }[])[0]!.scaleX).toBe(1);
+  expect(squash('lock')).toEqual([1, 1]);
 });
 
-test('a lockout spins the napping Sen edge-on, a pill with its edge showing', async () => {
+test('a lockout puts the napping Sen to sleep: one error haptic, a sigh, then a breath every 4 s, never edge-on', async () => {
   const answer = holdPrompt();
   await render(<LockScreen />);
   await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
 
   await answer({ success: false, error: 'lockout' });
-  await at(1400);
+  const frames = [];
+  for (const ms of [400, 900, 1000, 2000, 2000, 1000, 3000]) {
+    await at(ms);
+    frames.push([spin('lock'), node('lock', 'edge').opacity, ...squash('lock')]);
+  }
 
+  // [spin scaleX, edge pill opacity, squash x, squash y] at 0.4, 1.3, 2.3, 4.3, 6.3, 7.3 and 10.3 s.
+  expect(frames).toEqual([
+    [1, 0, 1.04, 0.95],
+    [1, 0, 1, 1],
+    [1, 0, 1, 1.02],
+    [1, 0, 1, 1],
+    [1, 0, 1, 1.02],
+    [1, 0, 1, 1],
+    [1, 0, 1, 1.02],
+  ]);
   expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
+  expect(face('lock')).toEqual([0, 48]);
   expect(jest.mocked(playHaptic).mock.calls).toEqual([['lockout']]);
-  const spin = within(screen.getByTestId('sen-rig-lock', hidden)).getByTestId('sen-sp', hidden);
-  const scaleX = (spin.props.jestAnimatedStyle.value.transform as { scaleX: number }[])[0]!.scaleX;
-  expect(scaleX).toBeCloseTo(0.04, 2);
-  expect(node('lock', 'edge').opacity).toBe(1);
+});
+
+test('in Calm a lockout fires the error haptic and the napping Sen rests asleep, with no sigh or breathing', async () => {
+  const answer = holdPrompt();
+  await render(
+    <Calm>
+      <LockScreen />
+    </Calm>,
+  );
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+
+  await answer({ success: false, error: 'lockout' });
+  await at(400);
+  expect(squash('lock')).toEqual([1, 1]);
+  await at(1900);
+
+  expect(squash('lock')).toEqual([1, 1]);
+  expect(spin('lock')).toBe(1);
+  expect(face('lock')).toEqual([0, 48]);
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([['lockout']]);
 });
 
 test('a match keeps Lock up while Sen plays Unlock, then opens the vault to History at 1370 ms', async () => {

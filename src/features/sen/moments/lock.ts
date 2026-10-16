@@ -1,6 +1,5 @@
-import { slice } from '../board';
 import type { Moment } from '../timeline/types';
-import { moments, MOMENTS_BOARD } from './build';
+import { moments, without } from './build';
 
 /** MAX-Moments `.M-face.ph-scan`: peek left with the left eye cracked, then right, in a 1.6 s loop. */
 export const faceScan: Moment = {
@@ -29,23 +28,24 @@ export const authFailed: Moment = {
   marks: [{ at: 80, haptic: 'authFailed' }],
 };
 
-/** MAX-Moments `.M-lockout`, to 1300 ms: asleep, a sigh squash, then a spin to edge-on. */
+/**
+ * MAX-Moments `.M-lockout`, to 1300 ms, without its spin: asleep, a sigh squash, then still. The
+ * owner overrides the board's turn edge-on (DESIGN.md › Owner overrides).
+ */
 export const lockout: Moment = {
   id: 'lockout',
   priority: 3,
   from: 'asleep',
   to: 'asleep',
   dur: 1300,
-  tracks: moments('.M-lockout', 0, 1300),
+  tracks: without(moments('.M-lockout', 0, 1300), ['sp.th']),
   marks: [{ at: 0, haptic: 'lockout' }],
   then: 'lockoutBreathe',
 };
 
-const EDGE_ON = slice(MOMENTS_BOARD['.M-lockout']!['sp.th']!, { from: 1300, to: 1300 })[0]!.v;
-
 /**
- * The edge-on pill breathes, scaleY 1 › 1.02 › 1 over 2 s (MAX-Moments `.M-lockout`, 2600 to
- * 4600 ms), every 4 s until the cool-down ends.
+ * Sen breathes in its sleep, scaleY 1 › 1.02 › 1 over 2 s (MAX-Moments `.M-lockout`, 2600 to
+ * 4600 ms, face-on), every 4 s until the cool-down ends.
  */
 export const lockoutBreathe: Moment = {
   id: 'lockoutBreathe',
@@ -53,7 +53,7 @@ export const lockoutBreathe: Moment = {
   from: 'asleep',
   to: 'asleep',
   dur: 4000,
-  tracks: { ...moments('.M-lockout', 2600, 4600), 'sp.th': [{ at: 0, v: EDGE_ON }] },
+  tracks: without(moments('.M-lockout', 2600, 4600), ['sp.th']),
   marks: [],
   loop: true,
 };

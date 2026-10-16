@@ -1,5 +1,5 @@
-# The phone's lockout spins the napping Sen edge-on, then it breathes through the cool-down.
-# Records the spin and a few breaths. Written, not yet run on a device.
+# The phone's lockout makes the napping Sen sigh, then it breathes face-on through the cool-down.
+# Records the sigh and a few breaths. Written, not yet run on a device.
 appId: com.kaiz404.sen
 ---
 - runFlow:

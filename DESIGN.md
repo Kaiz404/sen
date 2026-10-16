@@ -80,7 +80,7 @@ Rules:
 
 Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`react-native-svg`) and animated with Reanimated. The idle and masked art is in `assets/brand/`.
 
-**Source of truth.** Sen's look and motion come from the canvas boards, copied into [`design/`](design/). The tables below summarise them and name the board selector each row comes from. Where a table and a board differ, the board wins, and the table gets fixed. `python3 -I scripts/board-keyframes.py <board>` prints any board's animations in milliseconds.
+**Source of truth.** Sen's look and motion come from the canvas boards, copied into [`design/`](design/). The tables below summarise them and name the board selector each row comes from. Where a table and a board differ, the board wins, and the table gets fixed, unless an owner override below names the difference. `python3 -I scripts/board-keyframes.py <board>` prints any board's animations in milliseconds.
 
 | Board | Holds |
 | --- | --- |
@@ -89,6 +89,12 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 | `design/MAX-Spec.dc.html` | MAX · Reanimated spec. Its Launch row is superseded by MAL2 |
 | `design/MAL2-Loading.dc.html`, `design/MAL-Timelines.dc.html` | MAL2 · Sen is the dot. The launch, its timeline and the handoff to Lock. It supersedes `.M-launch`, MAX-Spec's Launch row, the `SF-Launch` board and every older launch |
 | `design/kit.py` | Every pose as SVG, the geometry phase 1 ported |
+
+**Owner overrides.** These win over the board they name.
+
+| Date | Board | Override |
+| --- | --- | --- |
+| 2026-10-17 | MAX-Moments `.M-lockout` | Sen never spins edge-on into the pill. It naps in the `asleep` pose and breathes for the whole lockout. The owner found the edge-on hold odd |
 
 Poses come from kit.py, MAX-Moments' static tiles (`.M-err`, `.M-last`, `.M-lockout`, `.M-lock`) and the held frames of MAX-Library's primitives (`.L-peek`, `.L-slide`, `.L-shrug`, `.L-squint`). MAX-Library holds no pose sheet.
 
@@ -229,7 +235,7 @@ Each row is a MAX-Moments tile unless it names another board.
 | Pull to refresh | `.M-ref` | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading: `refreshSpin` (240 ms to edge-on) then the `refreshSpinLoop` lap, one turn per 600 ms › `refreshLand`: the spin springs to the next heads-up turn while Sen rises 100 in 120 ms (not on the tile, which starts in the air) › drops › lands › wobble-settle, 6 swings from 8° › "Updated" pill | Selection at threshold, Light on land |
 | Empty search | `.M-empty` | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, then eases into the `shrug` pose in 200 ms instead of sinking, since the screen keeps that pose. It opens 70 units down, hidden by the slip. 3.5 s | None |
 | Network error | `.M-err` | Fetch fails | Worried, leans back to −8° with skewX 7°, holds at −6.5° with 5.5°, then returns to the worried lean. Paws squeeze the plug on the secondary layer (0.9). Slow blink every 4 to 7 s. On Retry, glances at the button | Warning, once |
-| Lockout | `.M-lockout` | Biometric lockout | Asleep with nightcap › sigh squash › spins edge-on (`lockout`, 1.3 s) › breathes as a pill, scaleY 1.02 every 4 s (`lockoutBreathe`, a loop that follows on its own) | Error |
+| Lockout | `.M-lockout`, less its spin (owner override) | Biometric lockout | Asleep with nightcap › sigh squash, then still (`lockout`, 1.3 s) › breathes face-on, scaleY 1.02 every 4 s, through the whole cool-down (`lockoutBreathe`, a loop that follows on its own). It never turns edge-on | Error |
 | Copy | `.M-copy` | Reference copied | Hop −60 out from the slip, paws up (∓60, −90), happy squint, grin, cheeks, accents. The squint relaxes from 1500 ms, so 1.64 s. The tile perches at a lean of 3° with skewX −4°, which no pose holds, so the hop starts and ends upright | Light |
 | Saved, added | No board | Add succeeds | As unlock, smaller. Copy's hop and accents with the success haptic. Row slides in under Today | Success |
 | Theme change | `.M-dark` | Theme switches while active | To light: hard squint (1.2, 0.3) and recoil +8, then the sunglasses drop in with one overshoot and stay (ends `cool`). To dark: the sunglasses lift off as at the end of `.ph-light`, squint (1.15, 0.5), eyes scan ±12, relax with a blink (ends `idle`). Each plays when a Sen's pose goes between `idle` and `cool` | In-app toggle only: Selection, Android `Toggle_On` or `Toggle_Off` |
