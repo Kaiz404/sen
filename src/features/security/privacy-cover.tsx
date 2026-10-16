@@ -27,6 +27,7 @@ function usePrivacyCoverShown(): boolean {
     const sync = () => show(AppState.currentState);
     const appState = AppState.addEventListener('change', show);
     const stopPrompt = onAuthenticationEnd(sync);
+    sync();
     return () => {
       appState.remove();
       stopPrompt();

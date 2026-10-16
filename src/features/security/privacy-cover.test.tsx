@@ -86,6 +86,17 @@ test('a prompt that ends while the app is active leaves no cover', async () => {
   expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
 });
 
+test('a state change between the first read and the subscription is not lost', async () => {
+  jest.mocked(AppState.addEventListener).mockImplementationOnce(() => {
+    AppState.currentState = 'background';
+    return { remove: jest.fn() };
+  });
+
+  await render(<PrivacyCover />);
+
+  expect(screen.getByTestId('privacy-cover')).toBeOnTheScreen();
+});
+
 test('Android draws no cover, because FLAG_SECURE blanks its recents preview', async () => {
   setOs('android');
   await render(<PrivacyCover />);
