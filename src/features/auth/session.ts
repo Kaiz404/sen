@@ -100,6 +100,13 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
   }
 }
 
+/** Calls `listener` with the open database each time an unlock passes, while the asking screen holds. */
+export function onArrive(listener: (db: OpenDb) => void): () => void {
+  return sessionStore.subscribe(({ session }, prev) => {
+    if (session.status === 'arriving' && prev.session.status !== 'arriving') listener(session.db);
+  });
+}
+
 export function lockNow(): void {
   dispatch({ type: 'LOCK', reason: 'manual' });
 }

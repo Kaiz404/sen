@@ -8,6 +8,7 @@ import { SessionRoot, useRouteGate } from '@/features/auth';
 import { useScreenGuard } from '@/features/security';
 import { useSenAppGate } from '@/features/sen';
 import { useSenMotionPreference } from '@/features/settings';
+import { useHistoryPrefetch } from '@/features/transactions';
 import { MotionPolicyRoot } from '@/motion/policy';
 
 const sheet = {
@@ -22,6 +23,7 @@ export default function RootLayout() {
   const { rt } = useUnistyles();
   useScreenGuard();
   useSenAppGate();
+  useHistoryPrefetch();
 
   return (
     <GestureHandlerRootView style={styles.root}>

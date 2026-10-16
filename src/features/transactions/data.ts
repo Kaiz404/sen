@@ -1,20 +1,23 @@
 import {
+  infiniteQueryOptions,
   keepPreviousData,
+  queryOptions,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 
-import type { DayKey } from '@/models/day';
+import { onArrive } from '@/features/auth';
+import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
 import type { AppError } from '@/models/errors';
 import type { MaskedRow } from '@/models/transaction';
 import { createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
 import { readPref } from '@/services/prefs';
-import { QK } from '@/services/query-client';
+import { QK, queryClient } from '@/services/query-client';
 import { readSyncState, sync, type SyncSummary } from '@/services/sync';
 import {
   type DayRange,
@@ -53,6 +56,54 @@ export const historyKeys = {
   nets: (filter: TxFilter, days: DayRange | null) =>
     [...QK.revealed, 'nets', filter, days] as const,
 };
+
+/** The reads History opens with, shared by the screen and the prefetch, so their keys never drift. */
+const queries = {
+  pages: (db: Db, filter: TxFilter) =>
+    infiniteQueryOptions({
+      queryKey: historyKeys.pages(filter),
+      queryFn: ({ pageParam }) => readPage(db, { filter, after: pageParam }),
+      initialPageParam: null as PageCursor | null,
+      getNextPageParam: (last) => last.next,
+    }),
+  syncState: (db: Db) =>
+    queryOptions({ queryKey: historyKeys.syncState, queryFn: () => readSyncState(db) }),
+  monthTotals: (db: Db, filter: TxFilter, month: DayRange) =>
+    queryOptions({
+      queryKey: historyKeys.totals(filter, month),
+      queryFn: () => readTotals(db, { filter, days: month }),
+    }),
+  revealedMonth: (db: Db, filter: TxFilter, month: DayRange) =>
+    queryOptions({
+      queryKey: historyKeys.revealedTotals(filter, month),
+      queryFn: () => readRevealedTotals(db, { filter, days: month }),
+    }),
+};
+
+/** The month card's range: the first of `today`'s month through `today`. */
+export function monthSoFarRange(today: DayKey): DayRange {
+  return { from: DayKeySchema.parse(`${today.slice(0, 8)}01`), to: today };
+}
+
+const OPENING_FILTER: TxFilter = { flow: 'all', search: '' };
+
+/**
+ * Starts the reads History opens with, as an unlock passes. Lock holds for Sen's Unlock moment before
+ * History mounts, so the reads run under it instead of after it.
+ */
+export function prefetchHistory(db: Db, now: Date): void {
+  const month = monthSoFarRange(malaysiaDay(toInstant(now)));
+  void queryClient.prefetchInfiniteQuery(queries.pages(db, OPENING_FILTER));
+  void queryClient.prefetchQuery(queries.syncState(db));
+  void queryClient.prefetchQuery(queries.monthTotals(db, OPENING_FILTER, month));
+  if (!readPref('hideAmounts'))
+    void queryClient.prefetchQuery(queries.revealedMonth(db, OPENING_FILTER, month));
+}
+
+/** The app root calls this once, so every unlock starts History's reads. */
+export function useHistoryPrefetch(): void {
+  useEffect(() => onArrive((db) => prefetchHistory(db, new Date())), []);
+}
 
 export type SyncTrigger = 'first' | 'pull' | 'retry';
 
@@ -105,17 +156,8 @@ export type HistoryQuery = {
 
 /** Every read the History screen makes. While `hidden`, none of them selects an amount. */
 export function useHistoryData(db: Db, { filter, month, today, hidden }: HistoryQuery) {
-  const pages = useInfiniteQuery({
-    queryKey: historyKeys.pages(filter),
-    queryFn: ({ pageParam }) => readPage(db, { filter, after: pageParam }),
-    initialPageParam: null as PageCursor | null,
-    getNextPageParam: (last) => last.next,
-    placeholderData: keepPreviousData,
-  });
-  const syncState = useQuery({
-    queryKey: historyKeys.syncState,
-    queryFn: () => readSyncState(db),
-  });
+  const pages = useInfiniteQuery({ ...queries.pages(db, filter), placeholderData: keepPreviousData });
+  const syncState = useQuery(queries.syncState(db));
 
   const loaded = useMemo(() => pages.data?.pages.flatMap((page) => page.rows), [pages.data]);
   const complete = pages.data !== undefined && !pages.hasNextPage;
@@ -132,10 +174,7 @@ export function useHistoryData(db: Db, { filter, month, today, hidden }: History
   const cardFilter: TxFilter = { flow: filter.flow, search: '' };
   const searching = filter.search.trim() !== '';
 
-  const monthTotals = useQuery({
-    queryKey: historyKeys.totals(cardFilter, month),
-    queryFn: () => readTotals(db, { filter: cardFilter, days: month }),
-  });
+  const monthTotals = useQuery(queries.monthTotals(db, cardFilter, month));
   const results = useQuery({
     queryKey: historyKeys.totals(filter, null),
     queryFn: () => readTotals(db, { filter }),
@@ -162,8 +201,7 @@ export function useHistoryData(db: Db, { filter, month, today, hidden }: History
     placeholderData: keepPreviousData,
   });
   const revealedMonth = useQuery({
-    queryKey: historyKeys.revealedTotals(cardFilter, month),
-    queryFn: () => readRevealedTotals(db, { filter: cardFilter, days: month }),
+    ...queries.revealedMonth(db, cardFilter, month),
     enabled: !hidden,
   });
   const revealedResults = useQuery({

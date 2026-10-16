@@ -17,6 +17,7 @@ jest.mock('@/features/auth', () => ({
 }));
 jest.mock('@/features/settings', () => ({ useSenMotionPreference: () => 'full' }));
 jest.mock('@/features/security', () => ({ useScreenGuard: () => undefined }));
+jest.mock('@/features/transactions', () => ({ useHistoryPrefetch: () => undefined }));
 jest.mock('@/components/toast', () => ({ ToastHost: () => null }));
 
 const APP = join(__dirname, '..', 'app');

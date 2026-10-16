@@ -324,9 +324,9 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **Returning.**
 - Launch › Lock › tap Unlock. Never auto-prompt.
-- **Success.** Unlock moment, then History (masked).
+- **Success.** Unlock moment, then History (masked). History's data starts loading as the check passes, so it is ready when the moment ends.
 - **Cancel.** Back to Lock silently.
-- **No match.** An inline message with the tries left.
+- **No match.** An inline message with the tries left. After Auth failed, Sen rests `worried`, as the Lock board's "Not quite." state draws it, not masked as the tile ends.
 - **Lockout.** The cool-down card and the passcode.
 
 **Show and hide amounts.**

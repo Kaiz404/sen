@@ -13,12 +13,12 @@ import {
   useDb,
   useDbResetNotice,
 } from '@/features/auth';
-import { DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
+import { malaysiaDay, toInstant } from '@/models/day';
 import { playHaptic } from '@/services/haptics';
 import type { Flow } from '@/services/tx-repo';
 
 import { historyBody, syncNotes } from './body';
-import { arrivals, syncView, useHistoryData, useSync } from './data';
+import { arrivals, monthSoFarRange, syncView, useHistoryData, useSync } from './data';
 import { HistoryView } from './history-view';
 import { clockText } from './rows';
 
@@ -38,7 +38,7 @@ export function HistoryScreen(): ReactNode {
   const today = malaysiaDay(toInstant(new Date()));
   const data = useHistoryData(db, {
     filter: { flow, search: deferredSearch },
-    month: { from: DayKeySchema.parse(`${today.slice(0, 8)}01`), to: today },
+    month: monthSoFarRange(today),
     today,
     hidden,
   });

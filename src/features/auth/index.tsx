@@ -52,6 +52,7 @@ export {
   type DbResetReason,
   dismissDbResetNotice,
   lockNow,
+  onArrive,
   signOut,
   useBiometric,
   useDb,

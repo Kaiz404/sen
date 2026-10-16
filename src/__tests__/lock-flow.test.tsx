@@ -8,8 +8,10 @@ import type { ComponentType } from 'react';
 
 import { hideAmounts, lockNow } from '@/features/auth';
 import type { OpenDb } from '@/services/db';
+import { openTestDb } from '@/services/db/testing/node-adapter';
 import { writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
+import * as TxRepo from '@/services/tx-repo';
 import * as Vault from '@/services/vault';
 
 jest.mock('expo-local-authentication', () => ({
@@ -78,4 +80,26 @@ test('the app root drops revealed amounts whenever they are hidden', async () =>
   await act(() => hideAmounts());
 
   expect(queryClient.getQueryData(['tx', 'revealed', 0])).toBeUndefined();
+});
+
+test('History’s first page is read as the unlock passes, while Lock holds for Unlock, not when History mounts', async () => {
+  jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
+  const vault = await openTestDb();
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: vault });
+  const readPage = jest.spyOn(TxRepo, 'readPage');
+  await renderRouter(routes, { initialUrl: '/' });
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+
+  authenticate.mockResolvedValueOnce({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await act(async () => {});
+
+  expect(screen.getByRole('button', { name: 'Unlocked' })).toBeDisabled();
+  expect(screen.queryByTestId('history')).not.toBeOnTheScreen();
+  expect(readPage.mock.calls).toEqual([[vault, { filter: { flow: 'all', search: '' }, after: null }]]);
+
+  screen.unmount();
+  readPage.mockRestore();
+  jest.useRealTimers();
 });
