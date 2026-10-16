@@ -1,36 +1,14 @@
-import type { EasingFunction } from 'react-native-reanimated';
-
-import { EASE_FN } from '@/motion/tokens';
-
-import type { BoardStep } from '../board';
+import { type BoardStep, type Keyframes, keyframesOf } from '../board';
 import { BOARDS } from '../board.gen';
-import type { Ease } from '../timeline/types';
 
-/** One accent value as `kf` reads it: `eases[i]` shapes the segment that starts at `stops[i]`. */
-export type Keyframes = {
-  readonly stops: readonly number[];
-  readonly values: readonly number[];
-  readonly eases: readonly EasingFunction[];
-};
+export type { Keyframes };
 
 const FX: Readonly<Record<string, readonly BoardStep[]>> = BOARDS['MAX-Library']['.L-fx'];
 
 /** The swoosh starts drawing 160 ms into `.L-fx`. Every app moment starts its accents there. */
 const LEAD = 160;
 
-function curve(e: Ease | undefined): EasingFunction {
-  if (e === undefined) return EASE_FN.linear;
-  return typeof e === 'string' ? EASE_FN[e] : EASE_FN.linear;
-}
-
-function keyframes(key: string): Keyframes {
-  const steps = FX[key]!.filter(([at]) => at >= LEAD);
-  return {
-    stops: steps.map(([at]) => at - LEAD),
-    values: steps.map(([, v]) => v),
-    eases: steps.slice(1).map(([, , e]) => curve(e)),
-  };
-}
+const keyframes = (key: string) => keyframesOf(FX[key]!, LEAD);
 
 const star = (n: 1 | 2 | 3) => ({
   op: keyframes(`s${n}.op`),

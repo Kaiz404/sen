@@ -1,3 +1,7 @@
+import { Easing, type EasingFunction } from 'react-native-reanimated';
+
+import { EASE_FN } from '@/motion/tokens';
+
 import { type Channel, CHANNELS } from './channels';
 import type { Ease, Step, Steps, Tracks } from './timeline/types';
 
@@ -33,4 +37,26 @@ export function boardTracks(moment: Readonly<Record<string, readonly BoardStep[]
     if (head && rest.some((step) => step.v !== head.v)) out[key as Channel] = [head, ...rest];
   }
   return out;
+}
+
+/** A board track as `kf` reads it: `eases[i]` shapes the segment that starts at `stops[i]`. */
+export type Keyframes = {
+  readonly stops: readonly number[];
+  readonly values: readonly number[];
+  readonly eases: readonly EasingFunction[];
+};
+
+function curve(e: Ease | undefined): EasingFunction {
+  if (e === undefined) return EASE_FN.linear;
+  return typeof e === 'string' ? EASE_FN[e] : Easing.bezierFn(...e);
+}
+
+/** A board track from `lead` ms on, rebased to 0, for a component that reads one clock with `kf`. */
+export function keyframesOf(steps: readonly BoardStep[], lead = 0): Keyframes {
+  const kept = steps.filter(([at]) => at >= lead);
+  return {
+    stops: kept.map(([at]) => at - lead),
+    values: kept.map(([, v]) => v),
+    eases: kept.slice(1).map(([, , e]) => curve(e)),
+  };
 }

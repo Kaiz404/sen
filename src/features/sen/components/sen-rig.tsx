@@ -23,6 +23,7 @@ import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
 import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
 import { playHaptic } from '@/services/haptics';
+import type { SenAccentTone } from '@/theme/colors';
 
 import { type Channel, type Frame } from '../channels';
 import {
@@ -148,8 +149,6 @@ export function SenRig({
   const [clock] = useState(() => makeMutable(0));
   const [fx] = useState(() => makeMutable(ACCENT_MS));
   const full = senTier(size) === 'full';
-  const clip = `sen-clip-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const { side, inset, unit } = senBox(size);
   const rest = useRef<Rest>({ pose, prop, level });
   const playing = useRef<{ token: number; moment: Moment } | null>(null);
   const shown = useRef(pose);
@@ -224,6 +223,32 @@ export function SenRig({
     return () => clearTimeout(timer);
   }, [id, pose, size, level]);
 
+  return (
+    <RigDrawing
+      rig={rig}
+      fx={full ? fx : null}
+      size={size}
+      label={label}
+      surface={surface}
+      testID={`sen-rig-${id}`}
+    />
+  );
+}
+
+type DrawingProps = {
+  readonly rig: RigValues;
+  /** The accent clock, or null for a rig that never pops accents. */
+  readonly fx: SharedValue<number> | null;
+  readonly size: number;
+  readonly label?: string;
+  readonly surface: SenAccentTone;
+  readonly testID?: string;
+};
+
+/** Draws a rig: the four body Views, the coin's SVG nodes, the edge pill and the accent layers. */
+export function RigDrawing({ rig, fx, size, label, surface, testID }: DrawingProps): ReactNode {
+  const clip = `sen-clip-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const { side, inset, unit } = senBox(size);
   const mv = useBody(rig, 'mv', unit);
   const rl = useBody(rig, 'rl', unit);
   const sq = useBody(rig, 'sq', unit);
@@ -235,7 +260,7 @@ export function SenRig({
       accessibilityRole={label === undefined ? undefined : 'image'}
       accessibilityLabel={label}
       importantForAccessibility={label === undefined ? 'no-hide-descendants' : 'yes'}
-      testID={`sen-rig-${id}`}
+      testID={testID}
       style={{ width: size, height: size }}
     >
       <View
@@ -243,7 +268,7 @@ export function SenRig({
         style={{ position: 'absolute', top: -inset, left: -inset, width: side, height: side }}
       >
         <Animated.View testID="sen-mv" style={[FILL, mv]}>
-          {full && <SwooshLayer fx={fx} tone={surface} side={side} />}
+          {fx && <SwooshLayer fx={fx} tone={surface} side={side} />}
           <Animated.View testID="sen-rl" style={[FILL, { transformOrigin: COIN }, rl]}>
             <Animated.View testID="sen-sq" style={[FILL, { transformOrigin: CONTACT }, sq]}>
               <Animated.View testID="sen-sp" style={[FILL, { transformOrigin: COIN }, sp]}>
@@ -263,7 +288,7 @@ export function SenRig({
               </Svg>
             </Animated.View>
           </Animated.View>
-          {full && <SparkLayer fx={fx} tone={surface} side={side} />}
+          {fx && <SparkLayer fx={fx} tone={surface} side={side} />}
         </Animated.View>
       </View>
     </View>
