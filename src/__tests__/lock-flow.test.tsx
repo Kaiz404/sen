@@ -4,7 +4,7 @@ import { join, relative } from 'node:path';
 import { act, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType } from 'react';
 
 import { hideAmounts, lockNow } from '@/features/auth';
 import type { OpenDb } from '@/services/db';
@@ -19,10 +19,6 @@ jest.mock('expo-local-authentication', () => ({
   getEnrolledLevelAsync: jest.fn(async () => 3),
 }));
 jest.mock('@/services/vault', () => ({ hasVault: jest.fn(), openVault: jest.fn() }));
-// expo-router/testing-library swaps Reanimated for its mock, which has no ReducedMotionConfig.
-jest.mock('@/motion/policy', () => ({
-  MotionPolicyRoot: ({ children }: { children: ReactNode }) => children,
-}));
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 
