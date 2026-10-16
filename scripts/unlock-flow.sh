@@ -4,6 +4,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 . scripts/device-env.sh
 mkdir -p shots
-maestro test --test-output-dir shots/maestro .maestro/lock-prompt.yaml
+maestro test --test-output-dir shots/maestro .maestro/auth-lock-prompt.yaml
 adb -e emu finger touch 1
 maestro test --test-output-dir shots/maestro .maestro/lands-on-history.yaml

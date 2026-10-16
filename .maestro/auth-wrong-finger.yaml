@@ -1,0 +1,10 @@
+# Run after auth-lock-prompt.yaml and `adb -e emu finger touch 2`. Maestro cannot reach the emulator console.
+# Android keeps BiometricPrompt open on a wrong finger and never reports authentication_failed to the app,
+# so the system sheet shows the miss and Lock stays underneath. iOS reports it, and Lock shows "Not quite.".
+appId: com.kaiz404.sen
+---
+- extendedWaitUntil:
+    visible: Unlock Sen
+    timeout: 10000
+- assertNotVisible: HISTORY
+- takeScreenshot: auth-wrong-finger

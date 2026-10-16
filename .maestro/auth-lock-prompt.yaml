@@ -1,12 +1,15 @@
+# Opens the dev build on Lock and taps Unlock. The system prompt stays up for an `adb -e emu finger touch` next.
 appId: com.kaiz404.sen
 ---
 - launchApp:
     clearState: false
 - openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
 - extendedWaitUntil:
-    visible: UNLOCK
+    visible:
+      id: unlock
     timeout: 60000
-- tapOn: UNLOCK
+- tapOn:
+    id: unlock
 - extendedWaitUntil:
     visible: Unlock Sen
     timeout: 10000
