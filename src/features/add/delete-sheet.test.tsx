@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { AppState, Platform } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import type { StepUpResult } from '@/features/auth';
@@ -150,3 +151,21 @@ test.each([['an id over 64 characters', 'm-'.padEnd(65, 'x')], ['an empty id', '
     expect(screen.queryByRole('button', { name: /Delete with/ })).toBeNull();
   },
 );
+
+test('on iOS the delete sheet, which sits above the root cover, draws its own cover while inactive', async () => {
+  Object.defineProperty(Platform, 'OS', { value: 'ios' });
+  try {
+    await renderSheet(ADDED);
+    expect(await screen.findByRole('header', { name: 'Delete this transaction?' })).toBeOnTheScreen();
+    expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
+
+    await act(async () => {
+      AppState.currentState = 'inactive';
+      jest.mocked(AppState.addEventListener).mock.calls.forEach(([, fn]) => fn('inactive'));
+    });
+    expect(screen.getByLabelText('Sen. Content hidden while you switch apps.')).toBeOnTheScreen();
+  } finally {
+    Object.defineProperty(Platform, 'OS', { value: 'android' });
+    AppState.currentState = 'active';
+  }
+});

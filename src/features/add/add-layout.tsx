@@ -1,7 +1,9 @@
 import { randomUUID } from 'expo-crypto';
 import { Stack } from 'expo-router';
 import { createContext, type Dispatch, type ReactNode, use, useReducer } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { PrivacyCover } from '@/features/security';
 import { type DayKey, malaysiaDay, toInstant } from '@/models/day';
 
 import { type DraftAction, type DraftInput, draftReducer, newDraft } from './draft';
@@ -19,12 +21,16 @@ export function todayInMalaysia(): DayKey {
 
 /**
  * Holds the draft for the three add steps. It lives only in this component's state, so the lock, which unmounts
- * every protected route, drops it.
+ * every protected route, drops it. The full screen modal is presented above the root layout, so it carries its
+ * own privacy cover.
  */
 export function AddLayout(): ReactNode {
   return (
     <DraftProvider start={freshDraft}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <View style={styles.fill}>
+        <Stack screenOptions={{ headerShown: false }} />
+        <PrivacyCover />
+      </View>
     </DraftProvider>
   );
 }
@@ -49,3 +55,5 @@ export function useDraft(): DraftContextValue {
   if (value === null) throw new Error('The add steps render inside AddLayout.');
   return value;
 }
+
+const styles = StyleSheet.create({ fill: { flex: 1 } });

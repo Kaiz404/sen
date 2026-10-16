@@ -16,6 +16,7 @@ import {
   useDb,
   useStepUp,
 } from '@/features/auth';
+import { PrivacyCover } from '@/features/security';
 import { ADD_CATEGORIES, type CategoryId } from '@/models/category';
 import { minor, type SignedMinor, signed } from '@/models/money';
 import { type MaskedRow, type TxId, TxIdSchema } from '@/models/transaction';
@@ -272,14 +273,17 @@ export function DeleteSheet(): ReactNode {
   };
 
   return (
-    <DeleteView
-      row={gone ?? (row.isError ? null : row.data)}
-      amount={amount}
-      biometric={biometric.kind}
-      phase={phase}
-      onDelete={() => void confirm()}
-      onKeep={() => router.back()}
-    />
+    <View>
+      <DeleteView
+        row={gone ?? (row.isError ? null : row.data)}
+        amount={amount}
+        biometric={biometric.kind}
+        phase={phase}
+        onDelete={() => void confirm()}
+        onKeep={() => router.back()}
+      />
+      <PrivacyCover />
+    </View>
   );
 }
 
