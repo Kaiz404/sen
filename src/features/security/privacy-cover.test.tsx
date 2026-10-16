@@ -5,6 +5,12 @@ import { coverShown, PrivacyCover } from './privacy-cover';
 
 let mockPrompting = false;
 jest.mock('@/features/auth', () => ({ isAuthenticating: () => mockPrompting }));
+jest.mock('@/features/sen', () => ({
+  Sen: ({ pose }: { pose: string }) => {
+    const { Text } = jest.requireActual('react-native');
+    return <Text>{`Sen pose ${pose}`}</Text>;
+  },
+}));
 
 const goes = (state: AppStateStatus) =>
   act(async () => jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state));
@@ -36,6 +42,7 @@ test('on iOS the cover draws when the app goes inactive and clears when it is ac
   await goes('inactive');
   expect(screen.getByLabelText('Sen. Content hidden while you switch apps.')).toBeOnTheScreen();
   expect(screen.getByText('RESTING WHILE YOU SWITCH APPS')).toBeOnTheScreen();
+  expect(screen.getByText('Sen pose asleep')).toBeOnTheScreen();
 
   await goes('active');
   expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();

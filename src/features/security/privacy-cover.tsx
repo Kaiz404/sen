@@ -49,7 +49,7 @@ export function PrivacyCoverView(): ReactNode {
         RESTING WHILE YOU SWITCH APPS
       </Text>
       <View style={styles.sen}>
-        <Sen pose="masked" size={250} />
+        <Sen pose="asleep" size={250} />
       </View>
     </View>
   );

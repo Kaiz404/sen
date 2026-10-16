@@ -1,5 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
-import { ScrollView } from 'react-native';
+import { Platform, ScrollView } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import { disarmLockout, useLockoutArmed } from '@/features/auth';
@@ -191,7 +191,24 @@ test('the sheets open as their routes', async () => {
   ]);
 });
 
-test('the security card says the app switcher and screenshots are covered, always', async () => {
+const setOs = (os: string) => Object.defineProperty(Platform, 'OS', { value: os });
+afterEach(() => setOs('android'));
+
+test('on Android the security card says recents is blank and the whole app blocks capture', async () => {
+  await renderSettings();
+
+  expect(
+    screen.getByLabelText(
+      'Blank preview in recent apps. Recents shows nothing of Sen, no amounts. ALWAYS ON',
+    ),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByLabelText('Block screenshots and recording. Every screen in Sen. ALWAYS ON'),
+  ).toBeOnTheScreen();
+});
+
+test('on iOS the security card says a cover with Sen asleep draws in the app switcher', async () => {
+  setOs('ios');
   await renderSettings();
 
   expect(
@@ -200,6 +217,8 @@ test('the security card says the app switcher and screenshots are covered, alway
     ),
   ).toBeOnTheScreen();
   expect(
-    screen.getByLabelText('Block screenshots on sensitive screens. iOS 13+ and Android. ALWAYS ON'),
+    screen.getByLabelText(
+      'Block screenshots and recording. Every screen in Sen, iOS 13+. ALWAYS ON',
+    ),
   ).toBeOnTheScreen();
 });

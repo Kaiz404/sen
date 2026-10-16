@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useRef } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Platform, ScrollView, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
@@ -82,6 +82,19 @@ export type SettingsViewProps = {
   readonly actions: SettingsActions;
   readonly focus: SettingsFocus;
 };
+
+/** What each OS really does, since only iOS draws a cover. Android blanks its recents card with FLAG_SECURE. */
+const SWITCHER_ROW = {
+  ios: { title: 'Hide Sen in the app switcher', sub: 'A cover with Sen asleep, no amounts' },
+  android: {
+    title: 'Blank preview in recent apps',
+    sub: 'Recents shows nothing of Sen, no amounts',
+  },
+} as const;
+const CAPTURE_ROW = {
+  ios: { title: 'Block screenshots and recording', sub: 'Every screen in Sen, iOS 13+' },
+  android: { title: 'Block screenshots and recording', sub: 'Every screen in Sen' },
+} as const;
 
 const VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -171,15 +184,13 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
           />
           <Dash />
           <InfoRow
-            title="Hide Sen in the app switcher"
-            sub="A cover with Sen asleep, no amounts"
+            {...SWITCHER_ROW[Platform.OS === 'ios' ? 'ios' : 'android']}
             chip={{ icon: 'cellphone-lock', pastel: PASTEL.lilac }}
             badge="ALWAYS ON"
           />
           <Dash />
           <InfoRow
-            title="Block screenshots on sensitive screens"
-            sub="iOS 13+ and Android"
+            {...CAPTURE_ROW[Platform.OS === 'ios' ? 'ios' : 'android']}
             chip={{ icon: 'cellphone-screenshot', pastel: PASTEL.peach }}
             badge="ALWAYS ON"
           />
