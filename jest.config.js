@@ -15,6 +15,7 @@ module.exports = {
     ],
   },
   moduleNameMapper: {
+    '^react-native-reanimated/mock$': '<rootDir>/jest/reanimated-for-router.js',
     '^@/assets/(.*)$': '<rootDir>/assets/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
   },

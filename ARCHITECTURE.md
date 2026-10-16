@@ -539,6 +539,7 @@ jest.mock('react-native-svg', () => {
 - **Async APIs.** RNTL 14's `render` and `act` are async.
 - **Unistyles.** `jest.setup.ts` imports `react-native-unistyles/mocks` and then `src/theme/unistyles.ts`.
 - **Types.** TypeScript 6 defaults `types` to none, so `tsconfig.json` lists `jest` and `node`.
+- **Route tests.** `expo-router/testing-library` swaps Reanimated for its old mock. `jest.config.js` maps that mock to the real module (`jest/reanimated-for-router.js`), so route tests render the same Reanimated as every other test.
 - **Renderer.** `test-renderer` 1.3.1 asks for `react-reconciler` 0.34, which needs React 19.3. An npm `overrides` entry pins it to 0.33.0 to match React 19.2.3.
 
 | Layer | What it proves | How |

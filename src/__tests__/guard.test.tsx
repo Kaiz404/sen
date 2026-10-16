@@ -18,10 +18,6 @@ jest.mock('@/features/auth', () => ({
 jest.mock('@/features/settings', () => ({ useSenMotionPreference: () => 'full' }));
 jest.mock('@/features/security', () => ({ useScreenGuard: () => undefined }));
 jest.mock('@/components/toast', () => ({ ToastHost: () => null }));
-// expo-router/testing-library swaps Reanimated for its mock, which has no ReducedMotionConfig.
-jest.mock('@/motion/policy', () => ({
-  MotionPolicyRoot: ({ children }: { children: ReactNode }) => children,
-}));
 
 const APP = join(__dirname, '..', 'app');
 const SKIP_LOCKED_LINK_CHECK = new Set(['lock', 'welcome', 'primer', 'dev/states', '+not-found']);
