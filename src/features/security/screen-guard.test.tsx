@@ -1,4 +1,4 @@
-import { allowScreenCaptureAsync, preventScreenCaptureAsync } from 'expo-screen-capture';
+import ExpoScreenCapture from 'expo-screen-capture/build/ExpoScreenCapture';
 import { act, renderHook } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
@@ -6,15 +6,23 @@ import { logEvent } from '@/services/logger';
 
 import { guardsScreens, useScreenGuard } from './screen-guard';
 
-jest.mock('expo-screen-capture', () => ({
-  preventScreenCaptureAsync: jest.fn(async () => undefined),
-  allowScreenCaptureAsync: jest.fn(async () => undefined),
+jest.mock('expo-screen-capture/build/ExpoScreenCapture', () => ({
+  __esModule: true,
+  default: {
+    preventScreenCapture: jest.fn(async () => undefined),
+    allowScreenCapture: jest.fn(async () => undefined),
+  },
 }));
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 
-const prevent = jest.mocked(preventScreenCaptureAsync);
-const allow = jest.mocked(allowScreenCaptureAsync);
+const native = jest.mocked(ExpoScreenCapture);
+const prevent = native.preventScreenCapture;
+const allow = native.allowScreenCapture;
 const setDev = (on: boolean) => Object.assign(globalThis, { __DEV__: on });
+const foreground = async () => {
+  const listener = jest.mocked(AppState.addEventListener).mock.lastCall?.[1];
+  await act(async () => listener?.('active'));
+};
 
 beforeEach(() => jest.clearAllMocks());
 afterEach(() => setDev(true));
@@ -30,9 +38,9 @@ test('a release build blocks capture on mount and lifts it on unmount', async ()
   setDev(false);
   const { unmount } = await renderHook(() => useScreenGuard());
 
-  expect(prevent.mock.calls).toEqual([['sen-screen-guard']]);
+  expect(prevent).toHaveBeenCalledTimes(1);
   await unmount();
-  expect(allow.mock.calls).toEqual([['sen-screen-guard']]);
+  expect(allow).toHaveBeenCalledTimes(1);
 });
 
 test('a dev build leaves capture open so agents can screenshot it', async () => {
@@ -41,15 +49,28 @@ test('a dev build leaves capture open so agents can screenshot it', async () => 
   expect(prevent).not.toHaveBeenCalled();
 });
 
-test('a release build blocks capture again each time the app returns to the foreground', async () => {
+test('returning to the foreground after a successful block does not call the native module again', async () => {
   setDev(false);
   await renderHook(() => useScreenGuard());
-  const listener = jest.mocked(AppState.addEventListener).mock.lastCall?.[1];
+  await act(async () => undefined);
 
-  await act(async () => listener?.('background'));
+  await foreground();
+
   expect(prevent).toHaveBeenCalledTimes(1);
-  await act(async () => listener?.('active'));
+});
+
+test('returning to the foreground after a native failure retries the block', async () => {
+  setDev(false);
+  prevent.mockRejectedValueOnce(new Error('no key window'));
+  await renderHook(() => useScreenGuard());
+  await act(async () => undefined);
+  expect(logEvent).toHaveBeenCalledWith('guard.failed');
+  expect(prevent).toHaveBeenCalledTimes(1);
+
+  await foreground();
+
   expect(prevent).toHaveBeenCalledTimes(2);
+  expect(logEvent).toHaveBeenCalledTimes(1);
 });
 
 test('a native failure is logged and does not throw', async () => {

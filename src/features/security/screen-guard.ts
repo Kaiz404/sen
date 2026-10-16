@@ -17,8 +17,9 @@ function engage(): void {
 
 /**
  * Blocks screenshots, screen recording and the recents preview for the whole app (Android FLAG_SECURE, iOS
- * secure canvas). It is re-applied whenever the app returns to the foreground, because an Activity that
- * Android recreated has a new window without the flag, and iOS moves the protection to the current key window.
+ * secure canvas). expo-screen-capture skips the native call while the key is active, so a foreground event only
+ * retries a block that failed. An Activity that Android recreates unmounts and mounts this hook again, which
+ * sets the flag on the new window.
  */
 export function useScreenGuard(): void {
   useEffect(() => {
