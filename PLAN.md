@@ -15,8 +15,8 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 | Check | Command | When |
 | --- | --- | --- |
 | Fast gate | `npm run check` (`tsc --noEmit`, `expo lint`, `jest --ci`, then the benches serially with `npm run test:bench`) | Before every commit. The pre-commit hook runs typecheck and related tests |
-| One screen state | `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
-| A flow | `maestro test .maestro/<flow>.yaml`, with `adb -e emu finger touch 1` for biometrics | After any flow change |
+| One screen state | On the phone, after `scripts/phone.sh`: `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
+| A flow | `npm run device:verify -- --only '<flow>'` on the phone. Biometrics come from the dev auth override (`sen://dev/states?auth=pass`), not a finger | After any flow change |
 | Release perf | `npx expo run:android --variant release`, then `flashlight test` with `scripts/scroll.sh` | Phase 3 and phase 8 |
 | Motion values | `npm run test:motion`: pure maths tables, plus `toHaveAnimatedStyle` and `toHaveAnimatedProps` at start, midpoint and end with literal values from DESIGN.md | Any motion change |
 | Settled screenshots | `maestro test .maestro/screenshots.yaml`: `assertScreenshot` on each states-route screen and pose against the owner-approved baselines | Any UI or Sen change |

@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# The fallback device. The phone is the default (scripts/phone.sh).
 . "$(dirname "$0")/device-env.sh"
-
-if ! adb devices >/dev/null 2>&1; then
-  (cd /mnt/c && setsid nohup "$WIN_ANDROID_SDK/platform-tools/adb.exe" -a -P 5037 nodaemon server >/dev/null 2>&1 &)
-  until adb devices >/dev/null 2>&1; do sleep 1; done
-fi
+export ANDROID_SERIAL="${EMULATOR_SERIAL:-emulator-5554}"
+ensure_adb_server
 
 # The emulator needs about 5.5 GB of Windows RAM. With less free it pages to disk and every device step
 # slows down 5x to 15x. FORCE=1 boots anyway.

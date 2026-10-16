@@ -65,6 +65,7 @@
     "check": "tsc --noEmit && expo lint && jest --ci && npm run test:bench",
     "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write .",
+    "device:verify": "scripts/verify-device.sh",
     "release:auth-check": "scripts/check-release-auth.sh"
   },
   "private": true,
