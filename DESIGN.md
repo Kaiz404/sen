@@ -167,28 +167,25 @@ References: Phantom's onboarding (tilted mid-motion character, flat sparkle acce
 - Wrap `lk` in a static `G` with `clipPath` (the face circle) so the clip stays put while the face slides.
 - The implementation model (channels, layers, moments as data) is in ARCHITECTURE.md › Motion.
 
-```ts
-const EASE = {
-  out:  Easing.bezier(0.2, 0.8, 0.2, 1),   // arrivals, eye moves
-  inQ:  Easing.in(Easing.quad),            // falls, exits
-  outQ: Easing.out(Easing.quad),           // rises
-  sine: Easing.inOut(Easing.sin),          // holds, returns
-  inS:  Easing.in(Easing.sin),             // spin toward edge-on
-  outS: Easing.out(Easing.sin),            // spin away from edge-on
-};
-const MAL = {                              // the launch, from MAL-Timelines
-  malSpring: Easing.bezier(0.34, 1.56, 0.64, 1), // one overshoot. As a spring: damping 12, stiffness 180
-  handoff:   Easing.bezier(0.3, 1.25, 0.5, 1),   // Sen grows into Lock's Sen
-  hopOut:    Easing.bezier(0.2, 0.7, 0.4, 1),    // rising out of a hop
-  hopIn:     Easing.bezier(0.6, 0, 0.8, 0.3),    // falling into a landing
-};
-const SPRING = {
-  pop:    { damping: 14, stiffness: 260, mass: 0.7 }, // ~15% overshoot
-  settle: { damping: 18, stiffness: 220, mass: 0.8 }, // ~5%
-  soft:   { damping: 20, stiffness: 140, mass: 1 },   // no visible overshoot
-};
-const RM = { reduceMotion: ReduceMotion.System };     // spread into every config
-```
+Easing and springs live in `src/motion/tokens.ts`, which is the one source. Every curve is a cubic bezier, so Reanimated, `kf` and CSS transitions share it.
+
+| Token | Bezier or spring | Use |
+| --- | --- | --- |
+| `out` | (0.2, 0.8, 0.2, 1) | Arrivals, eye moves |
+| `inQ` | (0.55, 0.085, 0.68, 0.53) | Falls, exits |
+| `outQ` | (0.25, 0.46, 0.45, 0.94) | Rises |
+| `sine` | (0.37, 0, 0.63, 1) | Holds, returns |
+| `inS` | (0.12, 0, 0.39, 0) | Spin toward edge-on |
+| `outS` | (0.61, 1, 0.88, 1) | Spin away from edge-on |
+| `malSpring` | (0.34, 1.56, 0.64, 1) | MAL2's landings, one overshoot |
+| `handoff` | (0.3, 1.25, 0.5, 1) | Sen grows into Lock's Sen |
+| `hopOut`, `hopIn` | (0.2, 0.7, 0.4, 1), (0.6, 0, 0.8, 0.3) | Rising out of a hop, falling into a landing |
+| `SPRING.pop` | damping 14, stiffness 260, mass 0.7 | About 15% overshoot |
+| `SPRING.settle` | damping 18, stiffness 220, mass 0.8 | About 5% |
+| `SPRING.soft` | damping 20, stiffness 140, mass 1 | No visible overshoot |
+| `SPRING.launch` | damping 12, stiffness 180, mass 1 | `malSpring` as a spring |
+
+Reduced motion comes from `useMotionPolicy()`, never `ReduceMotion.System` (ARCHITECTURE.md › Motion levels).
 
 ### Primitives
 
@@ -225,7 +222,7 @@ Each row is a MAX-Moments tile unless it names another board.
 | Auth failed | `.M-face.ph-fail` | Prompt fails | Eyes pop open at 0.9, face shakes ±16 and settles at (0, 10), counter-lean then lean back to −4° with skewX 4°, frown, paws clutch (±40, −24) at 0.9, eyes close at 1.5 s | Error |
 | Unlock | `.M-unlock` | Auth succeeds | eye-pop with paws up › face settles at (0, −6) › accent-pop › one flip › land. Happy squint (1.15, 0.45) from 1250 ms. 1.35 s | Success at 160 ms |
 | Reveal | `.M-reveal` | Amounts shown, after biometrics (D27: a saved setting, no timer) | eye-pop and small hop, paws up › digits roll in at 200 ms › face at (0, −6) › accents › face slides toward the digits (18, −10) at 640 ms › happy squint (1.15, 0.45). Accents pop before the slide | Success at 200 ms |
-| Re-mask | `.M-remask` | Timeout, Hide now, background | eye-close › face ducks behind the rim › settles masked. Dots replace digits at 120 ms. On background, set the pose instantly | Hide now only: Light |
+| Re-mask | `.M-remask` | "Hide amounts" on History or in Settings (D27) | eye-close › face ducks behind the rim › settles masked. Dots replace digits at 120 ms | Hide now only: Light |
 | Pull to refresh | `.M-ref` | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading (at least 600 ms) › stops on heads › lands › wobble-settle › "Updated" pill | Selection at threshold, Light on land |
 | Empty search | `.M-empty` | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, sinks half hidden | None |
 | Network error | `.M-err` | Fetch fails | Worried, leans back to −8° with skewX 7°, holds at −6.5° with 5.5°, then returns to the worried lean. Paws squeeze the plug on the secondary layer (0.9). Slow blink every 4 to 7 s. On Retry, glances at the button | Warning, once |
@@ -279,7 +276,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | Auth failed, lockout | `notificationAsync(Error)` | `AndroidHaptics.Reject` |
 | Network error | `notificationAsync(Warning)` | `AndroidHaptics.Reject` |
 | Launch landing | `impactAsync(Light)` | `impactAsync(Light)`. MAL-Timelines names no Android constant |
-| Copy, refresh landed, Hide now | `impactAsync(Light)` | `Context_Click`, `Clock_Tick`, `Toggle_Off` |
+| Copy, refresh landed, Hide amounts | `impactAsync(Light)` | `Context_Click`, `Clock_Tick`, `Toggle_Off` |
 | Segmented controls, refresh threshold | `selectionAsync()` | `Segment_Tick` |
 | Theme change, in-app toggle only | `selectionAsync()` | `Toggle_On` or `Toggle_Off`, matching the new state (inferred: MAX-Moments names both without a mapping) |
 
