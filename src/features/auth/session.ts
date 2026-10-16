@@ -44,10 +44,11 @@ let lockoutArmed = false;
 
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
 
-export function dispatch(event: SessionEvent): void {
+/** Returns whether the event applied. */
+export function dispatch(event: SessionEvent): boolean {
   const prev = sessionStore.getState().session;
   const next = reduce(prev, event);
-  if (next === prev) return;
+  if (next === prev) return false;
   sessionStore.setState({ session: next });
 
   const db = dbOf(prev);
@@ -55,6 +56,7 @@ export function dispatch(event: SessionEvent): void {
     queryClient.clear();
     closing = db.close();
   }
+  return true;
 }
 
 /** A failed vault check counts as a vault, so launch never offers Welcome over existing data. */
@@ -99,15 +101,21 @@ export function armLockout(): void {
   lockoutArmed = true;
 }
 
-/** Sign out of the demo, or "Not you? Start again" on Lock. Locks, destroys the vault (prefs included), then shows Welcome. */
+/**
+ * Sign out of the demo, or "Not you? Start again" on Lock. Closes the database, destroys the vault (prefs
+ * included), then shows Welcome. A failure returns to Lock and rethrows.
+ */
 export async function signOut(): Promise<void> {
-  const { status } = sessionStore.getState().session;
-  if (status !== 'locked' && status !== 'unlocked') return;
-  dispatch({ type: 'LOCK', reason: 'signout' });
-  await closing;
-  await destroyVault();
+  if (!dispatch({ type: 'SIGN_OUT_START' })) return;
+  try {
+    await closing;
+    await destroyVault();
+  } catch (error) {
+    dispatch({ type: 'SIGN_OUT_FAIL' });
+    throw error;
+  }
   sessionStore.setState({ dbReset: null });
-  dispatch({ type: 'RESET' });
+  dispatch({ type: 'SIGN_OUT_DONE' });
 }
 
 export function dismissDbResetNotice(): void {
@@ -140,6 +148,6 @@ export function useBiometric(): BiometricSupport {
   return useStore(sessionStore, (s) => s.biometric);
 }
 
-export function useIsAuthenticating(): boolean {
-  return useStore(sessionStore, (s) => s.session.status === 'authenticating');
+export function useSessionStatus(): Session['status'] {
+  return useStore(sessionStore, (s) => s.session.status);
 }

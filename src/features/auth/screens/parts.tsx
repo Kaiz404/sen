@@ -63,13 +63,21 @@ export function TextLink({
   label,
   onPress,
   onHero = false,
+  disabled = false,
 }: {
   readonly label: string;
   readonly onPress: () => void;
   readonly onHero?: boolean;
+  readonly disabled?: boolean;
 }): ReactNode {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.link}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={styles.link}
+    >
       <Text style={[styles.linkLabel, onHero && styles.linkOnHero]}>{label}</Text>
     </Pressable>
   );

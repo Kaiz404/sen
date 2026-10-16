@@ -253,7 +253,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 **Screen-local state.** Search text, filter and the add draft stay in `useState` or `useReducer` in their screen. The draft lives in memory only.
 
 ```
- launching ──LAUNCHED, no vault──► welcome ◄─────────────────── RESET ────────────────────┐
+ launching ──LAUNCHED, no vault──► welcome ◄──────────────── SIGN_OUT_DONE ──────────────┐
      │                              │   ▲                                                 │
      │                   AUTH_START ▼   │ AUTH_FAIL                                       │
      │                     authenticating{setup}                                          │
@@ -263,10 +263,12 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
      │                         │        │                          │                      │
      │                    LOCK │        └── STEP_UP_START ──► stepUp{action, returnTo}    │
      │                         ▼                                                          │
-     └──LAUNCHED, vault──► locked{reason} ────────────────────────────────────────────────┘
-                              │   ▲
+     └──LAUNCHED, vault──► locked{reason} ──SIGN_OUT_START──► signingOut ─────────────────┘
+                              │   ▲  ◄──── SIGN_OUT_FAIL ────────┘
                    AUTH_START ▼   │ AUTH_FAIL
                     authenticating{unlock} ──UNLOCK_OK──► unlocked
+
+ unlocked also takes SIGN_OUT_START to signingOut.
 ```
 
 | Event | From | To |
@@ -278,22 +280,25 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 | `STEP_UP_START` | `unlocked` | `stepUp{action, returnTo}` |
 | `STEP_UP_DONE` | `stepUp` | `returnTo` |
 | `LOCK` | `unlocked` | `locked{reason}` |
-| `RESET` | `locked` | `welcome` |
+| `SIGN_OUT_START` | `locked`, `unlocked` | `signingOut` |
+| `SIGN_OUT_DONE` | `signingOut` | `welcome` |
+| `SIGN_OUT_FAIL` | `signingOut` | `locked{signout}` |
 
-Every other pair returns the state unchanged. `machine.test.ts` checks all 63 pairs.
+Every other pair returns the state unchanged. `machine.test.ts` checks all 88 pairs.
 
 | State | Holds | Gate | Routes allowed |
 | --- | --- | --- | --- |
 | `launching` | Nothing. The splash stays up | `locked` | `lock` |
 | `welcome` | Nothing. No vault yet | `welcome` | `welcome`, `primer` |
-| `locked` | `reason`: launch, idle, background, manual, signout | `locked` | `lock` |
+| `locked` | `reason`: launch, idle, background, manual, signout (a sign-out that failed) | `locked` | `lock` |
 | `authenticating` | `purpose`: `unlock` from Lock, or `setup` from the primer | `locked` or `welcome` | Current screen stays |
 | `unlocked` | `since`, `db` | `unlocked` | All protected routes. Amounts follow `hideAmounts` |
 | `stepUp` | `action`, `returnTo` (the unlocked state, `db` included) | `unlocked` | Current screen stays |
+| `signingOut` | Nothing. The vault is being destroyed | `locked` | `lock`, with every key disabled |
 
 - **Launch.** `SessionRoot` runs `hasVault()` and `detectBiometric()` once. No vault goes to Welcome. A vault, or a failed check, goes to Lock, so Welcome never opens over existing data. The splash lifts after the gate is known.
 - **Unlock.** `unlock()` prompts, then calls `openVault()`. A `reset` result leaves a `db_reset` notice that History reads with `useDbResetNotice()` and clears with `dismissDbResetNotice()`. A vault that fails to open returns to Lock with the generic error.
-- **Sign out.** `signOut()` serves Settings and "Not you? Start again" on Lock. It locks, waits for the database to close, calls `destroyVault()` (which also clears prefs), then shows Welcome.
+- **Sign out.** `signOut()` serves Settings and "Not you? Start again" on Lock. It enters `signingOut`, waits for the database to close, calls `destroyVault()` (which also clears prefs), then shows Welcome. Only `SIGN_OUT_DONE` or `SIGN_OUT_FAIL` leaves `signingOut`, so an unlock, a lock or a tap during the erase does nothing. A failure returns to `locked{signout}` and Lock shows the generic error.
 - **Biometric name.** Copy names the device's own biometric: Face ID or Touch ID on iOS, fingerprint or face unlock on Android, from `supportedAuthenticationTypesAsync()`. `ready` is a strong biometric enrolled (`getEnrolledLevelAsync()`). When it is false, Lock and the primer open on "is off".
 - **Exports.** `useRouteGate`, `useDb`, `useStepUp`, `useAmountsHidden`, `showAmounts`, `hideAmounts`, `useDbResetNotice`, `useBiometric`, `lockNow`, `signOut`, `armLockout` (the reviewer lockout control) and `dismissDbResetNotice`. The screens export a prop-driven view next to each container (`LockView`, `PrimerView`, `WelcomeView`) for the gallery.
 

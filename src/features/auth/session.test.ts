@@ -50,6 +50,7 @@ async function unlockInto(db: OpenDb) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  [authenticate, hasVault, openVault, destroyVault].forEach((mock) => mock.mockReset());
   queryClient.clear();
   sessionStore.setState(sessionStore.getInitialState());
 });
@@ -154,6 +155,34 @@ test('sign out closes the database before the vault is destroyed, then shows Wel
   expect(atDestroy).toBe('The database is closed.');
   expect(destroyVault).toHaveBeenCalledTimes(1);
   expect(session()).toEqual({ status: 'welcome' });
+});
+
+test('an unlock during sign-out opens no prompt, and sign-out ends on Welcome', async () => {
+  const db = await openTestDb();
+  sessionStore.setState({ session: { status: 'locked', reason: 'idle' } });
+  let finish: () => void = () => {};
+  destroyVault.mockReturnValueOnce(new Promise<void>((resolve) => (finish = resolve)));
+  authenticate.mockResolvedValue({ success: true });
+  openVault.mockResolvedValue({ kind: 'created', db });
+
+  const signingOut = signOut();
+  expect(await unlock()).toEqual({ ok: false, reason: 'cancelled' });
+  finish();
+  await signingOut;
+
+  expect(authenticate).not.toHaveBeenCalled();
+  expect(session()).toEqual({ status: 'welcome' });
+});
+
+test('a sign-out that fails returns to Lock and keeps nothing open', async () => {
+  const db = await openTestDb();
+  await unlockInto(db);
+  destroyVault.mockRejectedValueOnce(new Error('keystore'));
+
+  await expect(signOut()).rejects.toThrow('keystore');
+
+  expect(session()).toEqual({ status: 'locked', reason: 'signout' });
+  expect(await closed(db)).toBe('The database is closed.');
 });
 
 test('an armed lockout reports lockout once without prompting', async () => {

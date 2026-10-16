@@ -7,8 +7,9 @@ export type Unlocked = { readonly status: 'unlocked'; readonly since: number; re
 
 /**
  * `authenticating` is the unlock prompt only, from Lock (`unlock`) or the first-run primer (`setup`). A step-up
- * prompt is `stepUp`, which keeps the unlocked state it returns to, open database included. Whether amounts show
- * is the `hideAmounts` pref, not a session state (D27).
+ * prompt is `stepUp`, which keeps the unlocked state it returns to, open database included. `signingOut` holds
+ * while the vault is destroyed, and only its own end leaves it, so nothing can unlock a vault being deleted.
+ * Whether amounts show is the `hideAmounts` pref, not a session state (D27).
  */
 export type Session =
   | { readonly status: 'launching' }
@@ -17,7 +18,8 @@ export type Session =
   | { readonly status: 'authenticating'; readonly purpose: 'setup' }
   | { readonly status: 'authenticating'; readonly purpose: 'unlock'; readonly reason: LockReason }
   | Unlocked
-  | { readonly status: 'stepUp'; readonly action: StepUpAction; readonly returnTo: Unlocked };
+  | { readonly status: 'stepUp'; readonly action: StepUpAction; readonly returnTo: Unlocked }
+  | { readonly status: 'signingOut' };
 
 export type SessionEvent =
   | { readonly type: 'LAUNCHED'; readonly hasVault: boolean }
@@ -27,7 +29,9 @@ export type SessionEvent =
   | { readonly type: 'STEP_UP_START'; readonly action: StepUpAction }
   | { readonly type: 'STEP_UP_DONE' }
   | { readonly type: 'LOCK'; readonly reason: LockReason }
-  | { readonly type: 'RESET' };
+  | { readonly type: 'SIGN_OUT_START' }
+  | { readonly type: 'SIGN_OUT_DONE' }
+  | { readonly type: 'SIGN_OUT_FAIL' };
 
 export const INITIAL: Session = { status: 'launching' };
 
@@ -65,8 +69,15 @@ export function reduce(state: Session, event: SessionEvent): Session {
       if (state.status !== 'unlocked') return state;
       return { status: 'locked', reason: event.reason };
 
-    case 'RESET':
-      return state.status === 'locked' ? { status: 'welcome' } : state;
+    case 'SIGN_OUT_START':
+      if (state.status !== 'locked' && state.status !== 'unlocked') return state;
+      return { status: 'signingOut' };
+
+    case 'SIGN_OUT_DONE':
+      return state.status === 'signingOut' ? { status: 'welcome' } : state;
+
+    case 'SIGN_OUT_FAIL':
+      return state.status === 'signingOut' ? { status: 'locked', reason: 'signout' } : state;
 
     default: {
       const unhandled: never = event;
@@ -85,6 +96,7 @@ export function gateOf(state: Session): RouteGate {
       return state.purpose === 'setup' ? 'welcome' : 'locked';
     case 'launching':
     case 'locked':
+    case 'signingOut':
       return 'locked';
     case 'unlocked':
     case 'stepUp':
@@ -102,6 +114,7 @@ export function dbOf(state: Session): OpenDb | null {
     case 'welcome':
     case 'locked':
     case 'authenticating':
+    case 'signingOut':
       return null;
   }
 }

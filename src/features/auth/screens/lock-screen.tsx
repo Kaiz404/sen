@@ -10,13 +10,21 @@ import { type } from '@/theme/type';
 
 import { useAmountsHidden } from '../amounts';
 import { amountsNote, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
+import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
-import { signOut, unlock, useBiometric, useIsAuthenticating } from '../session';
+import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
 
-export type LockState = PromptView | { readonly kind: 'checking' };
+/** `checking` and `signingOut` come from the session and win over the last prompt's view. */
+export type LockState =
+  PromptView | { readonly kind: 'checking' } | { readonly kind: 'signingOut' };
+
+const FROM_SESSION: Partial<Record<Session['status'], LockState>> = {
+  authenticating: { kind: 'checking' },
+  signingOut: { kind: 'signingOut' },
+};
 
 export type LockViewProps = {
   readonly state: LockState;
@@ -29,7 +37,7 @@ export type LockViewProps = {
 
 export function LockScreen(): ReactNode {
   const support = useBiometric();
-  const checking = useIsAuthenticating();
+  const status = useSessionStatus();
   const amountsHidden = useAmountsHidden();
   const [view, setView] = useState(() => initialView(support.ready));
 
@@ -51,7 +59,7 @@ export function LockScreen(): ReactNode {
 
   return (
     <LockView
-      state={checking ? { kind: 'checking' } : view}
+      state={FROM_SESSION[status] ?? view}
       biometric={support.kind}
       amountsHidden={amountsHidden}
       onUnlock={onUnlock}
@@ -84,6 +92,7 @@ export function LockView({
       />
     );
 
+  const signingOut = shown.kind === 'signingOut';
   const unlockKey = (label: string, keyIcon = icon, onPress = onUnlock) => (
     <Key
       testID="unlock"
@@ -91,7 +100,7 @@ export function LockView({
       size="xlarge"
       icon={keyIcon}
       label={label}
-      disabled={shown.kind === 'checking'}
+      disabled={shown.kind === 'checking' || signingOut}
       onPress={onPress}
     />
   );
@@ -101,6 +110,7 @@ export function LockView({
       size="medium"
       icon="lock-outline"
       label="Use device passcode"
+      disabled={signingOut}
       onPress={onUnlock}
     />
   );
@@ -109,6 +119,7 @@ export function LockView({
     switch (shown.kind) {
       case 'idle':
       case 'checking':
+      case 'signingOut':
         return (
           <>
             <ProfileRow />
@@ -162,7 +173,7 @@ export function LockView({
       <Hero kind="lock" {...HERO[shown.kind](copy)} />
       <View style={styles.actions}>
         {body}
-        <TextLink label="Not you? Start again" onPress={onStartAgain} />
+        <TextLink label="Not you? Start again" disabled={signingOut} onPress={onStartAgain} />
       </View>
     </View>
   );
@@ -231,14 +242,17 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
 
 type HeroCopy = Pick<Parameters<typeof Hero>[0], 'title' | 'body' | 'sen'>;
 
+const IDLE_HERO: HeroCopy = {
+  title: ['Welcome', 'back.'],
+  body: 'Sen kept its eyes shut while you were away.',
+  sen: { pose: 'masked', label: 'Sen, eyes closed while Sen is locked' },
+};
+
 const HERO: Readonly<
   Record<Exclude<LockState['kind'], 'lockout'>, (copy: BiometricCopy) => HeroCopy>
 > = {
-  idle: () => ({
-    title: ['Welcome', 'back.'],
-    body: 'Sen kept its eyes shut while you were away.',
-    sen: { pose: 'masked', label: 'Sen, eyes closed while Sen is locked' },
-  }),
+  idle: () => IDLE_HERO,
+  signingOut: () => IDLE_HERO,
   checking: () => ({
     title: ['Welcome', 'back.'],
     body: 'Sen opens one eye while your phone checks.',

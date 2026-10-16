@@ -15,7 +15,7 @@ import { useAmountsHidden } from '../amounts';
 import { amountsNote, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
 import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
-import { unlock, useBiometric, useIsAuthenticating } from '../session';
+import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Notice } from './parts';
 
@@ -33,7 +33,7 @@ export type PrimerViewProps = {
 export function PrimerScreen(): ReactNode {
   const router = useRouter();
   const support = useBiometric();
-  const checking = useIsAuthenticating();
+  const checking = useSessionStatus() === 'authenticating';
   const amountsHidden = useAmountsHidden();
   const [view, setView] = useState(() => initialView(support.ready));
 

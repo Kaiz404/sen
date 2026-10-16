@@ -15,6 +15,7 @@ const STATES = {
   unlocking: { status: 'authenticating', purpose: 'unlock', reason: 'idle' },
   unlocked,
   stepUp: { status: 'stepUp', action: 'delete', returnTo: unlocked },
+  signingOut: { status: 'signingOut' },
 } as const satisfies Record<string, Session>;
 type StateName = keyof typeof STATES;
 
@@ -27,7 +28,9 @@ const EVENTS = {
   STEP_UP_START: { type: 'STEP_UP_START', action: 'reveal' },
   STEP_UP_DONE: { type: 'STEP_UP_DONE' },
   LOCK: { type: 'LOCK', reason: 'manual' },
-  RESET: { type: 'RESET' },
+  SIGN_OUT_START: { type: 'SIGN_OUT_START' },
+  SIGN_OUT_DONE: { type: 'SIGN_OUT_DONE' },
+  SIGN_OUT_FAIL: { type: 'SIGN_OUT_FAIL' },
 } as const satisfies Record<string, SessionEvent>;
 type EventName = keyof typeof EVENTS;
 
@@ -42,7 +45,7 @@ const EXPECTED: Record<StateName, Partial<Record<EventName, Session>>> = {
   },
   locked: {
     AUTH_START: { status: 'authenticating', purpose: 'unlock', reason: 'idle' },
-    RESET: { status: 'welcome' },
+    SIGN_OUT_START: { status: 'signingOut' },
   },
   setup: {
     UNLOCK_OK: { status: 'unlocked', since: 2_000, db: other },
@@ -55,9 +58,14 @@ const EXPECTED: Record<StateName, Partial<Record<EventName, Session>>> = {
   unlocked: {
     STEP_UP_START: { status: 'stepUp', action: 'reveal', returnTo: unlocked },
     LOCK: { status: 'locked', reason: 'manual' },
+    SIGN_OUT_START: { status: 'signingOut' },
   },
   stepUp: {
     STEP_UP_DONE: { status: 'unlocked', since: 1_000, db },
+  },
+  signingOut: {
+    SIGN_OUT_DONE: { status: 'welcome' },
+    SIGN_OUT_FAIL: { status: 'locked', reason: 'signout' },
   },
 };
 
@@ -82,6 +90,7 @@ test.each([
   ['unlocking', 'locked'],
   ['unlocked', 'unlocked'],
   ['stepUp', 'unlocked'],
+  ['signingOut', 'locked'],
 ] as const)('%s routes as %s', (stateName, gate) => {
   expect(gateOf(STATES[stateName])).toBe(gate);
 });

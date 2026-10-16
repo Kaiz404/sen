@@ -112,6 +112,26 @@ test('"Not you? Start again" confirms, destroys the vault and returns to Welcome
   expect(session()).toEqual({ status: 'welcome' });
 });
 
+test('while "Start again" erases the vault, every key on Lock is disabled', async () => {
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  let finish: () => void = () => {};
+  jest
+    .mocked(Vault.destroyVault)
+    .mockReturnValueOnce(new Promise<void>((resolve) => (finish = resolve)));
+  const alert = jest.spyOn(Alert, 'alert');
+  await render(<LockScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Not you? Start again' }));
+  const startAgain = alert.mock.lastCall?.[2]?.find((button) => button.text === 'Start again');
+
+  await act(async () => startAgain?.onPress?.());
+
+  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Use device passcode' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Not you? Start again' })).toBeDisabled();
+  await act(async () => finish());
+  expect(session()).toEqual({ status: 'welcome' });
+});
+
 test('the first-run primer turns on the fingerprint and creates the vault', async () => {
   sessionStore.setState({ session: { status: 'welcome' } });
   const db = { close: jest.fn() };
