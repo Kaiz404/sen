@@ -9,7 +9,7 @@ import { type } from '@/theme/type';
 
 import { PoseIndex } from './poses';
 import { type GalleryQuery, parseQuery, parseTheme, shotName, type ThemeName } from './query';
-import { SCREENS } from './registry';
+import { isComponent, SCREENS } from './registry';
 
 /**
  * Forces a theme while this screen has focus. React Navigation blurs the old screen before it focuses the
@@ -65,12 +65,20 @@ export function GalleryBody({
           <Sen pose={query.pose} size={query.size} label={`Sen, ${query.pose}`} />
         </Frame>
       );
-    case 'state':
+    case 'state': {
+      const drawn = SCREENS[query.screen]?.[query.state]?.();
+      if (!isComponent(query.screen))
+        return (
+          <View testID={`shot-${shot}`} style={styles.bleed}>
+            {drawn}
+          </View>
+        );
       return (
         <Frame caption={`${query.screen} · ${query.state}`} shot={shot}>
-          {SCREENS[query.screen]?.[query.state]?.()}
+          {drawn}
         </Frame>
       );
+    }
     case 'unknown':
       return (
         <Frame caption="not in the gallery">
@@ -119,12 +127,13 @@ function Index() {
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
-  screen: { flex: 1, backgroundColor: theme.colors.canvas, paddingTop: rt.insets.top },
-  frame: { flex: 1, padding: 20, gap: 24 },
+  screen: { flex: 1, backgroundColor: theme.colors.canvas },
+  frame: { flex: 1, padding: 20, paddingTop: rt.insets.top + 20, gap: 24 },
+  bleed: { flex: 1 },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   stage: { flex: 1, justifyContent: 'center' },
   reason: { ...type.mono(13), color: theme.colors.ink },
-  index: { padding: 20, gap: 4 },
+  index: { padding: 20, paddingTop: rt.insets.top + 20, gap: 4 },
   link: {
     ...type.mono(14),
     color: theme.colors.ink,

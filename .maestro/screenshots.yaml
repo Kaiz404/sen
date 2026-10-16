@@ -329,6 +329,166 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/bone-rows-dark
+- openLink: "sen://dev/states?screen=auth&state=welcome&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-welcome-light
+- openLink: "sen://dev/states?screen=auth&state=welcome&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-welcome-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-ready-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-ready-light
+- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-ready-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-ready-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-off-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-off-light
+- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-idle-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-idle-light
+- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-idle-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-idle-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-checking-light
+- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-checking-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-mismatch-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-mismatch-light
+- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-mismatch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-mismatch-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-lockout-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-lockout-light
+- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-lockout-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-lockout-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-off-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-off-light
+- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-unavailable-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-unavailable-light
+- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-unavailable-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-unavailable-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-error-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-error-light
+- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-error-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-error-dark
 - openLink: "sen://dev/states?screen=sen&pose=idle&size=32&theme=light"
 - extendedWaitUntil:
     visible:

@@ -17,7 +17,19 @@ afterEach(async () => {
 
 test.each(states)('%s · %s draws from fixtures alone', async (name, state) => {
   await render(<GalleryBody query={{ kind: 'state', screen: name, state }} />);
-  expect(screen.getByText(`${name} · ${state}`)).toBeOnTheScreen();
+  expect(screen.getByTestId(`shot-${name}-${state}-system`)).toBeOnTheScreen();
+});
+
+test('a component state draws under its caption', async () => {
+  await render(<GalleryBody query={{ kind: 'state', screen: 'tag', state: 'added' }} />);
+  expect(screen.getByText('tag · added')).toBeOnTheScreen();
+});
+
+test('a screen state draws the real screen edge to edge, with no caption', async () => {
+  await render(<GalleryBody query={{ kind: 'state', screen: 'auth', state: 'lock-lockout' }} />);
+  expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
+  expect(screen.getByText('0:24')).toBeOnTheScreen();
+  expect(screen.queryByText('auth · lock-lockout')).not.toBeOnTheScreen();
 });
 
 test('the masked slip state hides every amount', async () => {
