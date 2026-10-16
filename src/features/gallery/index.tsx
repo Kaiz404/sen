@@ -6,6 +6,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type AuthOverride, isAuthOverride, setAuthOverride } from '@/features/auth';
 import { Sen } from '@/features/sen';
+import { FrozenMotion } from '@/motion/policy';
 import { DbSmoke } from '@/features/stub';
 import { readPref } from '@/services/prefs';
 import { type } from '@/theme/type';
@@ -41,7 +42,8 @@ function useShotId(shot: string | undefined, theme: ThemeName | undefined): stri
 
 /** `?auth=pass` makes the next biometric prompts answer without a finger, so device flows can pass Lock. */
 function useAuthOverrideParam(params: Params): AuthOverride | undefined {
-  const auth = typeof params.auth === 'string' && isAuthOverride(params.auth) ? params.auth : undefined;
+  const auth =
+    typeof params.auth === 'string' && isAuthOverride(params.auth) ? params.auth : undefined;
   useEffect(() => {
     if (auth !== undefined) setAuthOverride(auth);
   }, [auth]);
@@ -80,6 +82,23 @@ export function GalleryBody({
 }): ReactNode {
   const shot = shotName(query, theme);
   const shotId = useShotId(shot, theme);
+  // The motion lab exists to play motion. Every other state is a settled frame.
+  if (query.kind === 'state' && query.screen === 'motion')
+    return <Drawn query={query} shotId={shotId} />;
+  return (
+    <FrozenMotion>
+      <Drawn query={query} shotId={shotId} />
+    </FrozenMotion>
+  );
+}
+
+function Drawn({
+  query,
+  shotId,
+}: {
+  query: Exclude<GalleryQuery, { kind: 'db' }>;
+  shotId: string | undefined;
+}): ReactNode {
   switch (query.kind) {
     case 'index':
       return <Index />;

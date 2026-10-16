@@ -15,17 +15,11 @@ import {
 } from '@/features/auth';
 import { malaysiaDay, toInstant } from '@/models/day';
 import { playHaptic } from '@/services/haptics';
+import { mark } from '@/services/perf';
 import type { Flow } from '@/services/tx-repo';
 
 import { historyBody, syncNotes } from './body';
-import {
-  arrivals,
-  bankEpoch,
-  monthSoFarRange,
-  syncView,
-  useHistoryData,
-  useSync,
-} from './data';
+import { arrivals, bankEpoch, monthSoFarRange, syncView, useHistoryData, useSync } from './data';
 import { HistoryView } from './history-view';
 import { clockText } from './rows';
 
@@ -53,6 +47,12 @@ export function HistoryScreen(): ReactNode {
   const arrival = useStore(arrivals, (s) => s.after);
 
   const epoch = useStore(bankEpoch, (s) => s.epoch);
+
+  const hasRows = data.rows !== undefined;
+  useEffect(() => mark('history.mounted'), []);
+  useEffect(() => {
+    if (hasRows) mark('history.rows');
+  }, [hasRows]);
 
   const { mutate } = syncing;
   const unsynced = data.synced === false;

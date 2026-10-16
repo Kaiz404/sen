@@ -39,6 +39,27 @@ export function MotionPolicyRoot({ preference, children }: MotionPolicyRootProps
   );
 }
 
+const MotionFrozenContext = createContext(false);
+
+/**
+ * Stills every looping animation under it: the skeleton band, Sen's ambient beats and rest loops, and the
+ * lockout countdown. Only the dev gallery mounts it, so a shot settles at once and Maestro does not wait on a
+ * loop. The motion level is left alone.
+ */
+export function FrozenMotion({ children }: { children: ReactNode }): ReactNode {
+  return <MotionFrozenContext value>{children}</MotionFrozenContext>;
+}
+
+export function useMotionFrozen(): boolean {
+  return use(MotionFrozenContext);
+}
+
+/** The level that looping animations obey: `off` under `FrozenMotion`. */
+export function useLoopLevel(): MotionLevel {
+  const level = useMotionPolicy();
+  return useMotionFrozen() ? 'off' : level;
+}
+
 export function useMotionPolicy(): MotionLevel {
   return use(MotionLevelContext);
 }

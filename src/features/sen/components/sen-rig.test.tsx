@@ -1,6 +1,9 @@
 import { act, render, screen } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
+
+import { FrozenMotion } from '@/motion/policy';
 
 import { senTier } from '../art/geometry';
 import { type TreeNode, treeFor } from '../art/nodes';
@@ -97,4 +100,20 @@ test('without an id Sen stays the static drawing, with no animated props', async
   await render(<Sen pose="idle" size={84} />);
 
   expect(screen.getByTestId('sen-lk', hidden).props.jestAnimatedProps).toBeUndefined();
+});
+
+test('a Sen under FrozenMotion schedules no ambient beats', async () => {
+  const idle = <Sen id="ambient" pose="idle" size={200} />;
+  const timersFrom = async (tree: ReactElement) => {
+    const before = jest.getTimerCount();
+    await render(tree);
+    const added = jest.getTimerCount() - before;
+    await screen.unmount();
+    return added;
+  };
+
+  const live = await timersFrom(idle);
+  const frozen = await timersFrom(<FrozenMotion>{idle}</FrozenMotion>);
+
+  expect(live - frozen).toBe(1);
 });

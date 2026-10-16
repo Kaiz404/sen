@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { memo, type ReactNode } from 'react';
+import { memo, type ReactNode, useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles, withUnistyles } from 'react-native-unistyles';
@@ -70,6 +70,38 @@ export function Header({
 
 /** The month card's Sen. Showing amounts plays Reveal on it, hiding plays Re-mask. */
 const MONTH_SEN = 'month';
+
+/** True from the second frame on, so work behind it starts after the first frame has drawn. */
+function useAfterFirstPaint(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, []);
+  return ready;
+}
+
+/**
+ * The rig makes a shared value per channel and an animated mapper per part. The first frame draws the same
+ * pose with the still Sen, and the rig takes over a frame later, before anyone can tap Show.
+ */
+function MonthSen({ hidden }: { readonly hidden: boolean }): ReactNode {
+  const ready = useAfterFirstPaint();
+  return (
+    <Sen
+      id={ready ? MONTH_SEN : undefined}
+      pose={hidden ? 'masked' : 'revealed'}
+      size={92}
+      label={hidden ? 'Sen, eyes closed while amounts are hidden' : 'Sen, eyes open'}
+    />
+  );
+}
 
 export function MonthTop({
   month,
@@ -200,12 +232,7 @@ export function MonthCard({
       style={styles.card(hidden)}
     >
       <View style={styles.cardSen}>
-        <Sen
-          id={MONTH_SEN}
-          pose={hidden ? 'masked' : 'revealed'}
-          size={92}
-          label={hidden ? 'Sen, eyes closed while amounts are hidden' : 'Sen, eyes open'}
-        />
+        <MonthSen hidden={hidden} />
       </View>
       <Text style={styles.cardLabel(hidden)}>{label}</Text>
       <RollAmount

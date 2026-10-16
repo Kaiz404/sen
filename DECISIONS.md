@@ -482,3 +482,15 @@ The phases are in [PLAN.md](PLAN.md).
 - **Backup rules.** The Android docs say that for apps targeting 12+, `allowBackup="false"` on some manufacturers' devices disables cloud backup but not device-to-device transfer, and that a missing `<device-transfer>` section means that mode copies everything (developer.android.com/identity/data/autobackup). So `plugins/with-no-backup.js` writes both rule files excluding every domain. Config plugins are the Expo route; `expo-build-properties` has no such option. `expo-secure-store` ships its own narrower rules, so its plugin runs with `configureAndroidBackup: false`.
 
 **Watch out.** react-native-screens presents formSheet and fullScreenModal above the root view, so the root cover does not hide them. The delete sheet and the add flow show amounts, so each mounts its own `PrivacyCover`. The other sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.
+
+## D28. Release build: R8 minify and resource shrinking through `expo-build-properties`
+
+**Compared.**
+- Leave Expo's defaults (no minify, no shrink).
+- Turn both on through `expo-build-properties` in `app.config.ts`.
+- Edit `android/app/build.gradle` by hand.
+
+**Why the plugin.**
+- **Conventional.** It is the documented Expo route and survives `expo prebuild`, which regenerates `android/` (git-ignored). A hand edit would be lost.
+- **Smaller APK.** The reviewer APK is a release build. Shrinking drops unused code and resources (size gain not yet measured).
+- **Risk.** R8 can strip classes that native code reaches by reflection. Expo and React Native modules ship consumer rules, but SQLCipher, MMKV and Reanimated are unproven under R8 here (inferred). The first release build gets a smoke run of unlock, add, delete and lock before it is trusted. If a module breaks, add a keep rule through the plugin's `extraProguardRules`, not by turning minify off.

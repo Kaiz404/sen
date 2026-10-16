@@ -1,4 +1,4 @@
-import { logEvent } from './logger';
+import { logEvent, logTiming } from './logger';
 
 let info: jest.SpyInstance;
 let warn: jest.SpyInstance;
@@ -25,4 +25,10 @@ test('an amount cannot reach the log, by type or by force', () => {
 
   expect(info.mock.calls).toEqual([['[sen] sync.done']]);
   expect(warn.mock.calls).toEqual([]);
+});
+
+test('a timing is written as its mark and whole milliseconds', () => {
+  logTiming('history.painted', 912.4);
+
+  expect(info.mock.calls).toEqual([['[sen] perf history.painted +912ms']]);
 });

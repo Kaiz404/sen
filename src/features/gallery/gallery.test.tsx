@@ -89,3 +89,12 @@ test('the launch lab opens from its deep link and settles on Lock’s hero', asy
   expect(screen.queryByTestId('launch')).not.toBeOnTheScreen();
   expect(screen.getByLabelText('Sen, eyes closed while Sen is locked')).toBeOnTheScreen();
 });
+
+test('a gallery state holds the lockout count still, so a shot settles at once', async () => {
+  await render(<GalleryBody query={{ kind: 'state', screen: 'auth', state: 'lock-lockout' }} />);
+  expect(screen.getByText('0:24')).toBeOnTheScreen();
+
+  await act(() => jest.advanceTimersByTime(5000));
+
+  expect(screen.getByText('0:24')).toBeOnTheScreen();
+});

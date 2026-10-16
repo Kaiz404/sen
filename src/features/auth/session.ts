@@ -6,6 +6,7 @@ import { createStore } from 'zustand/vanilla';
 import { toast } from '@/components/toast';
 import type { AppError } from '@/models/errors';
 import type { OpenDb } from '@/services/db';
+import { mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
 import { destroyVault, hasVault, openVault } from '@/services/vault';
 
@@ -92,13 +93,20 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
     dispatch({ type: 'AUTH_FAIL' });
     return outcome;
   }
+  mark('unlock.ok');
   try {
     const opened = await openVault();
+    mark('vault.opened');
     if (opened.kind === 'reset') sessionStore.setState({ dbReset: opened.reason });
     dispatch({ type: 'UNLOCK_OK', at: Date.now(), db: opened.db });
+    mark('arriving');
     clearTimeout(arrival);
-    if (arriveAfterMs === 0) dispatch({ type: 'ARRIVED' });
-    else arrival = setTimeout(() => dispatch({ type: 'ARRIVED' }), arriveAfterMs);
+    const arrive = () => {
+      dispatch({ type: 'ARRIVED' });
+      mark('arrived');
+    };
+    if (arriveAfterMs === 0) arrive();
+    else arrival = setTimeout(arrive, arriveAfterMs);
     return outcome;
   } catch {
     dispatch({ type: 'AUTH_FAIL' });

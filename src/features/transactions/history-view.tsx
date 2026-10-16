@@ -9,6 +9,7 @@ import type { Biometric, DbResetReason } from '@/features/auth';
 import { releaseSenScroll, Sen, senScroll } from '@/features/sen';
 import type { DayKey, Instant } from '@/models/day';
 import type { TxId } from '@/models/transaction';
+import { mark } from '@/services/perf';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
 import { type } from '@/theme/type';
 
@@ -192,6 +193,7 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
               getItemType={(item) => item.kind}
               stickyHeaderIndices={body.kind === 'list' ? body.rows.sticky : undefined}
               extraData={arrival}
+              onLoad={painted}
               ListHeaderComponent={top}
               ListEmptyComponent={empty}
               ListFooterComponent={
@@ -233,6 +235,8 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
     </RevealedAmounts>
   );
 }
+
+const painted = () => mark('history.painted');
 
 /** Sen holds still while the list moves, and for 1.5 s after it stops (DESIGN › Motion rules). */
 const scrolling = () => senScroll(true);
