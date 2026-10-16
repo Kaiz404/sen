@@ -1,5 +1,4 @@
 import {
-  type ComponentClass,
   type ReactNode,
   useEffect,
   useEffectEvent,
@@ -10,6 +9,7 @@ import {
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
+  Easing,
   makeMutable,
   ReduceMotion,
   type SharedValue,
@@ -19,7 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import Svg, { Circle, ClipPath, Defs, G, type GProps } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
 import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
 import { playHaptic } from '@/services/haptics';
@@ -34,7 +34,7 @@ import {
   transformOrigin,
   VIEWBOX,
 } from '../art/geometry';
-import type { Matrix } from '../art/matrix';
+import { ACCENT_MS } from '../art/accents';
 import { type BodyStyle, NODES, type SvgProps, type TreeNode, treeFor } from '../art/nodes';
 import { momentFinished, playMoment, registerSen } from '../director/store';
 import { ambientFor, nextBeat, transitionFor } from '../moments';
@@ -42,13 +42,11 @@ import { poseFrame, type PoseId, type PropId } from '../poses';
 import type { SenProps } from '../sen-props';
 import { compileTrack, entry, formFor } from '../timeline/compile';
 import type { Moment } from '../timeline/types';
+import { AnimatedG } from './animated-g';
 import { ease, makeRig, pick, type RigValues, settle, snap, stop, wrap } from './rig-values';
+import { SparkLayer, SwooshLayer } from './sen-accents';
 import { ShapeEl } from './shape';
 
-// RNSVG's native G takes `matrix`, but its JS props type leaves it out.
-const AnimatedG = Animated.createAnimatedComponent(
-  G as unknown as ComponentClass<GProps & { matrix?: Matrix }>,
-);
 
 type Read<P> = (f: Frame, unit: number) => P;
 
@@ -96,17 +94,28 @@ const CONTACT = transformOrigin(PIVOT.contact);
 const EDGE_NODE: TreeNode = { node: 'edge', shapes: [EDGE] };
 
 /** Fires a moment's marks and its end from the UI thread, so haptics stay on the frame they belong to. */
-function runClock(clock: SharedValue<number>, m: Moment, onEnd: () => void): void {
+function runClock(
+  clock: SharedValue<number>,
+  fx: SharedValue<number> | null,
+  m: Moment,
+  onEnd: () => void,
+): void {
   let t = 0;
   const NEVER = ReduceMotion.Never;
   const parts = [...m.marks]
     .sort((a, b) => a.at - b.at)
-    .map(({ at, haptic }) => {
+    .map(({ at, haptic, accents }) => {
       const duration = at - t;
       t = at;
+      const pop = accents && fx;
       return withTiming(at, { duration, reduceMotion: NEVER }, (done) => {
         'worklet';
-        if (done && haptic) scheduleOnRN(playHaptic, haptic);
+        if (!done) return;
+        if (haptic) scheduleOnRN(playHaptic, haptic);
+        if (pop) {
+          fx.set(0);
+          fx.set(withTiming(ACCENT_MS, { duration: ACCENT_MS, easing: Easing.linear, reduceMotion: NEVER }));
+        }
       });
     });
   parts.push(
@@ -126,10 +135,19 @@ type Rest = { readonly pose: PoseId; readonly prop: PropId | null | undefined; r
  * does no work. It rests in its `pose`. A pose change plays the moment between the two poses when
  * there is one (TRANSITIONS), and eases there otherwise. The director decides what plays.
  */
-export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string }): ReactNode {
+export function SenRig({
+  id,
+  pose,
+  size,
+  prop,
+  label,
+  surface = 'onCanvas',
+}: SenProps & { id: string }): ReactNode {
   const level = useMotionPolicy();
   const [rig] = useState(() => makeRig(poseFrame(pose, prop)));
   const [clock] = useState(() => makeMutable(0));
+  const [fx] = useState(() => makeMutable(ACCENT_MS));
+  const full = senTier(size) === 'full';
   const clip = `sen-clip-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const { side, inset, unit } = senBox(size);
   const rest = useRef<Rest>({ pose, prop, level });
@@ -170,7 +188,7 @@ export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string 
           if (steps) sv.set(compileTrack(entry(steps, sv.get()), m.dur, m.loop));
           else ease(sv, ch, from[ch], r.level);
         }
-        if (!m.loop) runClock(clock, m, () => end(token));
+        if (!m.loop) runClock(clock, full ? fx : null, m, () => end(token));
       },
       settle() {
         playing.current = null;
@@ -178,7 +196,7 @@ export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string 
         restInPose();
       },
     });
-  }, [id, rig, clock]);
+  }, [id, rig, clock, fx, full]);
 
   const onPose = useEffectEvent((next: PoseId) => {
     const was = shown.current;
@@ -225,6 +243,7 @@ export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string 
         style={{ position: 'absolute', top: -inset, left: -inset, width: side, height: side }}
       >
         <Animated.View testID="sen-mv" style={[FILL, mv]}>
+          {full && <SwooshLayer fx={fx} tone={surface} side={side} />}
           <Animated.View testID="sen-rl" style={[FILL, { transformOrigin: COIN }, rl]}>
             <Animated.View testID="sen-sq" style={[FILL, { transformOrigin: CONTACT }, sq]}>
               <Animated.View testID="sen-sp" style={[FILL, { transformOrigin: COIN }, sp]}>
@@ -244,6 +263,7 @@ export function SenRig({ id, pose, size, prop, label }: SenProps & { id: string 
               </Svg>
             </Animated.View>
           </Animated.View>
+          {full && <SparkLayer fx={fx} tone={surface} side={side} />}
         </Animated.View>
       </View>
     </View>

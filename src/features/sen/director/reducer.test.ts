@@ -9,14 +9,14 @@ import {
 } from './reducer';
 
 /** Priorities chosen for the table, so the reducer is tested apart from the moment data. */
-const INFO: Record<MomentId, ReturnType<MomentInfo>> = {
+const INFO: Partial<Record<MomentId, ReturnType<MomentInfo>>> = {
   blink: { priority: 0 },
   glance: { priority: 1 },
   doubleBlink: { priority: 2, then: 'blink' },
   lockPeek: { priority: 2, loop: true },
   slowBlink: { priority: 3 },
 };
-const info: MomentInfo = (id) => INFO[id];
+const info: MomentInfo = (id) => INFO[id]!;
 
 function run(events: readonly DirectorEvent[]): [DirectorState, Command[]] {
   let s = INITIAL;

@@ -26,7 +26,16 @@ export type Mark = { readonly at: number; readonly haptic?: HapticEvent; readonl
 
 export type Priority = 0 | 1 | 2 | 3;
 
-export const MOMENT_IDS = ['blink', 'doubleBlink', 'glance', 'lockPeek', 'slowBlink'] as const;
+export const MOMENT_IDS = [
+  'unlock',
+  'reveal',
+  'remask',
+  'blink',
+  'doubleBlink',
+  'glance',
+  'lockPeek',
+  'slowBlink',
+] as const;
 export type MomentId = (typeof MOMENT_IDS)[number];
 
 export type Moment = {

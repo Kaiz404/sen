@@ -64,6 +64,7 @@ test('a moment that cuts in eases a channel to its first value over 80 ms instea
     { at: 1300, v: 0, ease: 'sine' },
   ]);
   expect(entry(LOOK, 0)).toBe(LOOK);
+  expect(entry([{ at: 0, v: -6 }], 34)).toEqual([{ at: 0, v: -6 }]);
 });
 
 const POP: Moment = {

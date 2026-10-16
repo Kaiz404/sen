@@ -31,11 +31,12 @@ function easing(e: Ease | undefined) {
 /**
  * A track that opens with a jump at 0 assumes the channel rests where the moment starts. When a
  * moment cuts in on another, the channel is elsewhere, so the jump becomes a short ease. Later steps
- * keep their times.
+ * keep their times. A lone jump is a snap on purpose, as in Off, and stays one.
  */
 export function entry(steps: Steps, current: number): Steps {
   const [first, ...rest] = steps;
-  if (first.at !== 0 || 'spring' in first || Math.abs(first.v - current) < 1e-3) return steps;
+  if (rest.length === 0 || first.at !== 0 || 'spring' in first) return steps;
+  if (Math.abs(first.v - current) < 1e-3) return steps;
   const blend = Math.min(ENTRY_MS, rest[0]?.at ?? ENTRY_MS);
   return blend === 0 ? steps : [{ at: blend, v: first.v, ease: 'out' }, ...rest];
 }

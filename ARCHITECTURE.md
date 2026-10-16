@@ -530,7 +530,7 @@ The rig copies the boards' structure (`design/MAX-Library.dc.html`, `design/MAX-
 | Clip `G` | Static | Never animated, so the face can slide behind the rim while the clip stays put |
 | `lk`, eye layers, `mo`, paw layers, `cap`, `shades` | `AnimatedG` with a `matrix` computed in a worklet (`mat(tx, ty, r, sx, sy, ox, oy)`) | RNSVG native accepts only `matrix`, not `translateX` or `originX` (V, source). This avoids the pivot bug |
 | Mouths, cheeks, held props | `AnimatedG` opacity | One channel per node, so idle nodes do no work |
-| Accents | Two SVG layers inside `mv` | The swoosh draws behind the coin, before `rl`. Stars and ticks draw after `rl`. Neither follows the spin. Mounted only while they play |
+| Accents | Two SVG layers inside `mv` (`components/sen-accents.tsx`) | The swoosh draws behind the coin, before `rl`. Stars and ticks draw after `rl`. Neither follows the spin. They stay mounted on full-tier rigs, driven by one accent clock `fx` that rests at the end (all clear), so popping them commits nothing. A mark with `accents` restarts `fx` from the clock's callback. The timeline is MAX-Library `.L-fx` from its 160 ms lead (`art/accents.ts`) |
 
 **Accents.**
 - `accentShapes(tone)` in `art/geometry.ts` holds the board geometry. The swoosh is `M-330 60 Q-330 250 -140 300`, stroke 44 with round caps. Stars are filled and stroked 10 wide with round joins. Three ticks are stroked 18 wide.
