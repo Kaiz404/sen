@@ -128,6 +128,7 @@ export function Amount({
           {COINS.map((i) => (
             <View
               key={i}
+              testID="amount-coin"
               style={[
                 styles.coin,
                 {

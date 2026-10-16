@@ -10,6 +10,7 @@ test('a masked amount shows four coins and no digits, and reads as "Amount hidde
   const amount = screen.getByLabelText('Amount hidden');
   expect(amount).toHaveTextContent('RM');
   expect(screen.queryByText(/\d/)).toBeNull();
+  expect(screen.getAllByTestId('amount-coin')).toHaveLength(4);
 });
 
 test('a masked hero can show the direction without the digits', async () => {
