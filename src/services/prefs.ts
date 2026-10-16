@@ -1,13 +1,52 @@
-import { PREFS, type PrefKey, type PrefValue } from '@/models/prefs';
+import { createMMKV, type MMKV } from 'react-native-mmkv';
 
+import { parsePref, PREFS, type PrefKey, type PrefValue } from '@/models/prefs';
+
+let store: MMKV | null = null;
+
+/** Opened on first use, so importing this file touches no native code. */
+function prefs(): MMKV {
+  store ??= createMMKV({ id: 'prefs' });
+  return store;
+}
+
+const isPrefKey = (key: string): key is PrefKey => key in PREFS;
+const KEYS = Object.keys(PREFS).filter(isPrefKey);
+
+const listeners = new Set<(key: PrefKey) => void>();
+
+function notify(key: PrefKey): void {
+  for (const listener of listeners) listener(key);
+}
+
+function decode(raw: string | undefined): unknown {
+  if (raw === undefined) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Never throws. A missing or corrupt value reads as the documented default. */
 export function readPref<K extends PrefKey>(key: K): PrefValue<K> {
-  return PREFS[key].default;
+  return parsePref(key, decode(prefs().getString(key)));
 }
 
-export function writePref<K extends PrefKey>(_key: K, _value: PrefValue<K>): void {}
-
-export function subscribePrefs(_listener: (key: PrefKey) => void): () => void {
-  return () => {};
+export function writePref<K extends PrefKey>(key: K, value: PrefValue<K>): void {
+  prefs().set(key, JSON.stringify(value));
+  notify(key);
 }
 
-export function clearPrefs(): void {}
+/** Called with the key after every write, and with every key after `clearPrefs`. */
+export function subscribePrefs(listener: (key: PrefKey) => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function clearPrefs(): void {
+  prefs().clearAll();
+  KEYS.forEach(notify);
+}
