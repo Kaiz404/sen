@@ -16,6 +16,12 @@ const LIGHT = {
   hero: '#17181A',
   onHero: '#FFFDF8',
   onHeroMuted: '#D8D2C4',
+  keyPlate: '#17181A',
+  keyEdge: '#17181A',
+  loud: '#17181A',
+  onLoud: '#F2DC72',
+  shimmer: '#F7F2E8',
+  leader: '#C9BFAA',
 } as const;
 
 export type ColorToken = keyof typeof LIGHT;
@@ -41,6 +47,12 @@ export const dark: Palette = {
   hero: '#1E2023',
   onHero: '#FFFDF8',
   onHeroMuted: '#D8D2C4',
+  keyPlate: '#000000',
+  keyEdge: '#4A4E55',
+  loud: '#F2DC72',
+  onLoud: '#17181A',
+  shimmer: '#34373B',
+  leader: '#4A4D52',
 };
 
 export const GLYPH_PASTELS = [

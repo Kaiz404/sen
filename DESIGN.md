@@ -30,6 +30,12 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 | `hero` | `#17181A` | `#1E2023` | The ink hero on Lock |
 | `on-hero` | `#FFFDF8` | `#FFFDF8` | Text on the hero |
 | `on-hero-muted` | `#D8D2C4` | `#D8D2C4` | Secondary text on the hero |
+| `key-plate` | `#17181A` | `#000000` | The hard shadow under a key |
+| `key-edge` | `#17181A` | `#4A4E55` | Paper key border |
+| `loud` | `#17181A` | `#F2DC72` | The screen's one loud fill, such as "+ Add" and the revealed hero |
+| `on-loud` | `#F2DC72` | `#17181A` | Text on the loud fill |
+| `shimmer` | `#F7F2E8` | `#34373B` | Skeleton highlight band. Dark has no board, so it uses `rule` (inferred) |
+| `leader` | `#C9BFAA` | `#4A4D52` | Dotted leaders before totals |
 
 Row glyph pastels: `#F9D5D0`, `#CBEBD3`, `#E6DDF8`, `#F8EDBF`, `#FBDCC8`, `#D2EEEA`. Every glyph shape is a slightly different blob.
 
