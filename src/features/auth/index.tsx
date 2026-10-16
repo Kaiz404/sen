@@ -62,6 +62,7 @@ export {
   type Biometric,
   isAuthenticating,
   isAuthOverride,
+  onAuthenticationEnd,
   setAuthOverride,
 } from './prompt';
 export type { PromptView } from './prompt-view';

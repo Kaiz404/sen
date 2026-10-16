@@ -74,6 +74,14 @@ const isAuthenticatingRef = { current: false };
 /** True while the system biometric sheet is up, which iOS reports to the app as `inactive`. */
 export const isAuthenticating = (): boolean => isAuthenticatingRef.current;
 
+const endListeners = new Set<() => void>();
+
+/** Calls `listener` each time a prompt ends, once `isAuthenticating` is false again. Returns the unsubscribe. */
+export function onAuthenticationEnd(listener: () => void): () => void {
+  endListeners.add(listener);
+  return () => void endListeners.delete(listener);
+}
+
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 
 export async function authenticate(promptMessage: string): Promise<AuthOutcome> {
@@ -86,6 +94,7 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
     return { ok: false, reason: 'unknown' };
   } finally {
     isAuthenticatingRef.current = false;
+    endListeners.forEach((listener) => listener());
   }
 }
 

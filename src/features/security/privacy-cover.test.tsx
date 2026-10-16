@@ -3,8 +3,11 @@ import { AppState, type AppStateStatus, Platform } from 'react-native';
 
 import { coverShown, PrivacyCover } from './privacy-cover';
 
-let mockPrompting = false;
-jest.mock('@/features/auth', () => ({ isAuthenticating: () => mockPrompting }));
+let mockPromptAnswer: (result: { success: boolean; error?: string }) => void = () => undefined;
+jest.mock('expo-local-authentication', () => ({
+  authenticateAsync: jest.fn(() => new Promise((resolve) => (mockPromptAnswer = resolve))),
+}));
+jest.mock('@/features/auth', () => jest.requireActual('@/features/auth/prompt'));
 jest.mock('@/features/sen', () => ({
   Sen: ({ pose }: { pose: string }) => {
     const { Text } = jest.requireActual('react-native');
@@ -12,12 +15,18 @@ jest.mock('@/features/sen', () => ({
   },
 }));
 
+const authenticate = (message: string) =>
+  jest
+    .requireActual<typeof import('@/features/auth/prompt')>('@/features/auth/prompt')
+    .authenticate(message);
 const goes = (state: AppStateStatus) =>
-  act(async () => jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state));
+  act(async () => {
+    AppState.currentState = state;
+    jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state);
+  });
 const setOs = (os: string) => Object.defineProperty(Platform, 'OS', { value: os });
 
 beforeEach(() => {
-  mockPrompting = false;
   AppState.currentState = 'active';
   setOs('ios');
 });
@@ -50,9 +59,29 @@ test('on iOS the cover draws when the app goes inactive and clears when it is ac
 
 test('the Face ID sheet does not cover the app', async () => {
   await render(<PrivacyCover />);
-  mockPrompting = true;
+  void authenticate('Confirm it is you');
 
   await goes('inactive');
+
+  expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
+});
+
+test('a prompt cancelled by swiping to the switcher leaves the app inactive, so the cover draws then', async () => {
+  await render(<PrivacyCover />);
+  void authenticate('Confirm it is you');
+  await goes('inactive');
+  expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
+
+  await act(async () => mockPromptAnswer({ success: false, error: 'system_cancel' }));
+
+  expect(screen.getByTestId('privacy-cover')).toBeOnTheScreen();
+});
+
+test('a prompt that ends while the app is active leaves no cover', async () => {
+  await render(<PrivacyCover />);
+  void authenticate('Confirm it is you');
+
+  await act(async () => mockPromptAnswer({ success: true }));
 
   expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
 });

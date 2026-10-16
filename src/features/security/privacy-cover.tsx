@@ -2,13 +2,14 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { AppState, type AppStateStatus, Platform, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { isAuthenticating } from '@/features/auth';
+import { isAuthenticating, onAuthenticationEnd } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
 /**
  * iOS shows the app in the switcher after `inactive`, and also reports `inactive` while the Face ID sheet is up,
- * so `inactive` covers only when no prompt is running. `background` always covers. Android never emits
+ * so `inactive` covers only when no prompt is running. A prompt that ends with the app still `inactive` (swiped
+ * to the switcher) sends no new event, so the end of a prompt re-checks. `background` always covers. Android never emits
  * `inactive`, and FLAG_SECURE already blanks its recents preview, so it has no JS cover.
  */
 export function coverShown(os: string, state: AppStateStatus, prompting: boolean): boolean {
@@ -21,10 +22,15 @@ function usePrivacyCoverShown(): boolean {
     coverShown(Platform.OS, AppState.currentState, isAuthenticating()),
   );
   useEffect(() => {
-    const appState = AppState.addEventListener('change', (state) =>
-      setShown(coverShown(Platform.OS, state, isAuthenticating())),
-    );
-    return () => appState.remove();
+    const show = (state: AppStateStatus) =>
+      setShown(coverShown(Platform.OS, state, isAuthenticating()));
+    const sync = () => show(AppState.currentState);
+    const appState = AppState.addEventListener('change', show);
+    const stopPrompt = onAuthenticationEnd(sync);
+    return () => {
+      appState.remove();
+      stopPrompt();
+    };
   }, []);
   return shown;
 }
