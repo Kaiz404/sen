@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 
+import { toast } from '@/components/toast';
 import type { AppError } from '@/models/errors';
 import type { OpenDb } from '@/services/db';
 import { queryClient } from '@/services/query-client';
@@ -54,6 +55,7 @@ export function dispatch(event: SessionEvent): boolean {
   const db = dbOf(prev);
   if (db !== null && dbOf(next) === null) {
     queryClient.clear();
+    toast.hide();
     closing = db.close();
   }
   return true;

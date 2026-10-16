@@ -356,8 +356,9 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - A prompt still open on `active`, such as a passcode screen that leaves the app, does not lock, because the reducer ignores `LOCK` while it holds. A prompt the OS cancelled on the way out, such as Home on a step-up sheet, leaves the window running.
 - The reducer ignores `LOCK` while in `authenticating` or `stepUp`, so an idle tick never cuts a prompt short.
 
-**On `LOCK`:**
+**On `LOCK`, and on any move out of the unlocked states, sign-out included:**
 - `queryClient.clear()`.
+- Hide the current toast. `<ToastHost />` sits outside the guarded routes, and the undo toast carries transaction text.
 - Close the database.
 - Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
 - Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.

@@ -1,6 +1,7 @@
-import { act, renderHook } from '@testing-library/react-native';
+import { act, render, renderHook, screen } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
+import { toast, ToastHost } from '@/components/toast';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { queryClient } from '@/services/query-client';
@@ -126,6 +127,20 @@ test('lock clears the query cache and closes the database', async () => {
   expect(session()).toEqual({ status: 'locked', reason: 'manual' });
   expect(queryClient.getQueryData(['tx', 'page', 0])).toBeUndefined();
   expect(await closed(db)).toBe('The database is closed.');
+});
+
+test('a lock hides the toast, which can carry transaction text', async () => {
+  const db = await openTestDb();
+  await unlockInto(db);
+  await render(<ToastHost />);
+  await act(async () => {
+    toast.show({ title: 'Deleted', detail: 'Lunch with Hafiz, cash' });
+  });
+  expect(screen.getByText('Lunch with Hafiz, cash')).toBeOnTheScreen();
+
+  await act(async () => lockNow());
+
+  expect(screen.queryByText('Lunch with Hafiz, cash')).not.toBeOnTheScreen();
 });
 
 test('a reset vault leaves one notice for History', async () => {
