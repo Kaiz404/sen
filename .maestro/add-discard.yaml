@@ -1,0 +1,17 @@
+# Not run yet: needs a device. On History, unlocked. Close with input asks before it drops the draft.
+appId: com.kaiz404.sen
+---
+- extendedWaitUntil:
+    visible: Add a transaction
+    timeout: 20000
+- tapOn: Add a transaction
+- tapOn: "7"
+- tapOn: Close
+- extendedWaitUntil:
+    visible: Discard this draft?
+    timeout: 10000
+- takeScreenshot: shots/4b/flow-add-discard
+- tapOn: Discard draft
+- extendedWaitUntil:
+    visible: Show amounts
+    timeout: 10000

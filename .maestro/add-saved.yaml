@@ -1,0 +1,13 @@
+# Not run yet: needs a device. After add-save-prompt.yaml and a matching finger. History shows the new row and
+# the Undo toast. Undo removes it with no prompt.
+appId: com.kaiz404.sen
+---
+- extendedWaitUntil:
+    visible: Lunch with Hafiz, cash · stored encrypted
+    timeout: 10000
+- takeScreenshot: shots/4b/flow-add-saved
+- tapOn: Undo add
+- extendedWaitUntil:
+    notVisible: Lunch with Hafiz, cash · stored encrypted
+    timeout: 10000
+- takeScreenshot: shots/4b/flow-add-undone

@@ -165,6 +165,134 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/bone-rows-light
+- openLink: "sen://dev/states?screen=add&state=amount-empty&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-empty-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-empty-light
+- openLink: "sen://dev/states?screen=add&state=amount-typed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-typed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-typed-light
+- openLink: "sen://dev/states?screen=add&state=amount-over-limit&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-over-limit-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-over-limit-light
+- openLink: "sen://dev/states?screen=add&state=amount-discard&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-discard-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-discard-light
+- openLink: "sen://dev/states?screen=add&state=details-filled&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-filled-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-filled-light
+- openLink: "sen://dev/states?screen=add&state=details-problems&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-problems-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-problems-light
+- openLink: "sen://dev/states?screen=add&state=details-picker&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-picker-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-picker-light
+- openLink: "sen://dev/states?screen=add&state=review-ready&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-ready-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-ready-light
+- openLink: "sen://dev/states?screen=add&state=review-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-checking-light
+- openLink: "sen://dev/states?screen=add&state=review-cancelled&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-cancelled-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-cancelled-light
+- openLink: "sen://dev/states?screen=add&state=review-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-failed-light
+- openLink: "sen://dev/states?screen=add&state=delete-confirm&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-confirm-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-confirm-light
+- openLink: "sen://dev/states?screen=add&state=delete-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-checking-light
+- openLink: "sen://dev/states?screen=add&state=delete-mismatch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-mismatch-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-mismatch-light
+- openLink: "sen://dev/states?screen=add&state=delete-bank&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-bank-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-bank-light
+- openLink: "sen://dev/states?screen=add&state=delete-gone&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-gone-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-gone-light
 - openLink: "sen://dev/states?screen=auth&state=welcome&theme=light"
 - extendedWaitUntil:
     visible:
@@ -813,6 +941,134 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/bone-rows-dark
+- openLink: "sen://dev/states?screen=add&state=amount-empty&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-empty-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-empty-dark
+- openLink: "sen://dev/states?screen=add&state=amount-typed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-typed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-typed-dark
+- openLink: "sen://dev/states?screen=add&state=amount-over-limit&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-over-limit-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-over-limit-dark
+- openLink: "sen://dev/states?screen=add&state=amount-discard&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-discard-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-amount-discard-dark
+- openLink: "sen://dev/states?screen=add&state=details-filled&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-filled-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-filled-dark
+- openLink: "sen://dev/states?screen=add&state=details-problems&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-problems-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-problems-dark
+- openLink: "sen://dev/states?screen=add&state=details-picker&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-picker-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-details-picker-dark
+- openLink: "sen://dev/states?screen=add&state=review-ready&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-ready-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-ready-dark
+- openLink: "sen://dev/states?screen=add&state=review-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-checking-dark
+- openLink: "sen://dev/states?screen=add&state=review-cancelled&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-cancelled-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-cancelled-dark
+- openLink: "sen://dev/states?screen=add&state=review-failed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-failed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-review-failed-dark
+- openLink: "sen://dev/states?screen=add&state=delete-confirm&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-confirm-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-confirm-dark
+- openLink: "sen://dev/states?screen=add&state=delete-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-checking-dark
+- openLink: "sen://dev/states?screen=add&state=delete-mismatch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-mismatch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-mismatch-dark
+- openLink: "sen://dev/states?screen=add&state=delete-bank&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-bank-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-bank-dark
+- openLink: "sen://dev/states?screen=add&state=delete-gone&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-gone-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/add-delete-gone-dark
 - openLink: "sen://dev/states?screen=auth&state=welcome&theme=dark"
 - extendedWaitUntil:
     visible:

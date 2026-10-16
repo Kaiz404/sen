@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { ADD_STATES } from '@/features/add';
 import { AUTH_STATES } from '@/features/auth';
 import { HISTORY_STATES } from '@/features/transactions';
 
@@ -9,6 +10,7 @@ export type ScreenStates = Readonly<Record<string, () => ReactNode>>;
 
 export const SCREENS: Readonly<Record<string, ScreenStates>> = {
   ...COMPONENT_STATES,
+  add: ADD_STATES,
   auth: AUTH_STATES,
   history: HISTORY_STATES,
 };

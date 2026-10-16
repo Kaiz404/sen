@@ -3,3 +3,4 @@ export { AmountStep } from './amount-step';
 export { DeleteSheet } from './delete-sheet';
 export { DetailsStep } from './details-step';
 export { ReviewStep } from './review-step';
+export { ADD_STATES } from './fixtures';
