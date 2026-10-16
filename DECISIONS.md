@@ -44,6 +44,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
+| D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
 
 ---
 
@@ -483,7 +484,7 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Watch out.** react-native-screens presents formSheet and fullScreenModal above the root view, so the root cover does not hide them. The delete sheet and the add flow show amounts, so each mounts its own `PrivacyCover`. The other sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.
 
-## D28. Release build: R8 minify and resource shrinking through `expo-build-properties`
+## D32. Release build: R8 minify and resource shrinking through `expo-build-properties`
 
 **Compared.**
 - Leave Expo's defaults (no minify, no shrink).
