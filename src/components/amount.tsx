@@ -12,7 +12,7 @@ import {
 } from '@/models/money';
 import { type, type TypeRole } from '@/theme/type';
 
-export type AmountSize = 'hero' | 'card' | 'row' | 'net';
+export type AmountSize = 'hero' | 'card' | 'row' | 'net' | 'tile';
 /** What the amount sits on: canvas or paper, a pastel card, or the loud fill. */
 export type AmountSurface = 'plain' | 'pastel' | 'loud';
 
@@ -29,9 +29,11 @@ type Scale = {
   readonly coin: number;
   readonly coinEdge: number;
   readonly coinGap: number;
+  /** Masked only. Sets `RM` above the coins, for a 44 pt icon tile. */
+  readonly stacked: boolean;
 };
 
-/** Sizes as the boards draw them: SF-Reveal and SF-Detail heroes, the month card, rows and day nets. */
+/** Sizes as the boards draw them: SF-Reveal and SF-Detail heroes, the month card, rows, day nets and SF-Welcome's tile. */
 const SCALE: Readonly<Record<AmountSize, Scale>> = {
   hero: {
     currency: { face: 'words', size: 30 },
@@ -42,6 +44,7 @@ const SCALE: Readonly<Record<AmountSize, Scale>> = {
     coin: 40,
     coinEdge: 2.5,
     coinGap: 8,
+    stacked: false,
   },
   card: {
     currency: null,
@@ -52,6 +55,7 @@ const SCALE: Readonly<Record<AmountSize, Scale>> = {
     coin: 12,
     coinEdge: 1.5,
     coinGap: 4,
+    stacked: false,
   },
   row: {
     currency: null,
@@ -62,6 +66,7 @@ const SCALE: Readonly<Record<AmountSize, Scale>> = {
     coin: 9,
     coinEdge: 1.5,
     coinGap: 3,
+    stacked: false,
   },
   net: {
     currency: null,
@@ -72,6 +77,18 @@ const SCALE: Readonly<Record<AmountSize, Scale>> = {
     coin: 8,
     coinEdge: 1.5,
     coinGap: 3,
+    stacked: false,
+  },
+  tile: {
+    currency: null,
+    face: 'numerals',
+    whole: 11,
+    fraction: 11,
+    masked: { face: 'numerals', size: 11 },
+    coin: 7,
+    coinEdge: 1.5,
+    coinGap: 2,
+    stacked: true,
   },
 };
 
@@ -111,13 +128,13 @@ export function Amount({
         accessible
         accessibilityRole="text"
         accessibilityLabel="Amount hidden"
-        style={[styles.row, { gap: scale.coinGap }]}
+        style={[scale.stacked ? styles.stack : styles.row, { gap: scale.coinGap }]}
       >
         <Text
           style={[
             FACE[scale.masked.face](scale.masked.size),
             styles.ink(surface, direction === 'credit'),
-            styles.maskedCurrency,
+            !scale.stacked && styles.maskedCurrency,
           ]}
         >
           {`${mark}RM`}
@@ -181,6 +198,7 @@ export function Amount({
 
 const styles = StyleSheet.create((theme) => ({
   row: { flexDirection: 'row', alignItems: 'center' },
+  stack: { alignItems: 'center' },
   baseline: { alignItems: 'baseline' },
   ink: (surface: AmountSurface, credit: boolean) => ({
     color:

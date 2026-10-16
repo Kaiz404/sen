@@ -151,6 +151,9 @@ export const COMPONENT_STATES = {
         <Amount value={null} size="card" direction="credit" />
         <Amount value={null} size="row" />
         <Amount value={null} size="net" />
+        <View style={styles.tile}>
+          <Amount value={null} size="tile" surface="pastel" />
+        </View>
       </Stack>
     ),
     revealed: () => (
@@ -235,6 +238,14 @@ export const COMPONENT_STATES = {
 const styles = StyleSheet.create((theme) => ({
   stack: { gap: 20, alignItems: 'flex-start' },
   inline: { flexDirection: 'row', gap: 10 },
+  tile: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.lemon,
+  },
   loud: {
     alignSelf: 'stretch',
     alignItems: 'flex-start',
