@@ -45,10 +45,7 @@ export const reveal: Moment = {
   to: 'revealed',
   dur: 1800,
   tracks: settleInto(moments('.M-reveal', 0, 760), poseFrame('revealed'), 1500, 300),
-  marks: [
-    { at: 160, accents: true },
-    { at: 200, haptic: 'reveal' },
-  ],
+  marks: [{ at: 160, accents: true }],
 };
 
 const fromRevealed = (() => {

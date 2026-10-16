@@ -60,20 +60,30 @@ async function renderHistory() {
   expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
 }
 
-test('showing amounts plays Reveal on the month card’s Sen, with one success haptic at 200 ms', async () => {
+test('showing amounts buzzes once as the check passes, and the month card’s Sen plays Reveal', async () => {
   await renderHistory();
   expect(face()).toEqual([0, 34]);
 
   await fireEvent.press(screen.getByRole('button', { name: 'Show amounts' }));
-  await at(150);
-  expect(playHaptic).not.toHaveBeenCalled();
-  await at(100);
   expect(jest.mocked(playHaptic).mock.calls).toEqual([['reveal']]);
-  await at(530);
+  await at(780);
   expect(face()).toEqual([18, -10]);
   await at(1200);
 
   expect(face()).toEqual([0, -6]);
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([['reveal']]);
+});
+
+test('showing amounts just after a scroll still buzzes once, while Sen holds still', async () => {
+  await renderHistory();
+  await fireEvent(screen.getByTestId('history-list'), 'scrollBeginDrag');
+  await fireEvent(screen.getByTestId('history-list'), 'momentumScrollEnd');
+  await at(500);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Show amounts' }));
+  await at(780);
+
+  expect(face()).toEqual([0, expect.closeTo(-6, 1)]);
   expect(jest.mocked(playHaptic).mock.calls).toEqual([['reveal']]);
 });
 

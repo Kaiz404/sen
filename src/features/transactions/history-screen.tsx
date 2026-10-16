@@ -98,9 +98,11 @@ export function HistoryScreen(): ReactNode {
           setFlow(next);
         },
         onShow: () => {
-          // The month card's Sen plays Reveal, whose success haptic lands at 200 ms.
+          // Fired here, not by Sen's Reveal, which a scroll or the background can hold back.
           void showAmounts().then((outcome) => {
-            if (outcome.ok) AccessibilityInfo.announceForAccessibility('Amounts shown');
+            if (!outcome.ok) return;
+            playHaptic('reveal');
+            AccessibilityInfo.announceForAccessibility('Amounts shown');
           });
         },
         onHide: () => {

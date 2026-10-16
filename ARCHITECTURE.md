@@ -320,7 +320,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - Lint bans `writePref('hideAmounts', …)` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
 - `SessionRoot` runs `dropRevealedOnHide()`. Whenever the pref reads hidden after a change, from any writer including `clearPrefs`, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
 - Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
-- The month card's Sen (`id="month"`) rests `masked` or `revealed` with the pref, so showing plays Reveal and hiding plays Re-mask. Reveal's success haptic comes from the moment at 200 ms, not the screen. "Hide amounts" fires the light `hideNow` haptic itself, as DESIGN says.
+- The month card's Sen (`id="month"`) rests `masked` or `revealed` with the pref, so showing plays Reveal and hiding plays Re-mask. History fires Reveal's success haptic itself when the check passes, and the moment carries none, because a scroll or the background can hold the moment back and the buzz must still come once. "Hide amounts" fires the light `hideNow` haptic itself too, as DESIGN says.
 
 **Sen on Lock and the primer.** Each screen names its Sen to the director (`lock`, `primer`; Lock's napping Sen shares `lock`, since the two never show together). The container holds its prompt as `notAsked`, `asking` or `answered` with the `AuthOutcome` that `unlock()` returned. `usePromptMoments(sen, prompt, answers)` in `screens/prompt-moments.ts` plays from that, never from a diff of the view, so a cancel that leaves the view as it was can't replay the last answer.
 

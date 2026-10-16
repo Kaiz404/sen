@@ -114,13 +114,11 @@ test('with animations off, Unlock snaps to happy and still plays its haptic', as
   expect(playHaptic).toHaveBeenCalledWith('unlock');
 });
 
-test('showing amounts plays Reveal: the face slides to the digits (18, -10), then rests revealed', async () => {
+test('showing amounts plays Reveal: the face slides to the digits (18, -10), then rests revealed, with no haptic of its own', async () => {
   const view = await render(<Lock pose="masked" />);
 
   await view.rerender(<Lock pose="revealed" />);
-  await at(210);
-  expect(playHaptic).toHaveBeenCalledWith('reveal');
-  await at(550);
+  await at(760);
   expect(face()).toEqual([18, -10]);
   expect(matrix('elb').slice(0, 4)).toEqual([1.15, 0, 0, 0.45]);
   await at(1100);
@@ -128,6 +126,7 @@ test('showing amounts plays Reveal: the face slides to the digits (18, -10), the
   expect(face()).toEqual([0, -6]);
   expect(matrix('elb').slice(0, 4)).toEqual([1, 0, 0, 1]);
   expect(matrix('pl').slice(4)).toEqual([0, 0]);
+  expect(playHaptic).not.toHaveBeenCalled();
 });
 
 test('hiding amounts plays Re-mask: the face ducks behind the rim at (-28, 190), then tucks masked', async () => {
