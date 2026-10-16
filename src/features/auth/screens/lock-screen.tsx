@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -21,7 +21,7 @@ import {
 } from '../copy';
 import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
-import { afterUnlock, canReset, initialView, type PromptView } from '../prompt-view';
+import { afterRecheck, afterUnlock, canReset, initialView, type PromptView } from '../prompt-view';
 import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
@@ -63,6 +63,7 @@ export function LockScreen(): ReactNode {
   const status = useSessionStatus();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
+  useEffect(() => setView((prev) => afterRecheck(prev, support.ready)), [support.ready]);
   // Holds "checking" until the answer lands, so the view never flashes idle in between.
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';

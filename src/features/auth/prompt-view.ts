@@ -22,6 +22,11 @@ export function initialView(ready: boolean): PromptView {
   return ready ? IDLE : { kind: 'off', canOpenSettings: true };
 }
 
+/** The app came back to the front. A view that says biometrics are off follows what the phone says now. */
+export function afterRecheck(prev: PromptView, ready: boolean): PromptView {
+  return prev.kind === 'off' ? initialView(ready) : prev;
+}
+
 export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number): PromptView {
   switch (failure) {
     case 'cancelled':

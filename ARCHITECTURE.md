@@ -492,6 +492,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then `eraseManual` deletes the added rows. The vault, key and prefs stay (D31) |
+| App returns to the front | `refreshBiometric()` re-reads the enrolled level, so a fingerprint turned on in the phone's settings clears Lock's "off" view without a restart |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
 | Database unreadable or newer than the app | Same, as `corrupt`. Unreadable means SQLite code 26 (wrong key, foreign file) or 11 (damaged page) |

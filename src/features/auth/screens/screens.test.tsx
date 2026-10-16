@@ -135,6 +135,20 @@ describe('a vault that will not open', () => {
   });
 });
 
+test('turning the fingerprint on in settings clears the off view when the app comes back', async () => {
+  sessionStore.setState({
+    session: { status: 'locked', reason: 'launch' },
+    biometric: { kind: 'fingerprint', ready: false },
+  });
+  await render(<LockScreen />);
+  expect(screen.getByRole('header', { name: 'Fingerprint is off.' })).toBeOnTheScreen();
+
+  await act(() => sessionStore.setState({ biometric: fingerprint }));
+
+  expect(screen.getByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
+});
+
 test('a cancelled prompt returns to Lock without a message', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });

@@ -100,6 +100,14 @@ export async function launch(): Promise<void> {
   dispatch({ type: 'LAUNCHED', hasVault: vault });
 }
 
+/** Lock reads biometrics once at launch, so a change made in the phone's settings is picked up here. */
+export async function refreshBiometric(): Promise<void> {
+  const next = await detectBiometric();
+  const prev = sessionStore.getState().biometric;
+  if (next.kind !== prev.kind || next.ready !== prev.ready)
+    sessionStore.setState({ biometric: next });
+}
+
 /**
  * Prompts, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
  * Unlock moment, before History opens.

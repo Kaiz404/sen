@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -21,7 +21,7 @@ import {
   triesLeftText,
 } from '../copy';
 import type { Biometric } from '../prompt';
-import { afterUnlock, initialView, type PromptView } from '../prompt-view';
+import { afterRecheck, afterUnlock, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Notice } from './parts';
@@ -49,6 +49,7 @@ export function PrimerScreen(): ReactNode {
   const status = useSessionStatus();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
+  useEffect(() => setView((prev) => afterRecheck(prev, support.ready)), [support.ready]);
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';
   usePromptMoments(PRIMER_SEN, prompt, ANSWERS);

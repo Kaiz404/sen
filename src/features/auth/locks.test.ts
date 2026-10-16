@@ -12,6 +12,8 @@ import { stepUp } from './use-step-up';
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
+  getEnrolledLevelAsync: jest.fn(async () => 0),
+  supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
 }));
 let mockPrefs: Partial<Prefs> = {};
 jest.mock('@/services/prefs', () => {
@@ -182,4 +184,17 @@ test('a clock set back while in use counts as idle on the next tick', () => {
   jest.advanceTimersByTime(TICK_MS);
 
   expect(status()).toEqual({ status: 'locked', reason: 'idle' });
+});
+
+test('coming back to the app re-reads whether the fingerprint is on', async () => {
+  jest
+    .mocked(LocalAuthentication.getEnrolledLevelAsync)
+    .mockResolvedValue(LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG);
+  start({ status: 'locked', reason: 'launch' });
+  sessionStore.setState({ biometric: { kind: 'fingerprint', ready: false } });
+
+  appGoes('active');
+  await jest.advanceTimersByTimeAsync(0);
+
+  expect(sessionStore.getState().biometric).toEqual({ kind: 'fingerprint', ready: true });
 });
