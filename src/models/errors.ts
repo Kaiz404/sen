@@ -5,6 +5,7 @@ export const AppErrorSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('timeout') }),
   z.object({ kind: z.literal('server') }),
   z.object({ kind: z.literal('invalid_data'), skipped: z.number().int().positive() }),
+  z.object({ kind: z.literal('storage') }),
   z.object({ kind: z.literal('db_reset'), reason: z.enum(['missing_key', 'corrupt']) }),
 ]);
 export type AppError = Readonly<z.infer<typeof AppErrorSchema>>;
@@ -25,6 +26,11 @@ export function isAppError(thrown: unknown): thrown is AppError {
   return AppErrorSchema.safeParse(thrown).success;
 }
 
+/** The TanStack boundary: whatever a sync throws that is not already an `AppError` is the phone's storage failing. */
+export function toAppError(thrown: unknown): AppError {
+  return isAppError(thrown) ? thrown : { kind: 'storage' };
+}
+
 export function isRetryable(error: AppError): boolean {
   switch (error.kind) {
     case 'offline':
@@ -32,6 +38,7 @@ export function isRetryable(error: AppError): boolean {
     case 'server':
       return true;
     case 'invalid_data':
+    case 'storage':
     case 'db_reset':
       return false;
   }

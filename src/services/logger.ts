@@ -9,6 +9,7 @@ const EVENTS = {
   'sync.failed.offline': 'warn',
   'sync.failed.timeout': 'warn',
   'sync.failed.server': 'warn',
+  'sync.failed.storage': 'warn',
   'sync.failed.invalid_data': 'warn',
   'db.close.failed': 'warn',
   'haptics.failed': 'warn',

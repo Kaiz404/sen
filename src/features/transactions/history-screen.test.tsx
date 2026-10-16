@@ -11,6 +11,7 @@ import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import { readSyncState } from '@/services/sync';
+import * as syncService from '@/services/sync';
 import * as txRepo from '@/services/tx-repo';
 
 import { arrivals, bank, markArrival, resetBank, syncProgress } from './data';
@@ -349,4 +350,40 @@ test('History says once that a lock dropped the add draft', async () => {
   });
   expect(sessionStore.getState().draftDropped).toBe(false);
   shown.mockRestore();
+});
+
+test('a first sync that throws instead of returning shows the storage error, and Retry recovers', async () => {
+  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(new Error('disk full'));
+
+  await renderHistory();
+
+  expect(
+    await screen.findByRole('header', { name: "Can't save to this phone" }, LONG),
+  ).toBeOnTheScreen();
+  expect(
+    screen.getByText("Sen couldn't save to this phone. Free some space, then try again."),
+  ).toBeOnTheScreen();
+  expect(screen.queryByText('Reviewer settings')).not.toBeOnTheScreen();
+  expect(run).toHaveBeenCalledTimes(1);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  run.mockRestore();
+});
+
+test('a refresh that throws over a list is a banner with its own copy and no reviewer link', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(new Error('disk full'));
+
+  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+
+  expect(
+    await screen.findByText("Sen couldn't save to this phone", undefined, LONG),
+  ).toBeOnTheScreen();
+  expect(screen.getByText('Free some space, then try again.')).toBeOnTheScreen();
+  expect(screen.queryByText('Simulated · Change in Settings')).not.toBeOnTheScreen();
+  expect(screen.getByText('Tealive')).toBeOnTheScreen();
+  run.mockRestore();
 });

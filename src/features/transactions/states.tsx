@@ -96,6 +96,11 @@ const FAILED: Readonly<
     'Taking too long',
     'The server is slow to answer. Your data is safe. Try again in a moment.',
   ],
+  storage: [
+    'STORAGE',
+    "Can't save to this phone",
+    "Sen couldn't save to this phone. Free some space, then try again.",
+  ],
   server: [
     'SERVER ERROR',
     'Something broke on our side',
@@ -113,7 +118,7 @@ export function FullError({
   readonly onSettings: () => void;
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
-  const simulated = error.kind !== 'unreadable';
+  const simulated = error.kind !== 'unreadable' && error.kind !== 'storage';
   return (
     <View testID="history-failed" style={styles.failed}>
       <View style={styles.failedSen}>

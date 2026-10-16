@@ -8,6 +8,7 @@ const NONE = buildHistoryRows([], { today: BOARD_TODAY, complete: true });
 const idle: SyncView = { kind: 'idle' };
 const running: SyncView = { kind: 'running' };
 const offline: SyncView = { kind: 'failed', error: { kind: 'offline' } };
+const storage: SyncView = { kind: 'failed', error: { kind: 'storage' } };
 const badData: SyncView = { kind: 'failed', error: { kind: 'invalid_data', skipped: 2 } };
 
 const at = (input: Partial<BodyInput>): string =>
@@ -25,6 +26,7 @@ test.each<[string, Partial<BodyInput>, string]>([
   ['the first sync is running', { synced: false, sync: running }, 'loading'],
   ['the sync state is still being read', { synced: undefined }, 'loading'],
   ['the first sync failed', { synced: false, sync: offline }, 'failed'],
+  ['the first sync could not save', { synced: false, sync: storage }, 'failed'],
   ['synced and nothing there', {}, 'empty'],
   ['a search with no match', { filtered: true }, 'no-results'],
   [

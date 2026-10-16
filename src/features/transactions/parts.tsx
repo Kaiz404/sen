@@ -461,6 +461,7 @@ const BANNER_COPY: Readonly<Record<Banner['kind'], string>> = {
   offline: "You're offline",
   timeout: 'Taking too long',
   server: 'Something broke on our side',
+  storage: "Sen couldn't save to this phone",
 };
 
 /**
@@ -482,18 +483,22 @@ export function SyncBanner({
       <View style={styles.bannerText}>
         <Text style={styles.bannerTitle}>{BANNER_COPY[banner.kind]}</Text>
         <Text style={styles.bannerDetail}>
-          {banner.since === null
-            ? 'Showing what Sen saved.'
-            : `Showing history from ${banner.since}.`}
+          {banner.kind === 'storage'
+            ? 'Free some space, then try again.'
+            : banner.since === null
+              ? 'Showing what Sen saved.'
+              : `Showing history from ${banner.since}.`}
         </Text>
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel="Simulated fault. Change it in Settings"
-          hitSlop={12}
-          onPress={onSettings}
-        >
-          <Text style={styles.bannerLink}>Simulated · Change in Settings</Text>
-        </Pressable>
+        {banner.kind !== 'storage' && (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Simulated fault. Change it in Settings"
+            hitSlop={12}
+            onPress={onSettings}
+          >
+            <Text style={styles.bannerLink}>Simulated · Change in Settings</Text>
+          </Pressable>
+        )}
       </View>
       <Key tone="lemon" icon="refresh" label="Retry" onPress={onRetry} />
     </View>

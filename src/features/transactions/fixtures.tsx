@@ -108,6 +108,10 @@ export const HISTORY_STATES = {
   ),
   offline: () => <HistoryView {...BASE} banner={{ kind: 'offline', since: '8:40 am' }} />,
   failed: () => <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'offline' } }} />,
+  'failed-storage': () => (
+    <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'storage' } }} />
+  ),
+  'storage-banner': () => <HistoryView {...BASE} banner={{ kind: 'storage', since: '8:40 am' }} />,
   'failed-server': () => (
     <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'server' } }} />
   ),

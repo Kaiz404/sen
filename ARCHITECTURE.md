@@ -157,6 +157,7 @@ type MaskedRow = Omit<Transaction, 'amountMinor'> & { day: DayKey }   // what ma
 type AppError =
   | { kind: 'offline' } | { kind: 'timeout' } | { kind: 'server' }
   | { kind: 'invalid_data'; skipped: number }
+  | { kind: 'storage' }
   | { kind: 'db_reset'; reason: 'missing_key' | 'corrupt' }
 ```
 
@@ -430,6 +431,8 @@ The newest link wins, and any other link drops the held one, so a link can never
 | Sync, local rows exist | `timeout`, `server` | Banner, list kept, Retry |
 | Any of the three | | The banner's "Simulated · Change in Settings" line and the full error's link open Settings at the reviewer controls (`/settings?focus=reviewers`) |
 | Sync | `invalid_data` | List shown, "2 items couldn't be read" |
+| Sync, a throw that is not an `AppError` (a local write failing, such as a full disk) | `storage` | `toAppError()` maps it at the mutation. Full error "Can't save to this phone" with Retry, or a banner "Sen couldn't save to this phone. Free some space, then try again." over a list. Neither mentions the reviewer controls, because the fault is real |
+| Database read | `unreadable` (a body state, not an `AppError`) | Full error "Sen couldn't read your history" with a Retry that reads again |
 | Database | `db_reset` | One-time notice |
 
 ## Settings and reviewer controls

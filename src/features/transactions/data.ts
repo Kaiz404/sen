@@ -12,11 +12,12 @@ import { create } from 'zustand';
 
 import { onArrive } from '@/features/auth';
 import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
-import { type AppError, isRetryable } from '@/models/errors';
+import { type AppError, isRetryable, toAppError } from '@/models/errors';
 import type { PrefValue } from '@/models/prefs';
 import type { MaskedRow, TxId } from '@/models/transaction';
 import { type BankScenario, createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
+import { logEvent } from '@/services/logger';
 import { readPref, writePref } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
 import { readSyncState, resetBankRows, sync, type SyncSummary } from '@/services/sync';
@@ -177,6 +178,9 @@ export function useSync(db: Db, newest: MaskedRow | undefined) {
           syncProgress.setState((s) => ({
             progress: { received, total: s.progress?.total ?? null },
           })),
+      }).catch((thrown: unknown) => {
+        logEvent('sync.failed.storage');
+        throw toAppError(thrown);
       });
       if (!result.ok) throw result.error;
       return result.data;
