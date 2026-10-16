@@ -113,7 +113,7 @@ Every route file is one line that re-exports a screen from a feature index, such
 | `dev/states.tsx` | `StatesScreen` (gallery) | `__DEV__` |
 
 **Guard contract.**
-- `useRouteGate()` from `@/features/auth` returns one of three values: `'welcome'`, `'locked'` or `'unlocked'`. One value can't express "unlocked but never onboarded". The auth lane maps its reducer onto it: `authenticating` from locked stays `'locked'`, and `revealed` and `stepUp` are `'unlocked'`.
+- `useRouteGate()` from `@/features/auth` returns one of three values: `'welcome'`, `'locked'` or `'unlocked'`. One value can't express "unlocked but never onboarded". The auth lane maps its reducer onto it: `authenticating` from locked stays `'locked'`, and `stepUp` is `'unlocked'`.
 - `_layout.tsx` declares every route inside exactly one `Stack.Protected`, with all presentation options. A deep link whose guard is false lands on the first available screen and is not replayed after unlock.
 - `+not-found` sits in the unlocked guard. Its redirect home does nothing while home is guarded, so a locked unknown link falls through to Lock instead.
 - The dev route is `dev/states`, not `(dev)/states`, because a group name never appears in the URL. In release `__DEV__` is false, so `sen://dev/states` lands on Lock.
