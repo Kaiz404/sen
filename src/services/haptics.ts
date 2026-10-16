@@ -23,7 +23,6 @@ const WARNING: IosHaptic = { kind: 'notification', type: NotificationFeedbackTyp
 const LIGHT: IosHaptic = { kind: 'impact', style: ImpactFeedbackStyle.Light };
 const SELECTION: IosHaptic = { kind: 'selection' };
 
-/** DESIGN.md › Haptics, one row per moment. */
 const HAPTICS = {
   unlock: { ios: SUCCESS, android: AndroidHaptics.Confirm },
   reveal: { ios: SUCCESS, android: AndroidHaptics.Confirm },
@@ -55,7 +54,6 @@ function play(event: HapticEvent): Promise<void> {
   }
 }
 
-/** Fire and forget. Silent when the Haptics setting is off. A device that can't buzz is not an error the user sees. */
 export function playHaptic(event: HapticEvent): void {
   if (!readPref('haptics')) return;
   play(event).catch(() => logEvent('haptics.failed'));

@@ -1,6 +1,5 @@
 import type { AuthFailure } from './prompt';
 
-/** What Lock and the primer show after the last prompt. `checking` comes from the session, not from here. */
 export type PromptView =
   | { readonly kind: 'idle' }
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
@@ -8,9 +7,8 @@ export type PromptView =
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
   | { readonly kind: 'error' };
 
-/** The phone owns the real count. Sen shows three, as iOS allows about that many before it asks for the passcode (inferred). */
 export const TRIES = 3;
-/** Android's biometric lockout lasts 30 s. iOS waits for the passcode instead (inferred). */
+/** Android's biometric lockout lasts 30 s. */
 export const LOCKOUT_MS = 30_000;
 
 export const IDLE: PromptView = { kind: 'idle' };

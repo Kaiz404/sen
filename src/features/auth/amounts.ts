@@ -13,12 +13,10 @@ function subscribeHidden(onChange: () => void): () => void {
   });
 }
 
-/** The saved `hideAmounts` pref (D27). It outlives lock and restart, so every screen reads this, never the session. */
 export function useAmountsHidden(): boolean {
   return useSyncExternalStore(subscribeHidden, readHidden);
 }
 
-/** Asks for biometrics every time. Only a confirmed check shows amounts. */
 export async function showAmounts(): Promise<StepUpResult> {
   const outcome = await stepUp('reveal');
   if (outcome.ok) writePref('hideAmounts', false);
@@ -29,7 +27,6 @@ export function hideAmounts(): void {
   writePref('hideAmounts', true);
 }
 
-/** Drops the revealed reads whenever the pref says hidden, whoever wrote it, `clearPrefs` included. */
 export function dropRevealedOnHide(): () => void {
   return subscribeHidden(() => {
     if (readHidden()) queryClient.removeQueries({ queryKey: QK.revealed });

@@ -91,12 +91,6 @@ export const EDGE: Shape = {
   fill: C.rim,
 };
 
-/**
- * Where each transformed SVG node rotates and scales. The boards use `transform-box: fill-box`
- * with `transform-origin: center`, so each is the centre of that node's drawn box: the eye box
- * (open ellipse and shut arc together), the shut arc alone, MAL2's smile, and each paw. Held props
- * would widen the board's `pr` box, so the rig keeps the paw centre as the pivot.
- */
 export const ORIGIN = {
   el: [-72, -38],
   elb: [-72, -38],
@@ -198,14 +192,11 @@ export const SWOOSH_LENGTH = 334.2;
 const TICKS = ['M228 -262 L262 -300', 'M270 -222 L318 -240', 'M196 -296 L208 -340'] as const;
 
 export type AccentShapes = {
-  /** Drawn behind the coin. */
   readonly swoosh: Shape;
-  /** Each star sits at `at`, scaled by `scale`, and pops about its own centre. */
   readonly stars: readonly { readonly at: Vec; readonly scale: number; readonly shape: Shape }[];
   readonly ticks: readonly Shape[];
 };
 
-/** The accent layer in the colours for the surface Sen sits on (MAX-Moments `--fx`, `--sw`). */
 export function accentShapes(tone: SenAccentTone): AccentShapes {
   const { mark, swoosh } = SEN_ACCENT_TONES[tone];
   return {

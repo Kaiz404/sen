@@ -13,10 +13,6 @@ export type AuthFailure =
 export type AuthOutcome =
   { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
 
-/**
- * `user_fallback` only fires when the passcode button is hidden. Sen always allows the device fallback, so the
- * code is treated as a cancel rather than a reason to prompt again.
- */
 const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure>> = {
   user_cancel: 'cancelled',
   system_cancel: 'cancelled',
@@ -42,7 +38,6 @@ function failureOf(error: string): AuthFailure {
   return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
 }
 
-/** Set before the prompt opens and cleared in `finally`, so a second prompt never opens over the first. */
 const isAuthenticatingRef = { current: false };
 
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
@@ -76,7 +71,6 @@ export function biometricOf(
   return face && !finger ? 'face' : 'fingerprint';
 }
 
-/** `ready` means a strong biometric is enrolled. Without one the prompt goes straight to the passcode. */
 export type BiometricSupport = { readonly kind: Biometric; readonly ready: boolean };
 
 export async function detectBiometric(): Promise<BiometricSupport> {

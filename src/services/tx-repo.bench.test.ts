@@ -18,7 +18,6 @@ import {
 
 jest.mock('./logger');
 
-/** D20: each read on Node within 16 ms, search within 100 ms, both at p95. Jest on WSL, not a phone. */
 const SELECTOR_MS = 16;
 const SEARCH_MS = 100;
 const RUNS = 50;

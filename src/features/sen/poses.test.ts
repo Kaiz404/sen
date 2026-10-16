@@ -69,11 +69,6 @@ const small = { 'mo.smile': 0, 'mo.small': 1 };
 const grin = { 'mo.smile': 0, 'mo.grin': 1 };
 const flat = { 'mo.smile': 0, 'mo.flat': 1 };
 
-/**
- * Each pose's settled values, written from the boards: kit.py, MAX-Moments' static tiles
- * (`.M-err`, `.M-last`, `.M-lockout`, `.M-lock`) and the held frames of MAX-Library's primitives
- * (`.L-peek`, `.L-slide`, `.L-shrug`). Every channel not listed stays at rest.
- */
 const BOARD: Readonly<Record<PoseId, Partial<Record<Channel, number>>>> = {
   idle: {},
   masked: { 'lk.y': 34, ...shut, ...small },

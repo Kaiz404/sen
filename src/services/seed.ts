@@ -9,7 +9,6 @@ export const SEED = 57;
 
 export type DatasetSize = PrefValue<'demo.datasetSize'>;
 
-/** A row as the bank sends it: a transaction and its feed position. Unbranded, because the bank sits outside the boundary. */
 export type BankRow = z.input<typeof TransactionSchema> & { readonly seq: number };
 
 export const DEMO_ACCOUNT = { name: 'Everyday Savings', last4: '4821' } as const;
@@ -61,11 +60,6 @@ const PAYDAY = board(
   '[EMPLOYER]',
 );
 
-/**
- * The newest 20 rows of every dataset. The first eight are drawn on SF-History, SF-Reveal and SF-Detail, where today
- * is Thu 15 Oct. The other twelve fill 1 to 12 Oct, so with the boards' added row (Lunch with Hafiz, RM 42.50) the
- * month card reads Money out RM 2,317.40 and Money in RM 6,850.00, as on SF-Reveal.
- */
 // prettier-ignore
 const BOARD: NonEmpty<BoardRow> = [
   board(0,  '13:15', 'debit',     990, 'pending', 'food',      'Tealive',                       'Tealive'),
@@ -110,7 +104,6 @@ const kind = (
 
 const same = (name: string) => [name, name] as const;
 
-/** The generated tail: what a Malaysian account might see over a year or two. Amounts in sen. */
 // prettier-ignore
 const TEMPLATES: NonEmpty<Template> = [
   kind(10, 'food',      'debit',  1200,  4800, same('GrabFood')),
@@ -143,7 +136,6 @@ const TEMPLATES: NonEmpty<Template> = [
                                                ['DuitNow from Nurul Huda', 'Nurul Huda']),
 ];
 
-/** Small everyday spending, for the row that arrives on refresh. */
 // prettier-ignore
 const EVERYDAY: NonEmpty<Template> = [
   kind(4, 'food',      'debit', 690, 1590, same('Tealive')),
@@ -153,13 +145,11 @@ const EVERYDAY: NonEmpty<Template> = [
   kind(2, 'groceries', 'debit', 800, 6500, same('99 Speedmart')),
 ];
 
-/** Mean rows a day in the tail: 1k is about a year at three a day, 10k about two years at fourteen. */
 const ROWS_PER_DAY: Readonly<Record<DatasetSize, number>> = { 20: 0, 1000: 3, 10000: 14 };
 
 const MINUTE_MS = 60_000;
 const MALAYSIA_OFFSET_MINUTES = 8 * 60;
 
-/** mulberry32, a small seeded generator. Demo data only, never anything secret. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -188,7 +178,6 @@ function pickWeighted(rand: Random, items: NonEmpty<Template>): Template {
   return items[0];
 }
 
-/** The UTC instant of a minute of a Malaysia-time day. */
 function instantAt(day: DayKey, minuteOfDay: number): Instant {
   const ms =
     Date.parse(`${day}T00:00:00.000Z`) + (minuteOfDay - MALAYSIA_OFFSET_MINUTES) * MINUTE_MS;
@@ -198,10 +187,6 @@ function instantAt(day: DayKey, minuteOfDay: number): Instant {
 const LATEST_TODAY = Math.max(...BOARD.filter((row) => row.daysAgo === 0).map((row) => row.minute));
 const OLDEST_BOARD_DAY = Math.max(...BOARD.map((row) => row.daysAgo));
 
-/**
- * The day the boards call "today": today in Malaysia once the boards' latest row (1:15 pm) has passed, yesterday
- * before that. So no row is ever in the future.
- */
 export function boardToday(now: Instant): DayKey {
   return malaysiaDay(toInstant(new Date(Date.parse(now) - LATEST_TODAY * MINUTE_MS)));
 }
@@ -250,7 +235,6 @@ function boardRows(rand: Random, today: DayKey): Unnumbered[] {
   });
 }
 
-/** Walks back a day at a time from the day before the boards' first day. Salary lands on the boards' payday. */
 function tailRows(rand: Random, today: DayKey, count: number, perDay: number): Unnumbered[] {
   const payday = addDays(today, -PAYDAY.daysAgo).slice(8);
   const rows: Unnumbered[] = [];
@@ -276,10 +260,6 @@ function tailRows(rand: Random, today: DayKey, count: number, perDay: number): U
 const byTime = (a: Unnumbered, b: Unnumbered) =>
   a.postedAt < b.postedAt ? -1 : a.postedAt > b.postedAt ? 1 : 0;
 
-/**
- * The bank's whole feed for a dataset size, oldest first, so `seq` grows with time like a real feed. The newest 20
- * rows are the boards' rows. Pure: the same size, `now` and seed give the same rows.
- */
 export function generateBankRows(size: DatasetSize, now: Instant, seed: number = SEED): BankRow[] {
   const rand = mulberry32(seed);
   const today = boardToday(now);
@@ -290,7 +270,6 @@ export function generateBankRows(size: DatasetSize, now: Instant, seed: number =
     .map((row, i) => ({ ...row, id: `bk-${i + 1}`, seq: i + 1 }));
 }
 
-/** The row that arrives on a refresh: small everyday spending, pending, at `now`. Pure in `seq`, `now` and seed. */
 export function mintRow(seq: number, now: Instant, seed: number = SEED): BankRow {
   const rand = mulberry32(seed ^ Math.imul(seq, 0x9e3779b1));
   return {

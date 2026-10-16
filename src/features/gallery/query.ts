@@ -16,7 +16,6 @@ type Registry = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const isPose = (v: string): v is PoseId => (POSE_IDS as readonly string[]).includes(v);
 
-/** Reads `sen://dev/states?…` into what to draw. Unknown names say why instead of drawing nothing. */
 export function parseQuery(params: Params, screens: Registry): GalleryQuery {
   const screen = one(params.screen);
   const state = one(params.state);
@@ -47,7 +46,6 @@ export function parseTheme(params: Params): ThemeName | undefined {
   return theme === 'light' || theme === 'dark' ? theme : undefined;
 }
 
-/** Names a drawn query's screenshot. The gallery also puts it on screen as a test id, so a flow can wait for it. */
 export function shotName(query: GalleryQuery, theme: ThemeName | undefined): string | undefined {
   if (query.kind === 'state') return `${query.screen}-${query.state}-${theme ?? 'system'}`;
   if (query.kind === 'pose') return `pose-${query.pose}-${query.size}`;

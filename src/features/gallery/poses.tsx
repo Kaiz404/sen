@@ -5,7 +5,6 @@ import { StyleSheet } from 'react-native-unistyles';
 import { POSE_IDS, Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
-/** One size per tier: face only, full rig at card size, full rig at hero size. */
 export const SEN_SIZES = [32, 72, 200] as const;
 
 export function PoseIndex(): ReactNode {

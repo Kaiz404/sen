@@ -53,7 +53,6 @@ async function allPages(db: Db, filter: TxFilter = NO_FILTER) {
   return { ids, pages };
 }
 
-/** Every number in a value, with the key that holds it. */
 function numbers(value: unknown, key = ''): [string, number][] {
   if (typeof value === 'number') return [[key, value]];
   if (value instanceof Map) return [...value.entries()].flatMap(([k, v]) => numbers(v, String(k)));

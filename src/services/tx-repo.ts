@@ -36,7 +36,6 @@ export type PageCursor = { readonly postedAt: Instant; readonly id: TxId };
 /** Malaysia-time days, both ends included. */
 export type DayRange = { readonly from: DayKey; readonly to: DayKey };
 
-/** Never `amount_minor`. `MaskedRowSchema` is strict, so a query that selects it fails its parse. */
 const MASKED = `id, currency, type, description, merchant, category, status, posted_at, day,
   reference, account_name, account_last4, source`;
 const REVEALED = `id, amount_minor, currency, type, description, merchant, category, status, posted_at,
@@ -61,7 +60,6 @@ function searchClause(search: string): Clause | null {
     : { sql: "search_text LIKE ? ESCAPE '\\'", params: [`%${escapeLike(key)}%`] };
 }
 
-/** A Malaysia day starts at 16:00 UTC the day before. Bounds on `posted_at` keep the page index in use. */
 function daysClause(days: DayRange | undefined): Clause | null {
   if (days === undefined) return null;
   return {
@@ -158,7 +156,6 @@ async function totals(db: Db, query: TotalsQuery, sum: boolean) {
   return { in: side('credit'), out: side('debit') };
 }
 
-/** Counts in and out. No amount is read. */
 export async function readTotals(db: Db, query: TotalsQuery): Promise<MaskedTotals> {
   const t = await totals(db, query, false);
   return { in: { count: t.in?.n ?? 0 }, out: { count: t.out?.n ?? 0 } };
@@ -221,7 +218,6 @@ export async function getRevealedTransaction(db: Db, id: TxId): Promise<Transact
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
-/** `SEN-M-` and the key's first 40 bits in Crockford base32, like the SF-DetailManual board's `SEN-M-7Q4K2D9X`. */
 export function manualReference(idemKey: string): string {
   const bits = [...idemKey.replaceAll('-', '').slice(0, 10)]
     .map((hex) => parseInt(hex, 16).toString(2).padStart(4, '0'))
@@ -235,13 +231,11 @@ const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 const OFFSET_MS = 8 * 60 * MINUTE_MS;
 
-/** A row added for a past day takes the current Malaysia time of day on that day, so it is never in the future. */
 function postedAtFor(day: DayKey, now: Instant): Instant {
   const timeOfDay = (Date.parse(now) + OFFSET_MS) % DAY_MS;
   return toInstant(new Date(Date.parse(`${day}T00:00:00.000Z`) - OFFSET_MS + timeOfDay));
 }
 
-/** Columns a manual row is written with, and the order the undo copy keeps them in. */
 const MANUAL_COLUMNS = [
   'id',
   'amount_minor',

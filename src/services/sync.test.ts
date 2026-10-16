@@ -46,7 +46,6 @@ async function tableHash(db: Db): Promise<string> {
 const count = async (db: Db, where = '1') =>
   (await db.all(`SELECT count(*) AS n FROM tx WHERE ${where}`))[0]?.n;
 
-/** Fails every request after the first `pages`, the way a dropped connection would. */
 function dropsAfter(bank: BankApi, pages: number): BankApi {
   let served = 0;
   return {

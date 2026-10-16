@@ -5,12 +5,6 @@ export type StepUpAction = 'reveal' | 'add' | 'delete' | 'clearLog' | 'erase';
 
 export type Unlocked = { readonly status: 'unlocked'; readonly since: number; readonly db: OpenDb };
 
-/**
- * `authenticating` is the unlock prompt only, from Lock (`unlock`) or the first-run primer (`setup`). A step-up
- * prompt is `stepUp`, which keeps the unlocked state it returns to, open database included. `signingOut` holds
- * while the vault is destroyed, and only its own end leaves it, so nothing can unlock a vault being deleted.
- * Whether amounts show is the `hideAmounts` pref, not a session state (D27).
- */
 export type Session =
   | { readonly status: 'launching' }
   | { readonly status: 'welcome' }
@@ -35,7 +29,6 @@ export type SessionEvent =
 
 export const INITIAL: Session = { status: 'launching' };
 
-/** Pure. An event that does not apply returns the same object, so the store skips the notify. */
 export function reduce(state: Session, event: SessionEvent): Session {
   switch (event.type) {
     case 'LAUNCHED':

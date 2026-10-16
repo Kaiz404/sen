@@ -13,27 +13,22 @@ import {
 import { type, type TypeRole } from '@/theme/type';
 
 export type AmountSize = 'hero' | 'card' | 'row' | 'net' | 'tile';
-/** What the amount sits on: canvas or paper, a pastel card, or the loud fill. */
 export type AmountSurface = 'plain' | 'pastel' | 'loud';
 
 type Face = 'words' | 'numerals' | 'mono';
 
 type Scale = {
-  /** `null` sets the currency inline in the whole-number text, at its size. */
   readonly currency: { readonly face: Face; readonly size: number } | null;
   readonly face: Face;
   readonly whole: number;
-  /** Equal to `whole` means the sen digits are not split. */
   readonly fraction: number;
   readonly masked: { readonly face: Face; readonly size: number };
   readonly coin: number;
   readonly coinEdge: number;
   readonly coinGap: number;
-  /** Masked only. Sets `RM` above the coins, for a 44 pt icon tile. */
   readonly stacked: boolean;
 };
 
-/** Sizes as the boards draw them: SF-Reveal and SF-Detail heroes, the month card, rows, day nets and SF-Welcome's tile. */
 const SCALE: Readonly<Record<AmountSize, Scale>> = {
   hero: {
     currency: { face: 'words', size: 30 },
@@ -107,7 +102,6 @@ type AmountProps = {
   readonly size: AmountSize;
   readonly surface?: AmountSurface;
   readonly sign?: SignMode;
-  /** Masked only. Shows the sign, so a hero can read `−RM` and coins. */
   readonly direction?: Direction;
 };
 

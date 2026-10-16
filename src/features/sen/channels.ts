@@ -1,11 +1,3 @@
-/**
- * Every value Sen can animate, grouped by the rig node that owns it. Node names are the boards'
- * selectors, so a keyframe on `.M-unlock .elb` lands on `elb.*`. Each entry is the channel's rest
- * value. Rig units (1 unit = size / 600) and degrees, except `sp.th`, which is radians.
- *
- * Suffixes: `x` `y` translate, `r` rotate, `k` skewX, `s` uniform scale, `sx` `sy` scale,
- * `op` opacity, `th` spin angle. Mouth and held-prop channels are opacities named by the shape.
- */
 const RIG = {
   mv: { x: 0, y: 0, op: 1 },
   rl: { r: 0 },

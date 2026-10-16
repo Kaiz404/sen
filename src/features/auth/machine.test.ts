@@ -34,7 +34,6 @@ const EVENTS = {
 } as const satisfies Record<string, SessionEvent>;
 type EventName = keyof typeof EVENTS;
 
-/** `same` means the reducer must return the very object it was given, so the store does not notify. */
 const EXPECTED: Record<StateName, Partial<Record<EventName, Session>>> = {
   launching: {
     'LAUNCHED vault': { status: 'locked', reason: 'launch' },

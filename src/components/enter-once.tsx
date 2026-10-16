@@ -10,7 +10,6 @@ const SLIDE_IN: CSSAnimationKeyframes<ViewStyle> = {
   to: { opacity: 1, transform: [{ translateY: 0 }] },
 };
 
-/** The board's `slidein`. Decoration, so Calm and Off show the row in place at once. */
 export function enterStyle(level: MotionLevel): CSSStyle<ViewStyle> | null {
   if (level !== 'full') return null;
   return {

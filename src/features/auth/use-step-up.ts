@@ -22,7 +22,6 @@ export async function stepUp(action: StepUpAction): Promise<StepUpResult> {
   return outcome;
 }
 
-/** Prompts on every call. Nothing is cached, so each write asks again. */
 export function useStepUp(action: StepUpAction): () => Promise<StepUpResult> {
   return () => stepUp(action);
 }

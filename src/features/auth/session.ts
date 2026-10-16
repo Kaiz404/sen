@@ -61,14 +61,12 @@ export function dispatch(event: SessionEvent): boolean {
   return true;
 }
 
-/** A failed vault check counts as a vault, so launch never offers Welcome over existing data. */
 export async function launch(): Promise<void> {
   const [vault, biometric] = await Promise.all([hasVault().catch(() => true), detectBiometric()]);
   sessionStore.setState({ biometric });
   dispatch({ type: 'LAUNCHED', hasVault: vault });
 }
 
-/** Unlocks from Lock, or creates the vault from the first-run primer. Never called on resume. */
 export async function unlock(): Promise<AuthOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
@@ -98,7 +96,6 @@ export function lockNow(): void {
   dispatch({ type: 'LOCK', reason: 'manual' });
 }
 
-/** The reviewer control "Simulate Face ID lockout". The next unlock reports lockout without prompting. */
 export function armLockout(): void {
   lockoutArmed = true;
 }
@@ -128,10 +125,6 @@ export function useRouteGate(): RouteGate {
   return useStore(sessionStore, (s) => gateOf(s.session));
 }
 
-/**
- * The open database, for protected screens. A screen still animating out after a lock keeps the closed handle,
- * so its late queries reject instead of the screen throwing mid-transition.
- */
 export function useDb(): OpenDb {
   const db = useStore(sessionStore, (s) => dbOf(s.session));
   const [last, setLast] = useState(db);

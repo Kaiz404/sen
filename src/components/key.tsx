@@ -13,10 +13,8 @@ import { FONT } from '@/theme/type';
 import { cssMs } from './motion-level';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
-/** `loud` is the screen's one loud key: ink in light, lemon in dark. `outline` has no fill and no plate. */
 export type KeyTone = 'lemon' | 'loud' | 'paper' | 'outline';
 export type KeySize = 'regular' | 'medium' | 'large' | 'xlarge';
-/** What the key sits on. The ink hero is dark in both themes, so a key on it takes the dark palette. */
 export type KeySurface = 'plain' | 'hero';
 
 type KeyProps = {
@@ -41,7 +39,6 @@ type KeyProps = {
     }
 );
 
-/** Sizes as the boards draw them: History's keys, the outline keys on Lock, "Show amounts", and the Lock and Welcome keys. */
 const SIZE = {
   regular: { height: 46, radius: 15, font: 17, icon: 21, gap: 4 },
   medium: { height: 52, radius: 18, font: 17, icon: 20, gap: 8 },
@@ -125,12 +122,6 @@ export function Key({
   );
 }
 
-/**
- * Tone colours, read in render through useUnistyles. On the device a live theme switch left the label inside
- * the animated face on the old theme, so the key takes its colours from the hook, which re-renders it.
- * Disabled keys follow SF-LockStates: a filled key keeps its edge and plate under a washed-out face, and an
- * outline key turns dashed and muted.
- */
 function keyColors(c: Palette, disabled: boolean) {
   const filled = (face: string, edge: string, ink: string, plate: string = c.keyPlate) => ({
     face,

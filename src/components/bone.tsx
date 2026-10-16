@@ -12,7 +12,6 @@ const SWEEP: CSSAnimationKeyframes<ViewStyle> = {
   to: { transform: [{ translateX: '100%' }] },
 };
 
-/** The board's `shim` band. A looping shimmer is motion, so Calm and Off draw still bones. */
 export function bandStyle(level: MotionLevel): CSSStyle<ViewStyle> | null {
   if (level !== 'full') return null;
   return {
@@ -29,7 +28,6 @@ type BoneProps = {
   readonly radius?: number;
 };
 
-/** A skeleton placeholder block. */
 export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
   const band = bandStyle(useMotionPolicy());
   const gradient = useId();

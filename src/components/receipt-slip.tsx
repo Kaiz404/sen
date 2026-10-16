@@ -6,10 +6,8 @@ import { StyleSheet, withUnistyles } from 'react-native-unistyles';
 const EDGE = 8;
 const BITE = { pitch: 14, r: 4 } as const;
 const TOOTH = { pitch: 11, depth: 7.78, notch: 2.28 } as const;
-/** Wider than any phone, so the edges never need a measured width. Both pitches divide it. */
 const SPAN = 616;
 
-/** Paper strip with semicircle bites cut from its top edge, as the board's `.perf`. */
 export function perforation(width: number): string {
   let d = 'M0,0';
   for (let cx = BITE.pitch / 2; cx + BITE.r <= width; cx += BITE.pitch)
@@ -17,7 +15,6 @@ export function perforation(width: number): string {
   return `${d} L${width},0 V${EDGE} H0 Z`;
 }
 
-/** Paper strip whose bottom edge is a row of teeth, as the board's `.zig`. */
 export function zigzag(width: number): string {
   let d = `M0,0 H${width}`;
   for (let x = width; x > 0; x -= TOOTH.pitch)
@@ -42,7 +39,6 @@ function Edge({ d }: { d: string }) {
   );
 }
 
-/** A receipt slip: perforated top, paper body, zigzag bottom. Children lay out in the body. */
 export function ReceiptSlip({ children }: { children: ReactNode }): ReactNode {
   return (
     <View>
@@ -53,7 +49,6 @@ export function ReceiptSlip({ children }: { children: ReactNode }): ReactNode {
   );
 }
 
-/** The dashed rule between slip rows. */
 export function SlipRule(): ReactNode {
   return (
     <View style={styles.rule} aria-hidden>
@@ -64,7 +59,6 @@ export function SlipRule(): ReactNode {
   );
 }
 
-/** Dotted leader that fills a row between a label and a total. */
 export function Leader(): ReactNode {
   return (
     <View style={styles.leader} aria-hidden>

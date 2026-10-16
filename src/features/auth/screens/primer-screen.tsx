@@ -55,7 +55,6 @@ export function PrimerScreen(): ReactNode {
   );
 }
 
-/** The first-run primer. It explains the prompt before the phone shows it. */
 export function PrimerView({
   state,
   biometric,
@@ -75,7 +74,6 @@ export function PrimerView({
 
   return (
     <View style={styles.screen}>
-      {/* Welcome stays mounted under the primer, and its light status bar would otherwise win. */}
       <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Key icon="arrow-left" accessibilityLabel="Back" onPress={onBack} />
@@ -169,7 +167,6 @@ function noticeOf(
 }
 
 const FRAME = 132;
-/** The four corner brackets of SF-Biometric's scan frame. */
 const CORNERS =
   'M4 38V20Q4 4 20 4H38M94 4H112Q128 4 128 20V38M128 94V112Q128 128 112 128H94M38 128H20Q4 128 4 112V94';
 

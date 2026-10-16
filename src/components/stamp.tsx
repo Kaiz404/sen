@@ -5,16 +5,12 @@ import { StyleSheet } from 'react-native-unistyles';
 import { type } from '@/theme/type';
 
 type StampProps = {
-  /** The small line above the word, such as "ADDED BY". */
   readonly caption: string;
   readonly word: string;
-  /** Already formatted, as the boards print it: `15·10·26`. */
   readonly date: string;
-  /** Omit when the stamp repeats something the screen already says. */
   readonly accessibilityLabel?: string;
 };
 
-/** A round rubber stamp with a double ring: outlined, never filled, set at a slant. */
 export function Stamp({ caption, word, date, accessibilityLabel }: StampProps): ReactNode {
   const spoken = accessibilityLabel !== undefined;
   return (

@@ -17,7 +17,6 @@ export interface BankApi {
   fetchPage(request: PageRequest): Promise<Result<unknown, BankFailure>>;
 }
 
-/** The reviewer controls, read before every request. The settings lane feeds them from the `demo.*` prefs. */
 export type BankScenario = {
   readonly next: PrefValue<'demo.next'>;
   readonly size: DatasetSize;
@@ -50,7 +49,6 @@ const LOOKS_REAL = {
   source: 'bank',
 };
 
-/** What "Bad data" adds to every page: two rows that each break one rule, with no `seq`, so the real rows still arrive. */
 const BAD_ROWS: readonly unknown[] = [
   { ...LOOKS_REAL, id: 'bk-junk-float', amountMinor: 12.5 },
   { ...LOOKS_REAL, id: 'bk-junk-category', category: 'crypto' },
@@ -58,10 +56,6 @@ const BAD_ROWS: readonly unknown[] = [
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/**
- * An in-app bank. Its feed is generated once per dataset size, at the first request. A request past the end mints
- * one new row when `newOnRefresh` is on, so every refresh after a full sync brings exactly one.
- */
 export function createMockBank(options: {
   readonly scenario: () => BankScenario;
   readonly now?: () => Instant;

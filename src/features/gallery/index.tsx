@@ -12,10 +12,6 @@ import { PoseIndex } from './poses';
 import { type GalleryQuery, parseQuery, parseTheme, shotName, type ThemeName } from './query';
 import { isComponent, SCREENS } from './registry';
 
-/**
- * Forces a theme while this screen has focus. React Navigation blurs the old screen before it focuses the
- * new one, so a stacked gallery screen hands the theme over in order.
- */
 function useForcedTheme(theme: ThemeName | undefined) {
   useFocusEffect(
     useCallback(() => {
@@ -50,10 +46,6 @@ export function StatesScreen(): ReactNode {
   );
 }
 
-/**
- * Draws one query. A new link can reuse this screen with new params, so the body is keyed by its query and
- * each state mounts fresh. Unfocused gallery screens draw nothing, so a toast never leaks into the next.
- */
 export function GalleryBody({
   query,
   theme,
@@ -109,7 +101,6 @@ function Frame({
   const { rt } = useUnistyles();
   return (
     <View testID={shotId} style={styles.frame}>
-      {/* A hero screen under the gallery, such as Welcome, would otherwise keep its light status bar. */}
       <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <Text style={styles.caption}>{caption}</Text>
       <View style={styles.stage}>{children}</View>

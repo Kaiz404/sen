@@ -56,7 +56,6 @@ const still = svg([], () => {
   return {};
 });
 
-/** An eye's pose layer: offset and scale about the eye box. */
 function eyePose(n: 'el' | 'er') {
   const ch = [`${n}.x`, `${n}.y`, `${n}.sx`, `${n}.sy`] as const;
   const [ox, oy] = ORIGIN[n];
@@ -66,7 +65,6 @@ function eyePose(n: 'el' | 'er') {
   });
 }
 
-/** An eye's open (`b`) or shut (`c`) layer: a scale and a crossfade. */
 function eyeLayer(n: 'elb' | 'elc' | 'erb' | 'erc') {
   const ch = [`${n}.sx`, `${n}.sy`, `${n}.op`] as const;
   const [ox, oy] = ORIGIN[n];
@@ -76,7 +74,6 @@ function eyeLayer(n: 'elb' | 'elc' | 'erb' | 'erc') {
   });
 }
 
-/** A paw layer: `pl` and `pr` hold the pose, `plf` and `prf` carry the secondary motion. */
 function pawLayer(n: 'pl' | 'plf' | 'pr' | 'prf') {
   const ch = [`${n}.x`, `${n}.y`, `${n}.r`, `${n}.s`] as const;
   const [ox, oy] = ORIGIN[n];
@@ -86,7 +83,6 @@ function pawLayer(n: 'pl' | 'plf' | 'pr' | 'prf') {
   });
 }
 
-/** A worn prop: it moves and tilts about its own centre and fades in. */
 function worn(n: 'cap' | 'shades') {
   const ch = [`${n}.x`, `${n}.y`, `${n}.r`, `${n}.op`] as const;
   const [ox, oy] = ORIGIN[n];
@@ -96,7 +92,6 @@ function worn(n: 'cap' | 'shades') {
   });
 }
 
-/** MAX-Spec: the edge pill shows while `|cos θ| < 0.12`, and `sp` never scales below 0.02. */
 const EDGE_ON = 0.12;
 const EDGE_FLOOR = 0.02;
 
@@ -192,7 +187,6 @@ export type TreeNode = {
   readonly children?: readonly TreeNode[];
 };
 
-/** The coin's SVG, inside `sp`, in the boards' nesting and draw order. */
 export const SVG_TREE: readonly TreeNode[] = [
   {
     node: 'hd',

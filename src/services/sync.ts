@@ -34,7 +34,6 @@ const COLUMNS = [
 
 const UPDATABLE = COLUMNS.filter((c) => c !== 'id' && c !== 'source' && c !== 'idem_key');
 
-/** Rows per INSERT. Fewer native round trips than one row per call, well under SQLite's bound-parameter limit. */
 const CHUNK = 50;
 
 function bankParams(row: Transaction): SqlValue[] {
@@ -57,7 +56,6 @@ function bankParams(row: Transaction): SqlValue[] {
   ];
 }
 
-/** A bank row may update a bank row. The `WHERE` keeps it from ever overwriting a row added on the phone. */
 function upsertSql(rows: number): string {
   const tuple = `(${COLUMNS.map(() => '?').join(', ')})`;
   return `INSERT INTO tx (${COLUMNS.join(', ')}) VALUES ${Array.from({ length: rows }, () => tuple).join(', ')}
@@ -78,7 +76,6 @@ type ReadPage = {
   readonly lastSeq: number | null;
 };
 
-/** Parses each item on its own, so one bad row is dropped and counted instead of failing the page. */
 function readItems(items: readonly unknown[]): ReadPage {
   const rows: Transaction[] = [];
   let lastSeq: number | null = null;
@@ -154,13 +151,11 @@ export async function sync(
   return ok({ received, cursor });
 }
 
-/** A page the client can't read, or one that claims more rows without moving the cursor, is the server's fault. */
 function failed(): Result<never> {
   logEvent('sync.failed.server');
   return err({ kind: 'server' });
 }
 
-/** For a dataset switch: drops bank rows and rewinds the cursor in one step. Rows added on the phone stay. */
 export async function resetBankRows(db: Db): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.run("DELETE FROM tx WHERE source = 'bank'");

@@ -50,7 +50,6 @@ jest.mock('./db', () => ({
 
 const K = 'c'.repeat(64);
 const K2 = 'd'.repeat(64);
-/** What the fake random bytes 0xa0 to 0xbf become. */
 const NEW = 'a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf';
 
 type DbFile = { key: string; version: number; generation: number };
@@ -61,7 +60,6 @@ afterEach(async () => {
   jest.clearAllMocks();
 });
 
-/** A keychain and a disk. A file opens only with the key that made it, as SQLCipher does. */
 function device(start: { key: string | null; file: Omit<DbFile, 'generation'> | null }) {
   const state = {
     key: start.key,

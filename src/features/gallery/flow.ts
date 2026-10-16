@@ -26,11 +26,6 @@ export function shots(screens: Readonly<Record<string, ScreenStates>>): Shot[] {
   return [...states('light'), ...poses, ...states('dark')];
 }
 
-/**
- * The Maestro flow that takes every shot as a candidate. The owner promotes approved candidates to
- * `assertScreenshot` baselines. Each step waits for the shot's test id, so a slow link never yields the last
- * screen. Animated states never settle, so the animation wait is capped.
- */
 export function screenshotFlow(list: readonly Shot[]): string {
   const steps = list.map(
     (s) =>

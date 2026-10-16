@@ -6,7 +6,6 @@ module.exports = {
   preset: 'jest-expo/android',
   resolver: 'react-native-worklets/jest/resolver',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  // Benches time real work, so they run alone and serially through `npm run test:bench`.
   testPathIgnorePatterns: ['/node_modules/', '\\.bench\\.test\\.ts$'],
   transform: {
     '\\.[jt]sx?$': [

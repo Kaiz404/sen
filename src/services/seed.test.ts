@@ -4,7 +4,6 @@ import { TransactionSchema } from '@/models/transaction';
 import { boardToday, type DatasetSize, generateBankRows, mintRow } from './seed';
 
 const at = (s: string) => InstantSchema.parse(s);
-/** 4 pm on Thu 15 Oct 2026 in Malaysia, the boards' afternoon. */
 const NOW = at('2026-10-15T08:00:00.000Z');
 
 function fnv1a(text: string): string {

@@ -22,9 +22,7 @@ export type ToastSpec = {
   readonly title: string;
   readonly detail?: string;
   readonly action?: ToastAction;
-  /** Milliseconds on screen. */
   readonly ttl?: number;
-  /** A small leading mark, such as a face-only Sen. */
   readonly mark?: ReactNode;
 };
 
@@ -108,7 +106,6 @@ function ActionKey({ id, action }: { id: number; action: ToastAction }) {
   );
 }
 
-/** The bar shows time left, so it runs at every motion level. */
 function drain(ttl: number) {
   return {
     animationName: { from: { transform: [{ scaleX: 1 }] }, to: { transform: [{ scaleX: 0 }] } },

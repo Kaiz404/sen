@@ -35,7 +35,6 @@ export const EASE: Readonly<Record<EaseName, EasingFunction | EasingFunctionFact
   linear: Easing.linear,
 };
 
-/** Plain worklet functions of progress, for `kf` segments. */
 export const EASE_FN: Readonly<Record<EaseName, EasingFunction>> = {
   ...perBezier((b) => Easing.bezierFn(...b)),
   linear: Easing.linear,
@@ -50,7 +49,6 @@ export const SPRING = {
   pop: { damping: 14, stiffness: 260, mass: 0.7 },
   settle: { damping: 18, stiffness: 220, mass: 0.8 },
   soft: { damping: 20, stiffness: 140, mass: 1 },
-  /** MAL's `malSpring` curve as a spring, per MAL-Timelines. */
   launch: { damping: 12, stiffness: 180, mass: 1 },
 } as const satisfies Record<string, WithSpringConfig>;
 

@@ -9,7 +9,6 @@ import { type } from '@/theme/type';
 
 export type { IconName };
 
-/** The hero's layout per screen, as SF-Welcome and SF-Lock draw it. Sen hangs off the bottom right corner. */
 const HERO = {
   welcome: { title: 96, gap: 20, body: 168, sen: { size: 196, right: 2, bottom: -66 } },
   lock: { title: 84, gap: 22, body: 178, sen: { size: 230, right: -34, bottom: -84 } },
@@ -22,7 +21,6 @@ type HeroProps = {
   readonly sen?: Omit<SenProps, 'size'>;
 };
 
-/** The ink hero on Welcome and Lock. The second title line is lemon. */
 export function Hero({ kind, title, body, sen }: HeroProps): ReactNode {
   const layout = HERO[kind];
   return (
@@ -49,7 +47,6 @@ export function Hero({ kind, title, body, sen }: HeroProps): ReactNode {
   );
 }
 
-/** The wordmark and the demo badge at the top of every ink screen. */
 export function Brand(): ReactNode {
   return (
     <View style={styles.brand}>
@@ -98,7 +95,6 @@ export function ProfileRow(): ReactNode {
   );
 }
 
-/** An inline message after a prompt fails. Screen readers hear it as it appears. */
 export function Notice({ text }: { readonly text: string }): ReactNode {
   const { theme } = useUnistyles();
   return (
@@ -113,7 +109,6 @@ export function Note({ text }: { readonly text: string }): ReactNode {
   return <Text style={styles.note}>{text}</Text>;
 }
 
-/** A reassurance on a paper card with an icon tile, as SF-LockStates' "not set up" state draws it. */
 export function NoteCard({ icon, text }: { readonly icon: IconName; readonly text: string }) {
   const { theme } = useUnistyles();
   return (

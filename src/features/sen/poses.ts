@@ -23,29 +23,18 @@ export type EyesKind = 'open' | 'closed' | 'peek' | 'happy' | 'worried' | 'squin
 
 type Vec = readonly [x: number, y: number];
 
-/**
- * One eye as a pose holds it: which of the open and shut layers shows, and the pose layer's
- * offset and scale. The open and shut layers stay at scale 1 in a pose, so a blink, an eye-close
- * or a peek crack can run on them over whatever the pose holds.
- */
 type EyeHold = { readonly shut: boolean; readonly at: Vec; readonly scale: Vec };
 
-/** A paw's pose layer: offset, rotation in degrees about the paw centre, uniform scale. */
 type PawHold = { readonly at: Vec; readonly r: number; readonly s: number };
 
 export type PoseSpec = {
-  /** `lk`: the face group's slide across the disc. */
   readonly face: Vec;
   readonly eyes: EyesKind;
   readonly mouth: MouthId;
   readonly cheeks: number;
-  /** `mv.y`: the whole coin lifts (negative) or sinks. */
   readonly lift: number;
-  /** `sq.r`: lean about the contact point. */
   readonly lean: number;
-  /** `sq.k`: the counter skewX the boards pair with nearly every lean. */
   readonly skew: number;
-  /** `sq.sx`, `sq.sy`. */
   readonly squash: Vec;
   readonly pawL: PawHold;
   readonly pawR: PawHold;

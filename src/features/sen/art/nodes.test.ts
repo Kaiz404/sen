@@ -96,7 +96,6 @@ const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
 const apply = ([a, b, c, d, e, f]: Matrix, [x, y]: readonly [number, number]) =>
   [a * x + c * y + e, b * x + d * y + f] as const;
 
-/** The left eye's open ellipse as drawn: its top and bottom y through `el`, then `elb`. */
 function leftEyeSpan(frame: Frame): readonly number[] {
   const pose = NODES.el.read(frame, 1).matrix ?? IDENTITY;
   const open = NODES.elb.read(frame, 1).matrix ?? IDENTITY;

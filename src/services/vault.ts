@@ -26,12 +26,10 @@ export type VaultOpened =
 
 export const KEY_NAME = 'sen.dbKey.v1';
 
-/** Readable only while the phone is unlocked, never restored to another device. No `requireAuthentication` (ARCHITECTURE › Storage and keys). */
 export const KEY_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
 
-/** The native pieces the vault needs, small enough to fake in tests. */
 export type VaultPorts = {
   readonly keys: {
     read(): Promise<string | null>;
@@ -50,16 +48,11 @@ export type VaultPorts = {
 
 type KeyState = 'stored' | 'missing';
 
-/**
- * The reset rules. A stored key opens the file or, if the file can't be read, resets it as corrupt. With no key, a
- * fresh file is created, and a file the new key can't read (a backup restore or a reinstall) resets as missing_key.
- */
 const RULES = {
   stored: { opened: 'opened', reset: 'corrupt' },
   missing: { opened: 'created', reset: 'missing_key' },
 } as const satisfies Record<KeyState, { opened: 'created' | 'opened'; reset: ResetReason }>;
 
-/** Only a file that can never be read resets. Anything else, such as a busy disk, rethrows and wipes nothing. */
 const isUnreadable = (error: unknown) =>
   error instanceof DbUnreadableError || error instanceof SchemaTooNewError;
 
@@ -102,7 +95,6 @@ export function createVault(ports: VaultPorts) {
       return (await storedKey()) !== null;
     },
 
-    /** A new key is stored only after its database opened, so a failed first open leaves no orphan key. */
     async openVault(): Promise<VaultOpened> {
       const stored = await storedKey();
       const state: KeyState = stored === null ? 'missing' : 'stored';
@@ -133,6 +125,14 @@ export function createVault(ports: VaultPorts) {
 /** expo-sqlite's message when the file is absent, on Android and iOS (expo-sqlite 57 native source). */
 const NOT_FOUND = /Database .* not found/;
 
+function provablyMissing(file: () => File): boolean {
+  try {
+    return !file().exists;
+  } catch {
+    return false;
+  }
+}
+
 const nativePorts: VaultPorts = {
   keys: {
     read: () => SecureStore.getItemAsync(KEY_NAME, KEY_OPTIONS),
@@ -150,15 +150,9 @@ const nativePorts: VaultPorts = {
     },
     /**
      * expo-sqlite keeps databases in `SQLite/` under the documents directory on Android and iOS (expo-sqlite 57
-     * native source). A check that throws counts as present: a false "missing" would delete a good key.
+     * native source).
      */
-    exists: () => {
-      try {
-        return new File(Paths.document, 'SQLite', DB_NAME).exists;
-      } catch {
-        return true;
-      }
-    },
+    exists: () => !provablyMissing(() => new File(Paths.document, 'SQLite', DB_NAME)),
   },
   randomBytes: (length) => getRandomValues(new Uint8Array(length)),
   clearPrefs,

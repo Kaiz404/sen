@@ -110,7 +110,6 @@ function DirectionDemo() {
   );
 }
 
-/** Shows a toast through the real host while this state is on screen. */
 function ToastDemo({ spec }: { spec: ToastSpec }) {
   useEffect(() => {
     const id = toast.show({ ...spec, ttl: 10 * 60_000 });

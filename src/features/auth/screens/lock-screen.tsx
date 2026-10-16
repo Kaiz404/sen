@@ -17,7 +17,6 @@ import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
 
-/** `checking` and `signingOut` come from the session and win over the last prompt's view. */
 export type LockState =
   PromptView | { readonly kind: 'checking' } | { readonly kind: 'signingOut' };
 
@@ -69,7 +68,6 @@ export function LockScreen(): ReactNode {
   );
 }
 
-/** Every Lock state from SF-LockStates, driven by props so the gallery can render each one. */
 export function LockView({
   state,
   biometric,
@@ -186,7 +184,6 @@ type LockoutProps = {
   readonly onStartAgain: () => void;
 };
 
-/** SF-LockStates' cool-down: the whole screen turns ink while Sen naps over the timer. */
 function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): ReactNode {
   const { name, title, icon } = copy;
   return (

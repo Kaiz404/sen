@@ -16,7 +16,6 @@ type TagSpec = {
   readonly dashed?: true;
 };
 
-/** The small outlined tags the boards use, as a closed set. */
 const TAGS = {
   pending: { label: 'PENDING', tone: 'pending', tilt: 0 },
   added: { label: 'ADDED BY YOU', tone: 'stamp', tilt: -3, icon: 'pencil' },

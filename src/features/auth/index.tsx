@@ -13,10 +13,6 @@ import { launch, sessionStore } from './session';
 
 void SplashScreen.preventAutoHideAsync();
 
-/**
- * Decides Welcome or Lock before the splash lifts, runs the lock triggers, drops revealed amounts on hide, and
- * counts every touch as activity.
- */
 export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
   const launching = useStore(sessionStore, (s) => s.session.status === 'launching');
 

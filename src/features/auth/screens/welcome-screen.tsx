@@ -19,7 +19,6 @@ export function WelcomeScreen(): ReactNode {
 
 type Pledge = {
   readonly tile: 'lemon' | 'lilac' | 'mint';
-  /** `null` draws the masked amount mark. */
   readonly icon: IconName | null;
   readonly text: string;
 };

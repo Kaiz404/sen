@@ -4,7 +4,6 @@ import { parsePref, PREFS, type PrefKey, type PrefValue } from '@/models/prefs';
 
 let store: MMKV | null = null;
 
-/** Opened on first use, so importing this file touches no native code. */
 function prefs(): MMKV {
   store ??= createMMKV({ id: 'prefs' });
   return store;

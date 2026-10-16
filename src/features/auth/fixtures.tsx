@@ -7,7 +7,6 @@ import { type PrimerState, PrimerView } from './screens/primer-screen';
 import { WelcomeView } from './screens/welcome-screen';
 
 const noop = () => {};
-/** The boards draw Face ID. */
 const BIOMETRIC: Biometric = 'faceId';
 
 function Lock({ state }: { state: LockState }) {
@@ -36,13 +35,11 @@ function Primer({ state }: { state: PrimerState }) {
   );
 }
 
-/** SF-LockStates draws the cool-down at 0:24. The clock starts there when the state mounts. */
 function Lockout() {
   const [state] = useState<PromptView>(() => ({ kind: 'lockout', until: Date.now() + 24_000 }));
   return <Lock state={state} />;
 }
 
-/** Welcome, the primer and every Lock state, for the states gallery. */
 export const AUTH_STATES = {
   welcome: () => <WelcomeView onContinue={noop} />,
   'primer-ready': () => <Primer state={{ kind: 'idle' }} />,
