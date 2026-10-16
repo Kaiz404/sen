@@ -24,9 +24,10 @@ export const PIVOT = {
   contact: [10, 278],
 } as const satisfies Record<string, Vec>;
 
-export function transformOrigin([x, y]: Vec): `${number}% ${number}%` {
+/** An array, because React Native's string parser reads only whole-number percentages. */
+export function transformOrigin([x, y]: Vec): [`${number}%`, `${number}%`, 0] {
   const pct = (v: number) => Math.round(((v + VIEWBOX_UNITS / 2) / VIEWBOX_UNITS) * 10000) / 100;
-  return `${pct(x)}% ${pct(y)}%`;
+  return [`${pct(x)}%`, `${pct(y)}%`, 0];
 }
 
 type Paint = {

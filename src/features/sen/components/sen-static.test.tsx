@@ -21,7 +21,7 @@ test('a worried Sen leans -4 degrees about the contact point', async () => {
   await render(<Sen pose="worried" size={120} />);
 
   expect(screen.getByTestId('sen-sq', { includeHiddenElements: true })).toHaveStyle({
-    transformOrigin: '51.47% 90.88%',
+    transformOrigin: ['51.47%', '90.88%', 0],
     transform: [{ rotate: '-4deg' }, { skewX: '0deg' }, { scaleX: 1 }, { scaleY: 1 }],
   });
 });
