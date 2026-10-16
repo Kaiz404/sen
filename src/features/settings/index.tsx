@@ -1,29 +1,17 @@
-import type { ReactNode } from 'react';
-
-import { StubScreen } from '@/features/stub';
 import type { PrefValue } from '@/models/prefs';
 import type { MotionLevel } from '@/motion/policy';
+
+import { usePref } from './use-pref';
 
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
 export type SenMotionPrefIsMotionLevel = Assert<Same<PrefValue<'senMotion'>, MotionLevel>>;
 
+/** The "Sen's animations" setting, live. The root layout hands it to `MotionPolicyRoot`. */
 export function useSenMotionPreference(): MotionLevel {
-  return 'full';
+  return usePref('senMotion');
 }
 
-export function SettingsScreen(): ReactNode {
-  return <StubScreen name="SETTINGS" />;
-}
-
-export function PrivacySheet(): ReactNode {
-  return <StubScreen name="PRIVACY" />;
-}
-
-export function SignOutSheet(): ReactNode {
-  return <StubScreen name="SIGN OUT" />;
-}
-
-export function ResetDemoSheet(): ReactNode {
-  return <StubScreen name="RESET DEMO" />;
-}
+export { SETTINGS_STATES } from './fixtures';
+export { SettingsScreen } from './settings-screen';
+export { PrivacySheet, ResetDemoSheet, SignOutSheet } from './sheets';

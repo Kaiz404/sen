@@ -388,34 +388,34 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 ## Settings
 
-Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there.
+Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The screen follows `SF-Settings`, with the changes listed under the table.
 
 | Section | Control | Options | Default | Key |
 | --- | --- | --- | --- | --- |
-| Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA | | | |
-| Appearance | Theme | Light · Dark · System | System | `theme` |
-| Security | Hide amounts | On · Off | On | `hideAmounts`. Turning it off asks for biometrics |
+| Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA, Sen peeking over it | | | |
+| Security | Hide amounts | Switch. Turning it off asks for biometrics | On | `hideAmounts` |
 | Security | Lock when idle | 2 · 5 · 10 min | 5 min | `idleLock` |
 | Security | Lock again after leaving | Right away · 1 min · 5 min | 1 min | `relockAfter` |
-| Security | Face ID for adding and deleting | Always on (info row) | | |
-| Security | Hide Sen in the app switcher | Always on (info row) | | |
-| Security | Block screenshots on sensitive screens | Always on, iOS 13+ and Android (info row) | | |
-| Security | Security activity | Pushed screen | | |
-| Security | Erase transactions I added | Destructive. Face ID and confirm | | |
-| Sen | Sen's animations | Full · Calm · Off. System Reduce Motion forces Calm | Full | `senMotion` |
+| Security | Fingerprint (or the phone's own biometric) for adding and deleting | Always on (info row) | | |
+| Sen | Sen's animations | Full · Calm · Off, with a still Sen and one line for each. System Reduce Motion forces Calm | Full | `senMotion` |
 | Sen | Haptics | Switch | On | `haptics` |
-| For reviewers | Next history request | Normal · Offline · Timeout · Server error · Bad data | Normal | `demo.next` |
-| For reviewers | Dataset size | 20 · 1k · 10k. Resets bank rows only, then syncs with a progress line | 1k | `demo.datasetSize` |
+| For reviewers | Next history request | Normal · Offline · Timeout (8 s) · Server error 500 · Bad data. One-shot: back to Normal after one request | Normal | `demo.next` |
+| For reviewers | Dataset size | 20 · 1k · 10k. Reloads bank rows only. The second line reads "Loading 1,500 of 10,000 rows…" while they load | 1k | `demo.datasetSize` |
 | For reviewers | Slow network, add 3 s | Switch | Off | `demo.slow` |
 | For reviewers | New transaction on refresh | Switch | On | `demo.newOnRefresh` |
-| For reviewers | Simulate Face ID lockout | Button. Arms the next unlock to report lockout | | |
-| For reviewers | Reset demo data | Button with confirm | | |
+| For reviewers | Simulate lockout | Button. Arms the next unlock to report lockout. Armed, it reads "Lockout armed · Tap again to disarm", and a toast offers Undo | | |
+| For reviewers | Reset demo data | Sheet with confirm | | |
 | About | How Sen keeps amounts private | Explainer sheet | | |
-| About | Source code, licences | Links | | |
 | Account | Lock now | Key | | |
-| Account | Sign out of demo | Destructive, with confirm. Destroys the database key and clears prefs | | |
+| Account | Sign out of demo | Destructive, with a confirm sheet. Destroys the database key and clears prefs | | |
 
-Footer: `SEN 1.0.0 (1) · SIMULATED DATA`.
+Footer: `SEN 1.0.0 · SIMULATED DATA`.
+
+**Changes from the board.**
+- "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden (D27).
+- Dataset size joins the reviewer slip.
+- History's fault states open Settings scrolled to the reviewer slip.
+- Not built: Theme (the phone's own setting decides), and the Source code and licences links (the README covers both). Security activity, Erase, and the app switcher and screenshot rows arrive with phase 5, when there is something true to show.
 
 ## Copy and accessibility
 

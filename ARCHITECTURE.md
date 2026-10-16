@@ -415,6 +415,20 @@ A deep link that arrives while locked lands on Lock and is not replayed after un
 | Sync | `invalid_data` | List shown, "2 items couldn't be read" |
 | Database | `db_reset` | One-time notice |
 
+## Settings and reviewer controls
+
+`features/settings/` draws one screen from the prefs and three sheets. DESIGN › Settings lists the rows.
+
+- **Reads.** `usePref(key)` reads one pref through `useSyncExternalStore` on `subscribePrefs`, so a write from anywhere shows at once. A fault that turns itself off after its request reads Normal on an open Settings screen.
+- **Writes.** Plain prefs (`idleLock`, `relockAfter`, `senMotion`, `haptics` and the `demo.*` switches) go straight through `writePref`. Hide amounts goes through `showAmounts()` and `hideAmounts()`, so showing still needs step-up. The dataset size runs `switchDataset`, which writes the pref, then `resetBank(db)`. It does nothing while a sync runs.
+- **Simulate lockout.** `armLockout()` sets `lockoutArmed` in the session store, and the next `unlock()` returns `lockout` without opening the prompt. Tapping again, or the toast's Undo, calls `disarmLockout()`.
+- **Reset demo data.** `resetDemo(db)` writes every `demo.*` pref back to its default, disarms the lockout, then runs `resetBank(db)`. Security prefs and added rows stay. The sheet then goes back to History, which loads the sample rows again.
+- **Sign out.** The sheet calls `signOut()`. A failure lands on Lock with a toast, and Lock's "Start again" tries again.
+- **Focus.** `/settings?focus=reviewers` opens the screen scrolled to the reviewer slip. History's fault states link there.
+- **Views.** `SettingsView`, `PrivacyView`, `SignOutView` and `ResetDemoView` take props only, so the gallery draws every state from fixtures.
+
+**In release builds.** The reviewer controls ship in the release APK, unlike the dev auth override (T12). They are safe there because of what they can reach. The `demo.*` prefs only shape the answers of the in-app fake bank, which stands in for a server, and every answer still goes through the same zod parse at sync (T6, T11). The lockout control can only make an unlock fail. None of them can pass a biometric check, show an amount, skip step-up or open a protected route. They live in `features/settings/`, `features/transactions/data.ts` and the session store, and never call `setAuthOverride`, so `npm run release:auth-check` still finds the override compiled out.
+
 ## Storage and keys
 
 | Store | Holds | Protection |
@@ -624,7 +638,7 @@ type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };  
 - **Calm.** It is compiled from the data (`formFor`). A moment keeps only its `calm` tracks, such as blinks, so hops, spins, flips and accents go, and its pose change becomes a 150 ms timing marked `ReduceMotion.Never`. Reanimated's own reduced motion would jump straight to the end (V).
 - **Off.** Poses snap and haptics still fire.
 - **`<MotionPolicyRoot>`.** Sets `ReducedMotionConfig` to `Never` in Full and `Always` otherwise. It is the live switch for every other worklet animation.
-- **Plumbing.** `src/motion/` can't import services, so the root layout reads the setting through `useSenMotionPreference()` from `@/features/settings` and passes it to `<MotionPolicyRoot preference>`. Without a root, as in a component test, `useMotionPolicy()` returns `'full'`.
+- **Plumbing.** `src/motion/` can't import services, so the root layout reads the setting through `useSenMotionPreference()` from `@/features/settings`, which follows the `senMotion` pref live, and passes it to `<MotionPolicyRoot preference>`. Without a root, as in a component test, `useMotionPolicy()` returns `'full'`.
 - **CSS transitions.** They ignore reduced motion (V), so components set their duration to 0 from the policy.
 - **Informational timers.** The lockout cool-down keeps counting in every mode, using `ReduceMotion.Never`.
 
@@ -736,6 +750,7 @@ Sen has no server. Everything it protects is on the phone.
 | T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
 | T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
 | T12 | The dev auth override skipping biometrics | Only `sen://dev/states` sets it, and that route is mounted only under `__DEV__`. `setAuthOverride` stores and `authenticate` reads only under `__DEV__`, which a release bundle compiles to `false`: the setter becomes an empty function and the prompt function is a bare `authenticateAsync` call. Memory only | `features/auth/prompt.ts`, `features/gallery/index.tsx` | `prompt.test.ts` (a release build stores and reads no override). `npm run release:auth-check` greps a production bundle |
+| T13 | The reviewer controls in a release build | They only shape the fake bank's answers, which zod still parses, and the lockout control only adds a failure before the real prompt. Nothing in them passes a check, shows an amount or skips step-up. Separate from the T12 override | `features/settings/`, `features/transactions/data.ts`, `features/auth/session.ts` | `settings/reviewer-faults.test.tsx`, `auth/session.test.tsx` (an armed lockout never prompts, and a disarmed one prompts for real). `npm run release:auth-check` |
 
 **What this does not protect against.** The README says this in plain words.
 
@@ -772,6 +787,8 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | A reviewer fault covers one history request, its retry included, then reads Normal. A fault picked mid-request waits for the next one. A bank reset runs the first sync again | `features/transactions/history-screen.test.tsx` |
 | Missing key resets the database, by the reset table. A busy disk wipes nothing. A key without its database file counts as no vault and is deleted, and a file check that throws keeps the key. Key shape and storage options | `services/vault.test.ts` |
 | Prefs read back, fall back to defaults, and notify on write and clear | `services/prefs.test.ts` |
+| Each reviewer fault from Settings shows its designed state on History, says it is simulated, reads Normal again after one request, and Retry or the next pull recovers. Slow mode holds a pull 3 s and turning it off lands the next at once. A dataset switch shows its progress, and Offline before it fails the first load full screen | `features/settings/reviewer-faults.test.tsx` |
+| Settings writes every control's pref. Turning off Hide amounts asks for biometrics and a cancel keeps them hidden. The lockout control arms, offers Undo and disarms. Reset demo data restores the reviewer defaults and keeps security choices, and a failed reset says nothing changed | `features/settings/settings-screen.test.tsx`, `features/settings/sheets.test.tsx` |
 | The logger takes an event code and nothing else | `services/logger.test.ts` |
 | Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
 | Log schema rejects amounts | `features/security/activity-log.test.ts` |

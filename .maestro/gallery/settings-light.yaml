@@ -1,0 +1,75 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=settings&state=top&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-top-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-top-light
+- openLink: "sen://dev/states?screen=settings&state=reviewers&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-light
+- openLink: "sen://dev/states?screen=settings&state=reviewers-armed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-armed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-armed-light
+- openLink: "sen://dev/states?screen=settings&state=reviewers-loading&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-loading-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-loading-light
+- openLink: "sen://dev/states?screen=settings&state=calm&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-calm-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-calm-light
+- openLink: "sen://dev/states?screen=settings&state=privacy&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-privacy-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-privacy-light
+- openLink: "sen://dev/states?screen=settings&state=sign-out&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-sign-out-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-sign-out-light
+- openLink: "sen://dev/states?screen=settings&state=reset-demo&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reset-demo-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reset-demo-light
+- openLink: "sen://dev/states?screen=settings&state=reset-demo-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reset-demo-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reset-demo-failed-light

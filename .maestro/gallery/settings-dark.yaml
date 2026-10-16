@@ -1,0 +1,75 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=settings&state=top&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-top-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-top-dark
+- openLink: "sen://dev/states?screen=settings&state=reviewers&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-dark
+- openLink: "sen://dev/states?screen=settings&state=reviewers-armed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-armed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-armed-dark
+- openLink: "sen://dev/states?screen=settings&state=reviewers-loading&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-loading-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-loading-dark
+- openLink: "sen://dev/states?screen=settings&state=calm&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-calm-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-calm-dark
+- openLink: "sen://dev/states?screen=settings&state=privacy&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-privacy-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-privacy-dark
+- openLink: "sen://dev/states?screen=settings&state=sign-out&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-sign-out-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-sign-out-dark
+- openLink: "sen://dev/states?screen=settings&state=reset-demo&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reset-demo-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reset-demo-dark
+- openLink: "sen://dev/states?screen=settings&state=reset-demo-failed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reset-demo-failed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reset-demo-failed-dark

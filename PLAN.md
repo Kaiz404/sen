@@ -116,8 +116,8 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [x] A double-tap on Save stores one row. `add-flow.test.tsx` › "a double tap on Save prompts once and stores one row", real SQL through `openTestDb`.
 
 **Lane 4c. Settings.** Owns `src/features/settings/`.
-- [ ] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes.
-- [ ] Each forced fault renders its designed state.
+- [x] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes. Unit evidence: `features/settings/settings-screen.test.tsx`, `sheets.test.tsx`, and the 9 `settings` gallery states in `gallery.test.tsx` (`.maestro/gallery/settings-{light,dark}.yaml`). The controls ship in release builds: a production bundle holds the reviewer copy, and `npm run release:auth-check` still passes. Device shots are not taken yet.
+- [x] Each forced fault renders its designed state, says it is simulated, lasts one request, and recovers. Unit evidence: `features/settings/reviewer-faults.test.tsx` (offline, timeout after 8 s, server, bad data, slow, a dataset switch with Offline armed), `features/transactions/history-screen.test.tsx`, `features/auth/session.test.tsx` (lockout). Device evidence is not taken yet.
 
 **Lane 4d. Sen motion.** Owns `src/features/sen/`. Build in this order, each step green before the next. The boards in `design/` are the source (DESIGN › Sen › Source of truth). Transcribe each moment from `MAX-Moments` keyframes, not from DESIGN's prose. `python3 -I scripts/board-keyframes.py <board>` prints them in ms. Channel names are the board selectors (ARCHITECTURE › Sen's rig).
 - [x] `SenRig`: four body Views plus animated SVG nodes, one channel per node, and `usePose`. A test checks that a settled rig shows the same values as `SenStatic`. Evidence: `src/features/sen/components/sen-rig.test.tsx` (every pose, and masked eased into worried).
