@@ -495,7 +495,8 @@ type Moment = { id: MomentId; priority: 0 | 1 | 2 | 3; from: PoseId; to: PoseId;
 - **Sampler.** `sampleTrack(track, ms)` is a pure function that returns the value at a time. The pose gallery uses it to draw settled poses. Tests don't use it as their oracle. They assert literal values copied once from DESIGN.md, so a wrong spec can't agree with itself.
 - **Generated tracks.** The Euler wobble and the edge spin come from generators (`eulerSteps`, `edgeSpin`).
 - **Marks.** Haptics and accents fire from a per-rig clock shared value through `scheduleOnRN`. They stay in step with the UI thread. `runOnJS` is deprecated.
-- **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53` and outQ `.25,.46,.45,.94`. The board and the app then draw the same curve.
+- **Easing.** Every easing uses the canvas curves as `Easing.bezier`: out `.2,.8,.2,1`, sine `.37,0,.63,1`, inQ `.55,.085,.68,.53`, outQ `.25,.46,.45,.94`, inS `.12,0,.39,0` and outS `.61,1,.88,1`. The board and the app then draw the same curve.
+- **Launch curves.** MAL-Timelines adds `malSpring` `.34,1.56,.64,1` (one overshoot, `SPRING.launch` damping 12 and stiffness 180 as a spring), `handoff` `.3,1.25,.5,1`, and the hop curves `hopOut` `.2,.7,.4,1` and `hopIn` `.6,0,.8,.3`. `src/motion/tokens.ts` holds each as `BEZIER`, `EASE` (for `withTiming`), `EASE_FN` (a plain worklet function, for `kf`) and `EASE_CSS`.
 - **No CSS animation in the rig.** Reanimated CSS animations can't drive SVG group transforms, ignore reduced motion, and can't be seen in Jest. Ambient loops (blink, peek, breathe) use the same compiler with `withRepeat`.
 
 ### MotionDirector
@@ -545,7 +546,7 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
 | Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
 
-Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, for the lockout cool-down), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf`, and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
+Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, for the lockout cool-down), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf(t, stops, values, eases?)`, where `eases[i]` shapes the segment from `stops[i]` the way a CSS keyframe's timing function does, so hop arcs have no corners; and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
 
 **Reading the level.** Components read the level only through `useMotionPolicy()`. `cssMs(level, ms)` in `src/components/motion-level.ts` zeroes every CSS transition outside Full, because CSS ignores reduced motion (V). Looping and decorative keyframes (`Bone`, `EnterOnce`) run in Full only.
 
