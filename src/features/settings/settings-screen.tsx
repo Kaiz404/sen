@@ -86,6 +86,7 @@ const VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export function SettingsView({ values, actions, focus }: SettingsViewProps): ReactNode {
   const scroll = useRef<ScrollView>(null);
+  const focused = useRef(false);
   const name = BIOMETRIC_NAME[values.biometric];
   const motion = MOTION_CHOICES.find((c) => c.id === values.senMotion) ?? MOTION_CHOICES[0]!;
   const { onPref } = actions;
@@ -192,8 +193,9 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
 
       <View
         onLayout={(e) => {
-          if (focus === 'reviewers')
-            scroll.current?.scrollTo({ y: e.nativeEvent.layout.y - 16, animated: false });
+          if (focus !== 'reviewers' || focused.current) return;
+          focused.current = true;
+          scroll.current?.scrollTo({ y: e.nativeEvent.layout.y - 16, animated: false });
         }}
       >
         <Reviewers values={values} actions={actions} name={name} />

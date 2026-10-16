@@ -1,4 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import { disarmLockout, useLockoutArmed } from '@/features/auth';
@@ -16,9 +17,10 @@ const mockLock = jest.fn();
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
+let mockParams: { focus?: string } = {};
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn() }),
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => mockParams,
 }));
 jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
@@ -35,6 +37,7 @@ beforeEach(async () => {
   mockPush.mockClear();
   mockLock.mockClear();
   disarmLockout();
+  mockParams = {};
   mockDb = await openTestDb();
 });
 afterEach(async () => {
@@ -158,6 +161,20 @@ test('Lock now locks through the session, which session.test covers', async () =
   await fireEvent.press(screen.getByRole('button', { name: 'Lock now' }));
 
   expect(mockLock).toHaveBeenCalledTimes(1);
+});
+
+test('opened at the reviewer controls, the screen scrolls there once and then leaves the scroll alone', async () => {
+  mockParams = { focus: 'reviewers' };
+  const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+  await renderSettings();
+  const layout = (y: number) =>
+    fireEvent(screen.getByTestId('reviewers'), 'layout', { nativeEvent: { layout: { y } } });
+
+  await layout(900);
+  await layout(940);
+
+  expect(scrollTo.mock.calls).toEqual([[{ y: 884, animated: false }]]);
+  scrollTo.mockRestore();
 });
 
 test('the sheets open as their routes', async () => {
