@@ -26,12 +26,15 @@ export type BankScenario = {
 
 const SLOW_MS = 3000;
 
-const FAILURE: { readonly [K in BankScenario['next']]: BankFailure | null } = {
+/** A failure answers after `afterMs`. A timeout waits out its deadline first, as a real one would. */
+const FAILURE: {
+  readonly [K in BankScenario['next']]: { readonly error: BankFailure; readonly afterMs: number } | null;
+} = {
   normal: null,
   bad_data: null,
-  offline: { kind: 'offline' },
-  timeout: { kind: 'timeout' },
-  server: { kind: 'server' },
+  offline: { error: { kind: 'offline' }, afterMs: 0 },
+  timeout: { error: { kind: 'timeout' }, afterMs: 8000 },
+  server: { error: { kind: 'server' }, afterMs: 0 },
 };
 
 const LOOKS_REAL = {
@@ -77,7 +80,10 @@ export function createMockBank(options: {
       const { next, size, slow, newOnRefresh } = scenario();
       if (slow) await wait(SLOW_MS);
       const failure = FAILURE[next];
-      if (failure !== null) return err(failure);
+      if (failure !== null) {
+        if (failure.afterMs > 0) await wait(failure.afterMs);
+        return err(failure.error);
+      }
 
       const rows = feed(size);
       const served =

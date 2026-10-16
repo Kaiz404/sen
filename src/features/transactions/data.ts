@@ -12,13 +12,14 @@ import { create } from 'zustand';
 
 import { onArrive } from '@/features/auth';
 import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
-import type { AppError } from '@/models/errors';
+import { type AppError, isRetryable } from '@/models/errors';
+import type { PrefValue } from '@/models/prefs';
 import type { MaskedRow } from '@/models/transaction';
 import { createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
-import { readPref } from '@/services/prefs';
+import { readPref, writePref } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
-import { readSyncState, sync, type SyncSummary } from '@/services/sync';
+import { readSyncState, resetBankRows, sync, type SyncSummary } from '@/services/sync';
 import {
   type DayRange,
   type PageCursor,
@@ -117,14 +118,58 @@ function cursorOf(row: MaskedRow | undefined): PageCursor | null {
   return row === undefined ? null : { postedAt: row.postedAt, id: row.id };
 }
 
+/** How far the running sync has got, or null when none runs. `total` is known only for a first sync. */
+export type SyncProgress = { readonly received: number; readonly total: number | null } | null;
+
+export const syncProgress = create<{ readonly progress: SyncProgress }>(() => ({ progress: null }));
+
+export function useSyncProgress(): SyncProgress {
+  return syncProgress((s) => s.progress);
+}
+
+/** Bumped by `resetBank`, so History runs a first sync again even when the last one failed. */
+export const bankEpoch = create<{ readonly epoch: number }>(() => ({ epoch: 0 }));
+
+/** Deletes the bank rows and rewinds the cursor. Rows added on the phone stay. History then syncs afresh. */
+export async function resetBank(db: Db): Promise<void> {
+  await resetBankRows(db);
+  bankEpoch.setState((s) => ({ epoch: s.epoch + 1 }));
+  await queryClient.invalidateQueries({ queryKey: QK.tx });
+}
+
+type DemoNext = PrefValue<'demo.next'>;
+
+/**
+ * A reviewer fault covers one history request, its pages and its automatic retry, then goes back to normal,
+ * unless the reviewer picked something else while the request ran.
+ */
+function settleFault(armed: DemoNext | undefined): void {
+  if (armed !== undefined && armed !== 'normal' && readPref('demo.next') === armed)
+    writePref('demo.next', 'normal');
+}
+
 export function useSync(db: Db, newest: MaskedRow | undefined) {
   const client = useQueryClient();
-  return useMutation<SyncSummary, AppError, SyncTrigger>({
+  return useMutation<SyncSummary, AppError, SyncTrigger, DemoNext>({
     mutationKey: [...QK.tx, 'sync'],
+    onMutate: (trigger) => {
+      const total = trigger === 'first' ? readPref('demo.datasetSize') : null;
+      syncProgress.setState({ progress: { received: 0, total } });
+      return readPref('demo.next');
+    },
     mutationFn: async () => {
-      const result = await sync(db, bank);
+      const result = await sync(db, bank, {
+        onProgress: (received) =>
+          syncProgress.setState((s) => ({ progress: { received, total: s.progress?.total ?? null } })),
+      });
       if (!result.ok) throw result.error;
       return result.data;
+    },
+    // A timeout has already made the user wait its whole deadline, so it goes straight to them.
+    retry: (failures, error) => failures < 1 && isRetryable(error) && error.kind !== 'timeout',
+    onSettled: (_data, _error, _trigger, armed) => {
+      syncProgress.setState({ progress: null });
+      settleFault(armed);
     },
     onSuccess: async (summary, trigger) => {
       const before = cursorOf(newest);

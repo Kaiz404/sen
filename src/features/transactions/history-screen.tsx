@@ -18,7 +18,14 @@ import { playHaptic } from '@/services/haptics';
 import type { Flow } from '@/services/tx-repo';
 
 import { historyBody, syncNotes } from './body';
-import { arrivals, monthSoFarRange, syncView, useHistoryData, useSync } from './data';
+import {
+  arrivals,
+  bankEpoch,
+  monthSoFarRange,
+  syncView,
+  useHistoryData,
+  useSync,
+} from './data';
 import { HistoryView } from './history-view';
 import { clockText } from './rows';
 
@@ -45,10 +52,15 @@ export function HistoryScreen(): ReactNode {
   const syncing = useSync(db, data.newest);
   const arrival = useStore(arrivals, (s) => s.after);
 
+  const epoch = useStore(bankEpoch, (s) => s.epoch);
+
   const { mutate } = syncing;
+  const unsynced = data.synced === false;
+  // Runs once each time the database has no cursor: at first unlock and after each bank reset. A first sync
+  // that failed waits for Retry instead of looping.
   useEffect(() => {
-    if (data.synced === false && syncing.status === 'idle') mutate('first');
-  }, [data.synced, syncing.status, mutate]);
+    if (unsynced) mutate('first');
+  }, [unsynced, epoch, mutate]);
 
   useEffect(() => {
     if (updated === null) return;

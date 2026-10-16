@@ -67,6 +67,18 @@ test.each(['offline', 'timeout', 'server'] as const)(
   },
 );
 
+test('"timeout" answers only after its 8 s deadline, and the other faults answer at once', async () => {
+  const timeout = bank({ next: 'timeout' });
+  const offline = bank({ next: 'offline' });
+  const server = bank({ next: 'server' });
+
+  await timeout.api.fetchPage({ since: 0, limit: 10 });
+  await offline.api.fetchPage({ since: 0, limit: 10 });
+  await server.api.fetchPage({ since: 0, limit: 10 });
+
+  expect([timeout.waits, offline.waits, server.waits]).toEqual([[8000], [], []]);
+});
+
 test('"bad_data" adds two broken rows with no seq, and the real rows still arrive', async () => {
   const body = await page(bank({ next: 'bad_data', size: 20 }).api, 0);
 
