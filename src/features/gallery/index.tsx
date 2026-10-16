@@ -70,7 +70,7 @@ export function GalleryBody({
       const drawn = SCREENS[query.screen]?.[query.state]?.();
       if (!isComponent(query.screen))
         return (
-          <View testID={shotId} style={styles.bleed}>
+          <View testID={shotId} collapsable={false} style={styles.bleed}>
             {drawn}
           </View>
         );
@@ -100,7 +100,7 @@ function Frame({
 }) {
   const { rt } = useUnistyles();
   return (
-    <View testID={shotId} style={styles.frame}>
+    <View testID={shotId} collapsable={false} style={styles.frame}>
       <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <Text style={styles.caption}>{caption}</Text>
       <View style={styles.stage}>{children}</View>
