@@ -6,10 +6,6 @@ appId: com.kaiz404.sen
     file: subflows/at-lock.yaml
     env:
       AUTH: lockout
-- extendedWaitUntil:
-    notVisible:
-      id: launch
-    timeout: 10000
 - startRecording: shots/motion/record-lockout
 - tapOn:
     id: unlock
