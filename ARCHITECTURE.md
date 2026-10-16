@@ -237,7 +237,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 - **Shown or hidden.** The `hideAmounts` pref decides, not the session. It survives lock and restart. Showing goes through `useStepUp('reveal')`. Hiding never prompts.
 - **On show.** `readRevealedAmounts(db, { filter, through })` loads `id → amountMinor` for the loaded rows, from the newest down to the last loaded row, keyed `['tx','revealed',…]`. `readRevealedTotals` and `readRevealedDayNets` add sums and nets. Rows read the map through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
 - **On hide.** `removeQueries(['tx','revealed'])`. Lock also clears it with the whole cache.
-- **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount exists in JS.
+- **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount read from the database exists in JS. The mock bank is the exception. `services/bank-api.ts` keeps its whole feed, amounts included, in JS memory for the life of the app, because it stands in for a server. A real bank's feed would live on that server.
 
 ## State
 
@@ -669,7 +669,7 @@ Sen has no server. Everything it protects is on the phone.
 | T4 | Screenshots and recording | FLAG_SECURE in release (Android). `usePreventScreenCapture` on sensitive screens (iOS 13+). Off in dev builds so agents can screenshot, with a test that release always guards | `features/security/screen-guard.ts` | Screenshot in the release APK: blocked |
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
 | T6 | Tampered or corrupt data | zod on every read, drop and count, reset on an unreadable database | `services/tx-repo.ts` | Reviewer control "Bad data" |
-| T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount in JS while masked. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only. Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
+| T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount from the database in JS while masked. The mock bank's feed, which stands in for a server, does hold amounts in JS. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only. Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
 | T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx` | `adb shell am start -d sen://transaction/x`: Lock |
 | T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
 | T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
