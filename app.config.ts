@@ -44,6 +44,12 @@ const config: ExpoConfig = {
     ['expo-secure-store', { configureAndroidBackup: false }],
     './plugins/with-no-backup',
     [
+      'expo-build-properties',
+      {
+        android: { enableMinifyInReleaseBuilds: true, enableShrinkResourcesInReleaseBuilds: true },
+      },
+    ],
+    [
       'expo-local-authentication',
       { faceIDPermission: 'Sen uses Face ID to unlock and to confirm changes.' },
     ],
