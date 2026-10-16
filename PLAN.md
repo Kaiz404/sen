@@ -120,7 +120,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [ ] Each forced fault renders its designed state.
 
 **Lane 4d. Sen motion.** Owns `src/features/sen/`. Build in this order, each step green before the next. The boards in `design/` are the source (DESIGN › Sen › Source of truth). Transcribe each moment from `MAX-Moments` keyframes, not from DESIGN's prose. `python3 -I scripts/board-keyframes.py <board>` prints them in ms. Channel names are the board selectors (ARCHITECTURE › Sen's rig).
-- [ ] `SenRig`: four body Views plus animated SVG nodes, one channel per node, and `usePose`. A test checks that a settled rig shows the same values as `SenStatic`.
+- [x] `SenRig`: four body Views plus animated SVG nodes, one channel per node, and `usePose`. A test checks that a settled rig shows the same values as `SenStatic`. Evidence: `src/features/sen/components/sen-rig.test.tsx` (every pose, and masked eased into worried).
 - [ ] `compileTrack`, `eulerSteps`, `edgeSpin`. Tests assert literal values (for example, wobble amplitudes 11, 7.92, 5.70).
 - [ ] Director reducer as a table test, then its store with gates and the idle scheduler, then the two-rigs test (only one animates).
 - [ ] Unlock, Reveal and Re-mask as data from `design/MAX-Moments.dc.html`. `toHaveAnimatedStyle` and `toHaveAnimatedProps` at start, midpoint and end with literal values. Calm and Off forms.

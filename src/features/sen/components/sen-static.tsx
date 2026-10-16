@@ -1,12 +1,11 @@
 import { memo, type ReactNode, useId } from 'react';
 import { View } from 'react-native';
-import Svg, { Circle, ClipPath, Defs, Ellipse, G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
 import type { Frame } from '../channels';
 import {
   FACE_CLIP,
   PIVOT,
-  type Shape,
   senBox,
   senTier,
   transformOrigin,
@@ -15,37 +14,7 @@ import {
 import { NODES, type TreeNode, treeFor } from '../art/nodes';
 import { poseFrame } from '../poses';
 import type { SenProps } from '../sen-props';
-
-function ShapeEl({ shape: s }: { shape: Shape }): ReactNode {
-  const paint = {
-    fill: s.fill ?? 'none',
-    stroke: s.stroke,
-    strokeWidth: s.strokeWidth,
-    strokeLinejoin: s.strokeLinejoin,
-    strokeDasharray: s.strokeDasharray,
-    opacity: s.opacity,
-  };
-  switch (s.kind) {
-    case 'circle':
-      return <Circle cx={s.cx} cy={s.cy} r={s.r} {...paint} />;
-    case 'ellipse':
-      return <Ellipse cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} {...paint} />;
-    case 'rect':
-      return (
-        <Rect
-          x={s.x}
-          y={s.y}
-          width={s.width}
-          height={s.height}
-          rx={s.rx}
-          transform={s.rotate ? `rotate(${s.rotate.join(' ')})` : undefined}
-          {...paint}
-        />
-      );
-    case 'path':
-      return <Path d={s.d} strokeLinecap="round" {...paint} />;
-  }
-}
+import { ShapeEl } from './shape';
 
 function Node({ n, frame, clip }: { n: TreeNode; frame: Frame; clip: string }): ReactNode {
   const { opacity, matrix } = NODES[n.node].read(frame, 1);

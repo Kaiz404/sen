@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 
+import { SenRig } from './components/sen-rig';
 import { SenStatic } from './components/sen-static';
 import type { SenProps } from './sen-props';
 
-export function Sen({ pose, size, prop, label }: SenProps): ReactNode {
+export function Sen({ id, pose, size, prop, label }: SenProps): ReactNode {
+  if (id !== undefined) return <SenRig id={id} pose={pose} size={size} prop={prop} label={label} />;
   return <SenStatic pose={pose} size={size} prop={prop} label={label} />;
 }
 

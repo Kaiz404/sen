@@ -539,8 +539,7 @@ The rig copies the boards' structure (`design/MAX-Library.dc.html`, `design/MAX-
 
 - **One public `<Sen>`.**
   - Without an `id` it renders `SenStatic` (`features/sen/components/sen-static.tsx`), a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only. It walks `treeFor(senTier(size))`, calls each node's `read(poseFrame(pose, prop), unit)` and skips nodes at opacity 0. Clip ids come from `useId()`. It never draws accents or the edge pill, because a pose never spins.
-  - Until the rig exists, `<Sen id>` also renders `SenStatic`.
-  - With an `id` it renders `SenRig`, which registers with the director.
+  - With an `id` it renders `SenRig` (`components/sen-rig.tsx`). It holds one `makeMutable` per channel (`components/rig-values.ts`), mounts every node of its tier, and gives each node's mapper only that node's channels, so a still part does no work. It rests in its `pose`: a pose change eases every channel there, opacities in 120 ms and the rest on `SPRING.settle` (150 ms timings in Calm, a snap in Off). `sen-rig.test.tsx` renders a rig in every pose, and after easing from one pose to another, and checks each node draws what `SenStatic` draws.
 - **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
   - `NODES` gives each part its declared channels and a worklet `read(frame, unit)`. A test calls each `read` through a recording Proxy and checks it reads exactly its channels, because a mapper wakes for every shared value it captures.
   - `SVG_TREE` holds the coin's nesting and draw order as data, in the boards' order: rim and face, cheeks, the clipped `lk` (eyes, mouths, shades), the cap, then the paws. `treeFor(tier)` drops cheeks, mouths, paws and held props at the face tier.
