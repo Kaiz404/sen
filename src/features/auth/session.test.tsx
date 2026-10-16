@@ -4,6 +4,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { toast, ToastHost } from '@/components/toast';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
 import * as Vault from '@/services/vault';
 
@@ -266,4 +267,16 @@ test('a lockout armed before sign out never reaches the next demo user', async (
 
   expect(await unlock()).toEqual({ ok: true });
   expect(authenticate).toHaveBeenCalledTimes(1);
+});
+
+test('locking ends the unlock timing, so a later gallery History logs no timing', async () => {
+  const info = jest.spyOn(console, 'info').mockImplementation(() => {});
+  await unlockInto(await openTestDb());
+  lockNow();
+  info.mockClear();
+
+  mark('history.painted');
+
+  expect(info).not.toHaveBeenCalled();
+  info.mockRestore();
 });

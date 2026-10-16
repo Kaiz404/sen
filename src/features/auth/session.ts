@@ -6,7 +6,7 @@ import { createStore } from 'zustand/vanilla';
 import { toast } from '@/components/toast';
 import type { AppError } from '@/models/errors';
 import type { OpenDb } from '@/services/db';
-import { mark } from '@/services/perf';
+import { endUnlock, mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
 import { destroyVault, hasVault, openVault } from '@/services/vault';
 
@@ -62,6 +62,7 @@ export function dispatch(event: SessionEvent): boolean {
   sessionStore.setState(closes ? { session: next, amountsHidden: true } : { session: next });
 
   if (closes) {
+    endUnlock();
     queryClient.clear();
     toast.hide();
     closing = db.close();
@@ -109,6 +110,7 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
     else arrival = setTimeout(arrive, arriveAfterMs);
     return outcome;
   } catch {
+    endUnlock();
     dispatch({ type: 'AUTH_FAIL' });
     return { ok: false, reason: 'unknown' };
   }
