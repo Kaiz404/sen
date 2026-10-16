@@ -162,3 +162,19 @@ test('in Calm the launch holds the rest frame 400 ms, fades to Lock in 200 ms, w
   expect(onDone).toHaveBeenCalledTimes(1);
   expect(playHaptic).not.toHaveBeenCalled();
 });
+
+test('reduced motion that turns on mid-launch jumps to the rest frame, then fades to Lock', async () => {
+  const onDone = jest.fn();
+  const view = await render(<Launch ready={false} onDone={onDone} />);
+  await at(300);
+
+  await view.rerender(<Launch ready={false} level="calm" onDone={onDone} />);
+  await at(16);
+  const s = sen();
+  expect([s.translateX, s.translateY, s.scale]).toEqual([-41, -15, 0.12]);
+
+  await view.rerender(<Launch ready level="calm" onDone={onDone} />);
+  await at(620);
+  expect(onDone).toHaveBeenCalledTimes(1);
+  expect(playHaptic).not.toHaveBeenCalled();
+});

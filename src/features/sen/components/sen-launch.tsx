@@ -125,7 +125,13 @@ export function SenLaunch({ target, rest, ready, onDone }: Props): ReactNode {
   });
 
   useEffect(() => {
-    if (calm) return;
+    // Reduce motion can turn on after the story starts, so Calm sets the rest frame itself.
+    if (calm) {
+      cancelAnimation(hop);
+      hop.set(HOP_MS);
+      t.set(REST_MS);
+      return;
+    }
     t.set(
       withSequence(
         NEVER,
@@ -140,7 +146,7 @@ export function SenLaunch({ target, rest, ready, onDone }: Props): ReactNode {
       ),
     );
     return () => cancelAnimation(t);
-  }, [calm, t]);
+  }, [calm, t, hop]);
 
   useEffect(() => {
     if (!ready) return;
