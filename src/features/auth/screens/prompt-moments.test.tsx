@@ -87,6 +87,44 @@ test('a wrong finger pops Sen’s eyes open at 0.9 and drops the face to (0, 10)
   expect(eye('lock')).toEqual([0.9, 0, 0, 0.9]);
 });
 
+test('cancelling the next prompt after a miss settles Sen worried, with no second miss and no haptic', async () => {
+  const miss = holdPrompt();
+  await render(<LockScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await miss({ success: false, error: 'authentication_failed' });
+  await at(2000);
+  jest.mocked(playHaptic).mockClear();
+
+  const cancel = holdPrompt();
+  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
+  await at(300);
+  await cancel({ success: false, error: 'user_cancel' });
+  await at(1500);
+
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
+  expect(screen.getByRole('header', { name: 'Not quite.' })).toBeOnTheScreen();
+  expect((node('lock', 'el').matrix as number[]).slice(0, 4)).toEqual([0.85, 0, 0, 0.85]);
+});
+
+test('cancelling the passcode during a lockout keeps the napping Sen still, with no second lockout', async () => {
+  const lockout = holdPrompt();
+  await render(<LockScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await lockout({ success: false, error: 'lockout' });
+  await at(2000);
+  jest.mocked(playHaptic).mockClear();
+
+  const cancel = holdPrompt();
+  await fireEvent.press(screen.getByRole('button', { name: 'Use device passcode' }));
+  await cancel({ success: false, error: 'user_cancel' });
+  await at(1400);
+
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
+  expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
+  const spin = within(screen.getByTestId('sen-rig-lock', hidden)).getByTestId('sen-sp', hidden);
+  expect((spin.props.jestAnimatedStyle.value.transform as { scaleX: number }[])[0]!.scaleX).toBe(1);
+});
+
 test('a lockout spins the napping Sen edge-on, a pill with its edge showing', async () => {
   const answer = holdPrompt();
   await render(<LockScreen />);
@@ -155,4 +193,22 @@ test('the first-run primer’s Sen plays Unlock when the fingerprint is on, then
   await at(1110);
 
   expect(session().status).toBe('unlocked');
+});
+
+test('cancelling the primer’s next prompt after a miss plays no second miss and no haptic', async () => {
+  sessionStore.setState({ session: { status: 'welcome' } });
+  const miss = holdPrompt();
+  await render(<PrimerScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Turn on fingerprint' }));
+  await miss({ success: false, error: 'authentication_failed' });
+  await at(2000);
+  jest.mocked(playHaptic).mockClear();
+
+  const cancel = holdPrompt();
+  await fireEvent.press(screen.getByRole('button', { name: 'Turn on fingerprint' }));
+  await cancel({ success: false, error: 'user_cancel' });
+  await at(1500);
+
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
+  expect(screen.getByText("Didn't match. 2 more tries before fingerprint locks.")).toBeOnTheScreen();
 });

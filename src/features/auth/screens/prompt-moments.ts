@@ -1,29 +1,34 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { type MomentId, playMoment, stopMoment } from '@/features/sen';
 
-import type { PromptView } from '../prompt-view';
-
-export type PromptKind = PromptView['kind'] | 'checking' | 'signingOut' | 'unlocked';
-
-/** The moment Sen plays for each answer the prompt gives. Any other answer ends the scan. */
-export type PromptAnswers = Readonly<Partial<Record<PromptKind, MomentId>>>;
+import type { AuthFailure, AuthOutcome } from '../prompt';
 
 /**
- * Plays the prompt's moments on a screen's Sen as its state moves: the Face ID scan while the prompt
- * is open, then the moment for its answer. A screen that mounts in a state plays nothing, so the
- * gallery draws each state still.
+ * Where the screen's prompt is. Every change is a new object, so two misses in a row each play their
+ * moment.
  */
-export function usePromptMoments(sen: string, kind: PromptKind, answers: PromptAnswers): void {
-  const last = useRef(kind);
+export type Prompt =
+  | { readonly kind: 'notAsked' }
+  | { readonly kind: 'asking' }
+  | { readonly kind: 'answered'; readonly outcome: AuthOutcome };
+
+export const NOT_ASKED: Prompt = { kind: 'notAsked' };
+
+/** The moment Sen plays for each answer. Any other answer, a cancel included, ends the scan. */
+export type PromptAnswers = Readonly<Partial<Record<'ok' | AuthFailure, MomentId>>>;
+
+/**
+ * Plays the prompt's moments on a screen's Sen: the Face ID scan while the prompt is open, then the
+ * moment for its answer. A screen that has not asked plays nothing.
+ */
+export function usePromptMoments(sen: string, prompt: Prompt, answers: PromptAnswers): void {
   useEffect(() => {
-    const was = last.current;
-    last.current = kind;
-    if (was === kind) return;
-    if (kind === 'checking') return playMoment(sen, 'faceScan');
-    if (was !== 'checking') return;
-    const answer = answers[kind];
-    if (answer) playMoment(sen, answer);
+    if (prompt.kind === 'asking') playMoment(sen, 'faceScan');
+    if (prompt.kind !== 'answered') return;
+    const { outcome } = prompt;
+    const moment = answers[outcome.ok ? 'ok' : outcome.reason];
+    if (moment) playMoment(sen, moment);
     else stopMoment(sen);
-  }, [sen, kind, answers]);
+  }, [sen, prompt, answers]);
 }

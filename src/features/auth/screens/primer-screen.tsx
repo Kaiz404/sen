@@ -19,7 +19,7 @@ import { afterPrompt, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Notice } from './parts';
-import { type PromptAnswers, usePromptMoments } from './prompt-moments';
+import { NOT_ASKED, type Prompt, type PromptAnswers, usePromptMoments } from './prompt-moments';
 
 export type PrimerState =
   PromptView | { readonly kind: 'checking' } | { readonly kind: 'unlocked' };
@@ -27,7 +27,7 @@ export type PrimerState =
 const PRIMER_SEN = 'primer';
 
 /** The primer's Sen keeps peeking through a lockout, and the notice explains it. */
-const ANSWERS: PromptAnswers = { unlocked: 'unlock', mismatch: 'authFailed' };
+const ANSWERS: PromptAnswers = { ok: 'unlock', mismatch: 'authFailed' };
 
 export type PrimerViewProps = {
   readonly state: PrimerState;
@@ -45,13 +45,15 @@ export function PrimerScreen(): ReactNode {
   const amountsHidden = useAmountsHidden();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
-  const [asking, setAsking] = useState(false);
+  const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
+  const asking = prompt.kind === 'asking';
+  usePromptMoments(PRIMER_SEN, prompt, ANSWERS);
 
   const onTurnOn = () => {
     if (asking) return;
-    setAsking(true);
+    setPrompt({ kind: 'asking' });
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
-      setAsking(false);
+      setPrompt({ kind: 'answered', outcome });
       if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
     });
   };
@@ -92,7 +94,6 @@ export function PrimerView({
   const notice = noticeOf(shown, copy, secondsLeft);
   const settings = shown.kind === 'off' && shown.canOpenSettings;
   const unlocked = shown.kind === 'unlocked';
-  usePromptMoments(PRIMER_SEN, shown.kind, ANSWERS);
 
   return (
     <View style={styles.screen}>

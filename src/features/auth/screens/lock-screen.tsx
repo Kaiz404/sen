@@ -18,7 +18,7 @@ import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
-import { type PromptAnswers, usePromptMoments } from './prompt-moments';
+import { NOT_ASKED, type Prompt, type PromptAnswers, usePromptMoments } from './prompt-moments';
 
 export type LockState =
   | PromptView
@@ -37,7 +37,7 @@ const FROM_SESSION: Partial<Record<Session['status'], LockState>> = {
 /** Lock's Sen, the hero's and the napping one, which never show together. */
 const LOCK_SEN = 'lock';
 
-const ANSWERS: PromptAnswers = { unlocked: 'unlock', mismatch: 'authFailed', lockout: 'lockout' };
+const ANSWERS: PromptAnswers = { ok: 'unlock', mismatch: 'authFailed', lockout: 'lockout' };
 
 export type LockViewProps = {
   readonly state: LockState;
@@ -56,15 +56,16 @@ export function LockScreen(): ReactNode {
   const amountsHidden = useAmountsHidden();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
-  // Holds "checking" until the answer lands, so the view moves from checking to the answer in one
-  // step and Sen plays the answer's moment.
-  const [asking, setAsking] = useState(false);
+  // Holds "checking" until the answer lands, so the view never flashes idle in between.
+  const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
+  const asking = prompt.kind === 'asking';
+  usePromptMoments(LOCK_SEN, prompt, ANSWERS);
 
   const onUnlock = () => {
     if (asking) return;
-    setAsking(true);
+    setPrompt({ kind: 'asking' });
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
-      setAsking(false);
+      setPrompt({ kind: 'answered', outcome });
       if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
     });
   };
@@ -105,7 +106,6 @@ export function LockView({
   const { name, icon } = copy;
   const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
   const shown: LockState = state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
-  usePromptMoments(LOCK_SEN, shown.kind, ANSWERS);
   if (shown.kind === 'lockout')
     return (
       <Lockout
