@@ -34,6 +34,11 @@ const nodeSqliteAtRuntime = {
   message: 'Jest only. App code opens the database through openDb from @/services/db.',
 };
 
+const showAmountsWithoutStepUp = {
+  selector: "CallExpression[callee.name='writePref'][arguments.0.value='hideAmounts']",
+  message: 'Show or hide amounts with showAmounts() or hideAmounts() from @/features/auth. Showing needs step-up.',
+};
+
 const restrictedImports = {
   paths: [
     {
@@ -106,6 +111,20 @@ module.exports = defineConfig([
         },
       ],
       'no-restricted-imports': ['error', withTestOnly(restrictedImports)],
+      'no-restricted-syntax': [
+        'error',
+        rawHex,
+        cubicBezierString,
+        sharedValueDotValue,
+        exclusiveTransaction,
+        nodeSqliteAtRuntime,
+        showAmountsWithoutStepUp,
+      ],
+    },
+  },
+  {
+    files: ['src/features/auth/amounts.ts'],
+    rules: {
       'no-restricted-syntax': [
         'error',
         rawHex,
