@@ -132,9 +132,14 @@ export function useSyncProgress(): SyncProgress {
 /** Bumped by `resetBank`, so History runs a first sync again even when the last one failed. */
 export const bankEpoch = create<{ readonly epoch: number }>(() => ({ epoch: 0 }));
 
-/** Deletes the bank rows and rewinds the cursor. Rows added on the phone stay. History then syncs afresh. */
-export async function resetBank(db: Db): Promise<void> {
+/**
+ * Deletes the bank rows and rewinds the cursor. Rows added on the phone stay. History then syncs afresh.
+ * `afterRows` runs once the rows are gone and before that sync starts, so a pref it writes shapes the sync.
+ * When the delete fails, it never runs.
+ */
+export async function resetBank(db: Db, afterRows?: () => void): Promise<void> {
   await resetBankRows(db);
+  afterRows?.();
   bankEpoch.setState((s) => ({ epoch: s.epoch + 1 }));
   await queryClient.invalidateQueries({ queryKey: QK.tx });
 }

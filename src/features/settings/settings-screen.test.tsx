@@ -70,6 +70,18 @@ test('each reviewer control writes its pref, and the screen shows the new value'
   expect(checked('switch', 'Slow network, add 3 s')).toBe(true);
 });
 
+test('a dataset switch that fails keeps the old size and says the rows are as they were', async () => {
+  await renderSettings();
+  await mockDb.close();
+
+  await fireEvent.press(screen.getByRole('radio', { name: '10k' }));
+
+  expect(await screen.findByText('Couldn’t switch the dataset')).toBeOnTheScreen();
+  expect(screen.getByText('Your rows are as they were.')).toBeOnTheScreen();
+  expect(readPref('demo.datasetSize')).toBe(1000);
+  expect(checked('radio', '1k')).toBe(true);
+});
+
 test('a fault that turns itself off elsewhere reads Normal again on the open screen', async () => {
   writePref('demo.next', 'offline');
   await renderSettings();

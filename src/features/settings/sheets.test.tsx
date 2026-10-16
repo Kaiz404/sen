@@ -70,7 +70,12 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
   expect(mockRouter.dismissTo).toHaveBeenCalledWith('/');
 });
 
-test('a reset that fails says nothing changed, stays open, and can be tried again', async () => {
+test('a reset that fails changes nothing, says so, stays open, and can be tried again', async () => {
+  writePref('demo.next', 'server');
+  writePref('demo.datasetSize', 10000);
+  writePref('demo.slow', true);
+  armLockout();
+  const armed = await renderHook(() => useLockoutArmed());
   await render(<ResetDemoSheet />);
   await mockDb.close();
 
@@ -79,6 +84,12 @@ test('a reset that fails says nothing changed, stays open, and can be tried agai
   expect(
     await screen.findByText('Sen couldn’t reset the sample data. Nothing changed. Try again.'),
   ).toBeOnTheScreen();
+  expect([readPref('demo.next'), readPref('demo.datasetSize'), readPref('demo.slow')]).toEqual([
+    'server',
+    10000,
+    true,
+  ]);
+  expect(armed.result.current).toBe(true);
   expect(mockRouter.dismissTo).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Reset demo data' })).toBeEnabled();
 });
