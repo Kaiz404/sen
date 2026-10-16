@@ -1,12 +1,16 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import { Amount } from '@/components/amount';
+import { type IconName, Key } from '@/components/key';
+import { ReceiptSlip } from '@/components/receipt-slip';
 import { type } from '@/theme/type';
 
-import { Hero, type IconName, Key } from './parts';
+import { Hero } from './parts';
 
 export function WelcomeScreen(): ReactNode {
   const router = useRouter();
@@ -15,6 +19,7 @@ export function WelcomeScreen(): ReactNode {
 
 type Pledge = {
   readonly tile: 'lemon' | 'lilac' | 'mint';
+  /** `null` draws the masked amount mark. */
   readonly icon: IconName | null;
   readonly text: string;
 };
@@ -26,39 +31,51 @@ const PROMISES: readonly Pledge[] = [
 ];
 
 export function WelcomeView({ onContinue }: { readonly onContinue: () => void }): ReactNode {
+  const { theme } = useUnistyles();
   return (
     <View style={styles.screen}>
+      <StatusBar style="light" />
       <Hero
+        kind="welcome"
         title={['Meet', 'Sen.']}
         body="A coin that keeps its eyes shut on your money until you ask."
-        sen={{ pose: 'happy', size: 170, label: 'Sen, waving hello' }}
+        sen={{ pose: 'happy', label: 'Sen, waving hello' }}
       />
       <View style={styles.actions}>
-        <View style={styles.slip}>
-          <Text accessibilityRole="header" style={styles.caption}>
-            THREE THINGS SEN PROMISES
-          </Text>
-          {PROMISES.map((promise, index) => (
-            <View key={promise.tile} style={[styles.promise, index > 0 && styles.promiseRule]}>
-              <Text accessible={false} style={styles.index}>
-                {String(index + 1).padStart(2, '0')}
-              </Text>
-              <View style={[styles.tile, styles[promise.tile]]}>
-                {promise.icon === null ? (
-                  <MaskedMark />
-                ) : (
-                  <MaterialCommunityIcons name={promise.icon} size={24} style={styles.tileIcon} />
-                )}
+        <ReceiptSlip>
+          <View style={styles.slip}>
+            <Text accessibilityRole="header" style={styles.caption}>
+              THREE THINGS SEN PROMISES
+            </Text>
+            {PROMISES.map((promise, index) => (
+              <View key={promise.tile} style={[styles.promise, index > 0 && styles.promiseRule]}>
+                <Text accessible={false} style={styles.index}>
+                  {String(index + 1).padStart(2, '0')}
+                </Text>
+                <View style={[styles.tile, styles[promise.tile]]}>
+                  {promise.icon === null ? (
+                    <Amount value={null} size="tile" surface="pastel" />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={promise.icon}
+                      size={24}
+                      color={theme.colors.onPastel}
+                    />
+                  )}
+                </View>
+                <Text style={styles.promiseText}>{promise.text}</Text>
               </View>
-              <Text style={styles.promiseText}>{promise.text}</Text>
-            </View>
-          ))}
-          <Text style={styles.stamp}>SIMULATED DATA · NO REAL ACCOUNT</Text>
-        </View>
+            ))}
+            <Text style={styles.stamp}>SIMULATED DATA · NO REAL ACCOUNT</Text>
+          </View>
+        </ReceiptSlip>
         <View style={styles.cta}>
           <Key
             testID="continue"
+            tone="lemon"
+            size="xlarge"
             icon="chevron-right"
+            iconPosition="end"
             label="Continue as demo user"
             onPress={onContinue}
           />
@@ -71,38 +88,23 @@ export function WelcomeView({ onContinue }: { readonly onContinue: () => void })
   );
 }
 
-/** "RM" over four coins, the masked amount mark. Always four, never the real digit count. */
-function MaskedMark(): ReactNode {
-  return (
-    <View accessible accessibilityLabel="Amount hidden" style={styles.masked}>
-      <Text style={styles.rm}>RM</Text>
-      <View style={styles.coins}>
-        {[0, 1, 2, 3].map((coin) => (
-          <View key={coin} style={styles.coin} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },
   actions: { paddingTop: 20, paddingHorizontal: 20, paddingBottom: rt.insets.bottom + 22, gap: 16 },
-  slip: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 6,
-    backgroundColor: theme.colors.paper,
+  slip: { paddingTop: 8, paddingHorizontal: 18, paddingBottom: 6 },
+  caption: {
+    ...type.caption(11),
+    paddingTop: 6,
+    paddingBottom: 4,
+    color: theme.colors.inkMuted,
   },
-  caption: { ...type.caption(11), paddingVertical: 6, color: theme.colors.inkMuted },
   promise: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
-  promiseRule: { borderTopWidth: 2, borderStyle: 'dotted', borderColor: theme.colors.rule },
-  index: { ...type.mono(11, 600), width: 20, color: theme.colors.inkMuted },
+  promiseRule: { borderTopWidth: 2, borderStyle: 'dotted', borderColor: theme.colors.leader },
+  index: { ...type.mono(11, 600), width: 20, letterSpacing: 0.88, color: theme.colors.inkMuted },
   tile: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   lemon: { backgroundColor: theme.colors.lemon },
   lilac: { backgroundColor: theme.colors.lilac },
   mint: { backgroundColor: theme.colors.mint },
-  tileIcon: { color: theme.colors.onPastel },
   promiseText: {
     flex: 1,
     fontSize: 16,
@@ -112,24 +114,15 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   stamp: {
     ...type.caption(11),
+    letterSpacing: 1.1,
     marginTop: 6,
+    marginBottom: 4,
     paddingTop: 10,
     borderTopWidth: 2,
     borderStyle: 'dashed',
-    borderColor: theme.colors.rule,
+    borderColor: theme.colors.leader,
     color: theme.colors.stamp,
   },
   cta: { gap: 10 },
   small: { fontSize: 13, lineHeight: 19, textAlign: 'center', color: theme.colors.inkMuted },
-  masked: { alignItems: 'center', gap: 2 },
-  rm: { ...type.numerals(11), color: theme.colors.onPastel },
-  coins: { flexDirection: 'row', gap: 2 },
-  coin: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: theme.colors.onPastel,
-    backgroundColor: theme.colors.lemon,
-  },
 }));

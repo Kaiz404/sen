@@ -1,9 +1,11 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import { type IconName, Key } from '@/components/key';
 import { Sen } from '@/features/sen';
 import { useSecondsLeft } from '@/motion/countdown';
 import { type } from '@/theme/type';
@@ -14,7 +16,7 @@ import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useIsAuthenticating } from '../session';
 import { openDeviceSettings } from './device-settings';
-import { type IconName, Key, Notice } from './parts';
+import { Notice } from './parts';
 
 export type PrimerState = PromptView | { readonly kind: 'checking' };
 
@@ -61,6 +63,7 @@ export function PrimerView({
   onOpenSettings,
   onBack,
 }: PrimerViewProps): ReactNode {
+  const { theme } = useUnistyles();
   const copy = BIOMETRIC[biometric];
   const { name, icon } = copy;
   const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
@@ -72,22 +75,24 @@ export function PrimerView({
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={onBack}
-          style={styles.back}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={21} style={styles.ink} />
-        </Pressable>
+        <Key icon="arrow-left" accessibilityLabel="Back" onPress={onBack} />
         <Text style={styles.caption}>STEP 2 OF 2</Text>
       </View>
       <View style={styles.card}>
         <View accessible={false} style={styles.frame}>
-          <MaterialCommunityIcons name={icon} size={64} style={styles.lemon} />
+          <Svg width={FRAME} height={FRAME} style={styles.corners}>
+            <Path
+              d={CORNERS}
+              fill="none"
+              stroke={theme.colors.lemon}
+              strokeWidth={7}
+              strokeLinecap="round"
+            />
+          </Svg>
+          <MaterialCommunityIcons name={icon} size={64} color={theme.colors.lemon} />
         </View>
         <View style={styles.sen}>
-          <Sen pose="peek" size={180} label={`Sen, peeking one eye open at the ${name} frame`} />
+          <Sen pose="peek" size={210} label={`Sen, peeking one eye open at the ${name} frame`} />
         </View>
       </View>
       <View style={styles.copy}>
@@ -111,19 +116,28 @@ export function PrimerView({
         <Point icon="cellphone" text="Nothing leaves this device. No account, no server." />
       </View>
       <View style={styles.keys}>
-        {notice !== null && <Notice icon="alert-circle-outline" text={notice} />}
+        {notice !== null && <Notice text={notice} />}
         {settings ? (
-          <Key testID="turn-on" icon="cog" label="Open device settings" onPress={onOpenSettings} />
+          <Key
+            testID="turn-on"
+            tone="lemon"
+            size="xlarge"
+            icon="cog"
+            label="Open device settings"
+            onPress={onOpenSettings}
+          />
         ) : (
           <Key
             testID="turn-on"
+            tone="lemon"
+            size="xlarge"
             icon={icon}
             label={shown.kind === 'checking' ? "Checking it's you" : `Turn on ${name}`}
             disabled={shown.kind === 'checking' || shown.kind === 'lockout'}
             onPress={onTurnOn}
           />
         )}
-        <Key tone="secondary" label="Use device passcode instead" onPress={onTurnOn} />
+        <Key tone="outline" size="medium" label="Use device passcode instead" onPress={onTurnOn} />
       </View>
     </View>
   );
@@ -151,11 +165,17 @@ function noticeOf(
   }
 }
 
+const FRAME = 132;
+/** The four corner brackets of SF-Biometric's scan frame. */
+const CORNERS =
+  'M4 38V20Q4 4 20 4H38M94 4H112Q128 4 128 20V38M128 94V112Q128 128 112 128H94M38 128H20Q4 128 4 112V94';
+
 function Point({ icon, text }: { readonly icon: IconName; readonly text: string }): ReactNode {
+  const { theme } = useUnistyles();
   return (
     <View style={styles.point}>
       <View accessible={false} style={styles.pointIcon}>
-        <MaterialCommunityIcons name={icon} size={20} style={styles.ink} />
+        <MaterialCommunityIcons name={icon} size={20} color={theme.colors.ink} />
       </View>
       <Text style={styles.pointText}>{text}</Text>
     </View>
@@ -172,18 +192,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: theme.colors.canvas,
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  back: {
-    width: 46,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 15,
-    borderWidth: theme.shape.keyBorder,
-    borderColor: theme.colors.ink,
-    backgroundColor: theme.colors.paper,
-  },
-  ink: { color: theme.colors.ink },
-  lemon: { color: theme.colors.lemon },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   card: {
     flex: 1,
@@ -191,23 +199,21 @@ const styles = StyleSheet.create((theme, rt) => ({
     maxHeight: 236,
     overflow: 'hidden',
     borderRadius: 32,
-    backgroundColor: theme.colors.onPastel,
+    backgroundColor: theme.colors.hero,
   },
   frame: {
     position: 'absolute',
     left: 30,
     top: 40,
-    width: 132,
-    height: 132,
+    width: FRAME,
+    height: FRAME,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 24,
-    borderWidth: 7,
-    borderColor: theme.colors.lemon,
   },
-  sen: { position: 'absolute', right: -38, bottom: -68 },
+  corners: { position: 'absolute' },
+  sen: { position: 'absolute', right: -44, bottom: -78 },
   copy: { gap: 10 },
-  title: { ...type.words(54), lineHeight: 47, color: theme.colors.ink },
+  title: { ...type.words(54), lineHeight: 46, color: theme.colors.ink },
   body: { fontSize: 16, lineHeight: 23, color: theme.colors.ink },
   points: { gap: 10 },
   point: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -218,7 +224,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     justifyContent: 'center',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: theme.colors.rule,
+    borderColor: theme.colors.leader,
     backgroundColor: theme.colors.paper,
   },
   pointText: { flex: 1, fontSize: 15, lineHeight: 20, color: theme.colors.ink },
