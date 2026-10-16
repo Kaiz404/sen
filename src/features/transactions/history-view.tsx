@@ -84,9 +84,9 @@ const NET_LABEL: Readonly<Record<Flow, string>> = { all: 'DAY NET', in: 'DAY IN'
 
 const NOTICE: Readonly<Record<DbResetReason, string>> = {
   missing_key:
-    "Sen couldn't find its key on this phone, so it started a fresh, empty store. Your bank history syncs back.",
+    "Sen couldn't find its key on this phone, so it started a fresh, empty store. Your bank history syncs back. Transactions you added here couldn't be recovered.",
   corrupt:
-    "Sen couldn't read its saved data, so it started a fresh store. Your bank history syncs back.",
+    "Sen couldn't read its saved data, so it started a fresh store. Your bank history syncs back. Transactions you added here couldn't be recovered.",
 };
 
 /** History drawn from props, so the gallery can draw every state without a database. */

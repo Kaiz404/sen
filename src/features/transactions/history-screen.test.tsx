@@ -294,3 +294,19 @@ test('a history read that fails shows "Sen couldn\'t read your history", and Ret
 
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
 });
+
+test.each([
+  ['missing_key', "Sen couldn't find its key on this phone, so it started a fresh, empty store."],
+  ['corrupt', "Sen couldn't read its saved data, so it started a fresh store."],
+] as const)('the %s reset notice says rows added on this phone are lost', async (reason, lead) => {
+  sessionStore.setState({ dbReset: reason });
+
+  await renderHistory();
+
+  expect(
+    await screen.findByText(
+      `${lead} Your bank history syncs back. Transactions you added here couldn't be recovered.`,
+    ),
+  ).toBeOnTheScreen();
+  sessionStore.setState({ dbReset: null });
+});
