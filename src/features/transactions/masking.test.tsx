@@ -113,7 +113,7 @@ test('show and hide keep the list data, roll amounts in and take them out again'
 
   expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
   expect(tree()).not.toMatch(/\d\.\d\d|ringgit/);
-  expect(new Set(mockData.filter((d) => Array.isArray(d) && d.length > 0))).toEqual(
-    new Set([listData]),
-  );
+  const lists = mockData.filter((d) => Array.isArray(d) && d.length > 0);
+  expect(lists.length).toBeGreaterThan(2);
+  expect(lists.filter((d) => d !== listData)).toEqual([]);
 });
