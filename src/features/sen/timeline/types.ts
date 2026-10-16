@@ -16,7 +16,8 @@ export type Step =
   | { readonly at: number; readonly v: number; readonly ease?: Ease }
   | { readonly at: number; readonly v: number; readonly spring: SpringName };
 
-export type Steps = readonly Step[];
+/** Never empty, so every track has a value to end on. */
+export type Steps = readonly [Step, ...Step[]];
 
 /** At most one track per channel, so two tracks can never fight over a value. */
 export type Tracks = Readonly<Partial<Record<Channel, Steps>>>;

@@ -1,5 +1,5 @@
 import { type Channel, CHANNELS } from './channels';
-import type { Ease, Step, Tracks } from './timeline/types';
+import type { Ease, Step, Steps, Tracks } from './timeline/types';
 
 export type BoardStep = readonly [at: number, v: number, ease?: Ease];
 export type BoardData = Readonly<
@@ -26,11 +26,11 @@ export function slice(steps: readonly BoardStep[], { from = 0, to }: Window): St
 
 /** Every rig channel a board moment animates in the window. A track that never changes is left out. */
 export function boardTracks(moment: Readonly<Record<string, readonly BoardStep[]>>, w: Window): Tracks {
-  const out: Partial<Record<Channel, Step[]>> = {};
+  const out: Partial<Record<Channel, Steps>> = {};
   for (const [key, steps] of Object.entries(moment)) {
     if (!IS_CHANNEL.has(key)) continue;
-    const s = slice(steps, w);
-    if (s.some((step) => step.v !== s[0]?.v)) out[key as Channel] = s;
+    const [head, ...rest] = slice(steps, w);
+    if (head && rest.some((step) => step.v !== head.v)) out[key as Channel] = [head, ...rest];
   }
   return out;
 }
