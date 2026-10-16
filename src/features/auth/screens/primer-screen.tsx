@@ -26,7 +26,7 @@ export type PrimerState =
 
 const PRIMER_SEN = 'primer';
 
-/** The primer's Sen keeps peeking through a lockout: the notice says it. */
+/** The primer's Sen keeps peeking through a lockout, and the notice explains it. */
 const ANSWERS: PromptAnswers = { unlocked: 'unlock', mismatch: 'authFailed' };
 
 export type PrimerViewProps = {

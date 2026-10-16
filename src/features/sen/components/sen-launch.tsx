@@ -72,11 +72,11 @@ const CALM_HOLD_MS = 400;
 const CALM_FADE_MS = 200;
 
 /**
- * MAL2, "Sen is the dot". Mounted over Lock or Welcome, which renders underneath from the first frame. Sen
- * falls onto the S, hops across the letters, lands as the period with a light haptic, winks, then
- * grows into Lock's Sen while the ink panel shrinks into Lock's hero. Every part reads one clock `t`,
- * so nothing re-renders while it plays. Calm and Off show the rest frame, hold it 400 ms and cross
- * fade to Lock in 200 ms, with no travel, accents or haptic.
+ * MAL2, "Sen is the dot". Mounted over Lock or Welcome, which renders underneath from the first
+ * frame. Sen falls onto the S, hops across the letters, lands as the period with a light haptic,
+ * winks, then grows into the screen's Sen while the ink panel shrinks into its hero. Every part
+ * reads one clock `t`, so nothing re-renders while it plays. Calm and Off show the rest frame, hold
+ * it 400 ms and cross fade to the screen in 200 ms, with no travel, accents or haptic.
  */
 export function SenLaunch({ target, rest, ready, onDone }: Props): ReactNode {
   const level = useMotionPolicy();
