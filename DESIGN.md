@@ -88,7 +88,7 @@ Rig units: 1 unit = size / 600 pt. Origin at the face centre.
 | `lk` (face group) | Eyes and mouth | Slides across the disc. Clipped to the face circle so it can tuck behind the rim |
 | `eye-l`, `eye-r` | Ellipse rx 14 ry 20 at (∓72, −38), plus a closed arc | Open and closed crossfade. Blink is scaleY |
 | `mouth` | Six pre-drawn paths: smile, small, grin, frown, flat, o | Crossfade, never morph |
-| `paw-l`, `paw-r` | Ellipse rx 46 ry 36 at (∓106, 152), deep mint | Wave, perch, hold one prop, celebrate. **Never touch or cover the face** |
+| `paw-l`, `paw-r` | Ellipse rx 46 ry 36 at (∓106, 152), deep mint | Wave, perch, hold one prop, celebrate. **Never cover the eyes.** The lower face is fine, as in `worried` |
 | `cheeks` | Two ellipses, opacity 0 to 0.3 | Happy only |
 | Props | Magnifier, plug, nightcap, sunglasses | One per moment |
 | Accents | 3 sparkle stars, 3 ticks, 1 swoosh | Separate layer. Launch, unlock, reveal and copy only |

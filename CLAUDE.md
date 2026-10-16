@@ -22,7 +22,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 | UI | FlashList 2.3.3, Unistyles 3, Zustand around the session reducer, react-native-svg and Reanimated for Sen |
 | Sign-in | "Continue as demo user", then device biometrics with passcode fallback. No Google sign-in, no accounts |
 | Visual direction | X1P: Bricolage Grotesque 800, receipt slips, cream, ink and pastels, masked amounts as four lemon coins |
-| Mascot | Sen the coin with hands (MAX rig). Paws never touch the face. Eyes close when masked |
+| Mascot | Sen the coin with hands (MAX rig). Paws never cover the eyes. Eyes close when masked |
 | Features | Everything in README "What it does", including manual add and delete, and the security layer |
 | Edit | No editing transactions. Delete and add again |
 | Security | Step-up biometrics for every write, mask at the source, idle and background lock |
