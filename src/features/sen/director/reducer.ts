@@ -32,6 +32,7 @@ export type DirectorEvent =
   | { readonly type: 'register'; readonly sen: SenId }
   | { readonly type: 'unregister'; readonly sen: SenId }
   | { readonly type: 'request'; readonly sen: SenId; readonly moment: MomentId }
+  | { readonly type: 'stop'; readonly sen: SenId }
   | { readonly type: 'finished'; readonly token: number }
   | { readonly type: 'gate'; readonly patch: Partial<Gate> };
 
@@ -109,6 +110,14 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
         ];
       }
       return [s, [{ type: 'settle', sen: e.sen }]];
+    }
+
+    case 'stop': {
+      if (s.playing?.sen === e.sen) {
+        const [t, commands] = next(s);
+        return [t, [{ type: 'settle', sen: e.sen }, ...commands]];
+      }
+      return s.queued?.sen === e.sen ? [{ ...s, queued: null }, []] : [s, []];
     }
 
     case 'finished': {

@@ -577,7 +577,7 @@ type Moment = { id: MomentId; priority: 0 | 1 | 2 | 3; from: PoseId; to: PoseId;
 A pure reducer, `direct(state, event, info)` in `director/reducer.ts`, behind a small module store (`director/store.ts`). It never touches shared values. It emits commands, and the store runs them through each rig's handle.
 
 ```ts
-type DirectorEvent = { type: 'register' | 'unregister'; sen } | { type: 'request'; sen; moment: MomentId }
+type DirectorEvent = { type: 'register' | 'unregister' | 'stop'; sen } | { type: 'request'; sen; moment: MomentId }
                    | { type: 'finished'; token } | { type: 'gate'; patch: Partial<{ scroll; focused; appActive }> };
 type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };   // settle: stop and ease into its pose
 ```
@@ -585,10 +585,11 @@ type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };  
 - **One slot.** `playing` holds one Sen, so only one Sen ever plays a moment. `queued` holds at most one more.
 - **Priority.** A higher priority replaces what plays, and the replaced Sen settles. So does any request from the Sen that plays, and any request of the same priority that meets a loop. Another Sen at the same priority takes the queue slot, and a newer one bumps it. P0 is dropped, never queued. A lower request from another Sen settles that Sen, so a pose change still lands without its moment. A lower request from the playing Sen is dropped: its moment plays on and ends by resting the Sen in its current pose.
 - **Follow-ups.** A finished moment with `then` plays that moment next on the same Sen (Lockout into its breathing).
+- **Stop.** `stop` settles the Sen if it plays and promotes the queue, or empties the queue slot if that Sen waits there. Loops end this way when their screen state moves on, such as the Face ID scan after a cancel.
 - **Stale finishes.** A `finished` with an old token is ignored, which guards the race with a cancelled sequence.
 - **Gates.** A closed gate settles whatever plays or waits. Scroll, unfocused and app inactive are the gates. `senScroll(true)` closes scroll, and `senScroll(false)` opens it 1.5 s later. Pull-to-refresh is direct manipulation, so it never closes the scroll gate.
 - **Level.** The director doesn't know the motion level. Each rig compiles the form for its own level when it plays.
-- **API.** `playMoment(senId, momentId)`, `senGate(patch)` and `senScroll(scrolling)` from `@/features/sen`. A Sen's `id` is the name other features use.
+- **API.** `playMoment(senId, momentId)`, `stopMoment(senId)`, `senGate(patch)` and `senScroll(scrolling)` from `@/features/sen`. A Sen's `id` is the name other features use.
 - **Pose changes.** A rig whose `pose` changes asks for `TRANSITIONS['<from>><to>']` (`moments/index.ts`) when there is one, and eases into the pose otherwise. After a moment it snaps to the moment's end pose, which draws the same, then eases to its `pose` prop if that differs.
 - **Ambient.** A rig resting in a pose with an `AMBIENT` entry schedules its own P0 beats with a JS timer, `nextBeat(ambient, played, random)`. Idle blinks 70%, glances 20% and double-blinks 10%, every 4 to 7 s, and rests 10 to 15 s after 3 beats. Masked peeks every 6 to 9 s. Worried blinks slowly every 4 to 7 s. From 48 to 120 pt a Sen only blinks, and under 48 pt it stays still. Off schedules nothing.
 

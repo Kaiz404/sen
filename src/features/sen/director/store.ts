@@ -47,6 +47,11 @@ export function playMoment(sen: SenId, moment: MomentId): void {
   dispatch({ type: 'request', sen, moment });
 }
 
+/** Stops what this Sen plays or waits to play, such as a loop whose screen state has moved on. */
+export function stopMoment(sen: SenId): void {
+  dispatch({ type: 'stop', sen });
+}
+
 export function momentFinished(token: number): void {
   dispatch({ type: 'finished', token });
 }

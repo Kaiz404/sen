@@ -110,6 +110,21 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
     null,
   ],
   [
+    'a stop settles the playing Sen and promotes the queued one',
+    [...two, req('a', 'glance'), req('b', 'glance'), { type: 'stop', sen: 'a' }],
+    [
+      { type: 'settle', sen: 'a' },
+      { type: 'play', sen: 'b', moment: 'glance', token: 2 },
+    ],
+    { sen: 'b', moment: 'glance', token: 2 },
+  ],
+  [
+    'a stop for a Sen that plays nothing leaves the playing one alone',
+    [...two, req('a', 'lockPeek'), { type: 'stop', sen: 'b' }],
+    [],
+    { sen: 'a', moment: 'lockPeek', token: 1 },
+  ],
+  [
     'unregistering the playing Sen promotes the queued one',
     [...two, req('a', 'glance'), req('b', 'glance'), { type: 'unregister', sen: 'a' }],
     [{ type: 'play', sen: 'b', moment: 'glance', token: 2 }],
@@ -119,6 +134,25 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
   const [s, last] = run(events);
   expect(last).toEqual(commands);
   expect(s.playing).toEqual(playing);
+});
+
+test('a stop for the queued Sen empties the slot, so nothing follows the playing moment', () => {
+  const [s] = run([
+    ...two,
+    req('a', 'glance'),
+    req('b', 'glance'),
+    { type: 'stop', sen: 'b' },
+  ]);
+  expect(s.queued).toBeNull();
+
+  const [, last] = run([
+    ...two,
+    req('a', 'glance'),
+    req('b', 'glance'),
+    { type: 'stop', sen: 'b' },
+    { type: 'finished', token: 1 },
+  ]);
+  expect(last).toEqual([]);
 });
 
 test('the same priority from another Sen waits in one slot, and the newest takes it', () => {
