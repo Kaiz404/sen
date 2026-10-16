@@ -37,15 +37,18 @@ const BIOMETRIC_ICON = {
 
 export function Header({
   onAdd,
+  inset,
   onSettings,
   onLock,
 }: {
+  /** False under the sync banner, which takes the status bar inset instead. */
+  readonly inset: boolean;
   readonly onAdd: () => void;
   readonly onSettings: () => void;
   readonly onLock: () => void;
 }): ReactNode {
   return (
-    <View style={styles.header}>
+    <View style={styles.header(inset)}>
       <View style={styles.brand}>
         <Sen pose="masked" size={34} />
         <Text style={styles.wordmark}>Sen</Text>
@@ -428,7 +431,7 @@ export function SyncBanner({
 }): ReactNode {
   return (
     <View testID="sync-banner" accessibilityRole="alert" style={styles.banner}>
-      <Sen pose="worried" size={40} />
+      <Sen pose="worried" size={52} />
       <View style={styles.bannerText}>
         <Text style={styles.bannerTitle}>{BANNER_COPY[banner.kind]}</Text>
         <Text style={styles.bannerDetail}>
@@ -459,15 +462,15 @@ export function NoteLine({
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
-  header: {
+  header: (inset: boolean) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: rt.insets.top + 12,
+    paddingTop: (inset ? rt.insets.top : 0) + 12,
     paddingHorizontal: 20,
     paddingBottom: 12,
     backgroundColor: theme.colors.canvas,
-  },
+  }),
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { ...type.words(28), color: theme.colors.ink },
   keys: { flexDirection: 'row', gap: 10 },
@@ -600,17 +603,15 @@ const styles = StyleSheet.create((theme, rt) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginHorizontal: 20,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: theme.colors.ink,
-    backgroundColor: theme.colors.paper,
+    marginTop: rt.insets.top,
+    paddingVertical: 14,
+    paddingLeft: 14,
+    paddingRight: 16,
+    backgroundColor: theme.colors.hero,
   },
   bannerText: { flex: 1, gap: 2 },
-  bannerTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.ink },
-  bannerDetail: { fontSize: 13, color: theme.colors.inkMuted },
+  bannerTitle: { ...type.numerals(16), color: theme.colors.onHero },
+  bannerDetail: { fontSize: 13, color: theme.colors.onHeroMuted },
   note: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
   noteText: { flex: 1, fontSize: 13, color: theme.colors.inkMuted },
 }));

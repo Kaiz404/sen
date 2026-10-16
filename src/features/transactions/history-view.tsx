@@ -158,10 +158,15 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
   return (
     <RevealedAmounts value={props.revealed}>
       <View testID="history" style={styles.screen}>
-        <Header onAdd={actions.onAdd} onSettings={actions.onSettings} onLock={actions.onLock} />
         {banner !== null && <SyncBanner banner={banner} onRetry={actions.onRetry} />}
+        <Header
+          inset={banner === null}
+          onAdd={actions.onAdd}
+          onSettings={actions.onSettings}
+          onLock={actions.onLock}
+        />
         {body.kind === 'failed' ? (
-          <FullError error={body.error} onRetry={actions.onRetry} />
+          <FullError error={body.error} onRetry={actions.onRetry} onSettings={actions.onSettings} />
         ) : (
           <View style={styles.listSlot}>
             <FlashList

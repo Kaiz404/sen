@@ -15,7 +15,8 @@ let mockDb: OpenDb;
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
@@ -107,4 +108,15 @@ test('a failed refresh keeps the list under an offline banner, and Retry brings 
   await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
 
   expect(await screen.findAllByText('1 new', { exact: false }, LONG)).not.toHaveLength(0);
+});
+
+test('a failed first load fills the screen, with Retry and a way to the reviewer settings', async () => {
+  writePref('demo.next', 'offline');
+  await renderHistory();
+
+  expect(await screen.findByText("Can't load your history", undefined, LONG)).toBeOnTheScreen();
+  expect(screen.queryByTestId('history-list')).not.toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('link', { name: 'Reviewer settings' }));
+
+  expect(mockPush).toHaveBeenCalledWith('/settings');
 });

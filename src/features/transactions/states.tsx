@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Bone } from '@/components/bone';
@@ -99,25 +99,36 @@ const FAILED: Readonly<Record<SyncFailure['kind'], readonly [string, string, str
 export function FullError({
   error,
   onRetry,
+  onSettings,
 }: {
   readonly error: SyncFailure;
   readonly onRetry: () => void;
+  readonly onSettings: () => void;
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
   return (
     <View testID="history-failed" style={styles.failed}>
-      <Sen pose="worried" prop="plug" size={180} label="Sen, holding an unplugged cable" />
-      <Text style={styles.caption}>{caption}</Text>
-      <Text accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
-      <Text style={styles.body}>{body}</Text>
-      <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={onRetry} />
+      <View style={styles.failedSen}>
+        <Sen pose="worried" prop="plug" size={176} label="Sen, holding an unplugged cable" />
+      </View>
+      <View style={styles.failedText}>
+        <Text style={styles.caption}>{caption}</Text>
+        <Text accessibilityRole="header" style={styles.failedTitle}>
+          {title}
+        </Text>
+        <Text style={styles.failedBody}>{body}</Text>
+      </View>
+      <View style={styles.failedActions}>
+        <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={onRetry} />
+        <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
+          <Text style={styles.linkText}>Reviewer settings</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
   skeleton: { paddingHorizontal: 20, paddingTop: 18, gap: 18 },
   boneSlip: { gap: 10 },
   bonePaper: { backgroundColor: theme.colors.paper, paddingVertical: 4 },
@@ -130,14 +141,20 @@ const styles = StyleSheet.create((theme) => ({
     paddingTop: 36,
     paddingBottom: 24,
   },
-  failed: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 32,
+  failed: { flex: 1, paddingHorizontal: 20, paddingBottom: rt.insets.bottom + 24 },
+  failedSen: { position: 'absolute', top: 12, right: -40, transform: [{ scaleX: -1 }] },
+  failedText: { marginTop: 196, gap: 14, maxWidth: 300 },
+  failedActions: { marginTop: 'auto', gap: 8 },
+  link: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  linkText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.inkMuted,
+    textDecorationLine: 'underline',
   },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   title: { ...type.words(34), textAlign: 'center', color: theme.colors.ink },
   body: { fontSize: 15, lineHeight: 21, textAlign: 'center', color: theme.colors.inkMuted },
+  failedTitle: { ...type.words(60), lineHeight: 52, color: theme.colors.ink },
+  failedBody: { fontSize: 16, lineHeight: 23, color: theme.colors.inkMuted },
 }));
