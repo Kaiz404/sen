@@ -139,3 +139,14 @@ test('a row that is gone says so', async () => {
     await screen.findByRole('header', { name: "This transaction isn't here any more." }),
   ).toBeOnTheScreen();
 });
+
+test.each([['an id over 64 characters', 'm-'.padEnd(65, 'x')], ['an empty id', '']])(
+  'a link with %s says the row is gone instead of throwing',
+  async (_case, id) => {
+    await renderSheet(id);
+    expect(
+      await screen.findByRole('header', { name: "This transaction isn't here any more." }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: /Delete with/ })).toBeNull();
+  },
+);

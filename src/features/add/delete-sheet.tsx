@@ -215,7 +215,8 @@ function announceDeleted(db: Db, id: TxId, description: string): void {
 
 export function DeleteSheet(): ReactNode {
   const params = useLocalSearchParams<{ id: string }>();
-  const id = TxIdSchema.parse(params.id);
+  const parsed = TxIdSchema.safeParse(params.id);
+  const id = parsed.success ? parsed.data : null;
   const db = useDb();
   const stepUp = useStepUp('delete');
   const biometric = useBiometric();
@@ -228,11 +229,11 @@ export function DeleteSheet(): ReactNode {
 
   const row = useQuery({
     queryKey: [...QK.tx, 'delete-sheet', id],
-    queryFn: () => getTransaction(db, id),
+    queryFn: () => (id === null ? null : getTransaction(db, id)),
   });
   const revealed = useQuery({
     queryKey: [...QK.revealed, 'delete-sheet', id],
-    queryFn: () => getRevealedTransaction(db, id),
+    queryFn: () => (id === null ? null : getRevealedTransaction(db, id)),
     enabled: !hidden,
   });
   const amount =
@@ -241,7 +242,7 @@ export function DeleteSheet(): ReactNode {
       : signed(minor(revealed.data.amountMinor), revealed.data.type);
 
   const confirm = async () => {
-    if (deleting.current || row.data == null) return;
+    if (deleting.current || id === null || row.data == null) return;
     deleting.current = true;
     setPhase({ kind: 'checking' });
     const outcome = await deleteRow(db, id, stepUp);
