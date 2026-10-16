@@ -160,6 +160,10 @@ Every lean pairs with a counter skewX, as on the boards. "Body" is `sq` (rotate,
 - Never centred on a blank screen. Never over an amount.
 - Only one Sen animates on screen at a time.
 
+### App icon
+
+The icon is the brand wordmark: "Sen." in paper on ink, with Sen as the full stop, as in MAL2's last frame. The word is Bricolage 800 at width 100 with −0.04 em tracking. Sen sits on the baseline at 1.2 times the wordmark's size, so the lemon still reads as a coin at 48 px. It is face only, idle, with no hands. The word and coin fill Android's 66 dp safe circle. Square icons (iOS, Android before 8) frame 80 dp. The background is ink, so the launch grows from the icon into the ink splash with no colour change. Themed icons get one silhouette with the face knocked out. iOS tinted gets a grey drawing on black. `npm run icons` builds the SVG sources in `design/icon/` and the PNGs in `assets/images/`.
+
 ## Motion
 
 Damped and calm. Every spring has one clean overshoot. The Euler settle is the only repeated wobble. Idle is almost still.

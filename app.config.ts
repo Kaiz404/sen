@@ -1,7 +1,6 @@
 import type { ExpoConfig } from 'expo/config';
 
 const INK = '#17181A';
-const CANVAS = '#F6F2E9';
 
 const fonts = {
   wordmark: './assets/fonts/BricolageGrotesque96ptCondensed-ExtraBold.ttf',
@@ -21,14 +20,18 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: 'com.kaiz404.sen',
     supportsTablet: false,
+    icon: {
+      light: './assets/images/icon.png',
+      dark: './assets/images/ios-icon-dark.png',
+      tinted: './assets/images/ios-icon-tinted.png',
+    },
   },
   android: {
     package: 'com.kaiz404.sen',
     allowBackup: false,
     adaptiveIcon: {
-      backgroundColor: CANVAS,
+      backgroundColor: INK,
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
