@@ -52,7 +52,7 @@ beforeEach(async () => {
   mockDb = await openTestDb();
   const now = InstantSchema.parse(NOW.toISOString());
   const scenario = { next: 'normal', size: 20, slow: false, newOnRefresh: false } as const;
-  await sync(mockDb, createMockBank({ scenario: () => scenario, now: () => now }), {
+  await sync(mockDb, createMockBank({ now: () => now }).under(scenario), {
     now: () => now,
   });
   const today = DayKeySchema.parse('2026-10-15');
