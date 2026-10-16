@@ -27,6 +27,9 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 | `stamp` | `#8A4B12` | `#F5BE98` | Rubber stamps |
 | `pending` | `#7A3F0C` | `#F5BE98` | PENDING tag |
 | `danger` | `#8A2E1F` | `#F4A493` | Destructive actions, validation errors |
+| `hero` | `#17181A` | `#1E2023` | The ink hero on Lock |
+| `on-hero` | `#FFFDF8` | `#FFFDF8` | Text on the hero |
+| `on-hero-muted` | `#D8D2C4` | `#D8D2C4` | Secondary text on the hero |
 
 Row glyph pastels: `#F9D5D0`, `#CBEBD3`, `#E6DDF8`, `#F8EDBF`, `#FBDCC8`, `#D2EEEA`. Every glyph shape is a slightly different blob.
 

@@ -13,6 +13,9 @@ const LIGHT = {
   pending: '#7A3F0C',
   danger: '#8A2E1F',
   onPastel: '#17181A',
+  hero: '#17181A',
+  onHero: '#FFFDF8',
+  onHeroMuted: '#D8D2C4',
 } as const;
 
 export type ColorToken = keyof typeof LIGHT;
@@ -35,6 +38,9 @@ export const dark: Palette = {
   pending: '#F5BE98',
   danger: '#F4A493',
   onPastel: '#17181A',
+  hero: '#1E2023',
+  onHero: '#FFFDF8',
+  onHeroMuted: '#D8D2C4',
 };
 
 export const GLYPH_PASTELS = [
