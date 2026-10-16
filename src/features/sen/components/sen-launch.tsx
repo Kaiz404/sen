@@ -3,7 +3,6 @@ import { Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
-  ReduceMotion,
   type SharedValue,
   useAnimatedProps,
   useAnimatedReaction,
@@ -25,6 +24,7 @@ import { FONT } from '@/theme/type';
 
 import type { Keyframes } from '../board';
 import type { Channel } from '../channels';
+import { NEVER } from '../timeline/compile';
 import {
   BOARD_FACE_R,
   BOARD_PANEL_INSET,
@@ -58,7 +58,6 @@ type Props = {
   readonly onDone: () => void;
 };
 
-const NEVER = ReduceMotion.Never;
 const steady = { easing: Easing.linear, reduceMotion: NEVER };
 const at = (k: Keyframes, t: number) => {
   'worklet';
@@ -103,8 +102,9 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
     const left = HOP_MS - hop.get();
     cancelAnimation(hop);
     hop.set(
-      withTiming(HOP_MS, { duration: left, ...steady }, () => {
+      withTiming(HOP_MS, { duration: left, ...steady }, (landed) => {
         'worklet';
+        if (!landed) return;
         t.set(
           withTiming(DONE_MS, { duration: DONE_MS - STORY_MS, ...steady }, (done) => {
             'worklet';
@@ -118,7 +118,9 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
     if (ready) return handoff();
     phase.current = 'waiting';
     hop.set(0);
-    hop.set(withRepeat(withTiming(HOP_MS, { duration: HOP_MS, ...steady }), -1, false, undefined, NEVER));
+    hop.set(
+      withRepeat(withTiming(HOP_MS, { duration: HOP_MS, ...steady }), -1, false, undefined, NEVER),
+    );
   });
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
     },
   );
 
-  const ui = useAnimatedStyle(() => ({ opacity: 1 - at(LAUNCH.lockUi, t.get()) }));
+  const ui = useAnimatedStyle(() => ({ opacity: fade.get() * (1 - at(LAUNCH.lockUi, t.get())) }));
   const cover = useAnimatedStyle(() => {
     const now = t.get();
     return { opacity: fade.get() * kf(now, [HANDOFF_MS, DONE_MS], [1, 0]) };
@@ -207,12 +209,32 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
     >
       <Animated.View
         testID="launch-veil"
-        style={[{ position: 'absolute', top: 0, left: 0, width, height, backgroundColor: theme.colors.canvas }, ui]}
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width,
+            height,
+            backgroundColor: theme.colors.canvas,
+          },
+          ui,
+        ]}
       />
       <Animated.View style={[{ position: 'absolute', top: 0, left: 0, width, height }, cover]}>
         <Animated.View
           testID="launch-panel"
-          style={[{ position: 'absolute', top: 0, left: 0, width, overflow: 'hidden', backgroundColor: theme.colors.hero }, panel]}
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width,
+              overflow: 'hidden',
+              backgroundColor: theme.colors.hero,
+            },
+            panel,
+          ]}
         >
           <Animated.View
             style={[
@@ -235,7 +257,16 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
           <Swoosh t={t} k={k} x={fxX} y={fxY} color={theme.colors.onHero} />
           <Animated.View
             testID="launch-sen"
-            style={[{ position: 'absolute', left: target.sen.x, top: target.sen.y, width: size, height: size }, sen]}
+            style={[
+              {
+                position: 'absolute',
+                left: target.sen.x,
+                top: target.sen.y,
+                width: size,
+                height: size,
+              },
+              sen,
+            ]}
           >
             <RigDrawing rig={rig} fx={null} size={size} surface="onHero" />
           </Animated.View>
@@ -243,7 +274,16 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
             <Spark key={i} i={i} t={t} k={k} x={fxX} y={fxY} color={color} />
           ))}
           {[-32, 0, 32].map((turn, i) => (
-            <Tick key={turn} i={i} turn={turn} t={t} k={k} x={fxX} y={fxY} color={theme.colors.onHero} />
+            <Tick
+              key={turn}
+              i={i}
+              turn={turn}
+              t={t}
+              k={k}
+              x={fxX}
+              y={fxY}
+              color={theme.colors.onHero}
+            />
           ))}
         </Animated.View>
       </Animated.View>
@@ -266,7 +306,10 @@ function Letter({ ch, i, t, k, color }: Part & { ch: string; i: number }) {
     };
   });
   return (
-    <Animated.View testID={`launch-l${i + 1}`} style={[{ transformOrigin: ['50%', '100%', 0] }, style]}>
+    <Animated.View
+      testID={`launch-l${i + 1}`}
+      style={[{ transformOrigin: ['50%', '100%', 0] }, style]}
+    >
       <Text
         style={{
           fontFamily: FONT.numerals,
@@ -304,7 +347,13 @@ function Spark({ i, t, k, x, y, color }: Part & { i: number; x: number; y: numbe
     <Animated.View
       testID={`launch-sp${i + 1}`}
       style={[
-        { position: 'absolute', left: x + pos[0] * k - side / 2, top: y + pos[1] * k - side / 2, width: side, height: side },
+        {
+          position: 'absolute',
+          left: x + pos[0] * k - side / 2,
+          top: y + pos[1] * k - side / 2,
+          width: side,
+          height: side,
+        },
         style,
       ]}
     >
@@ -315,7 +364,15 @@ function Spark({ i, t, k, x, y, color }: Part & { i: number; x: number; y: numbe
   );
 }
 
-function Tick({ i, turn, t, k, x, y, color }: Part & { i: number; turn: number; x: number; y: number }) {
+function Tick({
+  i,
+  turn,
+  t,
+  k,
+  x,
+  y,
+  color,
+}: Part & { i: number; turn: number; x: number; y: number }) {
   const s = LAUNCH.ticks[i]!;
   const style = useAnimatedStyle(() => {
     const now = t.get();
@@ -338,7 +395,10 @@ function Tick({ i, turn, t, k, x, y, color }: Part & { i: number; turn: number; 
     >
       <Animated.View
         testID={`launch-tk${i + 1}`}
-        style={[{ width: 4 * k, height: 13 * k, borderRadius: 2 * k, backgroundColor: color }, style]}
+        style={[
+          { width: 4 * k, height: 13 * k, borderRadius: 2 * k, backgroundColor: color },
+          style,
+        ]}
       />
     </View>
   );
@@ -374,4 +434,3 @@ function Swoosh({ t, k, x, y, color }: Part & { x: number; y: number }) {
     </Svg>
   );
 }
-

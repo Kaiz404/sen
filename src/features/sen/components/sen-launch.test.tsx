@@ -15,11 +15,23 @@ const TARGET = { sen: { x: 100, y: 200, size: (600 * 101) / 222 }, heroHeight: 4
 
 type Move = { translateX: number; translateY: number; scale: number };
 const sen = (): Move =>
-  Object.assign({}, ...(getAnimatedStyle(screen.getByTestId('launch-sen', hidden)).transform as object[]));
-const rig = (node: string) => screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
+  Object.assign(
+    {},
+    ...(getAnimatedStyle(screen.getByTestId('launch-sen', hidden)).transform as object[]),
+  );
+const rig = (node: string) =>
+  screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
 const at = async (ms: number) => act(() => jest.advanceTimersByTime(ms));
 
-function Launch({ ready, onDone, level = 'full' }: { ready: boolean; onDone: () => void; level?: MotionLevel }) {
+function Launch({
+  ready,
+  onDone,
+  level = 'full',
+}: {
+  ready: boolean;
+  onDone: () => void;
+  level?: MotionLevel;
+}) {
   return (
     <MotionPolicyRoot preference={level}>
       <SenLaunch target={TARGET} ready={ready} onDone={onDone} />
@@ -37,9 +49,16 @@ test('frame 0 is the splash: Sen small, off to the left and high, before it fall
   await render(<Launch ready={false} onDone={jest.fn()} />);
 
   const s = sen();
-  expect([s.translateX, s.translateY, s.scale]).toEqual([expect.closeTo(-371, 0), expect.closeTo(-247, 0), 0.22]);
+  expect([s.translateX, s.translateY, s.scale]).toEqual([
+    expect.closeTo(-371, 0),
+    expect.closeTo(-247, 0),
+    0.22,
+  ]);
   await at(378);
-  expect([sen().translateX, sen().translateY]).toEqual([expect.closeTo(-209, 0), expect.closeTo(-111, 0)]);
+  expect([sen().translateX, sen().translateY]).toEqual([
+    expect.closeTo(-209, 0),
+    expect.closeTo(-111, 0),
+  ]);
 });
 
 test('Sen lands as the period at 1512 ms with a light haptic, squashed 1.3 by 0.7', async () => {
@@ -112,10 +131,15 @@ test('in Calm the launch holds the rest frame 400 ms, fades to Lock in 200 ms, w
   const onDone = jest.fn();
   await render(<Launch ready level="calm" onDone={onDone} />);
 
+  const veil = () => getAnimatedStyle(screen.getByTestId('launch-veil', hidden)).opacity;
   await at(300);
   const s = sen();
   expect([s.translateX, s.translateY, s.scale]).toEqual([-41, -15, 0.12]);
-  await at(320);
+  expect(veil()).toBe(1);
+  await at(200);
+  expect(veil()).toBeCloseTo(0.5, 2);
+  await at(120);
+  expect(veil()).toBe(0);
   expect(onDone).toHaveBeenCalledTimes(1);
   expect(playHaptic).not.toHaveBeenCalled();
 });
