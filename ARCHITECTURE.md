@@ -638,7 +638,10 @@ This follows what Reanimated's docs and large open-source apps actually do. A su
 
 No surveyed app pixel-tests frames mid-animation or gates animation FPS in CI, so Sen doesn't either.
 
-**Board to milliseconds.** `python3 -I scripts/board-keyframes.py design/MAX-Moments.dc.html` prints every CSS animation on a board as a timeline: the selector, the keyframes' duration and delay, then each stop in ms with the easing that runs from it and its values. Easings with a token print by the token's name (`out`, `hopIn`). Moments are transcribed from this output, and their tests' literal values come from it.
+**Board to milliseconds.** `python3 -I scripts/board-keyframes.py design/MAX-Moments.dc.html` prints every CSS animation on a board as a timeline: the selector, the keyframes' duration and delay, then each stop in ms with the easing that runs from it and its values. Easings with a token print by the token's name (`out`, `hopIn`).
+- **The data.** With `--ts` the same script writes `src/features/sen/board.gen.ts`: every track on MAX-Library, MAX-Moments and MAL2 as arrival steps `[ms, value, easing]`, keyed by board, moment selector and channel. Moments slice their window out of it with `boardTracks(moment, { from, to })`, so a moment is the board's own numbers. `board.test.ts` reruns the script and fails when the file and the boards disagree.
+- **Spin.** The boards fake the edge spin with scaleX keyframes eased `inS` toward edge-on and `outS` away. That is cos of a steady angle, so the script turns scaleX into the angle `sp.th` (forward on a tie, backward when the coin turns back without showing tails) and runs those quarters linear.
+- **Skipped.** Heads, tails and the edge pill are drawn from `sp.th`, so their board opacities are not tracks. Screen furniture on the MAX boards (the list, digits, buttons, toasts) belongs to other features. `.M-launch` is superseded by MAL2.
 
 **Jest setup** (V, spike, and the same as Reanimated's own tests).
 
