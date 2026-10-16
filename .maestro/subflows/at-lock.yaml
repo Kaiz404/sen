@@ -1,0 +1,43 @@
+# Cold-starts Sen on Lock with the dev auth override set to ${AUTH}. A fresh install is set up first.
+appId: com.kaiz404.sen
+---
+- stopApp
+- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible:
+      id: unlock|continue
+    timeout: 120000
+- runFlow:
+    when:
+      visible:
+        id: continue
+    commands:
+      - openLink: sen://dev/states?auth=pass
+      - extendedWaitUntil:
+          visible:
+            id: auth-pass
+          timeout: 15000
+      - back
+      - tapOn:
+          id: continue
+      - tapOn: Use device passcode instead
+      - extendedWaitUntil:
+          notVisible:
+            id: turn-on
+          timeout: 15000
+      - stopApp
+      - openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+      - extendedWaitUntil:
+          visible:
+            id: unlock
+          timeout: 120000
+- openLink: sen://dev/states?auth=${AUTH}
+- extendedWaitUntil:
+    visible:
+      id: auth-${AUTH}
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible:
+      id: unlock
+    timeout: 15000

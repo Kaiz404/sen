@@ -1,0 +1,17 @@
+# A cancelled check stays on Lock with nothing changed.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: cancel
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: unlock
+      enabled: true
+    timeout: 15000
+- assertVisible: Welcome back.
+- assertNotVisible: Not quite.
+- takeScreenshot: auth-cancel

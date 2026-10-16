@@ -1,0 +1,15 @@
+# A passing check opens History.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: pass
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    notVisible:
+      id: unlock
+    timeout: 15000
+- assertVisible: HISTORY
+- takeScreenshot: auth-unlock

@@ -1,0 +1,15 @@
+# The phone's biometric lockout shows the cool-down and the passcode.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: lockout
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible: Too many tries.
+    timeout: 15000
+- assertVisible: TRY .* AGAIN IN
+- assertVisible: Use device passcode
+- takeScreenshot: auth-lockout

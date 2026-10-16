@@ -1,0 +1,17 @@
+# The real BiometricPrompt. A person touches the sensor within 60 s, so verify-device skips it unless --only names it.
+appId: com.kaiz404.sen
+tags:
+  - needs-human
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: real
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    notVisible:
+      id: unlock
+    timeout: 60000
+- assertVisible: HISTORY
+- takeScreenshot: auth-real-finger

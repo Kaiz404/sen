@@ -1,0 +1,16 @@
+# A finger that doesn't match shows "Not quite." and counts down the tries.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: fail
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible: Not quite.
+    timeout: 15000
+- assertVisible: "Didn't match. 2 more tries before .* locks."
+- assertVisible:
+    id: unlock
+- takeScreenshot: auth-mismatch
