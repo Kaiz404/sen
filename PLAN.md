@@ -109,7 +109,11 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 ## Phase 4. Features (four parallel lanes)
 
 **Lane 4a. Detail.** Owns `src/features/detail/`.
-- [ ] Masked and revealed detail, the timeline, copy reference, share receipt (revealed only), not found.
+- [x] Masked and revealed detail with every field the model holds, delete for added rows only, not found for a missing, deleted or malformed id, and a read error with Retry. Unit evidence: `features/detail/detail-screen.test.tsx` (no amount in the tree or the cache while hidden, show and hide, a deleted row turns into not found), `features/detail/receipt.test.ts`, and the 8 `detail` gallery states in `gallery.test.tsx`. Device evidence is not taken yet: `.maestro/gallery/detail-{light,dark}.yaml` have not run.
+- [ ] Copy reference, marked sensitive on the clipboard.
+- [ ] A detail link opened while locked opens after unlock.
+- [ ] The status timeline on shown bank receipts.
+- [ ] Share receipt, shown amounts only.
 
 **Lane 4b. Add and delete.** Owns `src/features/add/`.
 - [x] Keypad reducer, details step with the sanitiser, review, save with step-up and an idempotency key, Undo, the discard guard, delete with step-up. Unit evidence: `features/add/keypad-reducer.test.ts`, `draft.test.ts`, `actions.test.ts`, `add-flow.test.tsx`, `delete-sheet.test.tsx`, and the 16 `add` gallery states in `gallery.test.tsx`. Device evidence is not taken yet: `.maestro/add-*.yaml` have not run.

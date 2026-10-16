@@ -37,6 +37,7 @@ export function SessionRoot({ children }: { children: ReactNode }): ReactNode {
 const styles = StyleSheet.create({ root: { flex: 1 } });
 
 export { hideAmounts, showAmounts, useAmountsHidden } from './amounts';
+export { BIOMETRIC, type BiometricCopy } from './copy';
 export { AUTH_STATES } from './fixtures';
 export type { LockReason, RouteGate, StepUpAction } from './machine';
 export {

@@ -13,7 +13,7 @@ import { FONT } from '@/theme/type';
 import { cssMs } from './motion-level';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
-export type KeyTone = 'lemon' | 'loud' | 'paper' | 'outline';
+export type KeyTone = 'lemon' | 'loud' | 'paper' | 'danger' | 'outline';
 export type KeySize = 'regular' | 'medium' | 'large' | 'xlarge';
 export type KeySurface = 'plain' | 'hero';
 
@@ -136,6 +136,7 @@ function keyColors(c: Palette, disabled: boolean) {
     lemon: filled(c.lemon, c.lemonEdge, c.onPastel, c.lemonPlate),
     loud: filled(c.loud, c.loud, c.onLoud),
     paper: filled(c.paper, c.keyEdge, c.ink),
+    danger: filled(c.danger, c.keyEdge, c.paper),
     outline: {
       face: 'transparent',
       edge: outline,

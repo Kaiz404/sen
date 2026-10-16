@@ -347,6 +347,8 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **Detail.**
 - Tap a row › Detail, masked or revealed to match the session.
+- The receipt's source box says where a row came from. A bank row reads "From your bank · read only" and has no delete key. An added row reads "Added on this phone" and shows "Delete transaction".
+- The boards' receipt number ("NO. 1014-07"), settle date ("settles by Fri 16 Oct") and "Report a problem" link are left out. The model holds no such data and no backend takes reports.
 - Copy reference shows a toast.
 - "Share receipt" opens the system share sheet with plain text. It only shows when revealed.
 - Back keeps the scroll position.

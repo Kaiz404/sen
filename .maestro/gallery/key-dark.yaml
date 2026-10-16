@@ -25,3 +25,11 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: key-paper-dark
+- openLink: "sen://dev/states?screen=key&state=danger&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-danger-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: key-danger-dark

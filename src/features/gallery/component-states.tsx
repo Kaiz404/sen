@@ -190,6 +190,15 @@ export const COMPONENT_STATES = {
         <Key label="Clear search" icon="close" onPress={noop} />
       </View>
     ),
+    danger: () => (
+      <Key
+        tone="danger"
+        size="large"
+        icon="delete-outline"
+        label="Delete transaction"
+        onPress={noop}
+      />
+    ),
   },
   segmented: {
     all: () => <FilterDemo initial="all" />,

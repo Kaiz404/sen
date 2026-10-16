@@ -229,6 +229,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 - **Totals.** `readTotals` groups by `type` and `readDayNets` by `day`, newest day first, over a range of Malaysia days. The range becomes bounds on `posted_at`, so the page index serves it.
 - **Search.** `LIKE` on `search_text`, with `\`, `%` and `_` escaped. `search_text` and the query both go through `searchKey` (cleaned, accents stripped, lower case). Search matches the description only. The input is debounced with `useDeferredValue`.
 - **Detail.** `getTransaction(db, id)` is masked and `getRevealedTransaction` adds the amount. Both return null for a missing or unreadable row.
+- **The detail screen.** `features/detail/detail-screen.tsx` parses the route id with `TxIdSchema.safeParse`, so a bad id is a missing row and never a throw. It reads the masked row under `['tx','detail',id]`. Only while shown does it read `getRevealedTransaction` under `['tx','revealed','detail',id]`, so hiding drops it with the other revealed reads. The amount reaches the receipt through `<RevealedAmounts>` and `useAmountView(id)`, the same path History's rows use, so it rolls in the same way. The screen maps the reads onto one union, `loading`, `missing`, `failed` or `found`. A missing, deleted or malformed id shows the not-found receipt with Back to history. A read that throws shows Couldn't load with Retry. Back goes home when nothing is behind the detail.
 - **Writes.** `insertManual(db, draft, now)` stores a draft as `m-<idemKey>` with a `SEN-M-` reference made from the key, at the current Malaysia time of day on the chosen day. A repeated `idemKey` writes nothing and returns the stored row with `created: false`. `deleteManual` returns `deleted`, `missing` or `read_only` (bank rows).
 - **Undo.** `deleteManual` keeps the deleted row as JSON in `meta` (`undo.deleted`), and `restoreDeleted` moves it back. Both run in SQL, so undo never brings the amount into JS. `eraseManual` deletes every added row and the undo copy.
 - **Freshness.** The one write module calls `invalidateQueries(['tx'])` after every commit.
@@ -773,6 +774,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | --- | --- |
 | No amount in JS while masked, totals included. Rendered tree has no digits | `features/transactions/masking.test.tsx` |
 | List `data` reference unchanged across reveal and hide | same |
+| Detail: every field shows while hidden, and no amount is in the tree or the cache. A bad, missing or deleted id shows not found. A read that throws shows Retry | `features/detail/detail-screen.test.tsx`, `features/detail/receipt.test.ts` |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
 | Every state and event pair, `signingOut` included. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
 | Re-lock window (59 s stays, 61 s locks), idle lock. Home on a step-up prompt still locks. A clock set back locks, away and idle | `features/auth/locks.test.ts` |
