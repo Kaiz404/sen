@@ -84,6 +84,20 @@ test('a cancelled prompt returns to Lock without a message', async () => {
   expect(session()).toEqual({ status: 'locked', reason: 'launch' });
 });
 
+test('an error code outside the typed union shows the generic error, not a crash', async () => {
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValueOnce({
+    success: false,
+    error: 'unknown: -1004, Not interactive' as LocalAuthentication.LocalAuthenticationError,
+  });
+  await render(<LockScreen />);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+
+  expect(await screen.findByRole('header', { name: 'Something went wrong.' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled();
+});
+
 test('"Not you? Start again" confirms, destroys the vault and returns to Welcome', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   const alert = jest.spyOn(Alert, 'alert');

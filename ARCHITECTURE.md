@@ -323,7 +323,7 @@ The writes and logs belong to the callers. Undo inside the 6 s toast skips the p
 
 How the first two combine on a phone with only weak biometrics isn't documented, so it gets tested on a device.
 
-**Error codes.** The table `FAILURE` in `prompt.ts` types every `LocalAuthenticationError`, so a new code fails `tsc`.
+**Error codes.** The table `FAILURE` in `prompt.ts` types every `LocalAuthenticationError`, so a new code fails `tsc`. The native code is untrusted input. expo-local-authentication 57.0.3 on iOS also returns `unknown: <code>, <message>` and `missing_usage_description` (V, `LocalAuthenticationModule.swift`), so any code not in the table maps to `unknown`.
 
 | Codes | Reason | Lock and primer UI |
 | --- | --- | --- |
@@ -333,7 +333,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode |
 | `not_enrolled`, `passcode_not_set` | `not_set_up` | "Fingerprint is off." Open device settings, or the passcode |
 | `not_available` | `unavailable` | Explain, passcode |
-| `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown` | `unknown` | "Something went wrong." Generic retry |
+| `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown`, and any code not in the table | `unknown` | "Something went wrong." Generic retry |
 
 **Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself. "Not quite." appears on iOS, where LocalAuthentication reports the failure.
 

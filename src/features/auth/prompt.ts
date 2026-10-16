@@ -34,6 +34,14 @@ const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure>> = {
   unknown: 'unknown',
 };
 
+/**
+ * The native module can return codes outside its typed union (iOS sends `unknown: <code>, <message>` and
+ * `missing_usage_description`), so the code is untrusted input and anything not in the table is `unknown`.
+ */
+function failureOf(error: string): AuthFailure {
+  return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
+}
+
 /** Set before the prompt opens and cleared in `finally`. AppState reads it so the prompt's own focus loss never locks. */
 export const isAuthenticatingRef = { current: false };
 
@@ -48,7 +56,7 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
       biometricsSecurityLevel: 'strong',
       disableDeviceFallback: false,
     });
-    return result.success ? { ok: true } : { ok: false, reason: FAILURE[result.error] };
+    return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
   } catch {
     return { ok: false, reason: 'unknown' };
   } finally {
