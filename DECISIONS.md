@@ -43,6 +43,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | One saved setting, shown until hidden. Showing asks for biometrics |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
+| D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 
 ---
 
@@ -456,7 +457,7 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Cost.** One native rebuild. A build without the module reports a failed copy and points at the reference, which is selectable, so nothing breaks.
 
-## D28. Screen guard, privacy cover and backup rules
+## D30. Screen guard, privacy cover and backup rules
 
 **Compared.**
 - Guard only unlocked screens, or guard the whole app in release builds.
