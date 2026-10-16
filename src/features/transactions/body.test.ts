@@ -11,7 +11,14 @@ const offline: SyncView = { kind: 'failed', error: { kind: 'offline' } };
 const badData: SyncView = { kind: 'failed', error: { kind: 'invalid_data', skipped: 2 } };
 
 const at = (input: Partial<BodyInput>): string =>
-  historyBody({ rows: NONE, synced: true, sync: idle, filtered: false, ...input }).kind;
+  historyBody({
+    rows: NONE,
+    synced: true,
+    sync: idle,
+    filtered: false,
+    unreadable: false,
+    ...input,
+  }).kind;
 
 test.each<[string, Partial<BodyInput>, string]>([
   ['no page read yet', { rows: undefined }, 'loading'],
@@ -25,6 +32,13 @@ test.each<[string, Partial<BodyInput>, string]>([
     { filtered: true, sync: offline },
     'no-results',
   ],
+  ['a page read that rejected before any rows', { rows: undefined, unreadable: true }, 'failed'],
+  [
+    'a sync-state read that rejected on an empty list',
+    { synced: undefined, unreadable: true },
+    'failed',
+  ],
+  ['a read that rejected while rows are on screen', { rows: LIST, unreadable: true }, 'list'],
   ['rows, after a failed refresh', { rows: LIST, sync: offline }, 'list'],
   ['rows, while the first sync still runs', { rows: LIST, synced: false, sync: running }, 'list'],
 ])('%s shows %s', (_name, input, expected) => {
@@ -32,8 +46,20 @@ test.each<[string, Partial<BodyInput>, string]>([
 });
 
 test('a failed sync over a list is a banner with the last sync time, and bad rows are counted', () => {
-  const list = historyBody({ rows: LIST, synced: true, sync: offline, filtered: false });
-  const failed = historyBody({ rows: NONE, synced: false, sync: offline, filtered: false });
+  const list = historyBody({
+    rows: LIST,
+    synced: true,
+    sync: offline,
+    filtered: false,
+    unreadable: false,
+  });
+  const failed = historyBody({
+    rows: NONE,
+    synced: false,
+    sync: offline,
+    filtered: false,
+    unreadable: false,
+  });
 
   expect(syncNotes(offline, list, '8:40 am')).toEqual({
     banner: { kind: 'offline', since: '8:40 am' },

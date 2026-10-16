@@ -11,6 +11,7 @@ import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import { readSyncState } from '@/services/sync';
+import * as txRepo from '@/services/tx-repo';
 
 import { arrivals, bank, markArrival, resetBank, syncProgress } from './data';
 import { HistoryScreen } from './history-screen';
@@ -186,9 +187,7 @@ test('a bank reset in the middle of a slow sync leaves only the new dataset, and
   await waitFor(() => expect(syncProgress.getState().progress).toBeNull());
 
   const ids = await mockDb.all("SELECT id FROM tx WHERE source = 'bank' ORDER BY id");
-  expect(ids.map((r) => r.id)).toEqual(
-    Array.from({ length: 20 }, (_, i) => `bk-${i + 1}`).sort(),
-  );
+  expect(ids.map((r) => r.id)).toEqual(Array.from({ length: 20 }, (_, i) => `bk-${i + 1}`).sort());
   expect((await readSyncState(mockDb)).cursor).toBe(20);
 });
 
@@ -278,4 +277,20 @@ test('a slide-in marked before a lock does not wait to play after the unlock', a
   await unmount();
 
   expect(arrivals.getState().added).toBeNull();
+});
+
+test('a history read that fails shows "Sen couldn\'t read your history", and Retry reads it again', async () => {
+  const read = jest.spyOn(txRepo, 'readPage').mockRejectedValue(new Error('disk'));
+
+  await renderHistory();
+
+  expect(
+    await screen.findByRole('header', { name: "Sen couldn't read your history" }, LONG),
+  ).toBeOnTheScreen();
+  expect(screen.queryByTestId('history-skeleton')).not.toBeOnTheScreen();
+
+  read.mockRestore();
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
 });

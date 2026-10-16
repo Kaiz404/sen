@@ -120,6 +120,7 @@ export function HistoryScreen(): ReactNode {
     synced: data.synced,
     sync,
     filtered: deferredSearch.trim() !== '' || flow !== 'all',
+    unreadable: data.unreadable,
   });
   const notes = syncNotes(sync, body, data.syncedAt === null ? null : clockText(data.syncedAt));
 
@@ -161,7 +162,10 @@ export function HistoryScreen(): ReactNode {
         },
         onRefresh: () => refresh('pull'),
         onPullSettled: () => setPull('idle'),
-        onRetry: () => refresh('retry'),
+        onRetry: () =>
+          body.kind === 'failed' && body.error.kind === 'unreadable'
+            ? data.retryReads()
+            : refresh('retry'),
         onEndReached: data.loadMore,
         onAdd: () => router.push('/add'),
         onSettings: () => router.push('/settings'),

@@ -7,7 +7,7 @@ import { Key } from '@/components/key';
 import { Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
-import type { SyncFailure } from './body';
+import type { ReadFailure, SyncFailure } from './body';
 
 const BONE_ROWS = [0, 1, 2, 3] as const;
 
@@ -78,7 +78,14 @@ export function NoResults({
   );
 }
 
-const FAILED: Readonly<Record<SyncFailure['kind'], readonly [string, string, string]>> = {
+const FAILED: Readonly<
+  Record<SyncFailure['kind'] | ReadFailure['kind'], readonly [string, string, string]>
+> = {
+  unreadable: [
+    'STORAGE',
+    "Sen couldn't read your history",
+    'Your saved history is still on this phone. Try reading it again.',
+  ],
   offline: [
     'NO CONNECTION',
     "Can't load your history",
@@ -101,18 +108,19 @@ export function FullError({
   onRetry,
   onSettings,
 }: {
-  readonly error: SyncFailure;
+  readonly error: SyncFailure | ReadFailure;
   readonly onRetry: () => void;
   readonly onSettings: () => void;
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
+  const simulated = error.kind !== 'unreadable';
   return (
     <View testID="history-failed" style={styles.failed}>
       <View style={styles.failedSen}>
         <Sen pose="worried" prop="plug" size={176} label="Sen, holding an unplugged cable" />
       </View>
       <View style={styles.failedText}>
-        <Text style={styles.caption}>{`${caption} · SIMULATED`}</Text>
+        <Text style={styles.caption}>{simulated ? `${caption} · SIMULATED` : caption}</Text>
         <Text accessibilityRole="header" style={styles.failedTitle}>
           {title}
         </Text>
@@ -120,9 +128,11 @@ export function FullError({
       </View>
       <View style={styles.failedActions}>
         <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={onRetry} />
-        <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
-          <Text style={styles.linkText}>Reviewer settings</Text>
-        </Pressable>
+        {simulated && (
+          <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
+            <Text style={styles.linkText}>Reviewer settings</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

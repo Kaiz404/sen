@@ -111,6 +111,9 @@ export const HISTORY_STATES = {
   'failed-server': () => (
     <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'server' } }} />
   ),
+  unreadable: () => (
+    <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'unreadable' } }} />
+  ),
   'bad-data': () => <HistoryView {...BASE} skipped={2} />,
   'db-reset': () => <HistoryView {...BASE} notice="missing_key" />,
   refreshing: () => <HistoryView {...BASE} pull="loading" pullStill />,

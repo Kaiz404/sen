@@ -295,6 +295,11 @@ export function useHistoryData(db: Db, { filter, month, today, hidden }: History
     loadMore: () => {
       if (pages.hasNextPage && !pages.isFetchingNextPage) void pages.fetchNextPage();
     },
+    unreadable: pages.isError || syncState.isError,
+    retryReads: () => {
+      void pages.refetch();
+      void syncState.refetch();
+    },
     synced: syncState.data === undefined ? undefined : syncState.data.cursor > 0,
     syncedAt: syncState.data?.syncedAt ?? null,
     monthTotals: monthTotals.data,

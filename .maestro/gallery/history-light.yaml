@@ -105,6 +105,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: history-failed-server-light
+- openLink: "sen://dev/states?screen=history&state=unreadable&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-unreadable-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-unreadable-light
 - openLink: "sen://dev/states?screen=history&state=bad-data&theme=light"
 - extendedWaitUntil:
     visible:
