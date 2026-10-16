@@ -54,7 +54,7 @@ test('Auth failed pops the eyes open at 0.9, shakes the face ±16 and closes the
   expect(props('elc').opacity).toBe(1);
 });
 
-test('Lockout sighs, turns edge-on, breathes as a pill, and turns back when the cool-down ends', async () => {
+test('Lockout sighs, turns edge-on and breathes as a pill', async () => {
   await render(<S pose="asleep" />);
   await play('lockout');
 
@@ -67,11 +67,6 @@ test('Lockout sighs, turns edge-on, breathes as a pill, and turns back when the 
   expect(body('sq').scaleY).toBeCloseTo(1.02, 3);
   await at(5000);
   expect(spin()).toBeCloseTo(0.04, 2);
-
-  await play('lockoutWake');
-  await at(620);
-  expect(spin()).toBe(1);
-  expect(props('edge').opacity).toBe(0);
 });
 
 test('the refresh spin turns once every 600 ms, then lands on heads with a wobble', async () => {

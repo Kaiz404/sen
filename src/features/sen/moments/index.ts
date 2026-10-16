@@ -11,7 +11,7 @@ import {
   refreshSpin,
   refreshSpinLoop,
 } from './history';
-import { authFailed, faceScan, lockout, lockoutBreathe, lockoutWake } from './lock';
+import { authFailed, faceScan, lockout, lockoutBreathe } from './lock';
 
 export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
   unlock,
@@ -21,7 +21,6 @@ export const MOMENTS: Readonly<Record<MomentId, Moment>> = {
   authFailed,
   lockout,
   lockoutBreathe,
-  lockoutWake,
   networkError,
   networkRetry,
   copy,

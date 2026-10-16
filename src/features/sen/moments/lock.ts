@@ -57,17 +57,3 @@ export const lockoutBreathe: Moment = {
   marks: [],
   loop: true,
 };
-
-/** The tile's turn back, without its opening hold, so it turns from wherever the breathing left it. */
-const [, turn, ...rest] = slice(MOMENTS_BOARD['.M-lockout']!['sp.th']!, { from: 6000, to: 6600 });
-
-/** MAX-Moments `.M-lockout`, 6000 to 6600 ms: the cool-down ends and Sen turns back face-on. */
-export const lockoutWake: Moment = {
-  id: 'lockoutWake',
-  priority: 3,
-  from: 'asleep',
-  to: 'asleep',
-  dur: 600,
-  tracks: { 'sp.th': [turn!, ...rest] },
-  marks: [],
-};

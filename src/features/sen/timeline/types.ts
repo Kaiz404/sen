@@ -34,7 +34,6 @@ export const MOMENT_IDS = [
   'authFailed',
   'lockout',
   'lockoutBreathe',
-  'lockoutWake',
   'networkError',
   'networkRetry',
   'copy',
