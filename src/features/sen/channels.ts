@@ -1,95 +1,60 @@
-/** Rig units (1 unit = size / 600) and degrees, except `sp.th`, which is radians. */
-export const CHANNELS = [
-  'mv.x',
-  'mv.y',
-  'rl.r',
-  'sq.r',
-  'sq.k',
-  'sq.sx',
-  'sq.sy',
-  'sp.th',
-  'lk.x',
-  'lk.y',
-  'eyeL.sx',
-  'eyeL.sy',
-  'eyeL.dx',
-  'eyeL.dy',
-  'eyeL.open',
-  'eyeL.shut',
-  'eyeR.sx',
-  'eyeR.sy',
-  'eyeR.dx',
-  'eyeR.dy',
-  'eyeR.open',
-  'eyeR.shut',
-  'eyes.happy',
-  'mo.smile',
-  'mo.small',
-  'mo.grin',
-  'mo.frown',
-  'mo.flat',
-  'mo.o',
-  'cheeks',
-  'pawL.x',
-  'pawL.y',
-  'pawL.r',
-  'pawR.x',
-  'pawR.y',
-  'pawR.r',
-  'prop.magnifier',
-  'prop.plug',
-  'prop.nightcap',
-  'prop.shades',
-  'prop.y',
-] as const;
+/**
+ * Every value Sen can animate, grouped by the rig node that owns it. Node names are the boards'
+ * selectors, so a keyframe on `.M-unlock .elb` lands on `elb.*`. Each entry is the channel's rest
+ * value. Rig units (1 unit = size / 600) and degrees, except `sp.th`, which is radians.
+ *
+ * Suffixes: `x` `y` translate, `r` rotate, `k` skewX, `s` uniform scale, `sx` `sy` scale,
+ * `op` opacity, `th` spin angle. Mouth and held-prop channels are opacities named by the shape.
+ */
+const RIG = {
+  mv: { x: 0, y: 0, op: 1 },
+  rl: { r: 0 },
+  sq: { r: 0, k: 0, sx: 1, sy: 1 },
+  sp: { th: 0 },
+  ck: { op: 0 },
+  lk: { x: 0, y: 0 },
+  el: { x: 0, y: 0, sx: 1, sy: 1 },
+  elb: { sx: 1, sy: 1, op: 1 },
+  elc: { sx: 1, sy: 1, op: 0 },
+  er: { x: 0, y: 0, sx: 1, sy: 1 },
+  erb: { sx: 1, sy: 1, op: 1 },
+  erc: { sx: 1, sy: 1, op: 0 },
+  mo: { sx: 1, sy: 1, smile: 1, small: 0, grin: 0, frown: 0, flat: 0, o: 0 },
+  shades: { x: 0, y: 0, r: 0, op: 0 },
+  cap: { x: 0, y: 0, r: 0, op: 0 },
+  pl: { x: 0, y: 0, r: 0, s: 1 },
+  plf: { x: 0, y: 0, r: 0, s: 1 },
+  pr: { x: 0, y: 0, r: 0, s: 1 },
+  prf: { x: 0, y: 0, r: 0, s: 1 },
+  prop: { magnifier: 0, plug: 0 },
+} as const;
 
-export type Channel = (typeof CHANNELS)[number];
+type Rig = typeof RIG;
+export type RigNode = keyof Rig;
+export type Channel = { [N in RigNode]: `${N}.${keyof Rig[N] & string}` }[RigNode];
 export type Frame = Readonly<Record<Channel, number>>;
 
-export const MOUTH_CHANNELS = [
-  'mo.smile',
-  'mo.small',
-  'mo.grin',
-  'mo.frown',
-  'mo.flat',
-  'mo.o',
-] as const satisfies readonly Channel[];
-
-export const PROP_CHANNELS = [
-  'prop.magnifier',
-  'prop.plug',
-  'prop.nightcap',
-  'prop.shades',
-] as const satisfies readonly Channel[];
-
-const RESTS_AT_ONE: ReadonlySet<Channel> = new Set<Channel>([
-  'sq.sx',
-  'sq.sy',
-  'eyeL.sx',
-  'eyeL.sy',
-  'eyeL.open',
-  'eyeR.sx',
-  'eyeR.sy',
-  'eyeR.open',
-  'mo.smile',
-]);
-
 export const REST: Frame = Object.freeze(
-  Object.fromEntries(CHANNELS.map((ch) => [ch, RESTS_AT_ONE.has(ch) ? 1 : 0])) as Record<
-    Channel,
-    number
-  >,
+  Object.fromEntries(
+    Object.entries(RIG).flatMap(([node, props]) =>
+      Object.entries(props).map(([prop, rest]) => [`${node}.${prop}`, rest]),
+    ),
+  ) as Record<Channel, number>,
 );
 
+export const CHANNELS = Object.keys(REST) as readonly Channel[];
+
+export const MOUTH_IDS = ['smile', 'small', 'grin', 'frown', 'flat', 'o'] as const;
+export type MouthId = (typeof MOUTH_IDS)[number];
+export const MOUTH_CHANNELS = MOUTH_IDS.map((m) => `mo.${m}` as const);
+
+export const HELD_PROP_IDS = ['magnifier', 'plug'] as const;
+export type HeldPropId = (typeof HELD_PROP_IDS)[number];
+
 const FADES: ReadonlySet<Channel> = new Set<Channel>([
-  'eyeL.open',
-  'eyeL.shut',
-  'eyeR.open',
-  'eyeR.shut',
-  'eyes.happy',
+  ...CHANNELS.filter((ch) => ch.endsWith('.op')),
   ...MOUTH_CHANNELS,
-  'cheeks',
-  ...PROP_CHANNELS,
+  ...HELD_PROP_IDS.map((p) => `prop.${p}` as const),
 ]);
 
 export type ChannelKind = 'fade' | 'spring';

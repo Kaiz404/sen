@@ -1,17 +1,14 @@
 import type { TransformsStyle } from 'react-native';
 
-import type { Channel, Frame } from '../channels';
-import { MOUTH_IDS, type MouthId, type PropId } from '../poses';
+import { type Channel, type Frame, HELD_PROP_IDS, MOUTH_IDS } from '../channels';
 import {
   CHEEKS,
-  EYE_CENTER,
-  EYE_HAPPY,
   EYE_OPEN,
   EYE_SHUT,
   FACE,
   MOUTH,
+  ORIGIN,
   PAW,
-  PAW_CENTER,
   PROP,
   RIM,
   type SenTier,
@@ -22,7 +19,7 @@ import { type Matrix, mat } from './matrix';
 
 /**
  * Channels are declared, not discovered, because a Reanimated mapper subscribes to every shared value in
- * its closure. A mapper that closed over all 41 would wake on every frame.
+ * its closure. A mapper that closed over every channel would wake on every frame.
  */
 export type NodeDef<T extends 'view' | 'svg', C extends Channel, P> = {
   readonly target: T;
@@ -30,13 +27,16 @@ export type NodeDef<T extends 'view' | 'svg', C extends Channel, P> = {
   readonly read: (f: Pick<Frame, C>, unit: number) => P;
 };
 
-export type ViewTransform = { readonly transform: NonNullable<TransformsStyle['transform']> };
+export type BodyStyle = {
+  readonly transform: NonNullable<TransformsStyle['transform']>;
+  readonly opacity?: number;
+};
 export type SvgProps = { readonly matrix?: Matrix; readonly opacity?: number };
 
 function view<C extends Channel>(
   channels: readonly C[],
-  read: (f: Pick<Frame, C>, unit: number) => ViewTransform,
-): NodeDef<'view', C, ViewTransform> {
+  read: (f: Pick<Frame, C>, unit: number) => BodyStyle,
+): NodeDef<'view', C, BodyStyle> {
   return { target: 'view', channels, read };
 }
 function svg<C extends Channel>(
@@ -56,12 +56,57 @@ const still = svg([], () => {
   return {};
 });
 
-const EDGE_ON = 0.2;
+/** An eye's pose layer: offset and scale about the eye box. */
+function eyePose(n: 'el' | 'er') {
+  const ch = [`${n}.x`, `${n}.y`, `${n}.sx`, `${n}.sy`] as const;
+  const [ox, oy] = ORIGIN[n];
+  return svg(ch, (f) => {
+    'worklet';
+    return { matrix: mat(f[ch[0]], f[ch[1]], 0, f[ch[2]], f[ch[3]], ox, oy) };
+  });
+}
+
+/** An eye's open (`b`) or shut (`c`) layer: a scale and a crossfade. */
+function eyeLayer(n: 'elb' | 'elc' | 'erb' | 'erc') {
+  const ch = [`${n}.sx`, `${n}.sy`, `${n}.op`] as const;
+  const [ox, oy] = ORIGIN[n];
+  return svg(ch, (f) => {
+    'worklet';
+    return { opacity: f[ch[2]], matrix: mat(0, 0, 0, f[ch[0]], f[ch[1]], ox, oy) };
+  });
+}
+
+/** A paw layer: `pl` and `pr` hold the pose, `plf` and `prf` carry the secondary motion. */
+function pawLayer(n: 'pl' | 'plf' | 'pr' | 'prf') {
+  const ch = [`${n}.x`, `${n}.y`, `${n}.r`, `${n}.s`] as const;
+  const [ox, oy] = ORIGIN[n];
+  return svg(ch, (f) => {
+    'worklet';
+    return { matrix: mat(f[ch[0]], f[ch[1]], f[ch[2]], f[ch[3]], f[ch[3]], ox, oy) };
+  });
+}
+
+/** A worn prop: it moves and tilts about its own centre and fades in. */
+function worn(n: 'cap' | 'shades') {
+  const ch = [`${n}.x`, `${n}.y`, `${n}.r`, `${n}.op`] as const;
+  const [ox, oy] = ORIGIN[n];
+  return svg(ch, (f) => {
+    'worklet';
+    return { opacity: f[ch[3]], matrix: mat(f[ch[0]], f[ch[1]], f[ch[2]], 1, 1, ox, oy) };
+  });
+}
+
+/** MAX-Spec: the edge pill shows while `|cos θ| < 0.12`, and `sp` never scales below 0.02. */
+const EDGE_ON = 0.12;
+const EDGE_FLOOR = 0.02;
 
 export const NODES = {
-  mv: view(['mv.x', 'mv.y'], (f, unit) => {
+  mv: view(['mv.x', 'mv.y', 'mv.op'], (f, unit) => {
     'worklet';
-    return { transform: [{ translateX: f['mv.x'] * unit }, { translateY: f['mv.y'] * unit }] };
+    return {
+      transform: [{ translateX: f['mv.x'] * unit }, { translateY: f['mv.y'] * unit }],
+      opacity: f['mv.op'],
+    };
   }),
   rl: view(['rl.r'], (f) => {
     'worklet';
@@ -80,14 +125,16 @@ export const NODES = {
   }),
   sp: view(['sp.th'], (f) => {
     'worklet';
-    return { transform: [{ scaleX: Math.cos(f['sp.th']) }] };
+    const cos = Math.cos(f['sp.th']);
+    const scale = Math.max(Math.abs(cos), EDGE_FLOOR);
+    return { transform: [{ scaleX: cos < 0 ? -scale : scale }] };
   }),
 
-  heads: svg(['sp.th'], (f) => {
+  hd: svg(['sp.th'], (f) => {
     'worklet';
     return { opacity: Math.cos(f['sp.th']) >= 0 ? 1 : 0 };
   }),
-  tails: svg(['sp.th'], (f) => {
+  tl: svg(['sp.th'], (f) => {
     'worklet';
     return { opacity: Math.cos(f['sp.th']) < 0 ? 1 : 0 };
   }),
@@ -96,74 +143,46 @@ export const NODES = {
     return { opacity: Math.abs(Math.cos(f['sp.th'])) < EDGE_ON ? 1 : 0 };
   }),
   coin: still,
+  ck: fade('ck.op'),
 
   lk: svg(['lk.x', 'lk.y'], (f) => {
     'worklet';
     return { matrix: mat(f['lk.x'], f['lk.y'], 0, 1, 1, 0, 0) };
   }),
-  eyeL: svg(['eyeL.sx', 'eyeL.sy', 'eyeL.dx', 'eyeL.dy'], (f) => {
-    'worklet';
-    const [ox, oy] = EYE_CENTER.L;
-    return { matrix: mat(f['eyeL.dx'], f['eyeL.dy'], 0, f['eyeL.sx'], f['eyeL.sy'], ox, oy) };
-  }),
-  eyeR: svg(['eyeR.sx', 'eyeR.sy', 'eyeR.dx', 'eyeR.dy'], (f) => {
-    'worklet';
-    const [ox, oy] = EYE_CENTER.R;
-    return { matrix: mat(f['eyeR.dx'], f['eyeR.dy'], 0, f['eyeR.sx'], f['eyeR.sy'], ox, oy) };
-  }),
-  eyeLOpen: fade('eyeL.open'),
-  eyeLShut: fade('eyeL.shut'),
-  eyeROpen: fade('eyeR.open'),
-  eyeRShut: fade('eyeR.shut'),
-  eyesHappy: fade('eyes.happy'),
+  el: eyePose('el'),
+  elb: eyeLayer('elb'),
+  elc: eyeLayer('elc'),
+  er: eyePose('er'),
+  erb: eyeLayer('erb'),
+  erc: eyeLayer('erc'),
 
-  mouthSmile: fade('mo.smile'),
-  mouthSmall: fade('mo.small'),
-  mouthGrin: fade('mo.grin'),
-  mouthFrown: fade('mo.frown'),
-  mouthFlat: fade('mo.flat'),
-  mouthO: fade('mo.o'),
-  cheeks: fade('cheeks'),
+  mo: svg(['mo.sx', 'mo.sy'], (f) => {
+    'worklet';
+    const [ox, oy] = ORIGIN.mo;
+    return { matrix: mat(0, 0, 0, f['mo.sx'], f['mo.sy'], ox, oy) };
+  }),
+  'mo-smile': fade('mo.smile'),
+  'mo-small': fade('mo.small'),
+  'mo-grin': fade('mo.grin'),
+  'mo-frown': fade('mo.frown'),
+  'mo-flat': fade('mo.flat'),
+  'mo-o': fade('mo.o'),
 
-  pawL: svg(['pawL.x', 'pawL.y', 'pawL.r'], (f) => {
-    'worklet';
-    const [ox, oy] = PAW_CENTER.L;
-    return { matrix: mat(f['pawL.x'], f['pawL.y'], f['pawL.r'], 1, 1, ox, oy) };
-  }),
-  pawR: svg(['pawR.x', 'pawR.y', 'pawR.r'], (f) => {
-    'worklet';
-    const [ox, oy] = PAW_CENTER.R;
-    return { matrix: mat(f['pawR.x'], f['pawR.y'], f['pawR.r'], 1, 1, ox, oy) };
-  }),
+  shades: worn('shades'),
+  cap: worn('cap'),
 
-  propMagnifier: fade('prop.magnifier'),
-  propPlug: fade('prop.plug'),
-  propNightcap: fade('prop.nightcap'),
-  propShades: svg(['prop.shades', 'prop.y'], (f) => {
-    'worklet';
-    return { opacity: f['prop.shades'], matrix: mat(0, f['prop.y'], 0, 1, 1, 0, 0) };
-  }),
+  pl: pawLayer('pl'),
+  plf: pawLayer('plf'),
+  pr: pawLayer('pr'),
+  prf: pawLayer('prf'),
+  'prop-magnifier': fade('prop.magnifier'),
+  'prop-plug': fade('prop.plug'),
 } as const;
 
 export type NodeId = keyof typeof NODES;
 export type SvgNodeId = {
   [K in NodeId]: (typeof NODES)[K]['target'] extends 'svg' ? K : never;
 }[NodeId];
-
-export const MOUTH_NODE: Readonly<Record<MouthId, SvgNodeId>> = {
-  smile: 'mouthSmile',
-  small: 'mouthSmall',
-  grin: 'mouthGrin',
-  frown: 'mouthFrown',
-  flat: 'mouthFlat',
-  o: 'mouthO',
-};
-export const PROP_NODE: Readonly<Record<PropId, SvgNodeId>> = {
-  magnifier: 'propMagnifier',
-  plug: 'propPlug',
-  nightcap: 'propNightcap',
-  shades: 'propShades',
-};
 
 export type TreeNode = {
   readonly node: SvgNodeId;
@@ -173,53 +192,55 @@ export type TreeNode = {
   readonly children?: readonly TreeNode[];
 };
 
+/** The coin's SVG, inside `sp`, in the boards' nesting and draw order. */
 export const SVG_TREE: readonly TreeNode[] = [
   {
-    node: 'heads',
+    node: 'hd',
     children: [
       { node: 'coin', shapes: [RIM, FACE] },
-      { node: 'cheeks', shapes: CHEEKS, full: true },
+      { node: 'ck', shapes: CHEEKS, full: true },
       {
         node: 'lk',
         clip: true,
         children: [
           {
-            node: 'eyeL',
+            node: 'el',
             children: [
-              { node: 'eyeLOpen', shapes: [EYE_OPEN.L] },
-              { node: 'eyeLShut', shapes: [EYE_SHUT.L] },
+              { node: 'elb', shapes: [EYE_OPEN.L] },
+              { node: 'elc', shapes: [EYE_SHUT.L] },
             ],
           },
           {
-            node: 'eyeR',
+            node: 'er',
             children: [
-              { node: 'eyeROpen', shapes: [EYE_OPEN.R] },
-              { node: 'eyeRShut', shapes: [EYE_SHUT.R] },
+              { node: 'erb', shapes: [EYE_OPEN.R] },
+              { node: 'erc', shapes: [EYE_SHUT.R] },
             ],
           },
-          { node: 'eyesHappy', shapes: [EYE_HAPPY.L, EYE_HAPPY.R] },
-          ...MOUTH_IDS.map((m): TreeNode => ({
-            node: MOUTH_NODE[m],
-            shapes: [MOUTH[m]],
+          {
+            node: 'mo',
             full: true,
-          })),
+            children: MOUTH_IDS.map((m): TreeNode => ({ node: `mo-${m}`, shapes: [MOUTH[m]] })),
+          },
+          { node: 'shades', shapes: PROP.shades },
         ],
       },
-      { node: 'propNightcap', shapes: PROP.nightcap },
-      { node: 'propShades', shapes: PROP.shades },
-      { node: 'pawL', shapes: [PAW.L], full: true },
+      { node: 'cap', shapes: PROP.nightcap },
+      { node: 'pl', full: true, children: [{ node: 'plf', shapes: [PAW.L] }] },
       {
-        node: 'pawR',
-        shapes: [PAW.R],
+        node: 'pr',
         full: true,
         children: [
-          { node: 'propMagnifier', shapes: PROP.magnifier },
-          { node: 'propPlug', shapes: PROP.plug },
+          {
+            node: 'prf',
+            shapes: [PAW.R],
+            children: HELD_PROP_IDS.map((p): TreeNode => ({ node: `prop-${p}`, shapes: PROP[p] })),
+          },
         ],
       },
     ],
   },
-  { node: 'tails', shapes: TAILS },
+  { node: 'tl', shapes: TAILS },
 ];
 
 function prune(nodes: readonly TreeNode[]): readonly TreeNode[] {

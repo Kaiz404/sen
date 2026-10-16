@@ -454,30 +454,67 @@ Sen and every animated component follow one model. Motion is data, compiled to R
 
 ### Sen's rig
 
+The rig copies the boards' structure (`design/MAX-Library.dc.html`, `design/MAX-Moments.dc.html`). Node names are the boards' selectors, so a keyframe on `.M-unlock .elb` lands on the `elb.*` channels.
+
 **Channels.**
-- Every value Sen can animate is a named numeric channel, about 40 in all: body (`mv.x`, `sq.r`, `sp.th` and so on), face slide (`lk.x`, `lk.y`), eyes, six mouth opacities, cheeks, paws and props.
-- There are 41: rig.md's 39 plus `eyeL.dy` and `eyeR.dy`, because kit.py's worried eyes drop by 8.
-- A `Frame` is a full record of channels. `REST` is derived from `CHANNELS` and the set that rests at 1.
-- A pose is a `PoseSpec` written the way kit.py writes it: one eyes kind, one mouth, at most one prop, the face offset, the lean (`sq.r` about (10, 278)) and the paws. `poseFrame(pose, prop?)` expands it into a full `Frame`. A spec can't name two mouths.
-- Discrete choices are opacity channels. Exactly one mouth is at 1 and each eye is in exactly one state, and a test checks every pose with every prop.
+- Every value Sen can animate is a named numeric channel, `<node>.<property>`. There are 66, declared once in `RIG` in `channels.ts` with their rest values. `Channel`, `CHANNELS`, `REST` and `CHANNEL_KIND` derive from it.
+- Properties: `x` and `y` translate, `r` rotate, `k` skewX, `s` uniform scale, `sx` and `sy` scale, `op` opacity, `th` the spin angle in radians. Mouth and held-prop channels are opacities named by the shape (`mo.grin`, `prop.plug`). Units are rig units (1 unit = size / 600) and degrees.
+- Opacity channels fade. Every other channel springs.
+- A `Frame` is a full record of channels.
+
+| Node | Board | Channels | Rest | Pivot | Moves |
+| --- | --- | --- | --- | --- | --- |
+| `mv` | `.mv` | `x` `y` `op` | 0 0 1 | | Travel, hops, the roll-in and launch fade |
+| `rl` | `.rl` | `r` | 0 | Coin centre (10, 16) | Roll, flip arc |
+| `sq` | `.sq` | `r` `k` `sx` `sy` | 0 0 1 1 | Contact point (10, 278) | Lean, counter skew, squash and stretch |
+| `sp` | `.sp` | `th` | 0 | Coin centre | Edge spin. `scaleX = cos θ`, kept at least 0.02 from zero |
+| `ck` | `.ck` | `op` | 0 | | Cheeks |
+| `lk` | `.lk` | `x` `y` | 0 0 | | The face group slides across the disc, inside the face clip |
+| `el`, `er` | `.el`, `.er` | `x` `y` `sx` `sy` | 0 0 1 1 | Eye box (∓72, −38) | **Pose layer.** What a pose holds: worried's nudge and 0.85, squint, happy, the peek crack |
+| `elb`, `erb` | `.elb`, `.erb` | `sx` `sy` `op` | 1 1 1 | Eye box | **Open layer.** The ellipse. Blinks, squints and cracks that run over the pose |
+| `elc`, `erc` | `.elc`, `.erc` | `sx` `sy` `op` | 1 1 0 | Arc box (∓72, −34) | **Shut layer.** The closed arc. Eye-close springs it in |
+| `mo` | `.mo` | `sx` `sy`, then `smile` `small` `grin` `frown` `flat` `o` | 1 1, smile 1 | MAL2's smile box (0, 23.5) | Mouth scale (MAL2's wink, 1.6 by 1.8) and the six crossfaded mouths |
+| `shades` | `.shades` | `x` `y` `r` `op` | 0 0 0 0 | Its box (0, −41) | Rides `lk`, inside the clip. Drops in on the theme change |
+| `cap` | `.cap` | `x` `y` `r` `op` | 0 0 0 0 | Its box (63, −172.3) | Above the clip, outside `lk` |
+| `pl`, `pr` | `.pl`, `.pr` | `x` `y` `r` `s` | 0 0 0 1 | Paw centre (∓106, 152) | **Pose layer.** Wave, perch, celebrate, clutch |
+| `plf`, `prf` | `.plf`, `.prf` | `x` `y` `r` `s` | 0 0 0 1 | Paw centre | **Secondary layer.** Trails a lean or a hop. Held props ride `prf`, behind the paw |
+| `prop` | `.prop` | `magnifier` `plug` | 0 0 | | Which held prop shows |
+
+- **Pivots.** The boards use `transform-box: fill-box`, so each pivot is the centre of that node's drawn box (`ORIGIN` in `art/geometry.ts`). A held prop would widen the board's `pr` box, so the rig keeps the paw centre as the paw pivot. This only matters when a paw holding a prop scales or turns (worried with the plug, at 0.9).
+- **Layers compose.** A pose sets the pose layers (`el`, `er`, `pl`, `pr`) and which of each eye's open and shut layers shows. It leaves the open, shut and secondary layers at scale 1 and offset 0. A blink, eye-close, peek crack or squint runs on the open and shut layers, so it plays over any held pose. A test blinks over a held squint and checks the squint survives.
+- **Hand-off (inferred, for lane 4d).** The boards animate the squint, the crack and the happy squint on `elb`. A moment that ends in a pose holding one of them hands the value to the pose layer on its last frame. The drawn eye is the product of the two layers, so nothing moves.
+
+**Poses.**
+- A pose is a `PoseSpec` in `poses.ts`: one eyes kind, one mouth, at most one prop, cheeks, the face slide, the body (`lift` for `mv.y`, `lean` and `skew` for `sq.r` and `sq.k`, `squash` for `sq.sx` and `sq.sy`) and each paw's pose layer (offset, rotation and uniform scale). `poseFrame(pose, prop?)` expands it into a full `Frame`. A spec can't name two mouths.
+- The values come from kit.py, MAX-Moments' static tiles and the held frames of MAX-Library's primitives. DESIGN › Poses lists them. A test checks every pose against those numbers, literally.
+- Discrete choices are opacity channels. Exactly one mouth is at 1, each eye shows exactly one of its open and shut layers, and a test checks every pose with every prop.
+
+**Drawing.**
 
 | Node | Kind | Notes |
 | --- | --- | --- |
-| `mv`, `rl`, `sq`, `sp` | Four nested `Animated.View`s | Static `transformOrigin` for the pivots (coin centre, contact point). These take Reanimated's fast native path on Android |
+| `mv`, `rl`, `sq`, `sp` | Four nested `Animated.View`s | Static `transformOrigin` for the pivots (coin centre, contact point). These take Reanimated's fast native path on Android. `mv` also carries the rig's opacity |
+| `hd`, `tl` | SVG groups inside `sp` | Heads while `cos θ ≥ 0`, tails otherwise |
+| Edge pill | Its own SVG inside `sq`, after `sp` | Shows while `\|cos θ\| < 0.12` (MAX-Spec). It never takes the spin's scale |
 | Rim, face disc | Static SVG | |
 | Clip `G` | Static | Never animated, so the face can slide behind the rim while the clip stays put |
-| `lk`, eyes, paws | `AnimatedG` with a `matrix` computed in a worklet (`mat(tx, ty, r, sx, sy, ox, oy)`) | RNSVG native accepts only `matrix`, not `translateX` or `originX` (V, source). This avoids the pivot bug |
-| Eye open, shut, happy. Mouths. Cheeks. Props | `AnimatedG` or `AnimatedEllipse` opacity | One channel per node, so idle nodes do no work |
-| Accents | Separate `SenAccents` layer | Mounted only while they play |
+| `lk`, eye layers, `mo`, paw layers, `cap`, `shades` | `AnimatedG` with a `matrix` computed in a worklet (`mat(tx, ty, r, sx, sy, ox, oy)`) | RNSVG native accepts only `matrix`, not `translateX` or `originX` (V, source). This avoids the pivot bug |
+| Mouths, cheeks, held props | `AnimatedG` opacity | One channel per node, so idle nodes do no work |
+| Accents | Two SVG layers inside `mv` | The swoosh draws behind the coin, before `rl`. Stars and ticks draw after `rl`. Neither follows the spin. Mounted only while they play |
+
+**Accents.**
+- `accentShapes(tone)` in `art/geometry.ts` holds the board geometry. The swoosh is `M-330 60 Q-330 250 -140 300`, stroke 44 with round caps. Stars are filled and stroked 10 wide with round joins. Three ticks are stroked 18 wide.
+- The boards draw the swoosh on with `pathLength="100"`. react-native-svg supports `pathLength` only on web (inferred from its source), so the swoosh dashes by its real length, `SWOOSH_LENGTH` (334.2 units). A board dash offset `d` becomes `d × 334.2 / 100`.
+- Colours follow the surface Sen sits on: `SEN_ACCENT_TONES` in `src/theme/colors.ts`. On a pastel, ink marks and a paper swoosh at 75%. On the ink hero, lemon marks and a lemon swoosh at 22%. On the cream canvas, deep green marks and a green swoosh at 16%.
 
 - **One public `<Sen>`.**
-  - Without an `id` it renders `SenStatic` (`features/sen/components/sen-static.tsx`), a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only. It walks `treeFor(senTier(size))`, calls each node's `read(poseFrame(pose, prop), unit)` and skips nodes at opacity 0. Clip ids come from `useId()`. It never draws accents.
+  - Without an `id` it renders `SenStatic` (`features/sen/components/sen-static.tsx`), a memoised pure render of a pose with no Reanimated hooks. That covers headers, toasts and the app-switcher cover. Under 48 pt it draws face and eyes only. It walks `treeFor(senTier(size))`, calls each node's `read(poseFrame(pose, prop), unit)` and skips nodes at opacity 0. Clip ids come from `useId()`. It never draws accents or the edge pill, because a pose never spins.
   - Until the rig exists, `<Sen id>` also renders `SenStatic`.
   - With an `id` it renders `SenRig`, which registers with the director.
 - **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
   - `NODES` gives each part its declared channels and a worklet `read(frame, unit)`. A test calls each `read` through a recording Proxy and checks it reads exactly its channels, because a mapper wakes for every shared value it captures.
-  - `SVG_TREE` holds nesting and draw order as data. Eyes and mouths ride in `lk`, and `lk` sits inside the static clip. Held props sit in `pawR`. The nightcap and shades sit above the clip and outside `lk`. `treeFor(tier)` drops mouths, cheeks, paws and held props at the face tier.
-  - Geometry in `art/geometry.ts` is copied from kit.py, and the tails face and edge pill from MAX-Library. The edge pill sits outside `sp`, so the rig draws it in its own layer.
+  - `SVG_TREE` holds the coin's nesting and draw order as data, in the boards' order: rim and face, cheeks, the clipped `lk` (eyes, mouths, shades), the cap, then the paws. `treeFor(tier)` drops cheeks, mouths, paws and held props at the face tier.
+  - Geometry in `art/geometry.ts` is copied from kit.py, and the tails face, edge pill and accents from MAX-Library and MAX-Moments.
 - **Never in a row.** Sen never goes inside a FlashList row.
 - **Viewbox.** The Svg uses a 680-unit box so raised paws and tilts aren't clipped.
 

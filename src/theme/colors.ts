@@ -71,3 +71,15 @@ export const SEN_COLORS = {
   prop: '#17181A',
   glass: '#FFFDF8',
 } as const;
+
+/**
+ * Accent colours by the surface Sen sits on, from MAX-Moments: stars and ticks in `mark`, the
+ * swoosh in `swoosh`. The same in light and dark.
+ */
+export const SEN_ACCENT_TONES = {
+  onPastel: { mark: '#17181A', swoosh: 'rgba(255,253,248,.75)' },
+  onHero: { mark: '#F2DC72', swoosh: 'rgba(242,220,114,.22)' },
+  onCanvas: { mark: '#236B47', swoosh: 'rgba(35,107,71,.16)' },
+} as const;
+
+export type SenAccentTone = keyof typeof SEN_ACCENT_TONES;

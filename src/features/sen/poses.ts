@@ -1,4 +1,4 @@
-import { type Channel, type Frame, MOUTH_CHANNELS, PROP_CHANNELS, REST } from './channels';
+import { type Channel, type Frame, MOUTH_IDS, type MouthId, REST } from './channels';
 
 export const POSE_IDS = [
   'idle',
@@ -16,117 +16,125 @@ export const POSE_IDS = [
 ] as const;
 export type PoseId = (typeof POSE_IDS)[number];
 
-export const MOUTH_IDS = ['smile', 'small', 'grin', 'frown', 'flat', 'o'] as const;
-export type MouthId = (typeof MOUTH_IDS)[number];
-export type EyesKind = 'open' | 'closed' | 'peek' | 'happy' | 'worried' | 'squint';
 export const PROP_IDS = ['magnifier', 'plug', 'nightcap', 'shades'] as const;
 export type PropId = (typeof PROP_IDS)[number];
 
+export type EyesKind = 'open' | 'closed' | 'peek' | 'happy' | 'worried' | 'squint';
+
 type Vec = readonly [x: number, y: number];
 
+/**
+ * One eye as a pose holds it: which of the open and shut layers shows, and the pose layer's
+ * offset and scale. The open and shut layers stay at scale 1 in a pose, so a blink, an eye-close
+ * or a peek crack can run on them over whatever the pose holds.
+ */
+type EyeHold = { readonly shut: boolean; readonly at: Vec; readonly scale: Vec };
+
+/** A paw's pose layer: offset, rotation in degrees about the paw centre, uniform scale. */
+type PawHold = { readonly at: Vec; readonly r: number; readonly s: number };
+
 export type PoseSpec = {
+  /** `lk`: the face group's slide across the disc. */
   readonly face: Vec;
   readonly eyes: EyesKind;
   readonly mouth: MouthId;
   readonly cheeks: number;
+  /** `mv.y`: the whole coin lifts (negative) or sinks. */
+  readonly lift: number;
+  /** `sq.r`: lean about the contact point. */
   readonly lean: number;
-  readonly pawL: Vec;
-  readonly pawR: Vec;
+  /** `sq.k`: the counter skewX the boards pair with nearly every lean. */
+  readonly skew: number;
+  /** `sq.sx`, `sq.sy`. */
+  readonly squash: Vec;
+  readonly pawL: PawHold;
+  readonly pawR: PawHold;
   readonly prop: PropId | null;
 };
 
 const rest: Vec = [0, 0];
+const paw = (x: number, y: number, r = 0, s = 1): PawHold => ({ at: [x, y], r, s });
+const still = paw(0, 0);
 
 export const POSE_SPECS: Readonly<Record<PoseId, PoseSpec>> = {
   idle: spec({ eyes: 'open', mouth: 'smile' }),
   masked: spec({ face: [0, 34], eyes: 'closed', mouth: 'small' }),
-  peek: spec({ face: [22, 24], eyes: 'peek', mouth: 'small', lean: -2.4 }),
-  revealed: spec({ face: [0, -8], eyes: 'open', mouth: 'grin', cheeks: 0.3 }),
+  peek: spec({ face: [22, 24], eyes: 'peek', mouth: 'small', lean: -2.4, skew: 2 }),
+  revealed: spec({ face: [0, -6], eyes: 'open', mouth: 'grin', cheeks: 0.3 }),
   happy: spec({
-    face: [0, -8],
+    face: [0, -6],
     eyes: 'happy',
     mouth: 'grin',
     cheeks: 0.3,
-    pawL: [-128, -180],
-    pawR: [128, -180],
+    pawL: paw(-128, -180),
+    pawR: paw(128, -180),
   }),
-  look: spec({ face: [64, -44], eyes: 'open', mouth: 'smile', lean: 2.6 }),
-  lookdown: spec({ face: [-64, 70], eyes: 'open', mouth: 'smile', lean: -3 }),
-  worried: spec({ eyes: 'worried', mouth: 'frown', lean: -4, pawL: [66, -56], pawR: [-66, -56] }),
+  look: spec({ face: [64, -44], eyes: 'open', mouth: 'smile', lean: 2.6, skew: -2.4 }),
+  lookdown: spec({ face: [-64, 70], eyes: 'open', mouth: 'smile', lean: -3, skew: 3 }),
+  worried: spec({
+    eyes: 'worried',
+    mouth: 'frown',
+    lean: -4,
+    skew: 3,
+    pawL: paw(66, -56, 0, 0.9),
+    pawR: paw(-66, -56, 0, 0.9),
+  }),
   asleep: spec({
     face: [0, 48],
     eyes: 'closed',
     mouth: 'small',
-    pawL: [36, -6],
-    pawR: [-36, -6],
+    pawL: paw(36, -6),
+    pawR: paw(-36, -6),
     prop: 'nightcap',
   }),
-  shrug: spec({ face: [-16, -14], eyes: 'open', mouth: 'flat', pawL: [-70, -80], pawR: [20, -70] }),
+  shrug: spec({
+    face: [-16, -14],
+    eyes: 'open',
+    mouth: 'flat',
+    lift: -14,
+    lean: 2,
+    skew: -2,
+    squash: [0.98, 1.03],
+    pawL: paw(-70, -80, -20),
+    pawR: paw(70, -80, 20),
+  }),
   squint: spec({ eyes: 'squint', mouth: 'flat' }),
   cool: spec({ eyes: 'open', mouth: 'smile', prop: 'shades' }),
 };
 
 function spec(p: Partial<PoseSpec> & Pick<PoseSpec, 'eyes' | 'mouth'>): PoseSpec {
-  return { face: rest, cheeks: 0, lean: 0, pawL: rest, pawR: rest, prop: null, ...p };
-}
-
-type EyeChannel = Extract<Channel, `eyeL.${string}` | `eyeR.${string}` | 'eyes.happy'>;
-type EyeSide = { open?: 1; shut?: 1; sx?: number; sy?: number; dx?: number; dy?: number };
-
-function eyes(l: EyeSide, r: EyeSide, happy: 0 | 1 = 0): Readonly<Record<EyeChannel, number>> {
-  const side = (s: EyeSide) => ({
-    sx: s.sx ?? 1,
-    sy: s.sy ?? 1,
-    dx: s.dx ?? 0,
-    dy: s.dy ?? 0,
-    open: s.open ?? 0,
-    shut: s.shut ?? 0,
-  });
-  const L = side(l);
-  const R = side(r);
   return {
-    'eyeL.sx': L.sx,
-    'eyeL.sy': L.sy,
-    'eyeL.dx': L.dx,
-    'eyeL.dy': L.dy,
-    'eyeL.open': L.open,
-    'eyeL.shut': L.shut,
-    'eyeR.sx': R.sx,
-    'eyeR.sy': R.sy,
-    'eyeR.dx': R.dx,
-    'eyeR.dy': R.dy,
-    'eyeR.open': R.open,
-    'eyeR.shut': R.shut,
-    'eyes.happy': happy,
+    face: rest,
+    cheeks: 0,
+    lift: 0,
+    lean: 0,
+    skew: 0,
+    squash: [1, 1],
+    pawL: still,
+    pawR: still,
+    prop: null,
+    ...p,
   };
 }
 
-export const EYES: Readonly<Record<EyesKind, Readonly<Record<EyeChannel, number>>>> = {
-  open: eyes({ open: 1 }, { open: 1 }),
-  closed: eyes({ shut: 1 }, { shut: 1 }),
-  peek: eyes({ shut: 1 }, { open: 1, sx: 1.05, sy: 0.45 }),
-  happy: eyes({}, {}, 1),
-  worried: eyes(
-    { open: 1, sx: 12 / 14, sy: 17 / 20, dx: 10, dy: 8 },
-    { open: 1, sx: 12 / 14, sy: 17 / 20, dx: -10, dy: 8 },
-  ),
-  squint: eyes({ open: 1, sx: 1.15, sy: 0.35 }, { open: 1, sx: 1.15, sy: 0.35 }),
+const open = (scale: Vec = [1, 1], at: Vec = rest): EyeHold => ({ shut: false, at, scale });
+const shut: EyeHold = { shut: true, at: rest, scale: [1, 1] };
+const both = (e: EyeHold) => ({ L: e, R: e });
+
+export const EYES: Readonly<Record<EyesKind, { readonly L: EyeHold; readonly R: EyeHold }>> = {
+  open: both(open()),
+  closed: both(shut),
+  peek: { L: shut, R: open([1.05, 0.45]) },
+  happy: both(open([1.15, 0.45])),
+  worried: { L: open([0.85, 0.85], [10, 8]), R: open([0.85, 0.85], [-10, 8]) },
+  squint: both(open([1.15, 0.35])),
 };
 
-const MOUTH_CHANNEL: Readonly<Record<MouthId, (typeof MOUTH_CHANNELS)[number]>> = {
-  smile: 'mo.smile',
-  small: 'mo.small',
-  grin: 'mo.grin',
-  frown: 'mo.frown',
-  flat: 'mo.flat',
-  o: 'mo.o',
-};
-
-const PROP_CHANNEL: Readonly<Record<PropId, (typeof PROP_CHANNELS)[number]>> = {
+const WORN: Readonly<Record<PropId, Channel>> = {
   magnifier: 'prop.magnifier',
   plug: 'prop.plug',
-  nightcap: 'prop.nightcap',
-  shades: 'prop.shades',
+  nightcap: 'cap.op',
+  shades: 'shades.op',
 };
 
 export function poseFrame(pose: PoseId, prop?: PropId | null): Frame {
@@ -134,19 +142,36 @@ export function poseFrame(pose: PoseId, prop?: PropId | null): Frame {
   const worn = prop === undefined ? s.prop : prop;
   const frame: Record<Channel, number> = {
     ...REST,
+    'mv.y': s.lift,
+    'sq.r': s.lean,
+    'sq.k': s.skew,
+    'sq.sx': s.squash[0],
+    'sq.sy': s.squash[1],
+    'ck.op': s.cheeks,
     'lk.x': s.face[0],
     'lk.y': s.face[1],
-    ...EYES[s.eyes],
-    cheeks: s.cheeks,
-    'sq.r': s.lean,
-    'pawL.x': s.pawL[0],
-    'pawL.y': s.pawL[1],
-    'pawR.x': s.pawR[0],
-    'pawR.y': s.pawR[1],
   };
-  for (const ch of MOUTH_CHANNELS) frame[ch] = 0;
-  frame[MOUTH_CHANNEL[s.mouth]] = 1;
-  for (const ch of PROP_CHANNELS) frame[ch] = 0;
-  if (worn !== null) frame[PROP_CHANNEL[worn]] = 1;
+  holdEye(frame, 'el', EYES[s.eyes].L);
+  holdEye(frame, 'er', EYES[s.eyes].R);
+  holdPaw(frame, 'pl', s.pawL);
+  holdPaw(frame, 'pr', s.pawR);
+  for (const m of MOUTH_IDS) frame[`mo.${m}`] = m === s.mouth ? 1 : 0;
+  if (worn !== null) frame[WORN[worn]] = 1;
   return frame;
+}
+
+function holdEye(frame: Record<Channel, number>, n: 'el' | 'er', e: EyeHold): void {
+  frame[`${n}.x`] = e.at[0];
+  frame[`${n}.y`] = e.at[1];
+  frame[`${n}.sx`] = e.scale[0];
+  frame[`${n}.sy`] = e.scale[1];
+  frame[`${n}b.op`] = e.shut ? 0 : 1;
+  frame[`${n}c.op`] = e.shut ? 1 : 0;
+}
+
+function holdPaw(frame: Record<Channel, number>, n: 'pl' | 'pr', p: PawHold): void {
+  frame[`${n}.x`] = p.at[0];
+  frame[`${n}.y`] = p.at[1];
+  frame[`${n}.r`] = p.r;
+  frame[`${n}.s`] = p.s;
 }

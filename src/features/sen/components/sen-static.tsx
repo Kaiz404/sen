@@ -21,6 +21,8 @@ function ShapeEl({ shape: s }: { shape: Shape }): ReactNode {
     fill: s.fill ?? 'none',
     stroke: s.stroke,
     strokeWidth: s.strokeWidth,
+    strokeLinejoin: s.strokeLinejoin,
+    strokeDasharray: s.strokeDasharray,
     opacity: s.opacity,
   };
   switch (s.kind) {

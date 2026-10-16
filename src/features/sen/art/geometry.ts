@@ -1,6 +1,7 @@
-import { SEN_COLORS } from '@/theme/colors';
+import { SEN_ACCENT_TONES, SEN_COLORS, type SenAccentTone } from '@/theme/colors';
 
-import type { MouthId, PropId } from '../poses';
+import type { MouthId, RigNode } from '../channels';
+import type { PropId } from '../poses';
 
 export const COIN_UNITS = 600;
 export const VIEWBOX_UNITS = 680;
@@ -34,6 +35,8 @@ type Paint = {
   readonly fill?: string;
   readonly stroke?: string;
   readonly strokeWidth?: number;
+  readonly strokeLinejoin?: 'round';
+  readonly strokeDasharray?: number;
   readonly opacity?: number;
 };
 
@@ -88,7 +91,28 @@ export const EDGE: Shape = {
   fill: C.rim,
 };
 
-export const EYE_CENTER = { L: [-72, -38], R: [72, -38] } as const satisfies Record<'L' | 'R', Vec>;
+/**
+ * Where each transformed SVG node rotates and scales. The boards use `transform-box: fill-box`
+ * with `transform-origin: center`, so each is the centre of that node's drawn box: the eye box
+ * (open ellipse and shut arc together), the shut arc alone, MAL2's smile, and each paw. Held props
+ * would widen the board's `pr` box, so the rig keeps the paw centre as the pivot.
+ */
+export const ORIGIN = {
+  el: [-72, -38],
+  elb: [-72, -38],
+  elc: [-72, -34],
+  er: [72, -38],
+  erb: [72, -38],
+  erc: [72, -34],
+  mo: [0, 23.5],
+  shades: [0, -41],
+  cap: [63, -172.3],
+  pl: [-106, 152],
+  plf: [-106, 152],
+  pr: [106, 152],
+  prf: [106, 152],
+} as const satisfies Partial<Record<RigNode, Vec>>;
+
 const eyeOpen = (cx: number): Shape => ({
   kind: 'ellipse',
   cx,
@@ -101,10 +125,6 @@ export const EYE_OPEN = { L: eyeOpen(-72), R: eyeOpen(72) } as const;
 export const EYE_SHUT = {
   L: line('M-92 -40 Q-72 -16 -52 -40', 13),
   R: line('M52 -40 Q72 -16 92 -40', 13),
-} as const;
-export const EYE_HAPPY = {
-  L: line('M-92 -30 Q-72 -58 -52 -30', 13),
-  R: line('M52 -30 Q72 -58 92 -30', 13),
 } as const;
 
 export const MOUTH: Readonly<Record<MouthId, Shape>> = {
@@ -121,10 +141,6 @@ export const CHEEKS: readonly Shape[] = [
   { kind: 'ellipse', cx: 128, cy: 34, rx: 28, ry: 17, fill: C.feature },
 ];
 
-export const PAW_CENTER = { L: [-106, 152], R: [106, 152] } as const satisfies Record<
-  'L' | 'R',
-  Vec
->;
 export const PAW = {
   L: { kind: 'ellipse', cx: -106, cy: 152, rx: 46, ry: 36, fill: C.feature },
   R: { kind: 'ellipse', cx: 106, cy: 152, rx: 46, ry: 36, fill: C.feature },
@@ -167,13 +183,51 @@ export const PROP: Readonly<Record<PropId, readonly Shape[]>> = {
   ],
 };
 
-export const STAR_D = 'M0 -46 Q7 -7 46 0 Q7 7 0 46 Q-7 7 -46 0 Q-7 -7 0 -46Z';
-export const ACCENT_STARS: readonly { readonly at: Vec; readonly scale: number }[] = [
+const STAR_D = 'M0 -46 Q7 -7 46 0 Q7 7 0 46 Q-7 7 -46 0 Q-7 -7 0 -46Z';
+const STARS: readonly { readonly at: Vec; readonly scale: number }[] = [
   { at: [-292, -236], scale: 1 },
   { at: [308, -150], scale: 0.62 },
   { at: [262, 238], scale: 0.45 },
 ];
-export const ACCENT_TICKS: Shape = line(
-  'M228 -262 L262 -300 M270 -222 L318 -240 M196 -296 L208 -340',
-  18,
-);
+/**
+ * The swoosh's length in rig units. The boards draw it on with `pathLength="100"`, which
+ * react-native-svg supports only on web, so the rig dashes by the real length instead: a board dash
+ * offset `d` is `d * SWOOSH_LENGTH / 100`.
+ */
+export const SWOOSH_LENGTH = 334.2;
+const TICKS = ['M228 -262 L262 -300', 'M270 -222 L318 -240', 'M196 -296 L208 -340'] as const;
+
+export type AccentShapes = {
+  /** Drawn behind the coin. */
+  readonly swoosh: Shape;
+  /** Each star sits at `at`, scaled by `scale`, and pops about its own centre. */
+  readonly stars: readonly { readonly at: Vec; readonly scale: number; readonly shape: Shape }[];
+  readonly ticks: readonly Shape[];
+};
+
+/** The accent layer in the colours for the surface Sen sits on (MAX-Moments `--fx`, `--sw`). */
+export function accentShapes(tone: SenAccentTone): AccentShapes {
+  const { mark, swoosh } = SEN_ACCENT_TONES[tone];
+  return {
+    swoosh: {
+      kind: 'path',
+      d: 'M-330 60 Q-330 250 -140 300',
+      stroke: swoosh,
+      strokeWidth: 44,
+      strokeDasharray: SWOOSH_LENGTH,
+    },
+    stars: STARS.map(({ at, scale }) => ({
+      at,
+      scale,
+      shape: {
+        kind: 'path',
+        d: STAR_D,
+        fill: mark,
+        stroke: mark,
+        strokeWidth: 10,
+        strokeLinejoin: 'round',
+      },
+    })),
+    ticks: TICKS.map((d): Shape => ({ kind: 'path', d, stroke: mark, strokeWidth: 18 })),
+  };
+}
