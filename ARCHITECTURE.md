@@ -306,6 +306,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 88 pa
 - `useAmountsHidden()` reads the pref through `useSyncExternalStore` on `subscribePrefs`, so every writer re-renders it.
 - `showAmounts()` runs step-up `reveal` and writes `hideAmounts: false` only when the check passes. A cancel writes nothing.
 - `hideAmounts()` writes `true` and never prompts.
+- Lint bans `writePref('hideAmounts', …)` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
 - `SessionRoot` runs `dropRevealedOnHide()`. Whenever the pref reads hidden after a change, from any writer including `clearPrefs`, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
 - Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
 
