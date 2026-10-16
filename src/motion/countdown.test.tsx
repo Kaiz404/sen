@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { useLayoutEffect } from 'react';
 import { Text } from 'react-native';
 
 import { useSecondsLeft } from './countdown';
@@ -30,4 +31,20 @@ test('the label counts down whole seconds to zero', async () => {
 test('no deadline reads as zero', async () => {
   await render(<Label deadline={null} />);
   expect(screen.getByText('0s')).toBeOnTheScreen();
+});
+
+test('a new deadline shows its own count on the first frame', async () => {
+  const committed: number[] = [];
+  function Recorder({ deadline }: { deadline: number | null }) {
+    const left = useSecondsLeft(deadline);
+    useLayoutEffect(() => {
+      committed.push(left);
+    });
+    return null;
+  }
+  const view = await render(<Recorder deadline={null} />);
+
+  await view.rerender(<Recorder deadline={Date.now() + 30_000} />);
+
+  expect(committed.slice(0, 2)).toEqual([0, 30]);
 });

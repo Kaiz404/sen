@@ -6,6 +6,11 @@ function secondsUntil(deadline: number | null, now: number): number {
 
 export function useSecondsLeft(deadline: number | null): number {
   const [left, setLeft] = useState(() => secondsUntil(deadline, Date.now()));
+  const [counting, setCounting] = useState(deadline);
+  if (counting !== deadline) {
+    setCounting(deadline);
+    setLeft(() => secondsUntil(deadline, Date.now()));
+  }
 
   useEffect(() => {
     let id: ReturnType<typeof setTimeout> | undefined;
