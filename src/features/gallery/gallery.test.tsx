@@ -1,9 +1,10 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { renderRouter } from 'expo-router/testing-library';
 import { UnistylesRuntime } from 'react-native-unistyles';
 
 import { toast, ToastHost } from '@/components/toast';
 
-import { GalleryBody } from './index';
+import { GalleryBody, StatesScreen } from './index';
 import { SCREENS } from './registry';
 
 const states = Object.entries(SCREENS).flatMap(([name, byState]) =>
@@ -74,4 +75,17 @@ test('a state still waiting for its theme carries no shot name, so a flow never 
   );
   expect(screen.queryByTestId('shot-key-lemon-dark')).toBeNull();
   expect(screen.getByText('key · lemon')).toBeOnTheScreen();
+});
+
+test('the launch lab opens from its deep link and settles on Lock’s hero', async () => {
+  Object.assign(UnistylesRuntime, { themeName: 'light' });
+  await renderRouter(
+    { 'dev/states': () => <StatesScreen /> },
+    { initialUrl: '/dev/states?screen=motion&state=launch&theme=light' },
+  );
+  expect(screen.getByTestId('shot-motion-launch-light')).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(4000));
+
+  expect(screen.queryByTestId('launch')).not.toBeOnTheScreen();
+  expect(screen.getByLabelText('Sen, eyes closed while Sen is locked')).toBeOnTheScreen();
 });

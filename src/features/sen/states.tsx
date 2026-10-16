@@ -64,7 +64,7 @@ const lab = (moment: MomentId, prop?: PropId) =>
 
 /** Each app moment played once on mount, for device flows and recordings (`.maestro/sen-*.yaml`). */
 export const SEN_STATES = {
-  launch: LaunchLab,
+  launch: () => <LaunchLab />,
   unlock: lab('unlock'),
   reveal: lab('reveal'),
   remask: lab('remask'),
