@@ -321,8 +321,8 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 88 pa
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
 | `reveal` | "Show amounts" | `showAmounts()` writes `hideAmounts: false` | Stay hidden, silently |
-| `add` | "Save this transaction" | DB write, log `tx.added` | "Not saved. Your draft is still here." |
-| `delete` | "Delete this transaction" | DB delete, log `tx.deleted` | Sheet stays |
+| `add` | "Save this transaction" | DB write. The `tx.added` log entry waits for the activity log (phase 5) | "Not saved. Your draft is still here." |
+| `delete` | "Delete this transaction" | DB delete. The `tx.deleted` log entry waits for the activity log (phase 5) | Sheet stays, silently. Any other failure says "Nothing was deleted." |
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing |
 | `erase` | "Erase transactions you added" | Manual rows deleted, log `data.erased` | Nothing |
 
@@ -452,17 +452,30 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Field | Rule | Where |
 | --- | --- | --- |
 | Amount | Integer sen, 1 to 5,000,000 (RM 0.01 to RM 50,000.00) | `models/draft.ts` |
-| Keypad | Digits shift in from the right. At most 7 digits. No decimal key | `features/add/keypad-reducer.ts` |
+| Keypad | Digits shift in from the right. Keys 1 to 9, 00, 0 and delete. A key that would make an eighth digit does nothing. No decimal key | `features/add/keypad-reducer.ts` |
 | Direction | `'debit' \| 'credit'`. The sign is never typed | `models/draft.ts` |
-| Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed | `services/sanitize.ts` |
-| Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"` | `features/add/details-step.tsx` |
+| Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed. The draft keeps the text as typed. The counter, the preview, the review and the stored row read it through the sanitiser, and the field shows the cleaned text when editing ends | `services/sanitize.ts`, `features/add/draft.ts` |
+| Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"`, `maxLength={60}` | `features/add/details-step.tsx` |
 | Category | Enum of eight | `models/category.ts` |
-| Date | Today back to 90 days. Never future | `models/draft.ts` |
+| Date | Today, Yesterday, or a list of every day back to 90 days ago. Never future | `models/draft.ts`, `features/add/details-step.tsx` |
 
 **Why a custom keypad.** No amount ever reaches a keyboard that learns, suggests or syncs. The input space is exactly ten digits and delete.
 
+**The draft.** `AddLayout` holds one `DraftInput` in a reducer (`features/add/draft.ts`) and hands it to the three steps through context. It is memory only. Lock unmounts every protected route, so the draft drops with it. `toDraft` parses it with `draftSchema(today)` into the `Draft` the repo stores, or returns null.
+
+**Closing.** Close with input (an amount, a description or a category) shows "Discard this draft?". So does Android's back key on the amount step. Back on the later steps returns a step and keeps the draft.
+
+**Saving.** The review is a union: `ready`, `checking`, `refused` with the step-up reason, or `failed`. A save that lands leaves the screen.
+- The Save key disables before the prompt, and a ref drops a second tap that lands in the same frame.
+- `saveDraft` in `features/add/actions.ts` runs step-up, then `insertManual`, then `invalidateQueries(QK.tx)`.
+- A cancel shows "Not saved. Your draft is still here." and writes nothing.
+- A write that throws shows "Couldn't save securely. Nothing was stored." with "Retry with" the biometric. Retry prompts again and reuses the draft's `idemKey`, so a write that committed before it failed still leaves one row.
+- On success the saved haptic plays, the flow closes and a 6 s toast offers Undo. Undo deletes the row with no prompt.
+
+**Deleting.** `DeleteSheet` reads the row masked, and its amount only while amounts are shown. A bank row shows "From your bank · read only" with no delete key, and `deleteRow` refuses it before any prompt. A missing row says "This transaction isn't here any more." A cancelled prompt keeps the sheet silently. A failed match says "Nothing was deleted." and offers another try. A delete closes back to History with a 6 s Undo, which restores the same row with no prompt.
+
 **Double submit.**
-- **Draft key.** The draft gets an `idemKey` from `randomUUID()`, stored in a `UNIQUE` column, so a repeat save returns the existing row.
+- **Draft key.** The draft gets an `idemKey` from `randomUUID()` when the flow opens, stored in a `UNIQUE` column, so a repeat save returns the existing row.
 - **Save key.** It disables before the prompt.
 
 ## Motion
@@ -724,7 +737,8 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | The logger takes an event code and nothing else | `services/logger.test.ts` |
 | Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
 | Log schema rejects amounts | `features/security/activity-log.test.ts` |
-| Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `services/sanitize.test.ts` |
+| Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `features/add/draft.test.ts`, `services/sanitize.test.ts` |
+| A double tap on Save prompts once and stores one row. Cancel writes nothing. A write that committed but failed stores no second row on Retry. Undo of an add or a delete never prompts. Delete refuses bank rows before the prompt. The description field has the private input props and shows the cleaned text | `features/add/actions.test.ts`, `features/add/add-flow.test.tsx`, `features/add/delete-sheet.test.tsx` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |
 | Integer sen at the storage layer. A repeated idempotency key is refused. `day` matches `malaysiaDay` | `services/db/schema.test.ts` |
 | A masked query that selects an amount fails its parse | `services/db/rows.test.ts` |

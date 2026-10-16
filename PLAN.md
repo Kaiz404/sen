@@ -112,8 +112,8 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - [ ] Masked and revealed detail, the timeline, copy reference, share receipt (revealed only), not found.
 
 **Lane 4b. Add and delete.** Owns `src/features/add/`.
-- [ ] Keypad reducer, details step with the sanitiser, review, save with step-up and an idempotency key, Undo, the discard guard, delete with step-up.
-- [ ] A double-tap on Save stores one row.
+- [x] Keypad reducer, details step with the sanitiser, review, save with step-up and an idempotency key, Undo, the discard guard, delete with step-up. Unit evidence: `features/add/keypad-reducer.test.ts`, `draft.test.ts`, `actions.test.ts`, `add-flow.test.tsx`, `delete-sheet.test.tsx`, and the 16 `add` gallery states in `gallery.test.tsx`. Device evidence is not taken yet: `.maestro/add-*.yaml` have not run.
+- [x] A double-tap on Save stores one row. `add-flow.test.tsx` › "a double tap on Save prompts once and stores one row", real SQL through `openTestDb`.
 
 **Lane 4c. Settings.** Owns `src/features/settings/`.
 - [ ] Every row in DESIGN.md's settings table, reviewer controls including dataset size, and the sheets as form-sheet routes.
