@@ -58,8 +58,11 @@ test('Unlock squints happily at 1370 ms with the open eyes the board squints, no
   expect([poseFrame('happy')['el.sx'], poseFrame('happy')['elb.sx']]).toEqual([1.15, 1]);
 });
 
-test.each(MOMENT_IDS.filter((id) => MOMENTS[id].loop))('%s ends each lap on the frame it opens on', (id) => {
-  const m = MOMENTS[id];
-  const start = firstFrame(m, poseFrame(m.from));
-  expect(drawing(lastFrame(m, start))).toEqual(drawing(start));
-});
+test.each(MOMENT_IDS.filter((id) => MOMENTS[id].loop))(
+  '%s ends each lap on the frame it opens on',
+  (id) => {
+    const m = MOMENTS[id];
+    const start = firstFrame(m, poseFrame(m.from));
+    expect(drawing(lastFrame(m, start))).toEqual(drawing(start));
+  },
+);

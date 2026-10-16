@@ -3,14 +3,7 @@ import { View } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
 import type { Frame } from '../channels';
-import {
-  FACE_CLIP,
-  PIVOT,
-  senBox,
-  senTier,
-  transformOrigin,
-  VIEWBOX,
-} from '../art/geometry';
+import { FACE_CLIP, PIVOT, senBox, senTier, transformOrigin, VIEWBOX } from '../art/geometry';
 import { NODES, type TreeNode, treeFor } from '../art/nodes';
 import { poseFrame } from '../poses';
 import type { SenProps } from '../sen-props';

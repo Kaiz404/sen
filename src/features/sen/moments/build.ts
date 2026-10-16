@@ -31,7 +31,13 @@ export function startFrom(steps: Steps, v: number): Steps {
 }
 
 /** Adds an ease into the end pose for every track that doesn't already end there. */
-export function settleInto(tracks: Tracks, to: Frame, at: number, ms: number, ease: Ease = 'sine'): Tracks {
+export function settleInto(
+  tracks: Tracks,
+  to: Frame,
+  at: number,
+  ms: number,
+  ease: Ease = 'sine',
+): Tracks {
   const out: Partial<Record<Channel, Steps>> = {};
   for (const [ch, steps] of Object.entries(tracks) as [Channel, Steps][]) {
     const last = steps[steps.length - 1]!;

@@ -38,7 +38,9 @@ export function drawing(frame: Frame): Record<string, unknown> {
   walk(SVG_TREE, I, 1);
   for (const id of ['mv', 'rl', 'sq', 'sp'] as const) out[id] = NODES[id].read(frame, 1);
   out.edge = NODES.edge.read(frame, 1).opacity;
-  return JSON.parse(JSON.stringify(out, (_k, v: unknown) => (typeof v === 'number' ? round(v) : v)));
+  return JSON.parse(
+    JSON.stringify(out, (_k, v: unknown) => (typeof v === 'number' ? round(v) : v)),
+  );
 }
 
 /** The frame a moment opens on: each track's value at 0, and its start pose everywhere else. */

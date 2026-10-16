@@ -1,6 +1,10 @@
 import { act, render, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
-import Animated, { getAnimatedStyle, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  getAnimatedStyle,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 import { poseFrame } from '../poses';
 import { compileTrack, entry, formFor } from './compile';

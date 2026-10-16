@@ -6,8 +6,8 @@ const hop = moments('.M-copy', 0, 1640);
 
 /**
  * MAX-Moments `.M-copy`, to 1640 ms: a hop of 60 out from the slip, paws up, the happy squint, grin
- * and cheeks, accents, then the squint relaxes from 1500 ms. The tile perches at a lean of 3° with a −4° skew, which no pose holds, so the hop starts
- * and ends upright here.
+ * and cheeks, accents, then the squint relaxes from 1500 ms. The tile perches at a lean of 3° with
+ * a −4° skew, which no pose holds, so the hop starts and ends upright here.
  */
 const copyTracks: Tracks = {
   ...hop,

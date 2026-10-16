@@ -47,7 +47,9 @@ function expectSame(actual: Record<string, Drawn>, expected: Record<string, Draw
   for (const [node, d] of Object.entries(expected)) {
     const a = actual[node]!;
     expect([node, a.opacity]).toEqual([node, d.opacity]);
-    d.matrix?.forEach((v, i) => expect([node, i, a.matrix?.[i]]).toEqual([node, i, expect.closeTo(v, 3)]));
+    d.matrix?.forEach((v, i) =>
+      expect([node, i, a.matrix?.[i]]).toEqual([node, i, expect.closeTo(v, 3)]),
+    );
   }
 }
 

@@ -32,13 +32,18 @@ export function slice(steps: readonly BoardStep[], { from = 0, to }: Window): St
  * Every rig channel a board moment sets in the window. A track that never changes becomes one step
  * at 0, because its value can still differ from the pose the moment starts in.
  */
-export function boardTracks(moment: Readonly<Record<string, readonly BoardStep[]>>, w: Window): Tracks {
+export function boardTracks(
+  moment: Readonly<Record<string, readonly BoardStep[]>>,
+  w: Window,
+): Tracks {
   const out: Partial<Record<Channel, Steps>> = {};
   for (const [key, steps] of Object.entries(moment)) {
     if (!IS_CHANNEL.has(key)) continue;
     const [head, ...rest] = slice(steps, w);
     if (!head) continue;
-    out[key as Channel] = rest.some((step) => step.v !== head.v) ? [head, ...rest] : [{ at: 0, v: head.v }];
+    out[key as Channel] = rest.some((step) => step.v !== head.v)
+      ? [head, ...rest]
+      : [{ at: 0, v: head.v }];
   }
   return out;
 }

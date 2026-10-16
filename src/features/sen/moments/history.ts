@@ -63,8 +63,8 @@ export const refreshSpinLoop: Moment = {
   loop: true,
 };
 
-/** Sen rises 100 units while the spin springs to the next heads-up turn, before the board's drop. */
-const RISE = 120;
+/** How long Sen takes to rise 100 units while the spin springs to heads, before the board's drop. */
+const RISE_MS = 120;
 const land = moments('.M-ref.ph-land', 0, 330);
 const wobble = eulerSteps({ at: 330, a0: 8, swings: 6, half: 95 });
 const [, ...wobbleSx] = wobble['sq.sx'];
@@ -79,13 +79,13 @@ export const refreshLand: Moment = {
   priority: 1,
   from: 'idle',
   to: 'idle',
-  dur: RISE + 1161,
+  dur: RISE_MS + 1161,
   tracks: {
     'sp.th': [{ at: 0, v: 2 * Math.PI, spring: 'settle' }],
     'mv.y': [
       { at: 0, v: 0 },
-      { at: RISE, v: -100, ease: 'outQ' },
-      { at: RISE + 260, v: 0, ease: 'inQ' },
+      { at: RISE_MS, v: -100, ease: 'outQ' },
+      { at: RISE_MS + 260, v: 0, ease: 'inQ' },
     ],
     ...shift(
       {
@@ -93,10 +93,10 @@ export const refreshLand: Moment = {
         'sq.sx': [...land['sq.sx']!, ...wobbleSx],
         'sq.sy': [...land['sq.sy']!, ...wobble['sq.sy']],
       },
-      RISE,
+      RISE_MS,
     ),
   },
-  marks: [{ at: RISE + 260, haptic: 'refreshLanded' }],
+  marks: [{ at: RISE_MS + 260, haptic: 'refreshLanded' }],
 };
 
 /**

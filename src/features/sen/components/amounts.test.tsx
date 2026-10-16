@@ -12,7 +12,8 @@ import type { PoseId } from '../poses';
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 
 const hidden = { includeHiddenElements: true };
-const props = (node: string) => screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
+const props = (node: string) =>
+  screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
 const matrix = (node: string) => props(node).matrix as number[];
 const face = () => [matrix('lk')[4], matrix('lk')[5]];
 const style = (node: string) => getAnimatedStyle(screen.getByTestId(`sen-${node}`, hidden));
@@ -20,7 +21,15 @@ const lift = () => (style('mv').transform as { translateY: number }[])[1]!.trans
 const spin = () => (style('sp').transform as { scaleX: number }[])[0]!.scaleX;
 const at = async (ms: number) => act(() => jest.advanceTimersByTime(ms));
 
-function Lock({ pose, level = 'full', children }: { pose: PoseId; level?: MotionLevel; children?: ReactNode }) {
+function Lock({
+  pose,
+  level = 'full',
+  children,
+}: {
+  pose: PoseId;
+  level?: MotionLevel;
+  children?: ReactNode;
+}) {
   return (
     <MotionPolicyRoot preference={level}>
       <Sen id="lock" pose={pose} size={300} />

@@ -63,5 +63,9 @@ let resume: ReturnType<typeof setTimeout> | undefined;
 export function senScroll(scrolling: boolean): void {
   clearTimeout(resume);
   if (scrolling) dispatch({ type: 'gate', patch: { scroll: true } });
-  else resume = setTimeout(() => dispatch({ type: 'gate', patch: { scroll: false } }), SCROLL_RESUME_MS);
+  else
+    resume = setTimeout(
+      () => dispatch({ type: 'gate', patch: { scroll: false } }),
+      SCROLL_RESUME_MS,
+    );
 }

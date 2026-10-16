@@ -29,7 +29,7 @@ test('the copy lab plays Copy by request and rests idle', async () => {
   await render(<Copy />);
 
   await act(() => jest.advanceTimersByTime(600 + 300));
-  expect(screen.getByTestId('sen-elb', hidden).props.jestAnimatedProps.value.matrix.slice(0, 4)).toEqual([
-    1.15, 0, 0, 0.45,
-  ]);
+  expect(
+    screen.getByTestId('sen-elb', hidden).props.jestAnimatedProps.value.matrix.slice(0, 4),
+  ).toEqual([1.15, 0, 0, 0.45]);
 });

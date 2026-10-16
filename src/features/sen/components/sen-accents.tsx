@@ -20,7 +20,11 @@ const at = (k: Keyframes, t: number) => {
 
 const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const;
 
-type Layer = { readonly fx: SharedValue<number>; readonly tone: SenAccentTone; readonly side: number };
+type Layer = {
+  readonly fx: SharedValue<number>;
+  readonly tone: SenAccentTone;
+  readonly side: number;
+};
 
 /** The swoosh, behind the coin. It follows Sen's travel but never its roll or spin. */
 export function SwooshLayer({ fx, tone, side }: Layer): ReactNode {
@@ -46,7 +50,21 @@ export function SwooshLayer({ fx, tone, side }: Layer): ReactNode {
   );
 }
 
-function Star({ fx, i, shape, x, y, base }: { fx: SharedValue<number>; i: number; shape: Shape; x: number; y: number; base: number }) {
+function Star({
+  fx,
+  i,
+  shape,
+  x,
+  y,
+  base,
+}: {
+  fx: SharedValue<number>;
+  i: number;
+  shape: Shape;
+  x: number;
+  y: number;
+  base: number;
+}) {
   const k = ACCENT.stars[i]!;
   const props = useAnimatedProps(() => {
     const t = fx.get();

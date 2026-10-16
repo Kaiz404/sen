@@ -52,9 +52,7 @@ function LaunchLab(): ReactNode {
           <SenRig id={LAB} pose="masked" size={size} label="Sen, eyes closed while Sen is locked" />
         </View>
       </View>
-      {!done && (
-        <SenLaunch target={{ sen, heroHeight }} ready onDone={() => setDone(true)} />
-      )}
+      {!done && <SenLaunch target={{ sen, heroHeight }} ready onDone={() => setDone(true)} />}
     </View>
   );
 }

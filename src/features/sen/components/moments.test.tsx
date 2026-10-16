@@ -11,10 +11,14 @@ import type { PoseId, PropId } from '../poses';
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 
 const hidden = { includeHiddenElements: true };
-const props = (node: string) => screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
+const props = (node: string) =>
+  screen.getByTestId(`sen-${node}`, hidden).props.jestAnimatedProps.value;
 const face = () => [props('lk').matrix[4], props('lk').matrix[5]] as const;
 const body = (node: string) =>
-  Object.assign({}, ...(getAnimatedStyle(screen.getByTestId(`sen-${node}`, hidden)).transform as object[]));
+  Object.assign(
+    {},
+    ...(getAnimatedStyle(screen.getByTestId(`sen-${node}`, hidden)).transform as object[]),
+  );
 const spin = () => body('sp').scaleX as number;
 const at = async (ms: number) => act(() => jest.advanceTimersByTime(ms));
 const play = async (moment: Parameters<typeof playMoment>[1]) => act(() => playMoment('s', moment));

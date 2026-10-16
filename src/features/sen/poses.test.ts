@@ -149,9 +149,12 @@ const BOARD: Readonly<Record<PoseId, Partial<Record<Channel, number>>>> = {
   cool: { 'shades.op': 1 },
 };
 
-test.each(POSE_IDS)('%s settles on its board values and leaves every other channel at rest', (pose) => {
-  expect(poseFrame(pose)).toEqual({ ...REST, ...BOARD[pose] });
-});
+test.each(POSE_IDS)(
+  '%s settles on its board values and leaves every other channel at rest',
+  (pose) => {
+    expect(poseFrame(pose)).toEqual({ ...REST, ...BOARD[pose] });
+  },
+);
 
 test('a pose wears its default prop unless the caller overrides it', () => {
   expect(on(poseFrame('asleep'), WORN)).toEqual(['cap.op']);

@@ -2,12 +2,17 @@ import { slice } from '../board';
 import { BOARDS } from '../board.gen';
 import { edgeSpin, eulerSteps } from './generators';
 
-const peaks = (steps: readonly { v: number }[]) => steps.filter((_, i) => i % 2 === 1).map((s) => s.v);
+const peaks = (steps: readonly { v: number }[]) =>
+  steps.filter((_, i) => i % 2 === 1).map((s) => s.v);
 
 test('the wobble swings 11, then 0.72 of the last swing the other way', () => {
   const r = eulerSteps({ at: 0 })['sq.r'];
 
-  expect(peaks(r).slice(0, 4).map((v) => Number(v.toFixed(2)))).toEqual([11, -7.92, 5.7, -4.11]);
+  expect(
+    peaks(r)
+      .slice(0, 4)
+      .map((v) => Number(v.toFixed(2))),
+  ).toEqual([11, -7.92, 5.7, -4.11]);
   expect(r.map((s) => s.at).slice(0, 7)).toEqual([0, 100, 200, 280, 360, 424, 488]);
 });
 
@@ -17,7 +22,8 @@ test("eulerSteps draws MAX-Library's .L-wob tilt, swing for swing", () => {
 
   expect(ours.map((s) => s.at)).toEqual(board.map((s) => s.at));
   ours.forEach((s, i) => expect(s.v).toBeCloseTo(board[i]!.v, 3));
-  const eases = (steps: readonly object[]) => steps.slice(1).map((s) => ('ease' in s ? s.ease : null));
+  const eases = (steps: readonly object[]) =>
+    steps.slice(1).map((s) => ('ease' in s ? s.ease : null));
   expect(eases(ours)).toEqual(eases(board));
 });
 

@@ -9,8 +9,9 @@ type Euler = {
 
 /**
  * Euler's-disk settle on `sq` (MAX-Library `.L-wob`, MAX-Spec wobble-settle). Swing i tilts to
- * ±A, A = a0 × (−0.72)^i, out along `outS` and back along `inS`, each half `half` ms (100 by default) × 0.8^i. The tilt
- * reads narrower, scaleX 1 − 0.06·|A|/11. It ends with the clack, 1.03 by 0.97 for 40 ms, then rest.
+ * ±A, A = a0 × (−0.72)^i, out along `outS` and back along `inS`, each half `half` ms (100 by
+ * default) × 0.8^i. The tilt reads narrower, scaleX 1 − 0.06·|A|/11. It ends with the clack, 1.03
+ * by 0.97 for 40 ms, then rest.
  */
 export function eulerSteps({ at, a0 = 11, swings = 10, half: half0 = 100 }: Euler): {
   'sq.r': Steps;
@@ -26,7 +27,10 @@ export function eulerSteps({ at, a0 = 11, swings = 10, half: half0 = 100 }: Eule
     const peak = Math.round(t + half);
     const back = Math.round(t + 2 * half);
     r.push({ at: peak, v: a, ease: 'outS' }, { at: back, v: 0, ease: 'inS' });
-    sx.push({ at: peak, v: 1 - (0.06 * Math.abs(a)) / 11, ease: 'outS' }, { at: back, v: 1, ease: 'inS' });
+    sx.push(
+      { at: peak, v: 1 - (0.06 * Math.abs(a)) / 11, ease: 'outS' },
+      { at: back, v: 1, ease: 'inS' },
+    );
     t += 2 * half;
     a *= -0.72;
     half *= 0.8;

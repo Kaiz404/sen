@@ -294,7 +294,8 @@ def tracks(path):
                     if ch is None:
                         continue
                     steps, prev = [], None
-                    for at, v, e in seq:
+                    # `0%,100%{}` lists its times out of order. The sort is stable, so ties keep source order.
+                    for at, v, e in sorted(seq, key=lambda stop: stop[0]):
                         steps.append((round(at + shift), round(v, 6), prev))
                         prev = e
                     if ch == 'sp.sx':
