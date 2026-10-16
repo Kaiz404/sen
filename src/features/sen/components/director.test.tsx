@@ -202,3 +202,23 @@ test('a scroll the app leaves mid-fling no longer holds Sen once the app is back
 
   expect(faceX('a')).toBe(-22);
 });
+
+test('the Face ID scan picks up again when the app comes back from the background', async () => {
+  function Gated() {
+    useSenAppGate();
+    return <TwoSens />;
+  }
+  await render(<Gated />);
+  const appGoes = (state: 'background' | 'active') =>
+    act(() => jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state));
+
+  await act(() => playMoment('a', 'faceScan'));
+  await at(500);
+  await appGoes('background');
+  await at(500);
+  expect(faceX('a')).toBeCloseTo(0, 0);
+  await appGoes('active');
+  await at(300);
+
+  expect(faceX('a')).toBe(-20);
+});

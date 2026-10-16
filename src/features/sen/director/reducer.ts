@@ -25,6 +25,8 @@ export type DirectorState = {
   /** One slot, so only one Sen ever plays a moment. */
   readonly playing: Playing | null;
   readonly queued: Queued | null;
+  /** The loop a closed gate cut short, played again when every gate opens. */
+  readonly held: Queued | null;
   readonly nextToken: number;
 };
 
@@ -51,6 +53,7 @@ export const INITIAL: DirectorState = {
   gate: { scroll: false, focused: true, appActive: true },
   playing: null,
   queued: null,
+  held: null,
   nextToken: 1,
 };
 
@@ -65,6 +68,17 @@ function play(s: DirectorState, sen: SenId, moment: MomentId, before: Command[] 
     [...before, { type: 'play', sen, moment, token }],
   ];
 }
+
+/** The loop this moment is, or the loop it hands over to. */
+function loopOf({ sen, moment }: Queued, info: MomentInfo): Queued | null {
+  if (info(moment).loop) return { sen, moment };
+  const then = info(moment).then;
+  return then && info(then).loop ? { sen, moment: then } : null;
+}
+
+/** A Sen that moves on, or goes, lets go of the loop it held. */
+const release = (s: DirectorState, sen: SenId): DirectorState =>
+  s.held?.sen === sen ? { ...s, held: null } : s;
 
 function next(s: DirectorState): Result {
   if (s.queued) return play({ ...s, queued: null }, s.queued.sen, s.queued.moment);
@@ -84,7 +98,7 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
 
     case 'unregister': {
       const t: DirectorState = {
-        ...s,
+        ...release(s, e.sen),
         sens: s.sens.filter((x) => x !== e.sen),
         queued: s.queued?.sen === e.sen ? null : s.queued,
       };
@@ -94,7 +108,9 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
     case 'request': {
       if (!s.sens.includes(e.sen)) return [s, []];
       const p = info(e.moment).priority;
-      if (!isOpen(s.gate)) return [s, p === 0 ? [] : [{ type: 'settle', sen: e.sen }]];
+      if (!isOpen(s.gate)) {
+        return p === 0 ? [s, []] : [release(s, e.sen), [{ type: 'settle', sen: e.sen }]];
+      }
       if (!s.playing) return play(s, e.sen, e.moment);
       const now = info(s.playing.moment);
       const same = s.playing.sen === e.sen;
@@ -113,11 +129,12 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
     }
 
     case 'stop': {
-      if (s.playing?.sen === e.sen) {
-        const [t, commands] = next(s);
-        return [t, [{ type: 'settle', sen: e.sen }, ...commands]];
+      const t = release(s, e.sen);
+      if (t.playing?.sen === e.sen) {
+        const [u, commands] = next(t);
+        return [u, [{ type: 'settle', sen: e.sen }, ...commands]];
       }
-      return s.queued?.sen === e.sen ? [{ ...s, queued: null }, []] : [s, []];
+      return t.queued?.sen === e.sen ? [{ ...t, queued: null }, []] : [t, []];
     }
 
     case 'finished': {
@@ -128,12 +145,16 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
 
     case 'gate': {
       const gate = { ...s.gate, ...e.patch };
-      if (isOpen(gate)) return [{ ...s, gate }, []];
+      if (isOpen(gate)) {
+        const t = { ...s, gate, held: null };
+        return s.held && s.sens.includes(s.held.sen) ? play(t, s.held.sen, s.held.moment) : [t, []];
+      }
       const sens = [s.playing?.sen, s.queued?.sen].filter(
         (x, i, all): x is SenId => x !== undefined && all.indexOf(x) === i,
       );
+      const held = (s.playing && loopOf(s.playing, info)) ?? s.held;
       return [
-        { ...s, gate, playing: null, queued: null },
+        { ...s, gate, playing: null, queued: null, held },
         sens.map((sen) => ({ type: 'settle', sen })),
       ];
     }

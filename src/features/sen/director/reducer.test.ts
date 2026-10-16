@@ -15,6 +15,8 @@ const INFO: Partial<Record<MomentId, ReturnType<MomentInfo>>> = {
   doubleBlink: { priority: 2, then: 'blink' },
   lockPeek: { priority: 2, loop: true },
   slowBlink: { priority: 3 },
+  lockout: { priority: 3, then: 'lockoutBreathe' },
+  lockoutBreathe: { priority: 3, loop: true },
 };
 const info: MomentInfo = (id) => INFO[id]!;
 
@@ -28,6 +30,8 @@ function run(events: readonly DirectorEvent[]): [DirectorState, Command[]] {
 const reg = (sen: string): DirectorEvent => ({ type: 'register', sen });
 const req = (sen: string, moment: MomentId): DirectorEvent => ({ type: 'request', sen, moment });
 const two = [reg('a'), reg('b')];
+const close: DirectorEvent = { type: 'gate', patch: { appActive: false } };
+const open: DirectorEvent = { type: 'gate', patch: { appActive: true } };
 
 test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']]>([
   [
@@ -106,6 +110,42 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
   [
     'P0 through a closed gate does nothing',
     [...two, { type: 'gate', patch: { appActive: false } }, req('a', 'blink')],
+    [],
+    null,
+  ],
+  [
+    'a loop a closed gate cut short waits while another gate stays closed',
+    [...two, req('a', 'lockPeek'), close, { type: 'gate', patch: { focused: false } }, open],
+    [],
+    null,
+  ],
+  [
+    'a loop a closed gate cut short plays again once the last gate opens',
+    [...two, req('a', 'lockPeek'), close, open],
+    [{ type: 'play', sen: 'a', moment: 'lockPeek', token: 2 }],
+    { sen: 'a', moment: 'lockPeek', token: 2 },
+  ],
+  [
+    'a moment cut short before its follow-up loop comes back as that loop',
+    [...two, req('a', 'lockout'), close, open],
+    [{ type: 'play', sen: 'a', moment: 'lockoutBreathe', token: 2 }],
+    { sen: 'a', moment: 'lockoutBreathe', token: 2 },
+  ],
+  [
+    'a moment with no loop is not played again when the gate opens',
+    [...two, req('a', 'glance'), close, open],
+    [],
+    null,
+  ],
+  [
+    'a Sen that asks for another moment behind the gate lets go of its loop',
+    [...two, req('a', 'lockPeek'), close, req('a', 'glance'), open],
+    [],
+    null,
+  ],
+  [
+    'a stop behind the gate lets go of the loop',
+    [...two, req('a', 'lockPeek'), close, { type: 'stop', sen: 'a' }, open],
     [],
     null,
   ],
