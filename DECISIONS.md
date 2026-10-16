@@ -44,9 +44,9 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
-| D30 | Adding a transaction | A floating Add key on History, no bar |
-| D31 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
+| D33 | Adding a transaction | A floating Add key on History, no bar |
+| D35 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
 
 ---
 
@@ -486,7 +486,19 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Watch out.** react-native-screens presents formSheet and fullScreenModal above the root view, so the root cover does not hide them. The delete sheet and the add flow show amounts, so each mounts its own `PrivacyCover`. The other sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.
 
-## D30. Adding a transaction: a floating key, not a header key or a bar
+## D32. Release build: R8 minify and resource shrinking through `expo-build-properties`
+
+**Compared.**
+- Leave Expo's defaults (no minify, no shrink).
+- Turn both on through `expo-build-properties` in `app.config.ts`.
+- Edit `android/app/build.gradle` by hand.
+
+**Why the plugin.**
+- **Conventional.** It is the documented Expo route and survives `expo prebuild`, which regenerates `android/` (git-ignored). A hand edit would be lost.
+- **Smaller APK.** The reviewer APK is a release build. Shrinking drops unused code and resources (size gain not yet measured).
+- **Risk.** R8 can strip classes that native code reaches by reflection. A review of the dependencies found the keep rules in place (read from source, not yet run under R8). Reanimated, Worklets, react-native-svg and expo-modules-core ship `consumerProguardFiles`. The MMKV and Unistyles Nitro specs carry `@DoNotStrip` and `@Keep`. expo-sqlite's JNI code uses `DoNotStrip`. expo-font registers its `R.font` references, so resource shrinking keeps them. The release smoke of unlock, add, delete and lock stays the gate before the build is trusted. Keep the R8 mapping file (`mapping.txt`) with the reviewer APK, so a stack trace from it can be read. If a module breaks, add a keep rule through the plugin's `extraProguardRules`, not by turning minify off.
+
+## D33. Adding a transaction: a floating key, not a header key or a bar
 
 **Compared** (the `SF-AddNav-Options` board).
 - A. A floating Add key at the bottom right, no bar.
@@ -500,7 +512,7 @@ The phases are in [PLAN.md](PLAN.md).
 - **The owner's change.** The key stays a loud 60 × 60 "+" at every scroll position, with no "Add" word. The board's grow and shrink on scroll is dropped. The label "Add a transaction" is the name TalkBack and the flows use.
 - **With the toast.** Material lifts a FAB above a snackbar, so the key rises with the undo toast on the toast's own timing instead of hiding under it. A toast is one line plus a bar, so the lift is a fixed 92 pt. A two-line detail would still clear it by about 6 pt (inferred from the font sizes).
 
-## D31. Pull to refresh: a custom pan, with the platform control as the fallback
+## D35. Pull to refresh: a custom pan, with the platform control as the fallback
 
 **Compared.**
 - FlashList's `refreshing`, which is Android's `RefreshControl`. It is conventional and costs nothing, but its spinner cannot hold Sen, and the board's stretch out of the gap is impossible.
@@ -509,14 +521,3 @@ The phases are in [PLAN.md](PLAN.md).
 **Why the pan.** The board's pull, spin and landing are the screen's signature moment, and the pan gives direct manipulation, which DESIGN allows. The list's scroller is Gesture Handler's `ScrollView` with `simultaneousHandlers`, because a plain React Native scroller cancels a parent pan once it takes the touch. The pan pulls only while the list is at offset 0.
 
 **Risk.** Spike R1 (the pan beside FlashList on the phone, five normal scrolls still scroll) has not run. The unit tests prove the maths, the thresholds and the state changes through Gesture Handler's test driver, not the touch arbitration. If the spike fails, revert the lane's pull commit and keep `RefreshControl`.
-## D32. Release build: R8 minify and resource shrinking through `expo-build-properties`
-
-**Compared.**
-- Leave Expo's defaults (no minify, no shrink).
-- Turn both on through `expo-build-properties` in `app.config.ts`.
-- Edit `android/app/build.gradle` by hand.
-
-**Why the plugin.**
-- **Conventional.** It is the documented Expo route and survives `expo prebuild`, which regenerates `android/` (git-ignored). A hand edit would be lost.
-- **Smaller APK.** The reviewer APK is a release build. Shrinking drops unused code and resources (size gain not yet measured).
-- **Risk.** R8 can strip classes that native code reaches by reflection. A review of the dependencies found the keep rules in place (read from source, not yet run under R8). Reanimated, Worklets, react-native-svg and expo-modules-core ship `consumerProguardFiles`. The MMKV and Unistyles Nitro specs carry `@DoNotStrip` and `@Keep`. expo-sqlite's JNI code uses `DoNotStrip`. expo-font registers its `R.font` references, so resource shrinking keeps them. The release smoke of unlock, add, delete and lock stays the gate before the build is trusted. Keep the R8 mapping file (`mapping.txt`) with the reviewer APK, so a stack trace from it can be read. If a module breaks, add a keep rule through the plugin's `extraProguardRules`, not by turning minify off.
