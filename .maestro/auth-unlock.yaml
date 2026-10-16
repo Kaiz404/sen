@@ -11,5 +11,6 @@ appId: com.kaiz404.sen
     notVisible:
       id: unlock
     timeout: 15000
-- assertVisible: HISTORY
+- assertVisible:
+    id: history
 - takeScreenshot: auth-unlock

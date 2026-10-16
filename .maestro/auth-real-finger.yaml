@@ -13,5 +13,6 @@ tags:
     notVisible:
       id: unlock
     timeout: 60000
-- assertVisible: HISTORY
+- assertVisible:
+    id: history
 - takeScreenshot: auth-real-finger
