@@ -65,8 +65,11 @@ export function LockScreen(): ReactNode {
     if (asking) return;
     setPrompt({ kind: 'asking' });
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
-      setPrompt({ kind: 'answered', outcome });
-      if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
+      const now = Date.now();
+      const next = outcome.ok ? view : afterPrompt(view, outcome.reason, now);
+      const napping = next.kind === 'lockout' && next.until > now;
+      setPrompt({ kind: 'answered', outcome, ...(napping && { rest: 'lockoutBreathe' }) });
+      setView(next);
     });
   };
 

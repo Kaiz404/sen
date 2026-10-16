@@ -322,7 +322,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
 - The month card's Sen (`id="month"`) rests `masked` or `revealed` with the pref, so showing plays Reveal and hiding plays Re-mask. History fires Reveal's success haptic itself when the check passes, and the moment carries none, because a scroll or the background can hold the moment back and the buzz must still come once. "Hide amounts" fires the light `hideNow` haptic itself too, as DESIGN says.
 
-**Sen on Lock and the primer.** Each screen names its Sen to the director (`lock`, `primer`; Lock's napping Sen shares `lock`, since the two never show together). The container holds its prompt as `notAsked`, `asking` or `answered` with the `AuthOutcome` that `unlock()` returned. `usePromptMoments(sen, prompt, answers)` in `screens/prompt-moments.ts` plays from that, never from a diff of the view, so a cancel that leaves the view as it was can't replay the last answer.
+**Sen on Lock and the primer.** Each screen names its Sen to the director (`lock`, `primer`; Lock's napping Sen shares `lock`, since the two never show together). The container holds its prompt as `notAsked`, `asking` or `answered` with the `AuthOutcome` that `unlock()` returned, and an optional `rest` loop for an answer with no moment of its own. `usePromptMoments(sen, prompt, answers)` in `screens/prompt-moments.ts` plays from that, never from a diff of the view, so a cancel that leaves the view as it was can't replay the last answer.
 
 | Prompt | Moment |
 | --- | --- |
@@ -330,7 +330,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 | Answered `ok` (the session is `arriving`) | `unlock`. The screen holds `UNLOCK_HOLD[level]` (1370 ms in Full, 400 ms in Calm and Off), then History opens |
 | Answered `mismatch` | `authFailed` |
 | Answered `lockout` | `lockout`, then `lockoutBreathe`. Lock only. The primer's Sen keeps peeking |
-| Any other answer (a cancel, off, error) | Stops the scan, and Sen settles into the state's pose. After a miss that is `worried`, and in a lockout the napping Sen rests `asleep` |
+| Any other answer (a cancel, off, error) | Stops the scan, and Sen settles into the state's pose. After a miss that is `worried`. While the lockout card still shows, the answer carries `rest: 'lockoutBreathe'`, so the napping Sen breathes again after a passcode cancel |
 
 - A screen that has not asked plays nothing, and the prop-driven views (`LockView`, `PrimerView`) play nothing, so the gallery draws each state still.
 - The container shows `checking` until the answer lands (`asking`), because the session leaves `authenticating` a render before the answer reaches the screen. Without it the view would flash `idle`.

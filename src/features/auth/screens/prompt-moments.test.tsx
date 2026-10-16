@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import type { ReactNode } from 'react';
+import { AppState } from 'react-native';
 
+import { useSenAppGate } from '@/features/sen';
 import { MotionPolicyRoot } from '@/motion/policy';
 import type { OpenDb } from '@/services/db';
 import { playHaptic } from '@/services/haptics';
@@ -117,7 +119,7 @@ test('cancelling the next prompt after a miss settles Sen worried, with no secon
   expect((node('lock', 'el').matrix as number[]).slice(0, 4)).toEqual([0.85, 0, 0, 0.85]);
 });
 
-test('cancelling the passcode during a lockout keeps the napping Sen still, with no second lockout', async () => {
+test('cancelling the passcode during a lockout sends the napping Sen back to breathing, with no second lockout', async () => {
   const lockout = holdPrompt();
   await render(<LockScreen />);
   await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
@@ -128,11 +130,51 @@ test('cancelling the passcode during a lockout keeps the napping Sen still, with
   const cancel = holdPrompt();
   await fireEvent.press(screen.getByRole('button', { name: 'Use device passcode' }));
   await cancel({ success: false, error: 'user_cancel' });
-  await at(1400);
+  const frames = [];
+  for (const ms of [1000, 1000, 3000]) {
+    await at(ms);
+    frames.push([spin('lock'), node('lock', 'edge').opacity, ...squash('lock')]);
+  }
 
+  // [spin scaleX, edge pill opacity, squash x, squash y] at 1, 2 and 5 s after the cancel.
+  expect(frames).toEqual([
+    [1, 0, 1, 1.02],
+    [1, 0, 1, 1],
+    [1, 0, 1, 1.02],
+  ]);
   expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
   expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
+  expect(face('lock')).toEqual([0, 48]);
+});
+
+test('the napping Sen holds still in the background and breathes again when the app comes back', async () => {
+  function Gated() {
+    useSenAppGate();
+    return <LockScreen />;
+  }
+  const appGoes = (state: 'background' | 'active') =>
+    act(() => {
+      for (const [, listener] of jest.mocked(AppState.addEventListener).mock.calls) listener(state);
+    });
+  const answer = holdPrompt();
+  await render(<Gated />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await answer({ success: false, error: 'lockout' });
+  await at(1300);
+  await at(1000);
+  expect(squash('lock')).toEqual([1, 1.02]);
+
+  await appGoes('background');
+  await at(1000);
   expect(squash('lock')).toEqual([1, 1]);
+  await at(3000);
+  expect(squash('lock')).toEqual([1, 1]);
+
+  await appGoes('active');
+  await at(1000);
+  expect(squash('lock')).toEqual([1, 1.02]);
+  expect(spin('lock')).toBe(1);
+  expect(jest.mocked(playHaptic).mock.calls).toEqual([['lockout']]);
 });
 
 test('a lockout puts the napping Sen to sleep: one error haptic, a sigh, then a breath every 4 s, never edge-on', async () => {
