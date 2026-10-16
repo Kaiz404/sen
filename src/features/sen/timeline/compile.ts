@@ -18,12 +18,13 @@ import type { Ease, Mark, Moment, Steps } from './types';
  * The director picks the form for the motion level, so Reanimated must never shorten a step itself.
  * Under `ReduceMotion.System` a Calm crossfade would jump to its end.
  */
-const NEVER = ReduceMotion.Never;
+export const NEVER = ReduceMotion.Never;
 
 /** How long an interrupted channel takes to reach a moment's first value instead of jumping. */
 export const ENTRY_MS = 80;
 
 function easing(e: Ease | undefined) {
+  'worklet';
   if (e === undefined) return Easing.linear;
   return typeof e === 'string' ? EASE[e] : Easing.bezier(...e);
 }
@@ -34,6 +35,7 @@ function easing(e: Ease | undefined) {
  * keep their times. A lone jump is a snap on purpose, as in Off, and stays one.
  */
 export function entry(steps: Steps, current: number): Steps {
+  'worklet';
   const [first, ...rest] = steps;
   if (rest.length === 0 || first.at !== 0 || 'spring' in first) return steps;
   if (Math.abs(first.v - current) < 1e-3) return steps;
@@ -43,6 +45,7 @@ export function entry(steps: Steps, current: number): Steps {
 
 /** One track as a Reanimated animation. Each step runs from the step before it, starting at 0 ms. */
 export function compileTrack(steps: Steps, dur: number, loop = false): number {
+  'worklet';
   let t = 0;
   const parts = steps.map((s) => {
     const gap = Math.max(0, s.at - t);
@@ -80,4 +83,3 @@ export function formFor(m: Moment, level: MotionLevel, from: Frame, to: Frame): 
   const { loop: _loop, ...rest } = m;
   return { ...rest, tracks, marks, dur };
 }
-

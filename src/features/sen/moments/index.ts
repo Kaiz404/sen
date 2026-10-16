@@ -52,4 +52,4 @@ export function transitionFor(from: PoseId, to: PoseId): MomentId | undefined {
   return TRANSITIONS[`${from}>${to}`];
 }
 
-export { AMBIENT, ambientFor, nextBeat } from './ambient';
+export { AMBIENT, ambientFor, isBeat, nextBeat } from './ambient';

@@ -1,24 +1,16 @@
-import {
-  type ReactNode,
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
   makeMutable,
-  ReduceMotion,
   type SharedValue,
   useAnimatedProps,
   useAnimatedStyle,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
 import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
@@ -26,28 +18,19 @@ import { playHaptic } from '@/services/haptics';
 import type { SenAccentTone } from '@/theme/colors';
 
 import { type Channel, type Frame } from '../channels';
-import {
-  EDGE,
-  FACE_CLIP,
-  PIVOT,
-  senBox,
-  senTier,
-  transformOrigin,
-  VIEWBOX,
-} from '../art/geometry';
+import { EDGE, FACE_CLIP, PIVOT, senBox, senTier, transformOrigin, VIEWBOX } from '../art/geometry';
 import { ACCENT_MS } from '../art/accents';
 import { type BodyStyle, NODES, type SvgProps, type TreeNode, treeFor } from '../art/nodes';
 import { momentFinished, playMoment, registerSen } from '../director/store';
-import { ambientFor, nextBeat, transitionFor } from '../moments';
+import { ambientFor, isBeat, nextBeat, transitionFor } from '../moments';
 import { poseFrame, type PoseId, type PropId } from '../poses';
 import type { SenProps } from '../sen-props';
-import { compileTrack, entry, formFor } from '../timeline/compile';
+import { formFor, NEVER } from '../timeline/compile';
 import type { Moment } from '../timeline/types';
 import { AnimatedG } from './animated-g';
-import { ease, makeRig, pick, type RigValues, settle, snap, stop, wrap } from './rig-values';
+import { makeRig, pick, type RigValues, settle, snap, start, stop } from './rig-values';
 import { SparkLayer, SwooshLayer } from './sen-accents';
 import { ShapeEl } from './shape';
-
 
 type Read<P> = (f: Frame, unit: number) => P;
 
@@ -94,31 +77,45 @@ const COIN = transformOrigin(PIVOT.coin);
 const CONTACT = transformOrigin(PIVOT.contact);
 const EDGE_NODE: TreeNode = { node: 'edge', shapes: [EDGE] };
 
-/** Fires a moment's marks and its end from the UI thread, so haptics stay on the frame they belong to. */
-function runClock(
+/**
+ * Starts a moment's tracks and the clock that fires its marks and its end, in one UI-thread job, so
+ * every haptic lands on the frame it belongs to.
+ */
+function begin(
+  rig: RigValues,
   clock: SharedValue<number>,
   fx: SharedValue<number> | null,
   m: Moment,
+  from: Frame,
+  level: MotionLevel,
   onEnd: () => void,
 ): void {
+  'worklet';
+  start(rig, m, from, level);
+  cancelAnimation(clock);
+  if (m.loop) return;
   let t = 0;
-  const NEVER = ReduceMotion.Never;
-  const parts = [...m.marks]
-    .sort((a, b) => a.at - b.at)
-    .map(({ at, haptic, accents }) => {
-      const duration = at - t;
-      t = at;
-      const pop = accents && fx;
-      return withTiming(at, { duration, reduceMotion: NEVER }, (done) => {
-        'worklet';
-        if (!done) return;
-        if (haptic) scheduleOnRN(playHaptic, haptic);
-        if (pop) {
-          fx.set(0);
-          fx.set(withTiming(ACCENT_MS, { duration: ACCENT_MS, easing: Easing.linear, reduceMotion: NEVER }));
-        }
-      });
+  const marks = [...m.marks].sort((a, b) => a.at - b.at);
+  const parts = marks.map(({ at, haptic, accents }) => {
+    const duration = at - t;
+    t = at;
+    const pop = accents && fx;
+    return withTiming(at, { duration, reduceMotion: NEVER }, (done) => {
+      'worklet';
+      if (!done) return;
+      if (haptic) scheduleOnRN(playHaptic, haptic);
+      if (pop) {
+        fx.set(0);
+        fx.set(
+          withTiming(ACCENT_MS, {
+            duration: ACCENT_MS,
+            easing: Easing.linear,
+            reduceMotion: NEVER,
+          }),
+        );
+      }
     });
+  });
   parts.push(
     withTiming(m.dur, { duration: Math.max(0, m.dur - t), reduceMotion: NEVER }, (done) => {
       'worklet';
@@ -129,7 +126,12 @@ function runClock(
   clock.set(withSequence(NEVER, ...parts));
 }
 
-type Rest = { readonly pose: PoseId; readonly prop: PropId | null | undefined; readonly level: MotionLevel };
+type Rest = {
+  readonly pose: PoseId;
+  readonly prop: PropId | null | undefined;
+  readonly level: MotionLevel;
+  readonly full: boolean;
+};
 
 /**
  * The animated Sen. One shared value per channel, and every part reads only its own, so a still part
@@ -149,18 +151,20 @@ export function SenRig({
   const [clock] = useState(() => makeMutable(0));
   const [fx] = useState(() => makeMutable(ACCENT_MS));
   const full = senTier(size) === 'full';
-  const rest = useRef<Rest>({ pose, prop, level });
+  const rest = useRef<Rest>({ pose, prop, level, full });
   const playing = useRef<{ token: number; moment: Moment } | null>(null);
   const shown = useRef(pose);
+  /** Ambient beats played since the last other moment, so idle rests after three. */
+  const beats = useRef(0);
 
   useEffect(() => {
-    rest.current = { pose, prop, level };
+    rest.current = { pose, prop, level, full };
   });
 
   useEffect(() => {
     const restInPose = () => {
       const r = rest.current;
-      settle(rig, poseFrame(r.pose, r.prop), r.level);
+      scheduleOnUI(settle, rig, poseFrame(r.pose, r.prop), r.level);
     };
     const end = (token: number) => {
       const now = playing.current;
@@ -168,26 +172,19 @@ export function SenRig({
       playing.current = null;
       if (!now.moment.then) {
         const r = rest.current;
-        snap(rig, poseFrame(now.moment.to, r.prop));
+        scheduleOnUI(snap, rig, poseFrame(now.moment.to, r.prop));
         if (now.moment.to !== r.pose) restInPose();
       }
       momentFinished(token);
     };
-    return registerSen(id, {
+    const unregister = registerSen(id, {
       play(moment, token) {
         const r = rest.current;
         const from = poseFrame(moment.from, r.prop);
         const m = formFor(moment, r.level, from, poseFrame(moment.to, r.prop));
         playing.current = { token, moment: m };
-        stop(rig);
-        cancelAnimation(clock);
-        wrap(rig);
-        for (const [ch, sv] of Object.entries(rig) as [Channel, (typeof rig)[Channel]][]) {
-          const steps = m.tracks[ch];
-          if (steps) sv.set(compileTrack(entry(steps, sv.get()), m.dur, m.loop));
-          else ease(sv, ch, from[ch], r.level);
-        }
-        if (!m.loop) runClock(clock, full ? fx : null, m, () => end(token));
+        beats.current = isBeat(moment.id) ? beats.current + 1 : 0;
+        scheduleOnUI(begin, rig, clock, r.full ? fx : null, m, from, r.level, () => end(token));
       },
       settle() {
         playing.current = null;
@@ -195,26 +192,41 @@ export function SenRig({
         restInPose();
       },
     });
-  }, [id, rig, clock, fx, full]);
+    return () => {
+      unregister();
+      if (!playing.current) return;
+      playing.current = null;
+      cancelAnimation(clock);
+      restInPose();
+    };
+  }, [id, rig, clock, fx]);
+
+  // After the registration cleanup, so a settle it queues on the UI thread is stopped too.
+  useEffect(
+    () => () => {
+      scheduleOnUI(stop, rig);
+      cancelAnimation(clock);
+      cancelAnimation(fx);
+    },
+    [rig, clock, fx],
+  );
 
   const onPose = useEffectEvent((next: PoseId) => {
     const was = shown.current;
     shown.current = next;
     const moment = was === next ? undefined : transitionFor(was, next);
     if (moment) playMoment(id, moment);
-    else if (!playing.current) settle(rig, poseFrame(next, prop), level);
+    else if (!playing.current) scheduleOnUI(settle, rig, poseFrame(next, prop), level);
   });
   useEffect(() => onPose(pose), [pose, prop]);
 
   useEffect(() => {
     const ambient = level === 'off' ? undefined : ambientFor(pose, size);
     if (!ambient) return;
-    let played = 0;
     let timer: ReturnType<typeof setTimeout>;
     const schedule = () => {
-      const beat = nextBeat(ambient, played, Math.random);
+      const beat = nextBeat(ambient, beats.current, Math.random);
       timer = setTimeout(() => {
-        played++;
         playMoment(id, beat.moment);
         schedule();
       }, beat.delay);

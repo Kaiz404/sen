@@ -88,6 +88,14 @@ export const AMBIENT: Readonly<Partial<Record<PoseId, Ambient>>> = {
 };
 
 const BLINKS: ReadonlySet<MomentId> = new Set(['blink', 'doubleBlink', 'slowBlink']);
+const BEATS: ReadonlySet<MomentId> = new Set(
+  Object.values(AMBIENT).flatMap((a) => a.beats.map((b) => b.moment)),
+);
+
+/** Whether a moment is one of the beats a Sen plays on its own. */
+export function isBeat(moment: MomentId): boolean {
+  return BEATS.has(moment);
+}
 
 /** Over 120 pt a Sen does everything. From 48 pt it only blinks. Smaller marks stay still. */
 export function ambientFor(pose: PoseId, size: number): Ambient | undefined {
