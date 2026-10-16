@@ -12,6 +12,7 @@ import {
 } from './db';
 import { openTestDb } from './db/testing/node-adapter';
 import { logEvent } from './logger';
+import { KeyUnreadableError } from './store-fault';
 import { createVault, destroyVault, hasVault, openVault, type VaultPorts } from './vault';
 
 jest.mock('./logger');
@@ -67,12 +68,16 @@ function device(start: { key: string | null; file: Omit<DbFile, 'generation'> | 
     files: 1,
     busy: false,
     failKeyWrite: false,
+    failKeyRead: false,
     prefsCleared: 0,
     closed: 0,
   };
   const ports: VaultPorts = {
     keys: {
-      read: async () => state.key,
+      read: async () => {
+        if (state.failKeyRead) throw new Error('DecryptException');
+        return state.key;
+      },
       write: async (key) => {
         if (state.failKeyWrite) throw new Error('keystore unavailable');
         state.key = key;
@@ -109,6 +114,14 @@ function device(start: { key: string | null; file: Omit<DbFile, 'generation'> | 
   };
   return { state, vault: createVault(ports) };
 }
+
+test('a key the keystore cannot read throws a typed error and leaves the file alone', async () => {
+  const { state, vault } = device({ key: K, file: { key: K, version: 1 } });
+  state.failKeyRead = true;
+
+  await expect(vault.openVault()).rejects.toBeInstanceOf(KeyUnreadableError);
+  expect(state.file).not.toBeNull();
+});
 
 describe('the reset rules', () => {
   test.each([

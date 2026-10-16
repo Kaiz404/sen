@@ -6,6 +6,7 @@ import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
+import { KeyUnreadableError } from '@/services/store-fault';
 import * as Vault from '@/services/vault';
 
 import {
@@ -147,12 +148,16 @@ test('a second unlock while the prompt is up opens no second prompt', async () =
   expect(session()).toMatchObject({ status: 'unlocked', db });
 });
 
-test('a vault that fails to open stays on Lock', async () => {
+test.each([
+  ['a full disk', new Error('Error code 13: database or disk is full'), 'full'],
+  ['an unreadable key', new KeyUnreadableError({ cause: new Error('DecryptException') }), 'key'],
+  ['a failed migration', new Error('migration 2 failed'), 'store'],
+])('a vault that fails to open (%s) stays on Lock and names the cause', async (_, error, cause) => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockResolvedValueOnce({ success: true });
-  openVault.mockRejectedValueOnce(new Error('disk'));
+  openVault.mockRejectedValueOnce(error);
 
-  expect(await unlock()).toEqual({ ok: false, reason: 'unknown' });
+  expect(await unlock()).toEqual({ ok: false, reason: 'store', cause });
   expect(session()).toEqual({ status: 'locked', reason: 'launch' });
 });
 

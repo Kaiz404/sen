@@ -5,14 +5,23 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
 import { type LaunchTarget, Sen, type SenProps, UNLOCK_HOLD } from '@/features/sen';
+import type { StoreCause } from '@/services/store-fault';
 import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
-import { AMOUNTS_NOTE, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
+import {
+  AMOUNTS_NOTE,
+  BIOMETRIC,
+  type BiometricCopy,
+  clock,
+  RESET_COST,
+  STORE_COPY,
+  triesLeftText,
+} from '../copy';
 import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
-import { afterPrompt, initialView, type PromptView } from '../prompt-view';
+import { afterUnlock, canReset, initialView, type PromptView } from '../prompt-view';
 import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
@@ -44,6 +53,7 @@ export type LockViewProps = {
   readonly onUnlock: () => void;
   readonly onOpenSettings: () => void;
   readonly onStartAgain: () => void;
+  readonly onReset: () => void;
   /** The cold-start launch hands off into this screen's Sen. */
   readonly onLaunchTarget?: (target: LaunchTarget) => void;
 };
@@ -63,22 +73,32 @@ export function LockScreen(): ReactNode {
     setPrompt({ kind: 'asking' });
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
       const now = Date.now();
-      const next = outcome.ok ? view : afterPrompt(view, outcome.reason, now);
+      const next = outcome.ok ? view : afterUnlock(view, outcome, now);
       const napping = next.kind === 'lockout' && next.until > now;
       setPrompt({ kind: 'answered', outcome, ...(napping && { rest: 'lockoutBreathe' }) });
       setView(next);
     });
   };
 
-  const onStartAgain = () =>
-    Alert.alert('Start again?', 'This erases the demo data on this phone. Sen sets it up fresh.', [
+  const eraseWithConfirm = (title: string, message: string, action: string) => () =>
+    Alert.alert(title, message, [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Start again',
+        text: action,
         style: 'destructive',
         onPress: () => void signOut().catch(() => setView({ kind: 'error' })),
       },
     ]);
+  const onStartAgain = eraseWithConfirm(
+    'Start again?',
+    'This erases the demo data on this phone. Sen sets it up fresh.',
+    'Start again',
+  );
+  const onReset = eraseWithConfirm(
+    'Reset Sen on this phone?',
+    `${RESET_COST} Sen sets itself up fresh.`,
+    'Reset Sen',
+  );
 
   return (
     <LockView
@@ -87,6 +107,7 @@ export function LockScreen(): ReactNode {
       onUnlock={onUnlock}
       onOpenSettings={openDeviceSettings}
       onStartAgain={onStartAgain}
+      onReset={onReset}
       onLaunchTarget={reportLaunchTarget}
     />
   );
@@ -98,6 +119,7 @@ export function LockView({
   onUnlock,
   onOpenSettings,
   onStartAgain,
+  onReset,
   onLaunchTarget,
 }: LockViewProps): ReactNode {
   const copy = BIOMETRIC[biometric];
@@ -179,6 +201,23 @@ export function LockView({
             />
           </>
         );
+      case 'store':
+        return (
+          <>
+            <ProfileRow />
+            {canReset(shown) && <Notice text={RESET_COST} />}
+            {unlockKey('Try again')}
+            {canReset(shown) && (
+              <Key
+                tone="outline"
+                size="medium"
+                icon="restore"
+                label="Reset Sen on this phone"
+                onPress={onReset}
+              />
+            )}
+          </>
+        );
       case 'error':
         return (
           <>
@@ -191,7 +230,7 @@ export function LockView({
     }
   })();
 
-  const hero = HERO[shown.kind](copy);
+  const hero = shown.kind === 'store' ? storeHero(shown.cause) : HERO[shown.kind](copy);
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
@@ -289,7 +328,7 @@ const IDLE_HERO: HeroCopy = {
 };
 
 const HERO: Readonly<
-  Record<Exclude<LockState['kind'], 'lockout'>, (copy: BiometricCopy) => HeroCopy>
+  Record<Exclude<LockState['kind'], 'lockout' | 'store'>, (copy: BiometricCopy) => HeroCopy>
 > = {
   idle: () => IDLE_HERO,
   signingOut: () => IDLE_HERO,
@@ -318,6 +357,11 @@ const HERO: Readonly<
     sen: { pose: 'worried', label: 'Sen, worried' },
   }),
 };
+
+function storeHero(cause: StoreCause): HeroCopy {
+  const { title, body } = STORE_COPY[cause];
+  return { title, body, sen: { pose: 'worried', label: 'Sen, worried it cannot open its store' } };
+}
 
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },

@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 
 import { type MomentId, playMoment, stopMoment } from '@/features/sen';
 
-import type { AuthFailure, AuthOutcome } from '../prompt';
+import type { AuthFailure } from '../prompt';
+import type { UnlockOutcome } from '../session';
 
 /**
  * Where the screen's prompt is. Every change is a new object, so two misses in a row each play their
@@ -13,7 +14,7 @@ export type Prompt =
   | { readonly kind: 'asking' }
   | {
       readonly kind: 'answered';
-      readonly outcome: AuthOutcome;
+      readonly outcome: UnlockOutcome;
       /** The loop Sen goes back to when the answer has no moment, such as a nap after a cancel. */
       readonly rest?: MomentId;
     };
@@ -21,7 +22,7 @@ export type Prompt =
 export const NOT_ASKED: Prompt = { kind: 'notAsked' };
 
 /** The moment Sen plays for each answer. Any other answer, a cancel included, ends the scan. */
-export type PromptAnswers = Readonly<Partial<Record<'ok' | AuthFailure, MomentId>>>;
+export type PromptAnswers = Readonly<Partial<Record<'ok' | 'store' | AuthFailure, MomentId>>>;
 
 /**
  * Plays the prompt's moments on a screen's Sen: the Face ID scan while the prompt is open, then the

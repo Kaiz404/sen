@@ -11,6 +11,7 @@ import type { OpenDb } from '@/services/db';
 import { logEvent } from '@/services/logger';
 import { endUnlock, mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
+import { type StoreCause, storeCauseOf } from '@/services/store-fault';
 import { destroyVault, hasVault, openVault } from '@/services/vault';
 
 import {
@@ -56,6 +57,10 @@ export const sessionStore = createStore<SessionStore>(() => ({
 let closing: Promise<void> = Promise.resolve();
 let arrival: ReturnType<typeof setTimeout> | undefined;
 
+/** The check passed or failed on its own, or the vault would not open and the cause is named. */
+export type UnlockOutcome =
+  AuthOutcome | { readonly ok: false; readonly reason: 'store'; readonly cause: StoreCause };
+
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
 
 /** A wrong finger or a lockout is a security event. A cancel, a missing sensor or an error is not. */
@@ -99,7 +104,7 @@ export async function launch(): Promise<void> {
  * Prompts, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
  * Unlock moment, before History opens.
  */
-export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
+export async function unlock(arriveAfterMs = 0): Promise<UnlockOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
   if (sessionStore.getState().lockoutArmed) {
@@ -132,10 +137,12 @@ export async function unlock(arriveAfterMs = 0): Promise<AuthOutcome> {
     if (arriveAfterMs === 0) arrive();
     else arrival = setTimeout(arrive, arriveAfterMs);
     return outcome;
-  } catch {
+  } catch (error) {
     endUnlock();
     dispatch({ type: 'AUTH_FAIL' });
-    return { ok: false, reason: 'unknown' };
+    const cause = storeCauseOf(error);
+    logEvent(`vault.open_failed.${cause}`);
+    return { ok: false, reason: 'store', cause };
   }
 }
 

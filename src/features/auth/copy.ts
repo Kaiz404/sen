@@ -1,4 +1,5 @@
 import { capital } from '@/models/text';
+import type { StoreCause } from '@/services/store-fault';
 
 import type { AuthFailure, Biometric } from './prompt';
 import type { IconName } from './screens/parts';
@@ -44,3 +45,22 @@ export function refusalText(reason: AuthFailure, name: string): string | null {
       return 'Something went wrong with the check. Try again.';
   }
 }
+
+export const STORE_COPY: Readonly<
+  Record<StoreCause, { readonly title: readonly [string, string]; readonly body: string }>
+> = {
+  full: {
+    title: ['Phone is', 'full.'],
+    body: 'Your phone is out of space. Free some up, then try again.',
+  },
+  key: {
+    title: ["Can't open", 'its store.'],
+    body: "Your phone wouldn't hand over Sen's key. Nothing was shown.",
+  },
+  store: {
+    title: ["Can't open", 'its store.'],
+    body: "Sen's data on this phone wouldn't open. Nothing was shown.",
+  },
+};
+
+export const RESET_COST = 'Your bank history syncs back. Rows you added are erased.';

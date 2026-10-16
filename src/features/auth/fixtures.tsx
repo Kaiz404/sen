@@ -17,6 +17,7 @@ function Lock({ state }: { state: LockState }) {
       onUnlock={noop}
       onOpenSettings={noop}
       onStartAgain={noop}
+      onReset={noop}
     />
   );
 }
@@ -49,4 +50,7 @@ export const AUTH_STATES = {
   'lock-off': () => <Lock state={{ kind: 'off', canOpenSettings: true }} />,
   'lock-unavailable': () => <Lock state={{ kind: 'off', canOpenSettings: false }} />,
   'lock-error': () => <Lock state={{ kind: 'error' }} />,
+  'lock-store': () => <Lock state={{ kind: 'store', cause: 'store', failures: 1 }} />,
+  'lock-store-reset': () => <Lock state={{ kind: 'store', cause: 'store', failures: 2 }} />,
+  'lock-full': () => <Lock state={{ kind: 'store', cause: 'full', failures: 2 }} />,
 } satisfies Record<string, () => ReactNode>;

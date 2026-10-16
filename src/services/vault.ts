@@ -15,6 +15,7 @@ import {
 } from '@/services/db';
 
 import { logEvent } from './logger';
+import { KeyUnreadableError } from './store-fault';
 import { clearPrefs } from './prefs';
 
 type ResetReason = Extract<AppError, { kind: 'db_reset' }>['reason'];
@@ -69,7 +70,9 @@ export function createVault(ports: VaultPorts) {
    * install. It is deleted, and the vault counts as missing.
    */
   async function storedKey(): Promise<DbKey | null> {
-    const raw = await ports.keys.read();
+    const raw = await ports.keys.read().catch((cause: unknown) => {
+      throw new KeyUnreadableError({ cause });
+    });
     if (raw !== null && !ports.database.exists()) {
       await ports.keys.remove();
       return null;

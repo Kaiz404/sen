@@ -12,9 +12,16 @@ import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
-import { AMOUNTS_NOTE, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
+import {
+  AMOUNTS_NOTE,
+  BIOMETRIC,
+  type BiometricCopy,
+  clock,
+  STORE_COPY,
+  triesLeftText,
+} from '../copy';
 import type { Biometric } from '../prompt';
-import { afterPrompt, initialView, type PromptView } from '../prompt-view';
+import { afterUnlock, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Notice } from './parts';
@@ -51,7 +58,7 @@ export function PrimerScreen(): ReactNode {
     setPrompt({ kind: 'asking' });
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
       setPrompt({ kind: 'answered', outcome });
-      if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
+      if (!outcome.ok) setView((prev) => afterUnlock(prev, outcome, Date.now()));
     });
   };
 
@@ -116,7 +123,9 @@ export function PrimerView({
             pose={unlocked ? 'happy' : 'peek'}
             size={210}
             label={
-              unlocked ? `Sen, happy ${name} is on` : `Sen, peeking one eye open at the ${name} frame`
+              unlocked
+                ? `Sen, happy ${name} is on`
+                : `Sen, peeking one eye open at the ${name} frame`
             }
           />
         </View>
@@ -201,6 +210,8 @@ function noticeOf(
         : `This phone can't use ${name}. Your passcode works instead.`;
     case 'error':
       return "Sen couldn't check it's you. Try again.";
+    case 'store':
+      return STORE_COPY[state.cause].body;
   }
 }
 

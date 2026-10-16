@@ -69,6 +69,72 @@ test('with no fingerprint enrolled, Lock says it is off and offers settings and 
   expect(screen.getByRole('button', { name: 'Use device passcode' })).toBeOnTheScreen();
 });
 
+describe('a vault that will not open', () => {
+  const press = (name: string) => fireEvent.press(screen.getByRole('button', { name }));
+
+  async function failOpens(error: Error, times: number, header = "Can't open its store.") {
+    sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+    await render(<LockScreen />);
+    for (let i = 0; i < times; i++) {
+      authenticate.mockResolvedValueOnce({ success: true });
+      jest.mocked(Vault.openVault).mockRejectedValueOnce(error);
+      await press(i === 0 ? 'Unlock with fingerprint' : 'Try again');
+      await screen.findByRole('header', { name: header });
+    }
+  }
+
+  test('Lock names the store, not the fingerprint, and offers no reset on the first failure', async () => {
+    await failOpens(new Error('migration 2 failed'), 1);
+
+    expect(
+      screen.getByText("Sen's data on this phone wouldn't open. Nothing was shown."),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/couldn't check it's you/)).not.toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Reset Sen on this phone' })).not.toBeOnTheScreen();
+  });
+
+  test('after two failures Lock offers a reset that confirms, says what it costs, and starts fresh', async () => {
+    const alert = jest.spyOn(Alert, 'alert');
+    await failOpens(new Error('migration 2 failed'), 2);
+    expect(
+      screen.getByText('Your bank history syncs back. Rows you added are erased.'),
+    ).toBeOnTheScreen();
+
+    await press('Reset Sen on this phone');
+    expect(Vault.destroyVault).not.toHaveBeenCalled();
+    expect(alert.mock.lastCall?.[0]).toBe('Reset Sen on this phone?');
+    const reset = alert.mock.lastCall?.[2]?.find((button) => button.text === 'Reset Sen');
+    await act(async () => reset?.onPress?.());
+
+    expect(Vault.destroyVault).toHaveBeenCalledTimes(1);
+    expect(session()).toEqual({ status: 'welcome' });
+  });
+
+  test('a full disk says so and never offers to wipe the store', async () => {
+    await failOpens(new Error('Error code 13: database or disk is full'), 2, 'Phone is full.');
+
+    expect(
+      screen.getByText('Your phone is out of space. Free some up, then try again.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Reset Sen on this phone' })).not.toBeOnTheScreen();
+  });
+
+  test('the first run says the same on the primer', async () => {
+    sessionStore.setState({ session: { status: 'welcome' } });
+    authenticate.mockResolvedValueOnce({ success: true });
+    jest
+      .mocked(Vault.openVault)
+      .mockRejectedValueOnce(new Error('Error code 13: database or disk is full'));
+    await render(<PrimerScreen />);
+
+    await press('Turn on fingerprint');
+
+    expect(
+      await screen.findByText('Your phone is out of space. Free some up, then try again.'),
+    ).toBeOnTheScreen();
+  });
+});
+
 test('a cancelled prompt returns to Lock without a message', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
