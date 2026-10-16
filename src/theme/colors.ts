@@ -22,6 +22,10 @@ const LIGHT = {
   onLoud: '#F2DC72',
   shimmer: '#F7F2E8',
   leader: '#C9BFAA',
+  lemonEdge: '#17181A',
+  lemonPlate: '#17181A',
+  heroRaised: '#26282C',
+  heroAccent: '#F5BE98',
 } as const;
 
 export type ColorToken = keyof typeof LIGHT;
@@ -53,6 +57,10 @@ export const dark: Palette = {
   onLoud: '#17181A',
   shimmer: '#34373B',
   leader: '#4A4D52',
+  lemonEdge: '#F2DC72',
+  lemonPlate: '#8A7A2C',
+  heroRaised: '#26282C',
+  heroAccent: '#F5BE98',
 };
 
 export const GLYPH_PASTELS = [

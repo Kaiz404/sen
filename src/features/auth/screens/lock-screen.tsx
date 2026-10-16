@@ -6,7 +6,6 @@ import { StyleSheet } from 'react-native-unistyles';
 import { Key } from '@/components/key';
 import { Sen } from '@/features/sen';
 import { useSecondsLeft } from '@/motion/countdown';
-import { dark } from '@/theme/colors';
 import { type } from '@/theme/type';
 
 import { useAmountsHidden } from '../amounts';
@@ -262,10 +261,6 @@ const HERO: Readonly<
   }),
 };
 
-/**
- * The ink hero is dark in both themes, so the lockout's card and accent come from the dark palette, as a key
- * with `surface="hero"` does.
- */
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },
   actions: {
@@ -283,14 +278,14 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: theme.colors.hero,
   },
   lockoutTitle: { ...type.words(80), lineHeight: 67, color: theme.colors.onHero },
-  lockoutAccent: { color: dark.stamp },
+  lockoutAccent: { color: theme.colors.heroAccent },
   lockoutBody: { fontSize: 16, lineHeight: 23, color: theme.colors.onHeroMuted },
   cooldown: {
     marginTop: 96,
     paddingVertical: 18,
     paddingHorizontal: 20,
     borderRadius: 26,
-    backgroundColor: dark.chip,
+    backgroundColor: theme.colors.heroRaised,
   },
   cooldownCaption: { ...type.caption(11), color: theme.colors.onHeroMuted },
   clock: { ...type.numerals(88), lineHeight: 84, color: theme.colors.lemon },

@@ -132,17 +132,17 @@ export function Key({
  * outline key turns dashed and muted.
  */
 function keyColors(c: Palette, disabled: boolean) {
-  const filled = (face: string, edge: string, ink: string) => ({
+  const filled = (face: string, edge: string, ink: string, plate: string = c.keyPlate) => ({
     face,
     edge,
     ink,
-    plate: c.keyPlate,
+    plate,
     edgeStyle: 'solid' as const,
     washed: true,
   });
   const outline = disabled ? c.inkMuted : c.ink;
   return {
-    lemon: filled(c.lemon, c.onPastel, c.onPastel),
+    lemon: filled(c.lemon, c.lemonEdge, c.onPastel, c.lemonPlate),
     loud: filled(c.loud, c.loud, c.onLoud),
     paper: filled(c.paper, c.keyEdge, c.ink),
     outline: {

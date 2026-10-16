@@ -36,6 +36,9 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 | `on-loud` | `#F2DC72` | `#17181A` | Text on the loud fill |
 | `shimmer` | `#F7F2E8` | `#34373B` | Skeleton highlight band. Dark has no board, so it uses `rule` (inferred) |
 | `leader` | `#C9BFAA` | `#4A4D52` | Dotted leaders before totals |
+| `lemon-edge`, `lemon-plate` | `#17181A`, `#17181A` | `#F2DC72`, `#8A7A2C` | A lemon key's border and shadow plate |
+| `hero-raised` | `#26282C` | `#26282C` | A card on the hero, such as the lockout cool-down |
+| `hero-accent` | `#F5BE98` | `#F5BE98` | The accent word on the lockout hero |
 
 Row glyph pastels: `#F9D5D0`, `#CBEBD3`, `#E6DDF8`, `#F8EDBF`, `#FBDCC8`, `#D2EEEA`. Every glyph shape is a slightly different blob.
 
