@@ -5,6 +5,7 @@ const EVENTS = {
   'vault.reset.corrupt': 'warn',
   'vault.destroyed': 'info',
   'sync.done': 'info',
+  'sync.superseded': 'info',
   'sync.failed.offline': 'warn',
   'sync.failed.timeout': 'warn',
   'sync.failed.server': 'warn',

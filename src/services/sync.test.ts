@@ -245,6 +245,28 @@ test('a dataset switch drops bank rows and the cursor, keeps added rows, and syn
   ]);
 });
 
+test('a reset that lands while the first page is in flight keeps that page out of the new table', async () => {
+  const db = await freshDb();
+  const { bank } = mockBank({ size: 1000 });
+  let resetting: Promise<void> = Promise.resolve();
+  const resetMidPage: BankApi = {
+    fetchPage: async (request) => {
+      resetting = resetBankRows(db);
+      await resetting;
+      return bank.fetchPage(request);
+    },
+  };
+
+  const stale = await sync(db, resetMidPage, options);
+  await resetting;
+
+  expect(stale).toEqual(ok({ received: 0, cursor: 0 }));
+  expect([await count(db), await readSyncState(db)]).toEqual([0, { cursor: 0, syncedAt: null }]);
+  expect(await sync(db, mockBank({ size: 20 }).bank, options)).toEqual(
+    ok({ received: 20, cursor: 20 }),
+  );
+});
+
 test('search text is the cleaned, lower-cased description', async () => {
   const db = await freshDb();
   await sync(db, mockBank({ size: 20 }).bank, options);

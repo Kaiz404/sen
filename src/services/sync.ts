@@ -99,6 +99,28 @@ export async function readSyncState(db: Db): Promise<SyncState> {
   return { cursor: row.cursor, syncedAt: row.synced_at };
 }
 
+/** Bumped by every `resetBankRows`. A sync commits a page only while it still reads the value it started with. */
+const GENERATION_KEY = 'bank.generation';
+const GENERATION_SQL = `SELECT coalesce((SELECT value FROM meta WHERE key = '${GENERATION_KEY}'), '0')`;
+
+const StartRows = z.tuple([
+  z.object({ cursor: z.number().int().nonnegative(), generation: z.string() }),
+]);
+const GenerationRows = z.tuple([z.object({ generation: z.string() })]);
+
+/** One statement, so no reset can land between reading the cursor and reading its generation. */
+async function readStart(db: Db): Promise<{ cursor: number; generation: string }> {
+  const [row] = StartRows.parse(
+    await db.all(`SELECT cursor, (${GENERATION_SQL}) AS generation FROM sync_state`),
+  );
+  return row;
+}
+
+async function readGeneration(db: Db): Promise<string> {
+  const [row] = GenerationRows.parse(await db.all(`SELECT (${GENERATION_SQL}) AS generation`));
+  return row.generation;
+}
+
 export type SyncSummary = { readonly received: number; readonly cursor: number };
 
 export type SyncOptions = {
@@ -111,13 +133,16 @@ export type SyncOptions = {
  * Pulls the feed after the saved cursor. Each page commits in one transaction with its cursor, so a sync that stops
  * anywhere resumes where the last commit left it, and running it again converges on the same table.
  * Rows that parsed are kept even when others were bad, and the bad ones come back as `invalid_data`.
+ * A sync that finds the bank rows were reset under it stops without writing and reports nothing received, so a
+ * page from the old feed never lands in the new table. The reset's own first sync fills it.
  */
 export async function sync(
   db: Db,
   bank: BankApi,
   { now = () => toInstant(new Date()), pageSize = SYNC_PAGE_SIZE, onProgress }: SyncOptions = {},
 ): Promise<Result<SyncSummary>> {
-  let { cursor } = await readSyncState(db);
+  const { generation, ...start } = await readStart(db);
+  let { cursor } = start;
   let received = 0;
   let skipped = 0;
   for (;;) {
@@ -133,10 +158,16 @@ export async function sync(
     const next = Math.max(cursor, read.lastSeq ?? cursor);
     if (page.data.nextSeq !== null && next === cursor) return failed();
 
-    await db.transaction(async (tx) => {
+    const committed = await db.transaction(async (tx) => {
+      if ((await readGeneration(tx)) !== generation) return false;
       await upsertBankRows(tx, read.rows);
       await tx.run('UPDATE sync_state SET cursor = ?, synced_at = ? WHERE id = 1', [next, now()]);
+      return true;
     });
+    if (!committed) {
+      logEvent('sync.superseded');
+      return ok({ received: 0, cursor: 0 });
+    }
     cursor = next;
     received += read.rows.length;
     skipped += read.skipped;
@@ -156,9 +187,14 @@ function failed(): Result<never> {
   return err({ kind: 'server' });
 }
 
+/** Deletes the bank rows and rewinds the cursor, and ends any sync still running against the old rows. */
 export async function resetBankRows(db: Db): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.run("DELETE FROM tx WHERE source = 'bank'");
     await tx.run('UPDATE sync_state SET cursor = 0, synced_at = NULL WHERE id = 1');
+    await tx.run(
+      `INSERT INTO meta (key, value) VALUES ('${GENERATION_KEY}', '1')
+        ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)`,
+    );
   });
 }

@@ -158,6 +158,27 @@ test('a bank reset runs the first sync again, even after a first sync that faile
   expect(await readSyncState(mockDb)).toEqual({ cursor: 1000, syncedAt: expect.any(String) });
 });
 
+test('a bank reset in the middle of a slow sync leaves only the new dataset, and History syncs it afresh', async () => {
+  writePref('demo.datasetSize', 1000);
+  writePref('demo.slow', true);
+  writePref('demo.newOnRefresh', true);
+  await renderHistory();
+  await waitFor(async () => expect((await readSyncState(mockDb)).cursor).toBe(500), LONG);
+
+  writePref('demo.datasetSize', 20);
+  writePref('demo.slow', false);
+  await act(() => resetBank(mockDb));
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(3000));
+  await waitFor(() => expect(syncProgress.getState().progress).toBeNull());
+
+  const ids = await mockDb.all("SELECT id FROM tx WHERE source = 'bank' ORDER BY id");
+  expect(ids.map((r) => r.id)).toEqual(
+    Array.from({ length: 20 }, (_, i) => `bk-${i + 1}`).sort(),
+  );
+  expect((await readSyncState(mockDb)).cursor).toBe(20);
+});
+
 test('a failed first load fills the screen, says the fault is simulated, and links to the reviewer controls', async () => {
   writePref('demo.next', 'offline');
   await renderHistory();
