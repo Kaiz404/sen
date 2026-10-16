@@ -71,11 +71,11 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 ## Phase 2. Foundations (three parallel lanes)
 
 **Lane 2a. Components and the states gallery.** Owns `src/components/` and `src/features/gallery/`.
-- [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone and `Amount` (coins for `null`, digits otherwise).
-- [ ] Show every pose and tier on the gallery (`?screen=sen&pose=&size=`). Phase 1 built `SenStatic`.
-- [ ] The gallery renders any screen state from fixtures.
-- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`.
-- **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines.
+- [x] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, and `Amount` (coins for `null`, digits otherwise). Evidence: one test beside each file in `src/components/`, and the gallery shots `shots/2a/<component>-<state>-<light|dark>.png`.
+- [ ] Show every pose and tier on the gallery (`?screen=sen&pose=&size=`). Phase 1 built `SenStatic`. The gallery side is done (`gallery.test.tsx` › "a pose query draws one labelled Sen"). The device crash on decimal `transformOrigin` strings is fixed on main (`geometry.test.ts` runs React Native's own parser).
+- [x] The gallery renders any screen state from fixtures. Evidence: `gallery.test.tsx` draws every registered state, and `flow.test.ts` keeps `.maestro/screenshots.yaml` equal to the registry.
+- **Unit.** A masked `Amount` renders no digits, shows four coins and is labelled "Amount hidden" (`amount.test.tsx`). `pressIn` moves a Key 4 px (`key.test.tsx`). Pressing "In" moves the pill to `100%` (`segmented.test.tsx`).
+- **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines. `maestro test .maestro/screenshots.yaml` passed end to end on `Sen_API36` and wrote 76 candidates. Owner approval is still open.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [x] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert. Evidence: `services/seed.test.ts`, `services/bank-api.test.ts`, `services/sync.test.ts`.
