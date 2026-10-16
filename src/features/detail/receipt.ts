@@ -67,3 +67,28 @@ export function receiptFacts(row: MaskedRow): readonly Fact[] {
     },
   ];
 }
+
+export type StepState = 'done' | 'now' | 'next';
+export type PaymentStep = {
+  readonly label: 'Authorised' | 'Pending' | 'Posted';
+  readonly state: StepState;
+  readonly caption: string;
+};
+
+/**
+ * Authorised, Pending, Posted for a pending bank payment. Null for anything else: a posted or added row has nothing
+ * left to track. The bank gives no settle date, so Posted says only that it comes next.
+ */
+export function paymentSteps(row: MaskedRow): readonly PaymentStep[] | null {
+  if (row.source !== 'bank' || row.status !== 'pending') return null;
+  const weekday = WEEKDAYS[new Date(`${row.day}T00:00:00.000Z`).getUTCDay()];
+  return [
+    {
+      label: 'Authorised',
+      state: 'done',
+      caption: `${weekday} ${clockText(row.postedAt)}`.toUpperCase(),
+    },
+    { label: 'Pending', state: 'now', caption: 'NOW' },
+    { label: 'Posted', state: 'next', caption: 'NEXT' },
+  ];
+}

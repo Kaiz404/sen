@@ -22,7 +22,14 @@ import type { MaskedRow } from '@/models/transaction';
 import { GLYPH_PASTELS } from '@/theme/colors';
 import { FONT, type } from '@/theme/type';
 
-import { addedText, heroCaption, receiptFacts, stampDate } from './receipt';
+import {
+  addedText,
+  heroCaption,
+  type PaymentStep,
+  paymentSteps,
+  receiptFacts,
+  stampDate,
+} from './receipt';
 
 /** What the screen shows. A bad id, a missing row and a deleted row are all `missing`. */
 export type DetailBody =
@@ -210,6 +217,7 @@ function Receipt({
               <Text style={styles.pendingText}>Pending</Text>
             </View>
           )}
+          {!hidden && <Timeline steps={paymentSteps(row)} />}
           {hidden && (
             <View style={styles.show}>
               <Key
@@ -257,6 +265,35 @@ function Receipt({
           <Text style={styles.thanks}>* TERIMA KASIH · THANK YOU *</Text>
         </View>
       </ReceiptSlip>
+    </View>
+  );
+}
+
+function Timeline({ steps }: { readonly steps: readonly PaymentStep[] | null }) {
+  const { theme } = useUnistyles();
+  if (steps === null) return null;
+  const current = steps.findIndex((s) => s.state === 'now') + 1;
+  return (
+    <View
+      accessible
+      accessibilityLabel={`Payment progress, step ${current} of ${steps.length}`}
+      style={styles.timeline}
+    >
+      {steps.map((step, i) => (
+        <View key={step.label} style={styles.step}>
+          <View style={styles.stepTrack}>
+            <View style={styles.marker(step.state)}>
+              {step.state === 'done' && (
+                <MaterialCommunityIcons name="check" size={14} color={theme.colors.paper} />
+              )}
+              {step.state === 'now' && <View style={styles.markerDot} />}
+            </View>
+            {i < steps.length - 1 && <View style={styles.connector(step.state === 'done')} />}
+          </View>
+          <Text style={styles.stepLabel(step.state)}>{step.label}</Text>
+          <Text style={styles.stepCaption}>{step.caption}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -459,6 +496,37 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   pendingText: { fontSize: 13, fontWeight: '700', color: theme.colors.pending },
   show: { gap: 8 },
+  timeline: { flexDirection: 'row', gap: 6 },
+  step: { flex: 1, gap: 5 },
+  stepTrack: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  marker: (state: 'done' | 'now' | 'next') => ({
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: state === 'done' ? theme.colors.deep : 'transparent',
+    borderWidth: state === 'done' ? 0 : 2,
+    borderStyle: state === 'next' ? 'dashed' : 'solid',
+    borderColor: state === 'now' ? theme.colors.pending : theme.colors.inkMuted,
+  }),
+  markerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.pending },
+  connector: (done: boolean) => ({
+    flex: 1,
+    height: 2,
+    backgroundColor: done ? theme.colors.deep : theme.colors.leader,
+  }),
+  stepLabel: (state: 'done' | 'now' | 'next') => ({
+    fontSize: 13,
+    fontWeight: '700',
+    color:
+      state === 'now'
+        ? theme.colors.pending
+        : state === 'done'
+          ? theme.colors.ink
+          : theme.colors.inkMuted,
+  }),
+  stepCaption: { ...type.mono(10), color: theme.colors.inkMuted },
   note: { fontSize: 13, lineHeight: 18, textAlign: 'center', color: theme.colors.inkMuted },
   source: {
     flexDirection: 'row',

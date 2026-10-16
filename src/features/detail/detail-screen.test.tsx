@@ -121,6 +121,7 @@ test('while hidden the receipt shows every field but the amount, and no amount i
   expect(screen.getByText('FT26101400478213')).toBeOnTheScreen();
   expect(screen.getByText('MONEY OUT · WED 14 OCT 2026 · 6:20 PM')).toBeOnTheScreen();
   expect(screen.getAllByLabelText('Amount hidden')).toHaveLength(2);
+  expect(screen.queryByLabelText('Payment progress, step 2 of 3')).not.toBeOnTheScreen();
 
   expect(tree()).not.toMatch(/\d\.\d\d|ringgit|142/);
   expect(cache()).not.toMatch(/amountMinor|14260/);
@@ -136,6 +137,7 @@ test('Show amounts rolls the amount in, and Hide amounts takes it out of the tre
   expect(await screen.findByLabelText('Minus 142 ringgit 60 sen')).toBeOnTheScreen();
   expect(screen.getByLabelText('142 ringgit 60 sen')).toBeOnTheScreen();
   expect(cache()).toMatch(/"amountMinor":14260/);
+  expect(screen.getByLabelText('Payment progress, step 2 of 3')).toBeOnTheScreen();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Hide amounts' }));
 

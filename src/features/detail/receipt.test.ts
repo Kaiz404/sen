@@ -1,6 +1,6 @@
 import { type MaskedRow, MaskedRowSchema } from '@/models/transaction';
 
-import { addedText, heroCaption, receiptFacts, stampDate } from './receipt';
+import { addedText, heroCaption, paymentSteps, receiptFacts, stampDate } from './receipt';
 
 const TNB: MaskedRow = MaskedRowSchema.parse({
   id: 'bk-1',
@@ -73,4 +73,14 @@ test('an added row has no merchant line and reads its type plainly', () => {
 
 test('the stamp date is day, month and two-digit year', () => {
   expect(stampDate(TNB.day)).toBe('14·10·26');
+});
+
+test('a pending bank payment tracks Authorised, Pending and Posted; posted and added rows have no timeline', () => {
+  expect(paymentSteps(TNB)).toEqual([
+    { label: 'Authorised', state: 'done', caption: 'WED 6:20 PM' },
+    { label: 'Pending', state: 'now', caption: 'NOW' },
+    { label: 'Posted', state: 'next', caption: 'NEXT' },
+  ]);
+  expect(paymentSteps(SALARY)).toBeNull();
+  expect(paymentSteps(MaskedRowSchema.parse({ ...LUNCH, status: 'pending' }))).toBeNull();
 });
