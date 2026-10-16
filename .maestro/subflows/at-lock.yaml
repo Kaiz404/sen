@@ -7,6 +7,11 @@ appId: com.kaiz404.sen
     visible:
       id: unlock|continue
     timeout: 120000
+# The cold-start launch covers the first screen for about 3.3 s.
+- extendedWaitUntil:
+    notVisible:
+      id: launch
+    timeout: 15000
 - runFlow:
     when:
       visible:
@@ -31,6 +36,10 @@ appId: com.kaiz404.sen
           visible:
             id: unlock
           timeout: 120000
+      - extendedWaitUntil:
+          notVisible:
+            id: launch
+          timeout: 15000
 - openLink: sen://dev/states?auth=${AUTH}
 - extendedWaitUntil:
     visible:
