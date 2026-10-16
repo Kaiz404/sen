@@ -41,7 +41,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D24 | Motion levels | A live policy hook. Calm and Off compiled from the data |
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
-| D27 | Showing amounts | One saved setting, shown until hidden. Showing asks for biometrics |
+| D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 
@@ -430,18 +430,29 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Watch out.** Keep the emulator's animation scales on. Reanimated reads a zero transition scale as reduced motion, so every moment would jump to its end.
 
-## D27. Showing amounts: one saved setting, not a timed reveal
+## D27. Showing amounts: session state, masked on every unlock and cold start
+
+**Decision.** Whether amounts show is `amountsHidden` in the session store. It starts true, goes true again whenever the database closes, and is never saved. Showing asks for biometrics every time. Hiding never does. A reveal lasts until the user hides amounts or the app locks.
 
 **Compared.**
 - A timed reveal. One biometric check shows amounts for 30 s to 2 min, with a countdown ring, and background re-masks.
-- A show toggle that lasts until the user hides amounts or the app locks.
-- One saved setting, `hideAmounts`, flipped from History or Settings. It survives lock and restart.
+- One saved setting, `hideAmounts`, flipped from History or Settings. It survives lock and restart. (The first answer.)
+- The saved setting, plus a reset to hidden on lock and on launch.
+- Session state that resets with the session. (Chosen.)
 
-**Why one saved setting.**
-- **The brief.** It asks for amounts masked by default and revealed with biometrics. All three meet it.
-- **Familiar.** A persistent hide-balances toggle is the common banking pattern (inferred, not surveyed). A timer that re-hides amounts mid-read fights the user.
-- **One state.** A reveal that outlasts lock and restart is the setting itself, so there is one value instead of a session state plus a preference.
-- **Security kept.** `hideAmounts` defaults to on. Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS.
+**Why session state.**
+- **The brief.** It asks for amounts masked by default and revealed with biometrics. A reviewer who relaunches the app must see masked. The saved setting failed this: a reveal outlasted lock and restart, so the app reopened showing money.
+- **Familiar.** A reveal scoped to the session, re-hidden when the app locks, is the common banking pattern (inferred, not surveyed). A timer that re-hides amounts mid-read still fights the user, so there is none.
+- **Cold start is masked by construction.** An in-memory flag starts true. A pref with a reset on launch needs a write that runs after the first frame, and any path that skips it (a crash, a new entry point) shows amounts.
+- **One narrow reset.** The session's close path already clears the query cache and the toast on every lock and sign-out. The flag resets in the same `setState`, so idle, background, manual and sign-out locks are covered together.
+- **No persisted sensitive-adjacent state.** MMKV keeps no amounts key. A `hideAmounts` left by an earlier build is never read.
+- **Security kept.** Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS. The lint rule moves with the value: only `amounts.ts` may write `amountsHidden: false`.
+
+**What the user sees.** Unlock lands masked, Settings' Hide amounts switch reads On, and the month card's Sen starts masked. A lock unmounts History, so the next mount starts in the masked pose and Re-mask does not play on unlock. Re-mask still plays on "Hide amounts". Copy says "Stays shown until you hide it or Sen locks."
+
+**History.**
+- 2026-10-16. First answer: one saved setting, shown until hidden, surviving lock and restart. Reason: one value instead of a session state plus a preference, and no timer.
+- 2026-10-17. Reopened by the owner. The brief says masked by default, and a reviewer relaunching must see masked. Changed to session state. The saved setting and its "survives lock" tests were removed.
 
 ## D29. Copy reference: a local module marks the clip sensitive
 

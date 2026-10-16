@@ -28,7 +28,7 @@ const DEFAULTS: SettingsValues = {
   biometric: 'fingerprint',
   lockoutArmed: false,
   progress: null,
-  hideAmounts: PREFS.hideAmounts.default,
+  hideAmounts: true,
   theme: PREFS.theme.default,
   idleLock: PREFS.idleLock.default,
   relockAfter: PREFS.relockAfter.default,

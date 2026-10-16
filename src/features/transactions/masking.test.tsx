@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { moneySpoken, signed } from '@/models/money';
+import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, writePref } from '@/services/prefs';
@@ -23,7 +24,7 @@ jest.mock('@/features/auth', () => ({
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
   showAmounts: async () => {
-    jest.requireActual('@/services/prefs').writePref('hideAmounts', false);
+    jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
     return { ok: true };
   },
 }));
@@ -45,6 +46,7 @@ const SEEDED = generateBankRows(20, NOW.toISOString() as never);
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   clearPrefs();
+  sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);
   queryClient.clear();
@@ -96,6 +98,14 @@ test('while hidden no seeded amount is in the tree or the cache, totals included
   );
   for (const row of SEEDED)
     expect(tree()).not.toContain(moneySpoken(signed(row.amountMinor as never, row.type), 'never'));
+});
+
+test('the month card says how long a reveal lasts', async () => {
+  await renderHistory();
+
+  expect(
+    await screen.findByText('Asks for fingerprint first. Stays shown until you hide it or Sen locks.'),
+  ).toBeOnTheScreen();
 });
 
 test('show and hide keep the list data, roll amounts in and take them out again', async () => {

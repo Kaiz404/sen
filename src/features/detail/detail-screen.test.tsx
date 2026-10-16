@@ -10,6 +10,7 @@ import { createMockBank } from '@/services/bank-api';
 import { copySensitive } from '@/services/clipboard';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { sessionStore } from '@/features/auth/session';
 import { clearPrefs } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
 import { sync } from '@/services/sync';
@@ -33,7 +34,7 @@ jest.mock('@/features/auth', () => ({
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
   showAmounts: async () => {
-    jest.requireActual('@/services/prefs').writePref('hideAmounts', false);
+    jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
     return { ok: true };
   },
 }));
@@ -46,6 +47,7 @@ let tnb = '';
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   clearPrefs();
+  sessionStore.setState({ amountsHidden: true });
   Object.values(mockRouter).forEach((fn) => fn.mockReset());
   mockRouter.canGoBack.mockReturnValue(true);
   queryClient.clear();
@@ -129,6 +131,14 @@ test('while hidden the receipt shows every field but the amount, and no amount i
   expect(queryClient.getQueriesData({ queryKey: QK.revealed })).toEqual([
     [['tx', 'revealed', 'detail', tnb], undefined],
   ]);
+});
+
+test('the masked receipt says how long a reveal lasts', async () => {
+  await renderDetail(tnb);
+
+  expect(
+    await screen.findByText('Asks for fingerprint first. Stays shown until you hide it or Sen locks.'),
+  ).toBeOnTheScreen();
 });
 
 test('Show amounts rolls the amount in, and Hide amounts takes it out of the tree', async () => {

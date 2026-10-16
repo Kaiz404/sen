@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 
 import { act, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { router } from 'expo-router';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import type * as ExpoLinking from 'expo-linking';
@@ -14,7 +15,9 @@ import {
   type NativeEventSubscription,
 } from 'react-native';
 
-import { hideAmounts, lockNow } from '@/features/auth';
+import { hideAmounts, lockNow, showAmounts } from '@/features/auth';
+import { sessionStore } from '@/features/auth/session';
+import { playMoment } from '@/features/sen';
 import { InstantSchema, malaysiaDay } from '@/models/day';
 import { draftSchema } from '@/models/draft';
 import type { OpenDb } from '@/services/db';
@@ -30,6 +33,10 @@ jest.mock('expo-local-authentication', () => ({
   supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
   getEnrolledLevelAsync: jest.fn(async () => 3),
 }));
+jest.mock('@/features/sen/director/store', () => {
+  const actual = jest.requireActual('@/features/sen/director/store');
+  return { ...actual, playMoment: jest.fn(actual.playMoment) };
+});
 jest.mock('@/services/vault', () => ({ hasVault: jest.fn(), openVault: jest.fn() }));
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
@@ -217,7 +224,7 @@ test('a detail link that brings the app back inside the re-lock window opens tha
 test('the app root drops revealed amounts whenever they are hidden', async () => {
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
   await renderRouter(routes, { initialUrl: '/' });
-  await act(() => writePref('hideAmounts', false));
+  await act(() => sessionStore.setState({ amountsHidden: false }));
   queryClient.setQueryData(['tx', 'revealed', 0], { t1: 4250 });
 
   await act(() => hideAmounts());
@@ -247,4 +254,39 @@ test('History’s first page is read as the unlock passes, while Lock holds for 
   screen.unmount();
   readPage.mockRestore();
   jest.useRealTimers();
+});
+
+test('amounts shown before a lock are masked after the next unlock, on History and in Settings, with no Re-mask', async () => {
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  jest
+    .mocked(Vault.openVault)
+    .mockResolvedValueOnce({ kind: 'opened', db: await openTestDb() })
+    .mockResolvedValueOnce({ kind: 'opened', db: await openTestDb() });
+  sessionStore.setState(sessionStore.getInitialState());
+  const played = jest.mocked(playMoment);
+  played.mockClear();
+  await renderRouter(routes, { initialUrl: '/' });
+  await screen.findByRole('header', { name: 'Welcome back.' });
+
+  authenticate.mockResolvedValue({ success: true });
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await screen.findByRole('button', { name: 'Show amounts' }, { timeout: 20000 });
+  await act(() => showAmounts());
+  expect(await screen.findByRole('button', { name: 'Hide amounts' })).toBeOnTheScreen();
+
+  await act(() => lockNow());
+  await screen.findByRole('header', { name: 'Welcome back.' });
+  expect(screen.getByText('Amounts stay hidden until you choose to show them.')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+
+  expect(await screen.findByRole('button', { name: 'Show amounts' }, { timeout: 20000 })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Hide amounts' })).not.toBeOnTheScreen();
+  const moments = played.mock.calls.map(([, moment]) => moment);
+  expect(moments).toContain('reveal');
+  expect(moments).not.toContain('remask');
+
+  await act(() => router.push('/settings'));
+  const hide = await screen.findByRole('switch', { name: 'Hide amounts' });
+  expect(hide.props.accessibilityState.checked).toBe(true);
+
 });

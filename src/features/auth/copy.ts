@@ -14,11 +14,7 @@ export const BIOMETRIC: Readonly<Record<Biometric, BiometricCopy>> = {
   fingerprint: { name: 'fingerprint', title: 'Fingerprint', icon: 'fingerprint' },
 };
 
-export function amountsNote(hidden: boolean): string {
-  return hidden
-    ? 'Amounts stay hidden until you choose to show them.'
-    : 'Amounts show after you unlock, until you hide them.';
-}
+export const AMOUNTS_NOTE = 'Amounts stay hidden until you choose to show them.';
 
 export function clock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;

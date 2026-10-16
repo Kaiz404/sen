@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert } from 'react-native';
 
-import { clearPrefs, writePref } from '@/services/prefs';
+import { clearPrefs } from '@/services/prefs';
 import * as Vault from '@/services/vault';
 
 import { sessionStore } from '../session';
@@ -29,15 +29,12 @@ beforeEach(() => {
 
 afterEach(() => jest.useRealTimers());
 
-test('Lock promises hidden amounts only while the setting hides them', async () => {
+test('Lock promises hidden amounts, and no longer offers to keep them shown', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   await render(<LockScreen />);
+
   expect(screen.getByText('Amounts stay hidden until you choose to show them.')).toBeOnTheScreen();
-
-  await act(() => writePref('hideAmounts', false));
-
-  expect(screen.getByText('Amounts show after you unlock, until you hide them.')).toBeOnTheScreen();
-  expect(screen.queryByText(/stay hidden/)).not.toBeOnTheScreen();
+  expect(screen.queryByText(/until you hide them/)).not.toBeOnTheScreen();
 });
 
 test('a lockout counts down, then offers the fingerprint again', async () => {

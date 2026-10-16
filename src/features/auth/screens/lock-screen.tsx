@@ -9,8 +9,7 @@ import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
-import { useAmountsHidden } from '../amounts';
-import { amountsNote, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
+import { AMOUNTS_NOTE, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
 import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
@@ -42,7 +41,6 @@ const ANSWERS: PromptAnswers = { ok: 'unlock', mismatch: 'authFailed', lockout: 
 export type LockViewProps = {
   readonly state: LockState;
   readonly biometric: Biometric;
-  readonly amountsHidden: boolean;
   readonly onUnlock: () => void;
   readonly onOpenSettings: () => void;
   readonly onStartAgain: () => void;
@@ -53,7 +51,6 @@ export type LockViewProps = {
 export function LockScreen(): ReactNode {
   const support = useBiometric();
   const status = useSessionStatus();
-  const amountsHidden = useAmountsHidden();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
   // Holds "checking" until the answer lands, so the view never flashes idle in between.
@@ -87,7 +84,6 @@ export function LockScreen(): ReactNode {
     <LockView
       state={FROM_SESSION[status] ?? (asking ? CHECKING : view)}
       biometric={support.kind}
-      amountsHidden={amountsHidden}
       onUnlock={onUnlock}
       onOpenSettings={openDeviceSettings}
       onStartAgain={onStartAgain}
@@ -99,7 +95,6 @@ export function LockScreen(): ReactNode {
 export function LockView({
   state,
   biometric,
-  amountsHidden,
   onUnlock,
   onOpenSettings,
   onStartAgain,
@@ -154,7 +149,7 @@ export function LockView({
             <ProfileRow />
             {unlockKey(UNLOCK_LABEL[shown.kind] ?? `Unlock with ${name}`)}
             {passcode}
-            <Note text={amountsNote(amountsHidden)} />
+            <Note text={AMOUNTS_NOTE} />
           </>
         );
       case 'mismatch':

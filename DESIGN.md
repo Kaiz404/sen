@@ -236,7 +236,7 @@ Each row is a MAX-Moments tile unless it names another board.
 | Face ID in progress | `.M-face.ph-scan` | Prompt open | Peek left (−20, 24) with the left eye cracked, then right (20, 24) with the right eye, in a 1.6 s loop | None |
 | Auth failed | `.M-face.ph-fail` | Prompt fails | Eyes pop open at 0.9, face shakes ±16 and settles at (0, 10), counter-lean then lean back to −4° with skewX 4°, frown, paws clutch (±40, −24) at 0.9, eyes close at 1.5 s | Error |
 | Unlock | `.M-unlock` | Auth succeeds. Plays when a Sen's pose goes from `masked` to `happy` | eye-pop with paws up › face settles at (0, −6) › accent-pop › one flip › land. Happy squint (1.15, 0.45) from 1250 ms. 1.35 s | Success at 160 ms |
-| Reveal | `.M-reveal` | Amounts shown, after biometrics (D27: a saved setting, no timer). Plays when a Sen's pose goes from `masked` to `revealed` | eye-pop and small hop, paws up › digits roll in at 200 ms › face at (0, −6) › accents › face slides toward the digits (18, −10) at 640 ms › happy squint (1.15, 0.45). Accents pop before the slide. The tile then loops back to masked, but amounts stay shown, so from 1500 ms Sen eases into `revealed` in 300 ms on `sine`, the tile's own paw-drop time and curve. 1.8 s | Success when the check passes, fired by History, so it comes once even when a scroll or the background holds Sen still |
+| Reveal | `.M-reveal` | Amounts shown, after biometrics (D27: shown until you hide it or Sen locks, no timer). Plays when a Sen's pose goes from `masked` to `revealed` | eye-pop and small hop, paws up › digits roll in at 200 ms › face at (0, −6) › accents › face slides toward the digits (18, −10) at 640 ms › happy squint (1.15, 0.45). Accents pop before the slide. The tile then loops back to masked, but amounts stay shown, so from 1500 ms Sen eases into `revealed` in 300 ms on `sine`, the tile's own paw-drop time and curve. 1.8 s | Success when the check passes, fired by History, so it comes once even when a scroll or the background holds Sen still |
 | Re-mask | `.M-remask` | "Hide amounts" on History or in Settings (D27). Plays when a Sen's pose goes from `revealed` to `masked` | From 600 ms on the tile: eye-close › face ducks behind the rim (−28, 190) › settles masked at (0, 34) while Sen leans back behind the card, then the lean eases out from 1000 ms in 350 ms. It starts from `revealed`, so the eyes squeeze from open and the paws are already down. Dots replace digits at 120 ms. 1.35 s | Hide now only: Light, fired by the control |
 | Pull to refresh | `.M-ref` | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading: `refreshSpin` (240 ms to edge-on) then the `refreshSpinLoop` lap, one turn per 600 ms › `refreshLand`: the spin springs to the next heads-up turn while Sen rises 100 in 120 ms (not on the tile, which starts in the air) › drops › lands › wobble-settle, 6 swings from 8° › "Updated" pill | Selection at threshold, Light on land |
 | Empty search | `.M-empty` | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, then eases into the `shrug` pose in 200 ms instead of sinking, since the screen keeps that pose. It opens 70 units down, hidden by the slip. 3.5 s | None |
@@ -343,8 +343,9 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **Show and hide amounts.**
 - History › "Show amounts" › OS prompt › revealed.
-- One setting covers every screen, including Detail.
-- Amounts stay shown, through lock, unlock and restart, until "Hide amounts" on History or the Settings switch.
+- One session flag covers every screen, including Detail.
+- Amounts stay shown until "Hide amounts" on History, the Settings switch, or a lock. Every unlock and every cold start lands masked, and showing asks for biometrics again.
+- The month card's Sen starts masked after an unlock and does not play Re-mask.
 - Hiding never prompts. Showing always does.
 
 **Detail.**
@@ -399,7 +400,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 | --- | --- | --- | --- | --- |
 | Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA, Sen peeking over it | | | |
 | Appearance | Theme | Light · Dark · System, with a sun and a moon on the first two. System follows the phone | System | `theme` |
-| Security | Hide amounts | Switch. Turning it off asks for biometrics | On | `hideAmounts` |
+| Security | Hide amounts | Switch. Turning it off asks for biometrics | On, and on again after every lock or restart | Session only |
 | Security | Lock when idle | 2 · 5 · 10 min | 5 min | `idleLock` |
 | Security | Lock again after leaving | Right away · 1 min · 5 min | 1 min | `relockAfter` |
 | Security | Fingerprint (or the phone's own biometric) for adding and deleting | Always on (info row) | | |
@@ -418,7 +419,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 Footer: `SEN 1.0.0 · SIMULATED DATA`.
 
 **Changes from the board.**
-- "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden (D27).
+- "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden or until Sen locks (D27). The switch reads On after every unlock.
 - Dataset size joins the reviewer slip.
 - History's fault states open Settings scrolled to the reviewer slip.
 - Not built: the Source code and licences links (the README covers both). Security activity and Erase arrive with phase 5. The app switcher and screenshot rows are built, as ALWAYS ON info rows.

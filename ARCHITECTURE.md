@@ -246,7 +246,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 
 **Masking (D6).**
 - **Masked queries.** `readPage`, `readTotals`, `readDayNets` and `getTransaction` never select `amount_minor`. Masked totals and day nets return counts only. Every function that returns an amount has `Revealed` in its name.
-- **Shown or hidden.** The `hideAmounts` pref decides, not the session. It survives lock and restart. Showing goes through `useStepUp('reveal')`. Hiding never prompts.
+- **Shown or hidden.** The session store's `amountsHidden` flag decides (D27). It starts true at every launch and goes true again whenever the database closes, so every unlock and cold start lands masked. Nothing is saved. Showing goes through `useStepUp('reveal')`. Hiding never prompts.
 - **On show.** `readRevealedAmounts(db, { filter, through })` loads `id → amountMinor` for the loaded rows, from the newest down to the last loaded row, keyed `['tx','revealed',…]`. `readRevealedTotals` and `readRevealedDayNets` add sums and nets. Every revealed query is `enabled` only while shown. The screen gathers them into one `Revealed` value (amounts, day nets, month totals, result totals), which is null while hidden, and hands it down through `<RevealedAmounts>`. Rows read it through `useAmountView(id)` and day nets through `useDayNetView(day)`. Both return `null` while masked. The list's `data` never changes on show or hide, by identity (`masking.test.tsx`).
 - **On hide.** `removeQueries(['tx','revealed'])`. Lock also clears it with the whole cache.
 - **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount read from the database exists in JS. The mock bank is the exception. `services/bank-api.ts` keeps its whole feed, amounts included, in JS memory for the life of the app, because it stands in for a server. A real bank's feed would live on that server.
@@ -258,7 +258,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 - **Store.** A Zustand store in `features/auth/session.ts` wraps it. `dispatch` runs the reducer, then the effects of the transition (On `LOCK`).
 - **React.** Components select narrow slices. Rows never subscribe to the session.
 - **Outside React.** AppState, the tick and the actions read `sessionStore.getState()`.
-- **Not in the session.** Whether amounts show is the `hideAmounts` pref (D27), so it survives lock and restart. See Showing and hiding amounts below.
+- **Amounts are in the session store, not the machine.** Whether amounts show is `amountsHidden` beside `lockoutArmed` in `sessionStore` (D27). It is not a pref, so it can't outlive a lock or a process. See Showing and hiding amounts below.
 
 **The open database.** The states with an open vault (`arriving`, `unlocked`, `stepUp`) carry the one `OpenDb`, so "unlocked with no database" can't be written down. `openVault()` gives it on unlock and the store closes it when the session leaves the unlocked states. Screens read it with `useDb()` from `@/features/auth` and pass it to service functions, which never hold one. A screen still animating out after a lock keeps the closed handle, so a late query rejects with "The database is closed." instead of the screen throwing (inferred: react-native-screens keeps a closing screen mounted for its exit animation).
 
@@ -309,24 +309,26 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 | `locked` | `reason`: launch, idle, background, manual, signout (a sign-out that failed) | `locked` | `lock` |
 | `authenticating` | `purpose`: `unlock` from Lock, or `setup` from the primer | `locked` or `welcome` | Current screen stays |
 | `arriving` | `purpose`, `since`, `db` | `locked` or `welcome` | Current screen stays while Sen plays Unlock |
-| `unlocked` | `since`, `db` | `unlocked` | All protected routes. Amounts follow `hideAmounts` |
+| `unlocked` | `since`, `db` | `unlocked` | All protected routes. Amounts follow `amountsHidden`, which is true on every arrival |
 | `stepUp` | `action`, `returnTo` (the unlocked state, `db` included) | `unlocked` | Current screen stays |
 | `signingOut` | Nothing. The vault is being destroyed | `locked` | `lock`, with every key disabled |
 
 - **Launch.** `SessionRoot` runs `hasVault()` and `detectBiometric()` once. No vault goes to Welcome. A vault, or a failed check, goes to Lock, so Welcome never opens over existing data. The native splash (plain ink) stays up until `LaunchCover` covers the first screen with the MAL2 launch, so the hand-over can't be seen. Lock and Welcome report their hero's box from `onLayout` (`reportLaunchTarget` in `launch.ts`; the hero sits at the window's top left). A first screen with no hero in 500 ms, such as a dev deep link, skips the launch and lifts the splash. The launch plays once per process.
-- **Unlock.** `unlock(arriveAfterMs)` prompts, then calls `openVault()`. Success enters `arriving`, which keeps the asking screen (Lock or the primer) routed while its Sen plays the Unlock moment, and `ARRIVED` opens History after `arriveAfterMs` (DESIGN › Flows: "Unlock moment, then History"). `useHistoryPrefetch()`, called by the root layout, subscribes through `onArrive(listener)` and starts History's opening reads on `UNLOCK_OK` (the first page, the sync state and the month card's totals, plus the revealed totals while amounts show), with the same query options History mounts with. The hold then overlaps the data load instead of adding to it. History reads the rest (revealed amounts and day nets) once the first page is in. A lock in that window closes the vault, and the late `ARRIVED` does nothing. A `reset` result leaves a `db_reset` notice that History reads with `useDbResetNotice()` and clears with `dismissDbResetNotice()`. A vault that fails to open returns to Lock with the generic error.
+- **Unlock.** `unlock(arriveAfterMs)` prompts, then calls `openVault()`. Success enters `arriving`, which keeps the asking screen (Lock or the primer) routed while its Sen plays the Unlock moment, and `ARRIVED` opens History after `arriveAfterMs` (DESIGN › Flows: "Unlock moment, then History"). `useHistoryPrefetch()`, called by the root layout, subscribes through `onArrive(listener)` and starts History's opening reads on `UNLOCK_OK` (the first page, the sync state and the month card's totals), with the same query options History mounts with. The hold then overlaps the data load instead of adding to it. History reads the rest (revealed amounts and day nets) once the first page is in. A lock in that window closes the vault, and the late `ARRIVED` does nothing. A `reset` result leaves a `db_reset` notice that History reads with `useDbResetNotice()` and clears with `dismissDbResetNotice()`. A vault that fails to open returns to Lock with the generic error.
 - **Sign out.** `signOut()` serves Settings and "Not you? Start again" on Lock. It enters `signingOut`, waits for the database to close, calls `destroyVault()` (which also clears prefs), then shows Welcome. Only `SIGN_OUT_DONE` or `SIGN_OUT_FAIL` leaves `signingOut`, so an unlock, a lock or a tap during the erase does nothing. A failure returns to `locked{signout}` and Lock shows the generic error.
 - **Biometric name.** Copy names the device's own biometric: Face ID or Touch ID on iOS, fingerprint or face unlock on Android, from `supportedAuthenticationTypesAsync()`. `ready` is a strong biometric enrolled (`getEnrolledLevelAsync()`). When it is false, Lock and the primer open on "is off".
 - **Exports.** `useRouteGate`, `onArrive`, `useDb`, `useStepUp`, `useAmountsHidden`, `showAmounts`, `hideAmounts`, `useDbResetNotice`, `useBiometric`, `lockNow`, `signOut`, `armLockout`, `disarmLockout` and `useLockoutArmed` (the reviewer lockout control, a `lockoutArmed` flag in the session store that the next `unlock()` consumes by reporting `lockout` without prompting), `dismissDbResetNotice`, and the dev-only `setAuthOverride` and `isAuthOverride`. The screens export a prop-driven view next to each container (`LockView`, `PrimerView`, `WelcomeView`) for the gallery.
 
-**Showing and hiding amounts (D27).** `features/auth/amounts.ts` owns the `hideAmounts` pref's behaviour.
-- `useAmountsHidden()` reads the pref through `useSyncExternalStore` on `subscribePrefs`, so every writer re-renders it.
-- `showAmounts()` runs step-up `reveal` and writes `hideAmounts: false` only when the check passes. A cancel writes nothing.
-- `hideAmounts()` writes `true` and never prompts.
-- Lint bans `writePref('hideAmounts', …)` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
-- `SessionRoot` runs `dropRevealedOnHide()`. Whenever the pref reads hidden after a change, from any writer including `clearPrefs`, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
-- Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
-- The month card's Sen (`id="month"`) rests `masked` or `revealed` with the pref, so showing plays Reveal and hiding plays Re-mask. History fires Reveal's success haptic itself when the check passes, and the moment carries none, because a scroll or the background can hold the moment back and the buzz must still come once. "Hide amounts" fires the light `hideNow` haptic itself too, as DESIGN says.
+**Showing and hiding amounts (D27).** `features/auth/amounts.ts` owns the behaviour. The value is `amountsHidden` in `sessionStore`, not a pref.
+- **Session state, not a pref.** A pref would persist the reveal across lock and process death, and the cold start would need a write to undo it. An in-memory flag starts true at launch, so a cold start is masked by construction, and the close path in `dispatch` resets it. This is the conventional session-scoped reveal (inferred, not surveyed). MMKV holds no amounts key. A `hideAmounts` value left by an earlier build is never read.
+- `useAmountsHidden()` selects the flag from the store, so Settings' switch, History, Detail and the delete sheet all follow it.
+- `showAmounts()` runs step-up `reveal` and sets `amountsHidden: false` only when the check passes. A cancel changes nothing.
+- `hideAmounts()` sets it back to true and never prompts.
+- **Re-hide on lock.** `dispatch` sets `amountsHidden: true` in the same `setState` that leaves the unlocked states, next to `queryClient.clear()`. Idle, background, manual and sign-out all pass through it. A cold start needs nothing, because the store's initial value is true.
+- Lint bans the property write `amountsHidden: false` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
+- `SessionRoot` runs `dropRevealedOnHide()`. Whenever `amountsHidden` turns true, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
+- Lock and the primer always say "Amounts stay hidden until you choose to show them."
+- The month card's Sen (`id="month"`) rests `masked` or `revealed` with `amountsHidden`, so showing plays Reveal and hiding plays Re-mask. A lock unmounts History and the next unlock mounts it masked, so a Sen starts in `masked` and Re-mask does not play on unlock (`src/__tests__/lock-flow.test.tsx`). History fires Reveal's success haptic itself when the check passes, and the moment carries none, because a scroll or the background can hold the moment back and the buzz must still come once. "Hide amounts" fires the light `hideNow` haptic itself too, as DESIGN says.
 
 **Sen on Lock and the primer.** Each screen names its Sen to the director (`lock`, `primer`; Lock's napping Sen shares `lock`, since the two never show together). The container holds its prompt as `notAsked`, `asking` or `answered` with the `AuthOutcome` that `unlock()` returned, and an optional `rest` loop for an answer with no moment of its own. `usePromptMoments(sen, prompt, answers)` in `screens/prompt-moments.ts` plays from that, never from a diff of the view, so a cancel that leaves the view as it was can't replay the last answer.
 
@@ -346,7 +348,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
-| `reveal` | "Show amounts" | `showAmounts()` writes `hideAmounts: false` | Stay hidden, silently |
+| `reveal` | "Show amounts" | `showAmounts()` sets `amountsHidden: false` | Stay hidden, silently |
 | `add` | "Save this transaction" | DB write. The `tx.added` log entry waits for the activity log (phase 5) | "Not saved. Your draft is still here." |
 | `delete` | "Delete this transaction" | DB delete. The `tx.deleted` log entry waits for the activity log (phase 5) | Sheet stays, silently. Any other failure says "Nothing was deleted." |
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing |
@@ -383,7 +385,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 
 | Trigger | Mechanism |
 | --- | --- |
-| Background | AppState `background` stores `backgroundedAt`, every time. It does not hide amounts (D27) |
+| Background | AppState `background` stores `backgroundedAt`, every time. It does not hide amounts. The lock that follows (D27) does |
 | Return | `lockIfAwayTooLong()` locks if `now − backgroundedAt > relockAfter`, or if `now` is before `backgroundedAt` because the clock was set back. It runs on `active`, and before that on a `url` event, because both platforms deliver a link before the app turns active (inferred: Android calls `onNewIntent` before `onResume`, iOS `openURL` before `didBecomeActive`). Never auto-prompt |
 | Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`, and a `lastTouch` in the future (a clock set back) counts as idle. The tick skips while backgrounded, and `active` restarts the count |
 | Manual | "Lock now" calls `lockNow()` |
@@ -398,7 +400,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - Hide the current toast. `<ToastHost />` sits outside the guarded routes, and the undo toast carries transaction text.
 - Close the database.
 - Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
-- Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.
+- Set `amountsHidden` back to true, in the same `setState` as the move. This one place covers idle, background, manual and sign-out locks. The next unlock lands masked and showing asks for biometrics again.
 
 **Held detail link** (`features/auth/held-link.ts`). A deep link that arrives while locked lands on Lock. If it is a detail link in the app's own scheme (`sen://transaction/<id>`, never `https://transaction/<id>`), its path is held, and `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home.
 
@@ -451,7 +453,7 @@ The newest link wins, and any other link drops the held one, so a link can never
 | --- | --- | --- |
 | `sen.db` (SQLCipher) | Bank rows, added rows, sync cursor, activity log | AES-256, whole file |
 | SecureStore `sen.dbKey.v1` | 32 random bytes as 64 hex characters, applied as a raw key (`PRAGMA key = "x'…'"`) so open skips PBKDF2 (V) | Keychain or Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY` |
-| MMKV `prefs` | theme, `hideAmounts`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
+| MMKV `prefs` | theme, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
 
 **Key.** 32 bytes from `expo-crypto` `getRandomValues`, stored as 64 hex characters. Read, write and delete all pass `keychainAccessible: WHEN_UNLOCKED_THIS_DEVICE_ONLY`, so the key is readable only while the phone is unlocked and is never restored to another device (V). A new key is stored only after its database opened, so a failed first open leaves no orphan key.
 
@@ -774,7 +776,7 @@ Sen has no server. Everything it protects is on the phone.
 | Item | Why |
 | --- | --- |
 | A rooted or instrumented device | The step-up result is a JS boolean. A hooked runtime can skip it. A production app would bind the key to biometrics or verify a signed challenge on a server |
-| Amounts while shown | They sit in JS memory, the share sheet and the screen reader tree, and they stay shown after the next unlock until the user hides them. Masking protects the hidden state |
+| Amounts while shown | They sit in JS memory, the share sheet and the screen reader tree, and they stay shown until the user hides them or the app locks. Every unlock and cold start lands masked. Masking protects the hidden state |
 | Root or jailbreak detection, certificate pinning | Easily patched. No real server to pin |
 
 ## Tests (D16)
@@ -798,7 +800,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | A native auth error outside the typed union maps to `unknown` | `features/auth/prompt.test.ts` |
 | Unlock opens History, and a lock unmounts it, which drops the draft with every protected route | `__tests__/lock-flow.test.tsx` |
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
-| Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
+| Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Every lock kind (manual, idle, background, sign-out) re-hides shown amounts, and the next unlock and a cold start land masked, with Settings' switch on and no Re-mask | `features/auth/amounts.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
 | A detail link opened while locked, or one that brings the app back past `relockAfter`, shows Lock, then that receipt over History after unlock. Inside `relockAfter` the receipt opens at once and nothing is held. Only a detail link is held, once, and never while unlocked, on Welcome or through a sign-out | `__tests__/lock-flow.test.tsx`, `features/auth/held-link.test.ts` |
 | Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row. A reset while a page is in flight keeps that page out | `services/sync.test.ts` |

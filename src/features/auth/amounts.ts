@@ -1,34 +1,28 @@
-import { useSyncExternalStore } from 'react';
+import { useStore } from 'zustand';
 
-import { readPref, subscribePrefs, writePref } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
 
+import { sessionStore } from './session';
 import { stepUp, type StepUpResult } from './use-step-up';
 
-const readHidden = () => readPref('hideAmounts');
-
-function subscribeHidden(onChange: () => void): () => void {
-  return subscribePrefs((key) => {
-    if (key === 'hideAmounts') onChange();
-  });
-}
-
 export function useAmountsHidden(): boolean {
-  return useSyncExternalStore(subscribeHidden, readHidden);
+  return useStore(sessionStore, (s) => s.amountsHidden);
 }
 
 export async function showAmounts(): Promise<StepUpResult> {
   const outcome = await stepUp('reveal');
-  if (outcome.ok) writePref('hideAmounts', false);
+  if (outcome.ok) sessionStore.setState({ amountsHidden: false });
   return outcome;
 }
 
 export function hideAmounts(): void {
-  writePref('hideAmounts', true);
+  sessionStore.setState({ amountsHidden: true });
 }
 
 export function dropRevealedOnHide(): () => void {
-  return subscribeHidden(() => {
-    if (readHidden()) queryClient.removeQueries({ queryKey: QK.revealed });
+  return sessionStore.subscribe((state, prev) => {
+    if (state.amountsHidden && !prev.amountsHidden) {
+      queryClient.removeQueries({ queryKey: QK.revealed });
+    }
   });
 }

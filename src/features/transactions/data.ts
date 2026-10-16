@@ -99,8 +99,6 @@ export function prefetchHistory(db: Db, now: Date): void {
   void queryClient.prefetchInfiniteQuery(queries.pages(db, OPENING_FILTER));
   void queryClient.prefetchQuery(queries.syncState(db));
   void queryClient.prefetchQuery(queries.monthTotals(db, OPENING_FILTER, month));
-  if (!readPref('hideAmounts'))
-    void queryClient.prefetchQuery(queries.revealedMonth(db, OPENING_FILTER, month));
 }
 
 /** The app root calls this once, so every unlock starts History's reads. */

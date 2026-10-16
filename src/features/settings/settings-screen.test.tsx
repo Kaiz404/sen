@@ -3,6 +3,7 @@ import { Platform, ScrollView } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import { disarmLockout, useLockoutArmed } from '@/features/auth';
+import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
@@ -33,6 +34,7 @@ jest.mock('@/features/auth', () => ({
 beforeEach(async () => {
   jest.useFakeTimers();
   clearPrefs();
+  sessionStore.setState({ amountsHidden: true });
   mockShow.mockReset();
   mockPush.mockClear();
   mockLock.mockClear();
@@ -111,18 +113,19 @@ test('turning off Hide amounts asks for biometrics, and a cancel leaves them hid
   await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
 
   expect(mockShow).toHaveBeenCalledTimes(1);
-  expect(readPref('hideAmounts')).toBe(true);
+  expect(sessionStore.getState().amountsHidden).toBe(true);
   expect(checked('switch', 'Hide amounts')).toBe(true);
 });
 
 test('turning Hide amounts back on hides at once, with no prompt', async () => {
-  writePref('hideAmounts', false);
+  sessionStore.setState({ amountsHidden: false });
   await renderSettings();
 
   await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
 
   expect(mockShow).not.toHaveBeenCalled();
-  expect(readPref('hideAmounts')).toBe(true);
+  expect(sessionStore.getState().amountsHidden).toBe(true);
+  expect(checked('switch', 'Hide amounts')).toBe(true);
 });
 
 test('Sen’s animations writes the motion level that the root layout reads', async () => {

@@ -248,7 +248,7 @@ export function MonthCard({
             onPress={onShow}
           />
           <Text style={styles.cardNote}>
-            {`Asks for ${BIOMETRIC_NAME[biometric]} first. Stays shown until you hide it.`}
+            {`Asks for ${BIOMETRIC_NAME[biometric]} first. Stays shown until you hide it or Sen locks.`}
           </Text>
         </>
       ) : (

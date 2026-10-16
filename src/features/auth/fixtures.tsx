@@ -14,7 +14,6 @@ function Lock({ state }: { state: LockState }) {
     <LockView
       state={state}
       biometric={BIOMETRIC}
-      amountsHidden
       onUnlock={noop}
       onOpenSettings={noop}
       onStartAgain={noop}
@@ -27,7 +26,6 @@ function Primer({ state }: { state: PrimerState }) {
     <PrimerView
       state={state}
       biometric={BIOMETRIC}
-      amountsHidden
       onTurnOn={noop}
       onOpenSettings={noop}
       onBack={noop}

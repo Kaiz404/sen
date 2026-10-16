@@ -35,8 +35,8 @@ const nodeSqliteAtRuntime = {
 };
 
 const showAmountsWithoutStepUp = {
-  selector: "CallExpression[callee.name='writePref'][arguments.0.value='hideAmounts']",
-  message: 'Show or hide amounts with showAmounts() or hideAmounts() from @/features/auth. Showing needs step-up.',
+  selector: "Property[key.name='amountsHidden'][value.value=false]",
+  message: 'Show amounts with showAmounts() from @/features/auth. Showing needs step-up.',
 };
 
 const restrictedImports = {
@@ -81,6 +81,19 @@ const withTestOnly = (options) => ({
       message: 'The Node database adapter is for test files only.',
     },
   ],
+});
+
+/** Tests drive the session store directly. */
+const withTestStores = (options) => ({
+  paths: options.paths,
+  patterns: options.patterns.map((pattern) =>
+    pattern.group[0] === '@/features/*/**'
+      ? {
+          ...pattern,
+          group: [...pattern.group, '!@/features/auth/session'],
+        }
+      : pattern,
+  ),
 });
 
 module.exports = defineConfig([
@@ -167,7 +180,7 @@ module.exports = defineConfig([
     files: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': ['error', rawHex, cubicBezierString, exclusiveTransaction],
-      'no-restricted-imports': ['error', restrictedImports],
+      'no-restricted-imports': ['error', withTestStores(restrictedImports)],
     },
   },
   {

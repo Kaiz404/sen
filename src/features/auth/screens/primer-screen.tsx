@@ -12,8 +12,7 @@ import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
-import { useAmountsHidden } from '../amounts';
-import { amountsNote, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
+import { AMOUNTS_NOTE, BIOMETRIC, type BiometricCopy, clock, triesLeftText } from '../copy';
 import type { Biometric } from '../prompt';
 import { afterPrompt, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
@@ -32,7 +31,6 @@ const ANSWERS: PromptAnswers = { ok: 'unlock', mismatch: 'authFailed' };
 export type PrimerViewProps = {
   readonly state: PrimerState;
   readonly biometric: Biometric;
-  readonly amountsHidden: boolean;
   readonly onTurnOn: () => void;
   readonly onOpenSettings: () => void;
   readonly onBack: () => void;
@@ -42,7 +40,6 @@ export function PrimerScreen(): ReactNode {
   const router = useRouter();
   const support = useBiometric();
   const status = useSessionStatus();
-  const amountsHidden = useAmountsHidden();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
@@ -69,7 +66,6 @@ export function PrimerScreen(): ReactNode {
     <PrimerView
       state={state}
       biometric={support.kind}
-      amountsHidden={amountsHidden}
       onTurnOn={onTurnOn}
       onOpenSettings={openDeviceSettings}
       onBack={() => router.back()}
@@ -80,7 +76,6 @@ export function PrimerScreen(): ReactNode {
 export function PrimerView({
   state,
   biometric,
-  amountsHidden,
   onTurnOn,
   onOpenSettings,
   onBack,
@@ -136,7 +131,7 @@ export function PrimerView({
         </Text>
         <Text style={styles.body}>
           Your phone checks your face or fingerprint. Sen only hears yes or no.{' '}
-          {amountsNote(amountsHidden)}
+          {AMOUNTS_NOTE}
         </Text>
       </View>
       <View style={styles.points}>

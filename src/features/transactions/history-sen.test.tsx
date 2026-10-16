@@ -3,6 +3,7 @@ import '@shopify/flash-list/jestSetup';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
+import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { playHaptic } from '@/services/haptics';
@@ -21,7 +22,7 @@ jest.mock('@/features/auth', () => ({
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
   showAmounts: async () => {
-    jest.requireActual('@/services/prefs').writePref('hideAmounts', false);
+    jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
     return { ok: true };
   },
 }));
@@ -44,6 +45,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   jest.mocked(playHaptic).mockClear();
   clearPrefs();
+  sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);
   queryClient.clear();
@@ -88,7 +90,7 @@ test('showing amounts just after a scroll still buzzes once, while Sen holds sti
 });
 
 test('hiding amounts buzzes once from the control and plays Re-mask, ducking behind the rim', async () => {
-  writePref('hideAmounts', false);
+  sessionStore.setState({ amountsHidden: false });
   await render(
     <QueryClientProvider client={queryClient}>
       <HistoryScreen />
@@ -108,7 +110,7 @@ test('hiding amounts buzzes once from the control and plays Re-mask, ducking beh
 
 test('the month card’s Sen holds its blinks while the list scrolls, and blinks again after it stops', async () => {
   jest.spyOn(Math, 'random').mockReturnValue(0);
-  writePref('hideAmounts', false);
+  sessionStore.setState({ amountsHidden: false });
   await render(
     <QueryClientProvider client={queryClient}>
       <HistoryScreen />

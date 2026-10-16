@@ -54,9 +54,10 @@ import {
 import { usePref } from './use-pref';
 
 /** Prefs the screen writes straight through. Hiding amounts and the dataset size have their own actions. */
-export type PlainPref = Exclude<PrefKey, 'hideAmounts' | 'demo.datasetSize'>;
+export type PlainPref = Exclude<PrefKey, 'demo.datasetSize'>;
 
-export type SettingsValues = Pick<Prefs, PlainPref | 'hideAmounts' | 'demo.datasetSize'> & {
+export type SettingsValues = Pick<Prefs, PlainPref | 'demo.datasetSize'> & {
+  readonly hideAmounts: boolean;
   readonly biometric: Biometric;
   readonly lockoutArmed: boolean;
   readonly progress: SyncProgress;

@@ -34,6 +34,8 @@ type SessionStore = {
   readonly dbReset: DbResetReason | null;
   /** The reviewer control "Simulate lockout": the next unlock reports lockout without prompting. */
   readonly lockoutArmed: boolean;
+  /** Session-scoped (D27). Starts true at launch, so every cold start is masked, and goes true again whenever the database closes. */
+  readonly amountsHidden: boolean;
 };
 
 export const sessionStore = createStore<SessionStore>(() => ({
@@ -41,6 +43,7 @@ export const sessionStore = createStore<SessionStore>(() => ({
   biometric: { kind: biometricOf(Platform.OS, []), ready: true },
   dbReset: null,
   lockoutArmed: false,
+  amountsHidden: true,
 }));
 
 let closing: Promise<void> = Promise.resolve();
@@ -53,10 +56,11 @@ export function dispatch(event: SessionEvent): boolean {
   const prev = sessionStore.getState().session;
   const next = reduce(prev, event);
   if (next === prev) return false;
-  sessionStore.setState({ session: next });
-
   const db = dbOf(prev);
-  if (db !== null && dbOf(next) === null) {
+  const closes = db !== null && dbOf(next) === null;
+  sessionStore.setState(closes ? { session: next, amountsHidden: true } : { session: next });
+
+  if (closes) {
     queryClient.clear();
     toast.hide();
     closing = db.close();

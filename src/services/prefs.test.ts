@@ -23,23 +23,21 @@ test('the store is the MMKV instance "prefs"', () => {
 });
 
 test('a written value reads back', () => {
-  writePref('hideAmounts', false);
   writePref('theme', 'dark');
   writePref('idleLock', 10);
 
-  expect([readPref('hideAmounts'), readPref('theme'), readPref('idleLock')]).toEqual([
-    false,
+  expect([readPref('theme'), readPref('idleLock')]).toEqual([
     'dark',
     10,
   ]);
 });
 
 test('a missing, corrupt or out-of-range value reads as the default', () => {
-  mockStore?.set('hideAmounts', '{not json');
+  mockStore?.set('theme', '{not json');
   mockStore?.set('idleLock', JSON.stringify(7));
 
-  expect([readPref('hideAmounts'), readPref('idleLock'), readPref('demo.datasetSize')]).toEqual([
-    true,
+  expect([readPref('theme'), readPref('idleLock'), readPref('demo.datasetSize')]).toEqual([
+    'system',
     5,
     1000,
   ]);
@@ -69,7 +67,6 @@ test('clearPrefs restores every default and tells subscribers about every key', 
   expect([readPref('theme'), readPref('demo.slow')]).toEqual(['system', false]);
   expect(heard).toEqual([
     'theme',
-    'hideAmounts',
     'idleLock',
     'relockAfter',
     'senMotion',

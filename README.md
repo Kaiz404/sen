@@ -9,7 +9,7 @@ Amounts are hidden until you prove it's you. Sen, a coin with a face, keeps its 
 ## What it does
 
 - **Biometric login.** Face ID or fingerprint, with a device passcode fallback, clear errors for every failure, and a lockout cool-down.
-- **Masked by default.** Every amount shows as `RM` and four coins. One biometric check shows every amount, and they stay shown until you hide them again. Settings can turn hiding off, which also asks for biometrics.
+- **Masked by default.** Every amount shows as `RM` and four coins. One biometric check shows every amount, and they stay shown until you hide them again or Sen locks. Every unlock and every launch starts masked. Settings' switch can turn hiding off, which also asks for biometrics.
 - **History.** Date-grouped receipt slips, a month summary, All / In / Out filters, live search and pull-to-refresh.
 - **Detail.** All fields, a status timeline for pending items, copy reference and share receipt.
 - **Add your own transactions.** A custom keypad keeps amounts away from the system keyboard. Saving asks for Face ID. Added rows are stored encrypted. Only added rows can be deleted. Bank rows are read-only.
