@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { ColorToken } from '@/theme/colors';
 import { type } from '@/theme/type';
@@ -28,10 +28,11 @@ export const TAG_KINDS = Object.keys(TAGS) as TagKind[];
 
 export function Tag({ kind }: { kind: TagKind }): ReactNode {
   const spec: TagSpec = TAGS[kind];
+  const { theme } = useUnistyles();
   return (
     <View style={styles.tag(spec)}>
       {spec.icon !== undefined && (
-        <MaterialCommunityIcons name={spec.icon} size={11} style={styles.ink(spec.tone)} />
+        <MaterialCommunityIcons name={spec.icon} size={11} color={theme.colors[spec.tone]} />
       )}
       <Text style={[styles.label, styles.ink(spec.tone)]}>{spec.label}</Text>
     </View>

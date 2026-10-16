@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { create } from 'zustand';
 
 import { EASE } from '@/motion/tokens';
@@ -89,6 +89,7 @@ export function ToastHost(): ReactNode {
 }
 
 function ActionKey({ id, action }: { id: number; action: ToastAction }) {
+  const { theme } = useUnistyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -100,14 +101,14 @@ function ActionKey({ id, action }: { id: number; action: ToastAction }) {
       style={styles.action}
     >
       {action.icon !== undefined && (
-        <MaterialCommunityIcons name={action.icon} size={18} style={styles.actionInk} />
+        <MaterialCommunityIcons name={action.icon} size={18} color={theme.colors.onPastel} />
       )}
       <Text style={[styles.actionLabel, styles.actionInk]}>{action.label}</Text>
     </Pressable>
   );
 }
 
-/** The bar shows time left, so it runs at every motion level, like the countdown ring. */
+/** The bar shows time left, so it runs at every motion level. */
 function drain(ttl: number) {
   return {
     animationName: { from: { transform: [{ scaleX: 1 }] }, to: { transform: [{ scaleX: 0 }] } },

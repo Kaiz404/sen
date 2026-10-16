@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { useMotionPolicy } from '@/motion/policy';
 import { EASE_CSS } from '@/motion/tokens';
@@ -35,6 +35,7 @@ export function Segmented<T extends string>({
   accessibilityLabel,
 }: SegmentedProps<T>): ReactNode {
   const level = useMotionPolicy();
+  const { theme } = useUnistyles();
   const index = Math.max(
     0,
     options.findIndex((o) => o.id === value),
@@ -74,7 +75,11 @@ export function Segmented<T extends string>({
               style={styles.segment}
             >
               {o.icon !== undefined && (
-                <MaterialCommunityIcons name={o.icon} size={16} style={styles.ink(selected)} />
+                <MaterialCommunityIcons
+                  name={o.icon}
+                  size={16}
+                  color={selected ? theme.colors.canvas : theme.colors.ink}
+                />
               )}
               <Text style={[styles.label, styles.ink(selected)]}>{o.label}</Text>
             </Pressable>

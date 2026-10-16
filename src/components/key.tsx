@@ -3,10 +3,11 @@ import { type ComponentProps, type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { useMotionPolicy } from '@/motion/policy';
 import { DUR, EASE_CSS } from '@/motion/tokens';
+import type { Palette } from '@/theme/colors';
 import { FONT } from '@/theme/type';
 
 import { cssMs } from './motion-level';
@@ -45,6 +46,8 @@ export function Key({
   const level = useMotionPolicy();
   const s = SIZE[size];
   const iconOnly = label === undefined;
+  const { theme, rt } = useUnistyles();
+  const c = keyColors(theme.colors, rt.themeName)[tone];
 
   return (
     <Pressable
@@ -55,12 +58,18 @@ export function Key({
       onPressOut={() => setPressed(false)}
       style={[styles.key, { height: s.height + KEY_DROP }, iconOnly && { width: s.height }]}
     >
-      <View style={[styles.plate, { height: s.height, borderRadius: s.radius }]} />
+      <View
+        style={[
+          styles.plate,
+          { height: s.height, borderRadius: s.radius, backgroundColor: c.plate },
+        ]}
+      />
       <Animated.View
         testID="key-face"
         style={[
-          styles.face(tone),
+          styles.face,
           { height: s.height, borderRadius: s.radius, gap: s.gap },
+          { backgroundColor: c.face, borderColor: c.edge },
           iconOnly ? styles.iconOnly : styles.labelled,
           {
             transform: [{ translateY: pressed ? KEY_DROP : 0 }],
@@ -70,43 +79,44 @@ export function Key({
           },
         ]}
       >
-        {icon !== undefined && (
-          <MaterialCommunityIcons name={icon} size={s.icon} style={styles.ink(tone)} />
-        )}
+        {icon !== undefined && <MaterialCommunityIcons name={icon} size={s.icon} color={c.ink} />}
         {label !== undefined && (
-          <Text style={[styles.label, styles.ink(tone), { fontSize: s.font }]}>{label}</Text>
+          <Text style={[styles.label, { fontSize: s.font, color: c.ink }]}>{label}</Text>
         )}
       </Animated.View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create((theme, rt) => {
-  const c = theme.colors;
-  const s = standIn(c, rt.themeName);
-  const face: Record<KeyTone, string> = { lemon: c.lemon, loud: s.loud, paper: c.paper };
-  const edge: Record<KeyTone, string> = { lemon: c.onPastel, loud: s.loud, paper: s.keyEdge };
-  const ink: Record<KeyTone, string> = { lemon: c.onPastel, loud: s.onLoud, paper: c.ink };
+/**
+ * Tone colours, read in render through useUnistyles. On the device a live theme switch left the label inside
+ * the animated face on the old theme, so the key takes its colours from the hook, which re-renders it.
+ */
+function keyColors(c: Palette, themeName: string | undefined) {
+  const s = standIn(c, themeName);
+  const tone = (face: string, edge: string, ink: string) => ({
+    face,
+    edge,
+    ink,
+    plate: s.keyPlate,
+  });
   return {
-    key: { minWidth: theme.shape.touchMin },
-    plate: {
-      position: 'absolute',
-      top: KEY_DROP,
-      left: 0,
-      right: 0,
-      backgroundColor: s.keyPlate,
-    },
-    face: (tone: KeyTone) => ({
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: theme.shape.keyBorder,
-      backgroundColor: face[tone],
-      borderColor: edge[tone],
-    }),
-    iconOnly: { paddingHorizontal: 0 },
-    labelled: { paddingHorizontal: 18 },
-    ink: (tone: KeyTone) => ({ color: ink[tone] }),
-    label: { fontFamily: FONT.numerals },
-  };
-});
+    lemon: tone(c.lemon, c.onPastel, c.onPastel),
+    loud: tone(s.loud, s.loud, s.onLoud),
+    paper: tone(c.paper, s.keyEdge, c.ink),
+  } satisfies Record<KeyTone, unknown>;
+}
+
+const styles = StyleSheet.create((theme) => ({
+  key: { minWidth: theme.shape.touchMin },
+  plate: { position: 'absolute', top: KEY_DROP, left: 0, right: 0 },
+  face: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: theme.shape.keyBorder,
+  },
+  iconOnly: { paddingHorizontal: 0 },
+  labelled: { paddingHorizontal: 18 },
+  label: { fontFamily: FONT.numerals },
+}));
