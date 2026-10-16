@@ -106,7 +106,8 @@ export function Amount({
   const scale = SCALE[size];
 
   if (value === null) {
-    const mark = sign === 'never' || direction === undefined ? '' : direction === 'credit' ? '+' : MINUS;
+    const mark =
+      sign === 'never' || direction === undefined ? '' : direction === 'credit' ? '+' : MINUS;
     return (
       <View
         accessible
@@ -147,7 +148,11 @@ export function Amount({
   const ink = styles.ink(surface, value > 0);
   const split = scale.fraction !== scale.whole;
   const digits = (
-    <Text style={[FACE[scale.face](scale.whole), ink]}>
+    <Text
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      style={[FACE[scale.face](scale.whole), ink, styles.shrink]}
+    >
       {scale.currency === null && `${parts.sign}${parts.currency}${THIN_SPACE}`}
       {parts.whole}
       {split ? (
@@ -191,5 +196,6 @@ const styles = StyleSheet.create((theme, rt) => ({
   maskedCurrency: { marginRight: 2 },
   heroCurrency: { marginRight: 6 },
   fraction: { letterSpacing: 0 },
+  shrink: { flexShrink: 1 },
   coin: { backgroundColor: theme.colors.lemon, borderColor: theme.colors.onPastel },
 }));
