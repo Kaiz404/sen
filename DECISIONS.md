@@ -42,7 +42,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | One saved setting, shown until hidden. Showing asks for biometrics |
-| D28 | Copy reference | A local Expo module that marks the clip sensitive |
+| D29 | Copy reference | A local Expo module that marks the clip sensitive |
 
 ---
 
@@ -442,7 +442,7 @@ The phases are in [PLAN.md](PLAN.md).
 - **One state.** A reveal that outlasts lock and restart is the setting itself, so there is one value instead of a session state plus a preference.
 - **Security kept.** `hideAmounts` defaults to on. Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS.
 
-## D28. Copy reference: a local module marks the clip sensitive
+## D29. Copy reference: a local module marks the clip sensitive
 
 **Compared.**
 - `expo-clipboard` 57.0.2. Its `setStringAsync` takes only `inputFormat`, so it can't mark a clip sensitive.
