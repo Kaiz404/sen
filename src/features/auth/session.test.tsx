@@ -255,3 +255,15 @@ test('a disarmed lockout lets the next unlock prompt for real', async () => {
   expect(authenticate).toHaveBeenCalledTimes(1);
   expect(session().status).toBe('unlocked');
 });
+
+test('a lockout armed before sign out never reaches the next demo user', async () => {
+  await unlockInto(await openTestDb());
+  armLockout();
+  await signOut();
+  authenticate.mockClear();
+  authenticate.mockResolvedValueOnce({ success: true });
+  openVault.mockResolvedValueOnce({ kind: 'created', db: await openTestDb() });
+
+  expect(await unlock()).toEqual({ ok: true });
+  expect(authenticate).toHaveBeenCalledTimes(1);
+});

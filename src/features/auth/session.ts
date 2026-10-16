@@ -128,7 +128,8 @@ export function useLockoutArmed(): boolean {
 
 /**
  * Sign out of the demo, or "Not you? Start again" on Lock. Closes the database, destroys the vault (prefs
- * included), then shows Welcome. A failure returns to Lock and rethrows.
+ * included), drops the previous user's notice and armed lockout, then shows Welcome. A failure returns to Lock and
+ * rethrows.
  */
 export async function signOut(): Promise<void> {
   if (!dispatch({ type: 'SIGN_OUT_START' })) return;
@@ -139,7 +140,7 @@ export async function signOut(): Promise<void> {
     dispatch({ type: 'SIGN_OUT_FAIL' });
     throw error;
   }
-  sessionStore.setState({ dbReset: null });
+  sessionStore.setState({ dbReset: null, lockoutArmed: false });
   dispatch({ type: 'SIGN_OUT_DONE' });
 }
 

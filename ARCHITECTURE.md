@@ -422,7 +422,7 @@ A deep link that arrives while locked lands on Lock and is not replayed after un
 
 - **Reads.** `usePref(key)` reads one pref through `useSyncExternalStore` on `subscribePrefs`, so a write from anywhere shows at once. A fault that turns itself off after its request reads Normal on an open Settings screen.
 - **Writes.** Plain prefs (`idleLock`, `relockAfter`, `senMotion`, `haptics` and the `demo.*` switches) go straight through `writePref`. Hide amounts goes through `showAmounts()` and `hideAmounts()`, so showing still needs step-up. The dataset size runs `switchDataset`, which writes the pref, then `resetBank(db)`. It does nothing while a sync runs.
-- **Simulate lockout.** `armLockout()` sets `lockoutArmed` in the session store, and the next `unlock()` returns `lockout` without opening the prompt. Tapping again, or the toast's Undo, calls `disarmLockout()`.
+- **Simulate lockout.** `armLockout()` sets `lockoutArmed` in the session store, and the next `unlock()` returns `lockout` without opening the prompt. Tapping again, or the toast's Undo, calls `disarmLockout()`. Reset demo data disarms it, and so does a sign out that succeeds, so the next demo user never meets a lockout they did not arm.
 - **Reset demo data.** `resetDemo(db)` writes every `demo.*` pref back to its default, disarms the lockout, then runs `resetBank(db)`. Security prefs and added rows stay. The sheet then goes back to History, which loads the sample rows again.
 - **Sign out.** The sheet calls `signOut()`. A failure lands on Lock with a toast, and Lock's "Start again" tries again.
 - **Focus.** `/settings?focus=reviewers` opens the screen scrolled to the reviewer slip. History's fault states link there.
@@ -775,7 +775,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
 | Every state and event pair, `signingOut` included. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
 | Re-lock window (59 s stays, 61 s locks), idle lock. Home on a step-up prompt still locks. A clock set back locks, away and idle | `features/auth/locks.test.ts` |
-| Lock clears the cache, closes the database and hides the toast. An unlock during sign-out opens no prompt, and sign-out ends on Welcome | `features/auth/session.test.tsx` |
+| Lock clears the cache, closes the database and hides the toast. An unlock during sign-out opens no prompt, and sign-out ends on Welcome. A lockout armed before sign out never reaches the next demo user | `features/auth/session.test.tsx` |
 | A native auth error outside the typed union maps to `unknown` | `features/auth/prompt.test.ts` |
 | Unlock opens History, and a lock unmounts it, which drops the draft with every protected route | `__tests__/lock-flow.test.tsx` |
 | Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
