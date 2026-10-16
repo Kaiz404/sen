@@ -9,7 +9,6 @@ import { Key } from '@/components/key';
 import { Leader, ReceiptSlip, SlipRule } from '@/components/receipt-slip';
 import { Segmented } from '@/components/segmented';
 import { Stamp } from '@/components/stamp';
-import { standIn } from '@/components/stand-in';
 import { Tag, type TagKind } from '@/components/tag';
 import { toast, type ToastSpec } from '@/components/toast';
 import { signedMinor, type SignedMinor } from '@/models/money';
@@ -233,7 +232,7 @@ export const COMPONENT_STATES = {
   },
 };
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   stack: { gap: 20, alignItems: 'flex-start' },
   inline: { flexDirection: 'row', gap: 10 },
   loud: {
@@ -241,7 +240,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     alignItems: 'flex-start',
     padding: 20,
     borderRadius: 30,
-    backgroundColor: standIn(theme.colors, rt.themeName).loud,
+    backgroundColor: theme.colors.loud,
   },
   slipRow: {
     flexDirection: 'row',

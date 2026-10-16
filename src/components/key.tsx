@@ -11,7 +11,6 @@ import type { Palette } from '@/theme/colors';
 import { FONT } from '@/theme/type';
 
 import { cssMs } from './motion-level';
-import { standIn } from './stand-in';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 /** `loud` is the screen's one loud key: ink in light, lemon in dark. */
@@ -46,8 +45,8 @@ export function Key({
   const level = useMotionPolicy();
   const s = SIZE[size];
   const iconOnly = label === undefined;
-  const { theme, rt } = useUnistyles();
-  const c = keyColors(theme.colors, rt.themeName)[tone];
+  const { theme } = useUnistyles();
+  const c = keyColors(theme.colors)[tone];
 
   return (
     <Pressable
@@ -92,18 +91,17 @@ export function Key({
  * Tone colours, read in render through useUnistyles. On the device a live theme switch left the label inside
  * the animated face on the old theme, so the key takes its colours from the hook, which re-renders it.
  */
-function keyColors(c: Palette, themeName: string | undefined) {
-  const s = standIn(c, themeName);
+function keyColors(c: Palette) {
   const tone = (face: string, edge: string, ink: string) => ({
     face,
     edge,
     ink,
-    plate: s.keyPlate,
+    plate: c.keyPlate,
   });
   return {
     lemon: tone(c.lemon, c.onPastel, c.onPastel),
-    loud: tone(s.loud, s.loud, s.onLoud),
-    paper: tone(c.paper, s.keyEdge, c.ink),
+    loud: tone(c.loud, c.loud, c.onLoud),
+    paper: tone(c.paper, c.keyEdge, c.ink),
   } satisfies Record<KeyTone, unknown>;
 }
 

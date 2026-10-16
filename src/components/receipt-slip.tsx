@@ -30,6 +30,7 @@ const ZIGZAG = zigzag(SPAN);
 
 const PaperPath = withUnistyles(Path, (theme) => ({ fill: theme.colors.paper }));
 const RuleLine = withUnistyles(Line, (theme) => ({ stroke: theme.colors.rule }));
+const LeaderLine = withUnistyles(Line, (theme) => ({ stroke: theme.colors.leader }));
 
 function Edge({ d }: { d: string }) {
   return (
@@ -68,7 +69,7 @@ export function Leader(): ReactNode {
   return (
     <View style={styles.leader} aria-hidden>
       <Svg width={SPAN} height={2}>
-        <RuleLine
+        <LeaderLine
           x1={1}
           y1={1}
           x2={SPAN}

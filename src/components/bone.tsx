@@ -7,8 +7,6 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
 import { DUR } from '@/motion/tokens';
 
-import { standIn } from './stand-in';
-
 const SWEEP: CSSAnimationKeyframes<ViewStyle> = {
   from: { transform: [{ translateX: '-100%' }] },
   to: { transform: [{ translateX: '100%' }] },
@@ -35,8 +33,7 @@ type BoneProps = {
 export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
   const band = bandStyle(useMotionPolicy());
   const gradient = useId();
-  const { theme, rt } = useUnistyles();
-  const shimmer = standIn(theme.colors, rt.themeName).shimmer;
+  const { theme } = useUnistyles();
   return (
     <View aria-hidden style={[styles.bone, { width, height, borderRadius: radius }]}>
       {band !== null && (
@@ -44,9 +41,9 @@ export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
           <Svg width="100%" height="100%">
             <Defs>
               <LinearGradient id={gradient} x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0.2" stopColor={shimmer} stopOpacity={0} />
-                <Stop offset="0.5" stopColor={shimmer} stopOpacity={1} />
-                <Stop offset="0.8" stopColor={shimmer} stopOpacity={0} />
+                <Stop offset="0.2" stopColor={theme.colors.shimmer} stopOpacity={0} />
+                <Stop offset="0.5" stopColor={theme.colors.shimmer} stopOpacity={1} />
+                <Stop offset="0.8" stopColor={theme.colors.shimmer} stopOpacity={0} />
               </LinearGradient>
             </Defs>
             <Rect width="100%" height="100%" fill={`url(#${gradient})`} />

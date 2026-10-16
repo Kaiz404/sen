@@ -12,8 +12,6 @@ import {
 } from '@/models/money';
 import { type, type TypeRole } from '@/theme/type';
 
-import { standIn } from './stand-in';
-
 export type AmountSize = 'hero' | 'card' | 'row' | 'net';
 /** What the amount sits on: canvas or paper, a pastel card, or the loud fill. */
 export type AmountSurface = 'plain' | 'pastel' | 'loud';
@@ -181,13 +179,13 @@ export function Amount({
   );
 }
 
-const styles = StyleSheet.create((theme, rt) => ({
+const styles = StyleSheet.create((theme) => ({
   row: { flexDirection: 'row', alignItems: 'center' },
   baseline: { alignItems: 'baseline' },
   ink: (surface: AmountSurface, credit: boolean) => ({
     color:
       surface === 'loud'
-        ? standIn(theme.colors, rt.themeName).onLoud
+        ? theme.colors.onLoud
         : surface === 'pastel'
           ? theme.colors.onPastel
           : credit
