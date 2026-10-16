@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Key } from './key';
 
 test('pressIn drops the face 4 px onto the shadow plate, and pressOut lifts it', async () => {
-  await render(<Key label="Reveal for 60 seconds" tone="lemon" onPress={() => {}} />);
-  const key = screen.getByRole('button', { name: 'Reveal for 60 seconds' });
+  await render(<Key label="Show amounts" tone="lemon" onPress={() => {}} />);
+  const key = screen.getByRole('button', { name: 'Show amounts' });
   const face = screen.getByTestId('key-face');
   expect(face).toHaveStyle({ transform: [{ translateY: 0 }] });
 
