@@ -400,7 +400,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 - Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
 - Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.
 
-**Held detail link** (`features/auth/held-link.ts`). A deep link that arrives while locked lands on Lock. If it is a detail link (`sen://transaction/<id>`), its path is held, and `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home.
+**Held detail link** (`features/auth/held-link.ts`). A deep link that arrives while locked lands on Lock. If it is a detail link in the app's own scheme (`sen://transaction/<id>`, never `https://transaction/<id>`), its path is held, and `HeldLinkOpener` in `SessionRoot` pushes it once the gate turns `unlocked`, over History, so Back goes home.
 
 | Case | What happens |
 | --- | --- |

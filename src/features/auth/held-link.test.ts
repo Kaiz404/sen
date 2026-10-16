@@ -15,6 +15,9 @@ test.each([
   ['sen://dev/states?screen=detail', null],
   ['sen://transaction/', null],
   ['https://example.com/transaction/bk-17', null],
+  ['https://transaction/bk-17', null],
+  ['exp+sen://transaction/bk-17', null],
+  ['SEN://transaction/bk-17', '/transaction/bk-17'],
 ])('%s holds %s', (url, path) => {
   expect(detailPathOf(url)).toBe(path);
 });

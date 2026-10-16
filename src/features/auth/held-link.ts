@@ -6,7 +6,7 @@ import { sessionStore } from './session';
 
 export type DetailPath = `/transaction/${string}`;
 
-const DETAIL_LINK = /^[a-z][a-z0-9+.-]*:\/\/\/?transaction\/([^/?#]+)\/?(?:[?#].*)?$/i;
+const DETAIL_LINK = /^sen:\/\/\/?transaction\/([^/?#]+)\/?(?:[?#].*)?$/i;
 
 /** The route a detail link opens, or null. Only a detail is held through Lock: a sheet or a setting is not. */
 export function detailPathOf(url: string): DetailPath | null {
