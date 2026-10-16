@@ -29,6 +29,7 @@ beforeEach(() => {
 test('on Android each moment plays its named haptic', () => {
   playHaptic('unlock');
   playHaptic('authFailed');
+  playHaptic('launch');
   playHaptic('copy');
   playHaptic('hideNow');
   playHaptic('segment');
@@ -36,6 +37,7 @@ test('on Android each moment plays its named haptic', () => {
   expect(calls().android).toEqual([
     ['confirm'],
     ['reject'],
+    ['context-click'],
     ['context-click'],
     ['toggle-off'],
     ['segment-tick'],
@@ -47,13 +49,14 @@ test('on iOS the same moments use expo-haptics feedback types', () => {
 
   playHaptic('unlock');
   playHaptic('networkError');
+  playHaptic('launch');
   playHaptic('refreshLanded');
   playHaptic('refreshThreshold');
 
   expect(calls()).toEqual({
     android: [],
     notification: [['success'], ['warning']],
-    impact: [['light']],
+    impact: [['light'], ['light']],
     selection: [[]],
   });
   jest.restoreAllMocks();

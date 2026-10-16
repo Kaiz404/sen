@@ -69,8 +69,6 @@ const RIG_KEYS = Object.keys(LAUNCH_RIG) as Channel[];
 const REST_MS = STORY_MS;
 const CALM_HOLD_MS = 400;
 const CALM_FADE_MS = 200;
-/** A light impact on the landing. The haptics service has no launch event, so this borrows Copy's. */
-const LANDING = 'copy';
 
 /**
  * MAL2, "Sen is the dot". Mounted over Lock, which renders underneath from the first frame. Sen
@@ -130,7 +128,7 @@ export function SenLaunch({ target, ready, onDone }: Props): ReactNode {
         NEVER,
         withTiming(LAND_MS, { duration: LAND_MS, ...steady }, (done) => {
           'worklet';
-          if (done) scheduleOnRN(playHaptic, LANDING);
+          if (done) scheduleOnRN(playHaptic, 'launch');
         }),
         withTiming(STORY_MS, { duration: STORY_MS - LAND_MS, ...steady }, (done) => {
           'worklet';

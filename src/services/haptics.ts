@@ -30,6 +30,7 @@ const HAPTICS = {
   authFailed: { ios: ERROR, android: AndroidHaptics.Reject },
   lockout: { ios: ERROR, android: AndroidHaptics.Reject },
   networkError: { ios: WARNING, android: AndroidHaptics.Reject },
+  launch: { ios: LIGHT, android: AndroidHaptics.Context_Click },
   copy: { ios: LIGHT, android: AndroidHaptics.Context_Click },
   refreshLanded: { ios: LIGHT, android: AndroidHaptics.Clock_Tick },
   hideNow: { ios: LIGHT, android: AndroidHaptics.Toggle_Off },

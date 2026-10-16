@@ -74,7 +74,7 @@ test('Sen lands as the period at 1512 ms with a light haptic, squashed 1.3 by 0.
   expect([squash.scaleX, squash.scaleY]).toEqual([expect.closeTo(1.3, 2), expect.closeTo(0.7, 2)]);
   expect(sen().translateY).toBeCloseTo(-27, 0);
   await at(8);
-  expect(playHaptic).toHaveBeenCalledWith('copy');
+  expect(playHaptic).toHaveBeenCalledWith('launch');
 });
 
 test('it winks at 1743 ms: the right eye shuts to 0.12 and the left stays open', async () => {
