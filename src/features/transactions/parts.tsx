@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { memo, type ReactNode, useEffect, useState } from 'react';
+import { memo, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles, withUnistyles } from 'react-native-unistyles';
@@ -9,7 +9,7 @@ import { Leader, perforation, SlipRule, zigzag } from '@/components/receipt-slip
 import { Segmented, type SegmentOption } from '@/components/segmented';
 import { Tag } from '@/components/tag';
 import type { Biometric } from '@/features/auth';
-import { Sen } from '@/features/sen';
+import { type PoseId, playMoment, Sen, transitionFor } from '@/features/sen';
 import type { DayKey } from '@/models/day';
 import { type Direction, signed, type SignedMinor, signedMinor } from '@/models/money';
 import type { TxId } from '@/models/transaction';
@@ -93,10 +93,20 @@ function useAfterFirstPaint(): boolean {
  */
 function MonthSen({ hidden }: { readonly hidden: boolean }): ReactNode {
   const ready = useAfterFirstPaint();
+  const [firstPose] = useState<PoseId>(hidden ? 'masked' : 'revealed');
+  const pose: PoseId = hidden ? 'masked' : 'revealed';
+  // The rig mounts in the current pose, so a flip inside the window would skip its moment.
+  const catchUp = useEffectEvent(() => {
+    const moment = transitionFor(firstPose, pose);
+    if (moment) playMoment(MONTH_SEN, moment);
+  });
+  useEffect(() => {
+    if (ready) catchUp();
+  }, [ready]);
   return (
     <Sen
       id={ready ? MONTH_SEN : undefined}
-      pose={hidden ? 'masked' : 'revealed'}
+      pose={pose}
       size={92}
       label={hidden ? 'Sen, eyes closed while amounts are hidden' : 'Sen, eyes open'}
     />

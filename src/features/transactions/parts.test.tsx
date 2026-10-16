@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, render, screen, within } from '@testing-library/react-native';
 
 import { MonthCard } from './parts';
 
@@ -27,4 +27,15 @@ test('the month card draws a still Sen on the first frame and the rig takes over
 
   expect(screen.getByTestId('sen-rig-month')).toBeOnTheScreen();
   expect(screen.getByLabelText('Sen, eyes closed while amounts are hidden')).toBeOnTheScreen();
+});
+
+test('amounts shown before the rig takes over still play Reveal on it', async () => {
+  const view = await render(card(true));
+  await view.rerender(card(false));
+  await act(() => jest.advanceTimersByTime(40));
+  expect(screen.getByTestId('sen-rig-month')).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(780));
+
+  const lk = within(screen.getByTestId('sen-rig-month')).getByTestId('sen-lk');
+  expect((lk.props.jestAnimatedProps.value.matrix as number[]).slice(4)).toEqual([18, -10]);
 });
