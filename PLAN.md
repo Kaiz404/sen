@@ -80,12 +80,13 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [ ] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert.
 - [ ] Masked and revealed queries, keyset pages, month and day sums, search.
-- [ ] The database key in SecureStore. Open, lock and close, sign-out, erase and the missing-key reset.
+- [ ] The vault seam (`services/vault.ts`). The database key in SecureStore, open, sign-out, erase and the missing-key reset.
+- [ ] The prefs seam (`services/prefs.ts`) on MMKV, plus `logger.ts`, `sanitize.ts` and `haptics.ts`.
 - **Unit.** Sync twice and interrupted give the same table hash. Masked results hold no amounts. Search "entral" matches a JS filter.
 - **Perf.** Jest benches on 10k rows stay inside the D20 budgets.
 
 **Lane 2c. Auth.** Owns `src/features/auth/`.
-- [ ] The session reducer as a pure table, the Zustand store, `useStepUp`, the AppState and idle locks, and the iOS inactive guard.
+- [ ] The session reducer as a pure table, the Zustand store holding the open database (`useDb()`), `useStepUp`, the AppState and idle locks, and the iOS inactive guard.
 - [ ] Welcome, the Face ID primer and the Lock screens with every error code mapped.
 - **Unit.** Every state and event pair. `BACKGROUND` during `authenticating` is ignored. Re-lock at 61 s, not 59 s.
 - **Device.** Launch, Lock, `finger touch`, then History. A wrong finger shows "Not quite."

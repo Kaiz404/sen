@@ -73,7 +73,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
          │ typed domain objects │
  ┌───────┴──────── src/services/ ───┴────────────────────────────┐
  │ db (port + adapters)  tx-repo  sync  bank-api (mock + seed)   │
- │ db-key  prefs  clock  crypto  sanitize  logger  haptics       │
+ │ vault  prefs  clock  crypto  sanitize  logger  haptics        │
  └──▲───────────────▲───────────────▲───────────────▲────────────┘
   ══╪═══ TRUST BOUNDARY: everything below is untrusted ════════════
     │ PARSE (zod)   │ PARSE (zod)   │ KEY          │ PARSE (zod)
@@ -128,6 +128,8 @@ Every route file is one line that re-exports a screen from a feature index, such
 | `useScreenGuard`, `EraseSheet` | `@/features/security` | Does nothing |
 | `ToastHost` | `@/components/toast` | Renders nothing |
 | `StatesScreen` | `@/features/gallery` | `screen=db` runs the database smoke. Any other query is echoed |
+| `hasVault`, `openVault`, `destroyVault`, `VaultOpened` | `@/services/vault` | Rejects. Lane 2b owns the body |
+| `readPref`, `writePref`, `subscribePrefs`, `clearPrefs` | `@/services/prefs` | Reads return the default. Writes do nothing |
 
 Placeholder screens render `StubScreen` from `src/features/stub/`, so no lane's folder hosts another lane's placeholder. Phase 6 deletes that folder.
 
@@ -233,6 +235,8 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 - **Store.** A Zustand store wraps it.
 - **React.** Components select narrow slices. Rows never subscribe to the session.
 - **Outside React.** Handlers such as AppState, the idle tick and lock call `store.getState()`.
+
+**The open database.** The session store holds the one `OpenDb` while unlocked. `openVault()` gives it on unlock and the store closes it on lock. Screens read it with `useDb()` from `@/features/auth` and pass it to service functions, which never hold one.
 
 **Screen-local state.** Search text, filter and the add draft stay in `useState` or `useReducer` in their screen. The draft lives in memory only.
 
@@ -547,7 +551,7 @@ Sen has no server. Everything it protects is on the phone.
 | T7 | Leaks via logs, crash reports, clipboard, accessibility, devtools | No amount in JS while masked. Logger takes event codes only, `console` banned by lint. Clipboard gets the reference only. Cache cleared on lock. Error UI never shows messages | `features/transactions/`, `services/logger.ts` | Screen reader says "Amount hidden" |
 | T8 | Deep links that skip the lock | Protected routes are not mounted while locked | `app/_layout.tsx` | `adb shell am start -d sen://transaction/x`: Lock |
 | T9 | Double submit | Idempotency key, disabled key | `features/add/`, `services/tx-repo.ts` | Tap Save twice fast: one row |
-| T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/db-key.ts` | Inspect `AndroidManifest.xml` |
+| T10 | Backup extraction | `allowBackup: false`, `THIS_DEVICE_ONLY` key | `app.config.ts`, `services/vault.ts` | Inspect `AndroidManifest.xml` |
 | T11 | Bad data from the "API" | `TransactionSchema` parse at sync | `services/sync.ts` | Reviewer control "Bad data" |
 
 **What this does not protect against.** The README says this in plain words.
@@ -579,7 +583,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Sync twice and interrupted give the same table hash | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows | `services/tx-repo.test.ts` |
 | Seed is deterministic, valid, never in the future | `services/bank-api.test.ts` |
-| Missing key resets the database. Key shape and storage options | `services/db-key.test.ts` |
+| Missing key resets the database. Key shape and storage options | `services/vault.test.ts` |
 | Log schema rejects amounts | `features/security/activity-log.test.ts` |
 | Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `services/sanitize.test.ts` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |
