@@ -821,7 +821,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | A masked query that selects an amount fails its parse | `services/db/rows.test.ts` |
 | A root call never lands inside an open transaction. A failed savepoint undoes only its writes | `services/db/port.test.ts` |
 | The key is the first statement on the device database | `services/db/expo.test.ts` |
-| Release config always guards screens, dev never does, and a foreground event retries the guard only after a native failure (the real expo-screen-capture JS runs, only the native module is mocked) | `features/security/screen-guard.test.tsx`. `npm run release:guard-check` greps a production bundle |
+| Release config always guards screens, dev never does, and a foreground event retries the guard only after a native failure (the real expo-screen-capture JS runs, only the native module is mocked) | `features/security/screen-guard.test.tsx`. `npm run release:guard-check` greps a production bundle for `guardsScreens` returning true and the guarded call. Both release checks run from the main checkout only, and fail loudly if the bundle lacks the app's code (a worktree with a symlinked `node_modules` exports none) |
 | The privacy cover per platform and app state, and not over the Face ID sheet | `features/security/privacy-cover.test.tsx` |
 | Backup rules exclude every domain and the manifest points at them | `plugins/with-no-backup.test.ts` |
 | Selector and query benches on 10k rows within budget. They run alone and serially (`npm run test:bench`), because parallel workers inflate the timings | `*.bench.test.ts`, `services/tx-repo.bench.test.ts` |
