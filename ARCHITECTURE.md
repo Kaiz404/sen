@@ -88,7 +88,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | `src/theme/` | Unistyles themes and tokens | Nothing |
 | `src/motion/` | Motion tokens, policy, timeline helpers | `theme/` |
 | `src/features/` | Domain logic, hooks and screens per feature | `services/`, `models/`, `components/`, `theme/`, `motion/` |
-| `src/components/` | Design-system primitives: `Amount`, `Key`, `ReceiptSlip`, `Stamp`, `Tag`, `Segmented`, `Toast` | `models/`, `theme/`, `motion/` |
+| `src/components/` | Design-system primitives: `Amount`, `Key`, `Segmented`, `ReceiptSlip` (with `SlipRule` and `Leader`), `Stamp`, `Tag`, `ToastHost` and `toast`, `EnterOnce`, `Bone`. They take callbacks and never call services, so a feature fires the haptic. `stand-in.ts` maps board colours that have no theme token to the nearest token | `models/`, `theme/`, `motion/` |
 | `src/app/` | expo-router routes only. Each renders a feature screen | `features/`, `components/`, `theme/`, `motion/` |
 
 **Enforcement.** ESLint zones enforce this table, plus `import/no-cycle`. Deep imports across features are banned, and so is `console` outside `services/logger.ts`. File names are kebab-case and tests sit next to their files. Route tests are the exception. Expo Router bundles every file in `src/app/` as a route, so they live in `src/__tests__/`, and lint fails on a test file inside `src/app/`. The alias is `@/*` for `src/*`.
@@ -534,18 +534,29 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Component | How it moves | Thread and renders | Test |
 | --- | --- | --- | --- |
 | Amount reveal | `<RevealProgressProvider>` holds one shared value. Each digit column has a `useAnimatedStyle` (`digitStyle(p, col)`) | UI. About 20 mounted rows render once when the amounts map arrives, then zero during the roll. The spike measured zero parent re-renders | `toHaveAnimatedStyle` at 100 ms. Commit counter |
-| Press keys | Gesture Handler `Pressable` (immune to the Android fast-path press bug, V). The face slides 4 px onto a static ink shadow plate with a 90 ms CSS transition. No shadow animates | UI after one render | `pressIn` gives `translateY: 4` |
-| Segmented control | Absolute pill with a CSS transition on percent `translateX`. Nothing to measure | UI | Press "In" gives `translateX: '100%'` |
-| New row slide-in | `<EnterOnce>` mounts only for the just-added id, set by a store flag cleared at 900 ms. Recycled cells never replay it | UI | The wrapper exists for that id only |
-| Toasts, offline banner | One `<ToastHost>` at the root with module-level `FadeInDown` and `FadeOutDown`, keyed by id | UI | Undo works. Gone after 6000 ms |
+| Press keys | `<Key>`: Gesture Handler `Pressable` (immune to the Android fast-path press bug, V). The face slides 4 px onto a static shadow plate with a 90 ms CSS transition, 0 ms outside Full. No shadow animates. Tones `lemon`, `loud` and `paper`. An icon-only key must carry a label | UI after one render | `pressIn` gives `translateY: 4` (`key.test.tsx`) |
+| Segmented control | `<Segmented options value onChange>`. Equal segments in one lane, so the pill is `100/n %` wide and slides by percent `translateX` with a 200 ms CSS transition, 0 ms outside Full. Nothing to measure. Segments are radios. The caller fires the haptic | UI | Press "In" gives `translateX: '100%'` (`segmented.test.tsx`) |
+| New row slide-in | `<EnterOnce>` runs the board's `slidein` keyframe once on mount, 900 ms, in Full only (`enterStyle(level)`). The list mounts it only for the just-added id, set by a store flag cleared at 900 ms, so recycled cells never replay it | UI | Pure `enterStyle` test. The list lane tests that the wrapper exists for that id only |
+| Toasts, offline banner | One `<ToastHost>` at the root with module-level `FadeInDown` and `FadeOutDown`, keyed by id. Features call `toast.show({ title, detail?, action?, ttl?, mark? })`, which returns an id, and `toast.hide(id?)`. One toast at a time: a new one replaces the current one and its timer. The default is 6000 ms. A bar drains over the toast's life at every motion level, because it shows time left rather than decorating. `mark` takes a face-only `<Sen>` | UI | Undo runs once and dismisses. Gone at 6000 ms, not 5999. A replaced toast's timer can't hide the new one (`toast.test.tsx`) |
 | Pull-to-refresh | Phase 1 is FlashList `refreshing` with Sen in an overlay slot. Phase 2, optional on Android, is a `Gesture.Pan` plus `Gesture.Native` with a `pull` shared value and `useThreshold` for the haptic | UI | `fireEvent(list, 'refresh')` calls the sync |
-| Skeleton | `<Bone>` with one CSS keyframe band, 1.4 s linear | UI, no renders | Pure `bandStyle(policy)` test |
+| Skeleton | `<Bone width height radius?>` with one CSS keyframe band, 1.4 s linear, in Full only. Calm and Off draw still bones | UI, no renders | Pure `bandStyle(level)` test (`bone.test.tsx`) |
 | Launch | One loop clock, `useLoopClock(4800)`. Letters, drop and fade all derive from it through `kf(t, stops, values)`. Hands off to Sen's rig. The native splash is plain ink, hidden on first layout | UI, zero renders | Fake timers at key times |
 | Theme switch | Unistyles, instant, no re-render | Native | Device render counter |
 | Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
 | Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
 
 Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, for the lockout cool-down), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf`, and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
+
+**Reading the level.** Components read the level only through `useMotionPolicy()`. `cssMs(level, ms)` in `src/components/motion-level.ts` zeroes every CSS transition outside Full, because CSS ignores reduced motion (V). Looping and decorative keyframes (`Bone`, `EnterOnce`) run in Full only.
+
+**Stand-in colours.** Some board colours have no theme token: the dark key plate (`#000000`) and paper key edge (`#4A4E55`), the loud fill that is ink in light and lemon in dark, and the skeleton highlight. `standIn(colors, themeName)` in `src/components/stand-in.ts` maps each to the nearest token per theme. Promoting them into `src/theme/` is a change to that one table. Dotted leaders (`#C9BFAA`, `#4A4D52` on the boards) use `rule`.
+
+**States gallery.** `sen://dev/states` (dev builds only) draws any screen state from fixtures, with no services and no database.
+- `?screen=<screen>&state=<state>` draws one state. `?screen=sen&pose=<pose>&size=<pt>` draws one Sen, and `?screen=sen` alone shows every pose at 32, 72 and 200 pt. No `screen` lists every link. `screen=db` runs the database smoke.
+- `&theme=dark` or `&theme=light` forces a theme with `UnistylesRuntime.setAdaptiveThemes(false)` and `setTheme`, Unistyles' documented runtime switch, while the screen has focus. Leaving restores adaptive themes. `ScopedTheme` was not used: its Jest mock renders nothing, and the stand-in colours read `rt.themeName`, which follows the runtime theme (inferred from the Unistyles source).
+- Each drawn state mounts fresh, keyed by its query, and carries a test id `shot-<name>` so a flow can wait for the right screen.
+- **Registering a screen.** Export the screen's states from its own feature index as a plain object of render functions, such as `export const HISTORY_STATES = { masked: () => <HistoryView rows={FIXTURE_ROWS} /> }`, with the fixtures in that feature folder. Then add one entry to `SCREENS` in `src/features/gallery/registry.ts`, such as `history: HISTORY_STATES`. Type the object with `satisfies Record<string, () => ReactNode>` rather than importing the gallery's type, so the import runs one way.
+- `.maestro/screenshots.yaml` is generated from the registry: every state in light and dark, then every pose at every tier. `src/features/gallery/flow.test.ts` fails when the file and the registry disagree. `UPDATE_FLOW=1 npx jest src/features/gallery/flow` rewrites it. Its shots are candidates in `shots/2a/`. The owner promotes approved ones to `assertScreenshot` baselines.
 
 ### Proving motion works
 

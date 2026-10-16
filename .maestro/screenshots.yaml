@@ -1,0 +1,619 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- launchApp:
+    clearState: false
+- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible: UNLOCK
+    timeout: 60000
+- tapOn:
+    point: 50%,92%
+- openLink: "sen://dev/states?screen=amount&state=masked&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-masked-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-masked-light
+- openLink: "sen://dev/states?screen=amount&state=masked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-masked-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-masked-dark
+- openLink: "sen://dev/states?screen=amount&state=revealed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-revealed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-revealed-light
+- openLink: "sen://dev/states?screen=amount&state=revealed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-revealed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-revealed-dark
+- openLink: "sen://dev/states?screen=amount&state=loud&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-loud-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-loud-light
+- openLink: "sen://dev/states?screen=amount&state=loud&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-loud-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-loud-dark
+- openLink: "sen://dev/states?screen=key&state=lemon&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-lemon-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-lemon-light
+- openLink: "sen://dev/states?screen=key&state=lemon&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-lemon-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-lemon-dark
+- openLink: "sen://dev/states?screen=key&state=loud&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-loud-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-loud-light
+- openLink: "sen://dev/states?screen=key&state=loud&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-loud-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-loud-dark
+- openLink: "sen://dev/states?screen=key&state=paper&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-paper-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-paper-light
+- openLink: "sen://dev/states?screen=key&state=paper&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-paper-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-paper-dark
+- openLink: "sen://dev/states?screen=segmented&state=all&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-all-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-all-light
+- openLink: "sen://dev/states?screen=segmented&state=all&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-all-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-all-dark
+- openLink: "sen://dev/states?screen=segmented&state=in&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-in-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-in-light
+- openLink: "sen://dev/states?screen=segmented&state=in&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-in-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-in-dark
+- openLink: "sen://dev/states?screen=segmented&state=direction&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-direction-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-direction-light
+- openLink: "sen://dev/states?screen=segmented&state=direction&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-direction-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-direction-dark
+- openLink: "sen://dev/states?screen=receipt-slip&state=masked&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-masked-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-masked-light
+- openLink: "sen://dev/states?screen=receipt-slip&state=masked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-masked-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-masked-dark
+- openLink: "sen://dev/states?screen=receipt-slip&state=revealed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-revealed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-revealed-light
+- openLink: "sen://dev/states?screen=receipt-slip&state=revealed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-revealed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-revealed-dark
+- openLink: "sen://dev/states?screen=stamp&state=added&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-added-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-added-light
+- openLink: "sen://dev/states?screen=stamp&state=added&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-added-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-added-dark
+- openLink: "sen://dev/states?screen=stamp&state=pending&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-pending-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-pending-light
+- openLink: "sen://dev/states?screen=stamp&state=pending&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-pending-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-pending-dark
+- openLink: "sen://dev/states?screen=tag&state=pending&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-pending-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-pending-light
+- openLink: "sen://dev/states?screen=tag&state=pending&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-pending-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-pending-dark
+- openLink: "sen://dev/states?screen=tag&state=added&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-added-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-added-light
+- openLink: "sen://dev/states?screen=tag&state=added&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-added-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-added-dark
+- openLink: "sen://dev/states?screen=tag&state=draft&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-draft-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-draft-light
+- openLink: "sen://dev/states?screen=tag&state=draft&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-draft-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-draft-dark
+- openLink: "sen://dev/states?screen=toast&state=undo&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-undo-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-undo-light
+- openLink: "sen://dev/states?screen=toast&state=undo&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-undo-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-undo-dark
+- openLink: "sen://dev/states?screen=toast&state=plain&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-plain-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-plain-light
+- openLink: "sen://dev/states?screen=toast&state=plain&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-plain-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-plain-dark
+- openLink: "sen://dev/states?screen=enter-once&state=row&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-enter-once-row-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/enter-once-row-light
+- openLink: "sen://dev/states?screen=enter-once&state=row&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-enter-once-row-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/enter-once-row-dark
+- openLink: "sen://dev/states?screen=bone&state=rows&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-bone-rows-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/bone-rows-light
+- openLink: "sen://dev/states?screen=bone&state=rows&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-bone-rows-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/bone-rows-dark
+- openLink: "sen://dev/states?screen=sen&pose=idle&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-idle-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-idle-32
+- openLink: "sen://dev/states?screen=sen&pose=idle&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-idle-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-idle-72
+- openLink: "sen://dev/states?screen=sen&pose=idle&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-idle-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-idle-200
+- openLink: "sen://dev/states?screen=sen&pose=masked&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-masked-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-masked-32
+- openLink: "sen://dev/states?screen=sen&pose=masked&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-masked-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-masked-72
+- openLink: "sen://dev/states?screen=sen&pose=masked&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-masked-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-masked-200
+- openLink: "sen://dev/states?screen=sen&pose=peek&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-peek-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-peek-32
+- openLink: "sen://dev/states?screen=sen&pose=peek&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-peek-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-peek-72
+- openLink: "sen://dev/states?screen=sen&pose=peek&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-peek-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-peek-200
+- openLink: "sen://dev/states?screen=sen&pose=revealed&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-revealed-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-revealed-32
+- openLink: "sen://dev/states?screen=sen&pose=revealed&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-revealed-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-revealed-72
+- openLink: "sen://dev/states?screen=sen&pose=revealed&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-revealed-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-revealed-200
+- openLink: "sen://dev/states?screen=sen&pose=happy&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-happy-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-happy-32
+- openLink: "sen://dev/states?screen=sen&pose=happy&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-happy-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-happy-72
+- openLink: "sen://dev/states?screen=sen&pose=happy&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-happy-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-happy-200
+- openLink: "sen://dev/states?screen=sen&pose=look&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-look-32
+- openLink: "sen://dev/states?screen=sen&pose=look&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-look-72
+- openLink: "sen://dev/states?screen=sen&pose=look&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-look-200
+- openLink: "sen://dev/states?screen=sen&pose=lookdown&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-lookdown-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-lookdown-32
+- openLink: "sen://dev/states?screen=sen&pose=lookdown&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-lookdown-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-lookdown-72
+- openLink: "sen://dev/states?screen=sen&pose=lookdown&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-lookdown-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-lookdown-200
+- openLink: "sen://dev/states?screen=sen&pose=worried&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-worried-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-worried-32
+- openLink: "sen://dev/states?screen=sen&pose=worried&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-worried-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-worried-72
+- openLink: "sen://dev/states?screen=sen&pose=worried&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-worried-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-worried-200
+- openLink: "sen://dev/states?screen=sen&pose=asleep&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-asleep-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-asleep-32
+- openLink: "sen://dev/states?screen=sen&pose=asleep&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-asleep-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-asleep-72
+- openLink: "sen://dev/states?screen=sen&pose=asleep&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-asleep-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-asleep-200
+- openLink: "sen://dev/states?screen=sen&pose=shrug&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-shrug-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-shrug-32
+- openLink: "sen://dev/states?screen=sen&pose=shrug&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-shrug-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-shrug-72
+- openLink: "sen://dev/states?screen=sen&pose=shrug&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-shrug-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-shrug-200
+- openLink: "sen://dev/states?screen=sen&pose=squint&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-squint-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-squint-32
+- openLink: "sen://dev/states?screen=sen&pose=squint&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-squint-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-squint-72
+- openLink: "sen://dev/states?screen=sen&pose=squint&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-squint-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-squint-200
+- openLink: "sen://dev/states?screen=sen&pose=cool&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-cool-32
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-cool-32
+- openLink: "sen://dev/states?screen=sen&pose=cool&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-cool-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-cool-72
+- openLink: "sen://dev/states?screen=sen&pose=cool&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-cool-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/pose-cool-200
