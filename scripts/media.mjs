@@ -45,7 +45,18 @@ for (const name of SCREENS) {
 for (const name of GIFS) {
   execFileSync(
     FFMPEG,
-    ['-y', '-v', 'error', '-i', join(CLIPS, `${name}-full.mp4`), '-vf', GIF_FILTER, '-loop', '0', join(OUT, 'gifs', `${name}.gif`)],
+    [
+      '-y',
+      '-v',
+      'error',
+      '-i',
+      join(CLIPS, `${name}-full.mp4`),
+      '-vf',
+      GIF_FILTER,
+      '-loop',
+      '0',
+      join(OUT, 'gifs', `${name}.gif`),
+    ],
     { stdio: 'inherit' },
   );
 }
