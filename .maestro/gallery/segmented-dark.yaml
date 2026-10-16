@@ -1,0 +1,27 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=segmented&state=all&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-all-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: segmented-all-dark
+- openLink: "sen://dev/states?screen=segmented&state=in&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-in-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: segmented-in-dark
+- openLink: "sen://dev/states?screen=segmented&state=direction&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-direction-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: segmented-direction-dark

@@ -1,0 +1,107 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=motion&state=launch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-launch-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-launch-dark
+- openLink: "sen://dev/states?screen=motion&state=unlock&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-unlock-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-unlock-dark
+- openLink: "sen://dev/states?screen=motion&state=reveal&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-reveal-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-reveal-dark
+- openLink: "sen://dev/states?screen=motion&state=remask&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-remask-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-remask-dark
+- openLink: "sen://dev/states?screen=motion&state=face-scan&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-face-scan-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-face-scan-dark
+- openLink: "sen://dev/states?screen=motion&state=auth-failed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-auth-failed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-auth-failed-dark
+- openLink: "sen://dev/states?screen=motion&state=lockout&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-lockout-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-lockout-dark
+- openLink: "sen://dev/states?screen=motion&state=network-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-network-error-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-network-error-dark
+- openLink: "sen://dev/states?screen=motion&state=refresh&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-refresh-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-refresh-dark
+- openLink: "sen://dev/states?screen=motion&state=empty-search&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-empty-search-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-empty-search-dark
+- openLink: "sen://dev/states?screen=motion&state=copy&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-copy-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-copy-dark
+- openLink: "sen://dev/states?screen=motion&state=theme-light&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-light-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-theme-light-dark
+- openLink: "sen://dev/states?screen=motion&state=theme-dark&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-dark-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-theme-dark-dark

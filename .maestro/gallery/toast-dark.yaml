@@ -1,0 +1,19 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=toast&state=undo&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-undo-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: toast-undo-dark
+- openLink: "sen://dev/states?screen=toast&state=plain&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-plain-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: toast-plain-dark

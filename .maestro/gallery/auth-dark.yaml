@@ -1,0 +1,83 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=auth&state=welcome&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-welcome-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-ready-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-primer-ready-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-primer-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-idle-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-idle-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-checking-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-mismatch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-mismatch-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-lockout-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-lockout-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-unavailable-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-unavailable-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-error-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-error-dark

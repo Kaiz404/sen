@@ -1,0 +1,123 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=history&state=loading&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-loading-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-loading-light
+- openLink: "sen://dev/states?screen=history&state=empty&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-empty-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-empty-light
+- openLink: "sen://dev/states?screen=history&state=masked&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-masked-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-masked-light
+- openLink: "sen://dev/states?screen=history&state=shown&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-shown-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-shown-light
+- openLink: "sen://dev/states?screen=history&state=search&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-search-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-search-light
+- openLink: "sen://dev/states?screen=history&state=search-shown&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-search-shown-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-search-shown-light
+- openLink: "sen://dev/states?screen=history&state=no-results&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-no-results-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-no-results-light
+- openLink: "sen://dev/states?screen=history&state=in-filter&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-in-filter-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-in-filter-light
+- openLink: "sen://dev/states?screen=history&state=offline&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-offline-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-offline-light
+- openLink: "sen://dev/states?screen=history&state=failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-failed-light
+- openLink: "sen://dev/states?screen=history&state=failed-server&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-failed-server-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-failed-server-light
+- openLink: "sen://dev/states?screen=history&state=bad-data&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-bad-data-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-bad-data-light
+- openLink: "sen://dev/states?screen=history&state=db-reset&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-db-reset-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-db-reset-light
+- openLink: "sen://dev/states?screen=history&state=refreshing&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-refreshing-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-refreshing-light
+- openLink: "sen://dev/states?screen=history&state=updated&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-updated-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-updated-light

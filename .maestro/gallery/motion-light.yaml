@@ -1,0 +1,107 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=motion&state=launch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-launch-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-launch-light
+- openLink: "sen://dev/states?screen=motion&state=unlock&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-unlock-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-unlock-light
+- openLink: "sen://dev/states?screen=motion&state=reveal&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-reveal-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-reveal-light
+- openLink: "sen://dev/states?screen=motion&state=remask&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-remask-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-remask-light
+- openLink: "sen://dev/states?screen=motion&state=face-scan&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-face-scan-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-face-scan-light
+- openLink: "sen://dev/states?screen=motion&state=auth-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-auth-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-auth-failed-light
+- openLink: "sen://dev/states?screen=motion&state=lockout&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-lockout-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-lockout-light
+- openLink: "sen://dev/states?screen=motion&state=network-error&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-network-error-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-network-error-light
+- openLink: "sen://dev/states?screen=motion&state=refresh&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-refresh-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-refresh-light
+- openLink: "sen://dev/states?screen=motion&state=empty-search&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-empty-search-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-empty-search-light
+- openLink: "sen://dev/states?screen=motion&state=copy&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-copy-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-copy-light
+- openLink: "sen://dev/states?screen=motion&state=theme-light&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-light-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-theme-light-light
+- openLink: "sen://dev/states?screen=motion&state=theme-dark&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-motion-theme-dark-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: motion-theme-dark-light

@@ -1,0 +1,27 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=key&state=lemon&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-lemon-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: key-lemon-light
+- openLink: "sen://dev/states?screen=key&state=loud&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-loud-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: key-loud-light
+- openLink: "sen://dev/states?screen=key&state=paper&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-paper-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: key-paper-light

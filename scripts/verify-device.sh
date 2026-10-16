@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
-# Runs every unattended Maestro flow plus the gallery screenshots on the phone in one `maestro test`, then
+# Runs every unattended Maestro flow plus the gallery screenshot flows on the phone in one `maestro test`, then
 # prints a pass or fail row per flow. Exits non-zero on any failure.
-# Usage: scripts/verify-device.sh [--only <glob>]   (the glob matches flow names, such as 'auth-*')
+# Usage: scripts/verify-device.sh [--only <glob>]... [--shots [<glob>...]]
+#   --only matches flow names, such as 'auth-*'. The gallery's flows are named 'gallery/<screen>-<theme>' and
+#   'gallery/pose-<pose>'. --shots 'history-*' is short for --only 'gallery/history-*', and --shots alone runs them all.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-only=""
+usage() {
+  echo "usage: scripts/verify-device.sh [--only <glob>]... [--shots [<glob>...]]" >&2
+  exit 2
+}
+only=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)
-      only="${2:?--only needs a glob}"
+      [ $# -ge 2 ] || usage
+      only+=("$2")
       shift 2
       ;;
-    *)
-      echo "usage: scripts/verify-device.sh [--only <glob>]" >&2
-      exit 2
+    --shots)
+      shift
+      [ $# -gt 0 ] && [[ $1 != --* ]] || only+=("gallery/*")
+      while [ $# -gt 0 ] && [[ $1 != --* ]]; do
+        only+=("gallery/$1")
+        shift
+      done
       ;;
+    *) usage ;;
   esac
 done
 
@@ -54,21 +66,34 @@ else
 fi
 
 flows=()
-for f in .maestro/*.yaml; do
-  name="$(basename "$f" .yaml)"
-  if [ -n "$only" ]; then
-    # shellcheck disable=SC2053
-    [[ $name == $only ]] && flows+=("$f")
+for f in .maestro/*.yaml .maestro/gallery/*.yaml; do
+  name="${f#.maestro/}"
+  name="${name%.yaml}"
+  if [ ${#only[@]} -gt 0 ]; then
+    for glob in "${only[@]}"; do
+      # shellcheck disable=SC2053
+      if [[ $name == $glob ]]; then
+        flows+=("$f")
+        break
+      fi
+    done
   elif ! grep -qx '  - needs-human' "$f"; then
     flows+=("$f")
   fi
 done
 [ ${#flows[@]} -gt 0 ] || {
-  echo "verify-device: no flow in .maestro matches '$only'." >&2
+  echo "verify-device: no flow in .maestro matches ${only[*]}." >&2
   exit 2
 }
 
+# Reloading the dev client puts the latest bundle on the phone. A link sent while it loads is dropped, so wait
+# for React Native's "Running main" log line before any flow opens one.
+since="$(adb shell date +%s | tr -d '\r').000"
 adb shell am start -a android.intent.action.VIEW -d "$DEV_CLIENT" com.kaiz404.sen >/dev/null 2>&1
+timeout 120 adb logcat -T "$since" -m 1 -e 'Running "main"' ReactNativeJS:I '*:S' >/dev/null || {
+  echo "verify-device: the app did not load its bundle from Metro within 120 s. See .expo/metro.log." >&2
+  exit 1
+}
 
 case "$(adb shell pm list packages dev.mobile.maestro 2>&1)" in
   *dev.mobile.maestro*) ;;
@@ -87,12 +112,15 @@ set -e
 # Flows leave the override on their last outcome. Hand the phone back to the real prompt.
 adb shell am start -a android.intent.action.VIEW -d "sen://dev/states?auth=real" com.kaiz404.sen >/dev/null 2>&1 || true
 
-shots="$(find "$run" -name '*.png' | wc -l)"
+# Maestro nests each shot under its flow's folder. Hard links gather them in one folder to open.
+mkdir -p "$run/png"
+find "$run" -path '*/takeScreenshot/*.png' -exec ln -f {} "$run/png/" \;
+shots="$(find "$run/png" -name '*.png' | wc -l)"
 python3 -I - "$run/report.xml" "${flows[@]}" <<'EOF' || status=1
 import os, sys
 import xml.etree.ElementTree as ET
 
-report, flows = sys.argv[1], [os.path.basename(f)[:-5] for f in sys.argv[2:]]
+report, flows = sys.argv[1], [f[len(".maestro/"):-len(".yaml")] for f in sys.argv[2:]]
 results = {}
 if os.path.exists(report):
     for case in ET.parse(report).iter("testcase"):
@@ -102,7 +130,7 @@ width = max(len(f) for f in flows)
 print(f"\n{'flow'.ljust(width)}  result  seconds")
 bad = False
 for flow in flows:
-    result, secs = results.get(flow, ("not run", ""))
+    result, secs = results.get(os.path.basename(flow), ("not run", ""))
     bad |= result != "pass"
     print(f"{flow.ljust(width)}  {result.ljust(6)}  {secs}")
 sys.exit(1 if bad else 0)
@@ -110,6 +138,6 @@ EOF
 if grep -q INSTALL_FAILED_USER_RESTRICTED "$run/maestro.log"; then
   echo "verify-device: the phone cancelled Maestro's driver install. Accept the install prompts on the phone, then rerun." >&2
 fi
-echo "shots: $shots"
+echo "shots: $shots in $run/png"
 echo "run: $run"
 exit "$status"

@@ -1,0 +1,131 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=add&state=amount-empty&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-empty-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-empty-light
+- openLink: "sen://dev/states?screen=add&state=amount-typed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-typed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-typed-light
+- openLink: "sen://dev/states?screen=add&state=amount-over-limit&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-over-limit-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-over-limit-light
+- openLink: "sen://dev/states?screen=add&state=amount-discard&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-discard-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-discard-light
+- openLink: "sen://dev/states?screen=add&state=details-filled&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-filled-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-filled-light
+- openLink: "sen://dev/states?screen=add&state=details-problems&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-problems-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-problems-light
+- openLink: "sen://dev/states?screen=add&state=details-picker&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-picker-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-picker-light
+- openLink: "sen://dev/states?screen=add&state=review-ready&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-ready-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-ready-light
+- openLink: "sen://dev/states?screen=add&state=review-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-checking-light
+- openLink: "sen://dev/states?screen=add&state=review-cancelled&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-cancelled-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-cancelled-light
+- openLink: "sen://dev/states?screen=add&state=review-failed&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-failed-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-failed-light
+- openLink: "sen://dev/states?screen=add&state=delete-confirm&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-confirm-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-confirm-light
+- openLink: "sen://dev/states?screen=add&state=delete-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-checking-light
+- openLink: "sen://dev/states?screen=add&state=delete-mismatch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-mismatch-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-mismatch-light
+- openLink: "sen://dev/states?screen=add&state=delete-bank&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-bank-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-bank-light
+- openLink: "sen://dev/states?screen=add&state=delete-gone&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-gone-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-gone-light

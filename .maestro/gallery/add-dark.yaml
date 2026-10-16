@@ -1,0 +1,131 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=add&state=amount-empty&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-empty-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-empty-dark
+- openLink: "sen://dev/states?screen=add&state=amount-typed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-typed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-typed-dark
+- openLink: "sen://dev/states?screen=add&state=amount-over-limit&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-over-limit-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-over-limit-dark
+- openLink: "sen://dev/states?screen=add&state=amount-discard&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-discard-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-discard-dark
+- openLink: "sen://dev/states?screen=add&state=details-filled&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-filled-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-filled-dark
+- openLink: "sen://dev/states?screen=add&state=details-problems&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-problems-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-problems-dark
+- openLink: "sen://dev/states?screen=add&state=details-picker&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-details-picker-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-details-picker-dark
+- openLink: "sen://dev/states?screen=add&state=review-ready&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-ready-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-ready-dark
+- openLink: "sen://dev/states?screen=add&state=review-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-checking-dark
+- openLink: "sen://dev/states?screen=add&state=review-cancelled&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-cancelled-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-cancelled-dark
+- openLink: "sen://dev/states?screen=add&state=review-failed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-review-failed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-review-failed-dark
+- openLink: "sen://dev/states?screen=add&state=delete-confirm&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-confirm-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-confirm-dark
+- openLink: "sen://dev/states?screen=add&state=delete-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-checking-dark
+- openLink: "sen://dev/states?screen=add&state=delete-mismatch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-mismatch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-mismatch-dark
+- openLink: "sen://dev/states?screen=add&state=delete-bank&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-bank-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-bank-dark
+- openLink: "sen://dev/states?screen=add&state=delete-gone&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-delete-gone-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-delete-gone-dark

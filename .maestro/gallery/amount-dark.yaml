@@ -1,0 +1,27 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=amount&state=masked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-masked-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: amount-masked-dark
+- openLink: "sen://dev/states?screen=amount&state=revealed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-revealed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: amount-revealed-dark
+- openLink: "sen://dev/states?screen=amount&state=loud&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-loud-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: amount-loud-dark

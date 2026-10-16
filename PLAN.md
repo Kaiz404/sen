@@ -15,11 +15,11 @@ How Sen gets built in about 3 days by coding agents, on `main` only. It follows 
 | Check | Command | When |
 | --- | --- | --- |
 | Fast gate | `npm run check` (`tsc --noEmit`, `expo lint`, `jest --ci`, then the benches serially with `npm run test:bench`) | Before every commit. The pre-commit hook runs typecheck and related tests |
-| One screen state | On the phone, after `scripts/phone.sh`: `adb shell am start -d "sen://dev/states?screen=<s>&state=<t>"`, then `adb exec-out screencap -p > shots/<s>-<t>.png` | After any UI change |
+| One screen's states | `npm run device:shots -- '<screen>-light'` (or `'<screen>-*'` for both themes) on the phone. The shots land in `shots/runs/<timestamp>/png/` | After any UI change |
 | A flow | `npm run device:verify -- --only '<flow>'` on the phone. Biometrics come from the dev auth override (`sen://dev/states?auth=pass`), not a finger | After any flow change |
 | Release perf | `npx expo run:android --variant release`, then `flashlight test` with `scripts/scroll.sh` | Phase 3 and phase 8 |
 | Motion values | `npm run test:motion`: pure maths tables, plus `toHaveAnimatedStyle` and `toHaveAnimatedProps` at start, midpoint and end with literal values from DESIGN.md | Any motion change |
-| Settled screenshots | `maestro test .maestro/screenshots.yaml`: `assertScreenshot` on each states-route screen and pose against the owner-approved baselines | Any UI or Sen change |
+| Settled screenshots | `npm run device:shots`: every gallery flow in `.maestro/gallery/`, then `assertScreenshot` on each states-route screen and pose against the owner-approved baselines | Any UI or Sen change |
 | Motion video | `maestro test .maestro/record-<moment>.yaml`: `startRecording` for the owner to watch | After the screenshots pass |
 
 Screenshots go in `shots/`, which is git-ignored. Every perf number gets its seed size and build type written next to it.
@@ -73,7 +73,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Lane 2a. Components and the states gallery.** Owns `src/components/` and `src/features/gallery/`.
 - [x] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, and `Amount` (coins for `null`, digits otherwise). Evidence: one test beside each file in `src/components/`, and the gallery shots `shots/2a/<component>-<state>-<light|dark>.png`. The components read only theme tokens. The reshoots after the stand-ins were removed are `shots/int/{key,bone,receipt-slip,amount-loud,amount-masked}-*.png`.
 - [ ] Show every pose and tier on the gallery (`?screen=sen&pose=&size=`). Phase 1 built `SenStatic`. The gallery side is done (`gallery.test.tsx` › "a pose query draws one labelled Sen"). The device crash on decimal `transformOrigin` strings is fixed on main (`geometry.test.ts` runs React Native's own parser).
-- [x] The gallery renders any screen state from fixtures. Evidence: `gallery.test.tsx` draws every registered state, and `flow.test.ts` keeps `.maestro/screenshots.yaml` equal to the registry.
+- [x] The gallery renders any screen state from fixtures. Evidence: `gallery.test.tsx` draws every registered state, and `flow.test.ts` keeps `.maestro/gallery/` equal to the registry.
 - **Unit.** A masked `Amount` renders no digits, shows four coins and is labelled "Amount hidden" (`amount.test.tsx`). `pressIn` moves a Key 4 px (`key.test.tsx`). Pressing "In" moves the pill to `100%` (`segmented.test.tsx`).
 - **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines. `maestro test .maestro/screenshots.yaml` passed end to end on `Sen_API36` and wrote 76 candidates. Owner approval is still open.
 

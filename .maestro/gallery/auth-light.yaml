@@ -1,0 +1,83 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=auth&state=welcome&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-welcome-light
+- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-ready-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-primer-ready-light
+- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-off-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-primer-off-light
+- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-idle-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-idle-light
+- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-checking-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-checking-light
+- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-mismatch-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-mismatch-light
+- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-lockout-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-lockout-light
+- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-off-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-off-light
+- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-unavailable-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-unavailable-light
+- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-error-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-error-light

@@ -1,0 +1,27 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=sen&pose=look&size=32&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-32
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: pose-look-32
+- openLink: "sen://dev/states?screen=sen&pose=look&size=72&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-72
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: pose-look-72
+- openLink: "sen://dev/states?screen=sen&pose=look&size=200&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-pose-look-200
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: pose-look-200

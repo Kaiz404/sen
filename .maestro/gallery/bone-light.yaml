@@ -1,0 +1,11 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=bone&state=rows&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-bone-rows-light
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: bone-rows-light

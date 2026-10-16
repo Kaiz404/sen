@@ -66,6 +66,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write .",
     "device:verify": "scripts/verify-device.sh",
+    "device:shots": "scripts/verify-device.sh --shots",
     "release:auth-check": "scripts/check-release-auth.sh"
   },
   "private": true,
