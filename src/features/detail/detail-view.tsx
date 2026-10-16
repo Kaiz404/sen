@@ -38,6 +38,7 @@ export type DetailActions = {
   readonly onHide: () => void;
   readonly onDelete: () => void;
   readonly onRetry: () => void;
+  readonly onCopy: () => void;
 };
 
 export type DetailViewProps = {
@@ -46,6 +47,8 @@ export type DetailViewProps = {
   /** Null while hidden: the amount is never read then. */
   readonly revealed: Revealed | null;
   readonly biometric: Biometric;
+  /** True for a moment after the reference reaches the clipboard. */
+  readonly copied: boolean;
   readonly actions: DetailActions;
 };
 
@@ -54,6 +57,7 @@ export function DetailView({
   hidden,
   revealed,
   biometric,
+  copied,
   actions,
 }: DetailViewProps): ReactNode {
   const found = body.kind === 'found';
@@ -71,7 +75,14 @@ export function DetailView({
         {body.kind === 'failed' && <Failed onRetry={actions.onRetry} onBack={actions.onBack} />}
         {body.kind === 'found' && (
           <>
-            <Receipt row={body.row} hidden={hidden} biometric={biometric} onShow={actions.onShow} />
+            <Receipt
+              row={body.row}
+              hidden={hidden}
+              biometric={biometric}
+              copied={copied}
+              onShow={actions.onShow}
+              onCopy={actions.onCopy}
+            />
             <Footer row={body.row} biometric={biometric} onDelete={actions.onDelete} />
           </>
         )}
@@ -118,12 +129,16 @@ function Receipt({
   row,
   hidden,
   biometric,
+  copied,
   onShow,
+  onCopy,
 }: {
   readonly row: MaskedRow;
   readonly hidden: boolean;
   readonly biometric: Biometric;
+  readonly copied: boolean;
   readonly onShow: () => void;
+  readonly onCopy: () => void;
 }) {
   const { theme } = useUnistyles();
   const amount = useAmountView(row.id);
@@ -225,11 +240,19 @@ function Receipt({
             <Leader />
             <RollAmount value={value} size="net" sign="never" />
           </View>
-          <View style={styles.reference}>
-            <Text style={styles.factLabel}>REFERENCE</Text>
-            <Text selectable style={styles.referenceCode}>
-              {row.reference}
-            </Text>
+          <View style={styles.referenceRow}>
+            <View style={styles.reference}>
+              <Text style={styles.factLabel}>REFERENCE</Text>
+              <Text selectable style={styles.referenceCode}>
+                {row.reference}
+              </Text>
+            </View>
+            <Key
+              icon={copied ? 'check' : 'content-copy'}
+              label={copied ? 'Copied' : 'Copy'}
+              accessibilityLabel={copied ? 'Reference copied' : `Copy reference ${row.reference}`}
+              onPress={onCopy}
+            />
           </View>
           <Text style={styles.thanks}>* TERIMA KASIH · THANK YOU *</Text>
         </View>
@@ -475,7 +498,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderColor: theme.colors.ink,
   },
   totalLabel: { ...type.mono(13, 600), letterSpacing: 1.3, color: theme.colors.ink },
-  reference: { gap: 4 },
+  referenceRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  reference: { flex: 1, gap: 4 },
   referenceCode: { ...type.mono(16, 600), letterSpacing: 0.48, color: theme.colors.ink },
   thanks: {
     ...type.mono(11),

@@ -1,10 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
+import { toast, ToastHost } from '@/components/toast';
 import { DayKeySchema, InstantSchema } from '@/models/day';
 import { draftSchema } from '@/models/draft';
 import type { TxId } from '@/models/transaction';
 import { createMockBank } from '@/services/bank-api';
+import { copySensitive } from '@/services/clipboard';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs } from '@/services/prefs';
@@ -20,6 +22,7 @@ const mockRouter = { back: jest.fn(), replace: jest.fn(), push: jest.fn(), canGo
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
+jest.mock('@/services/clipboard', () => ({ copySensitive: jest.fn() }));
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   useLocalSearchParams: () => ({ id: mockId }),
@@ -65,6 +68,7 @@ beforeEach(async () => {
   tnb = String(row?.id);
 });
 afterEach(async () => {
+  await act(async () => toast.hide());
   await mockDb.close();
   jest.useRealTimers();
 });
@@ -74,6 +78,7 @@ async function renderDetail(id: string) {
   await render(
     <QueryClientProvider client={queryClient}>
       <DetailScreen />
+      <ToastHost />
     </QueryClientProvider>,
   );
 }
@@ -199,4 +204,33 @@ test('a read that throws shows the error, and Retry reads again', async () => {
 
   expect(await screen.findByText('TNB electricity')).toBeOnTheScreen();
   expect(all).toHaveBeenCalledTimes(2);
+});
+
+test('Copy puts the reference on the clipboard as sensitive, then the key settles back', async () => {
+  jest.mocked(copySensitive).mockResolvedValue(true);
+  await renderDetail(tnb);
+
+  await fireEvent.press(
+    await screen.findByRole('button', { name: 'Copy reference FT26101400478213' }),
+  );
+
+  expect(copySensitive).toHaveBeenCalledWith('FT26101400478213');
+  expect(screen.getByRole('button', { name: 'Reference copied' })).toBeOnTheScreen();
+  expect(screen.getByText('Reference copied')).toBeOnTheScreen();
+
+  await act(async () => jest.advanceTimersByTime(2500));
+  expect(screen.getByRole('button', { name: 'Copy reference FT26101400478213' })).toBeOnTheScreen();
+});
+
+test('a copy that fails says so and points at the selectable reference', async () => {
+  jest.mocked(copySensitive).mockResolvedValue(false);
+  await renderDetail(tnb);
+
+  await fireEvent.press(
+    await screen.findByRole('button', { name: 'Copy reference FT26101400478213' }),
+  );
+
+  expect(await screen.findByText('Couldn’t copy')).toBeOnTheScreen();
+  expect(screen.getByText('Press and hold the reference to copy it.')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Reference copied' })).not.toBeOnTheScreen();
 });

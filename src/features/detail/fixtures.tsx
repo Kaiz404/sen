@@ -15,6 +15,7 @@ const NO_ACTIONS: DetailActions = {
   onHide: noop,
   onDelete: noop,
   onRetry: noop,
+  onCopy: noop,
 };
 
 const ACCOUNT = { name: 'Everyday Savings', last4: '4821' };
@@ -70,6 +71,7 @@ const BASE: DetailViewProps = {
   hidden: true,
   revealed: null,
   biometric: 'fingerprint',
+  copied: false,
   actions: NO_ACTIONS,
 };
 
@@ -78,6 +80,7 @@ const found = (row: MaskedRow) => ({ kind: 'found', row }) as const;
 export const DETAIL_STATES = {
   masked: () => <DetailView {...BASE} />,
   shown: () => <DetailView {...BASE} hidden={false} revealed={shown(TNB, 14260)} />,
+  copied: () => <DetailView {...BASE} hidden={false} revealed={shown(TNB, 14260)} copied />,
   'posted-in': () => (
     <DetailView {...BASE} body={found(SALARY)} hidden={false} revealed={shown(SALARY, 650000)} />
   ),

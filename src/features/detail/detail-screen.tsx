@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+import { toast } from '@/components/toast';
 
 import {
   hideAmounts,
@@ -11,8 +13,10 @@ import {
   useBiometric,
   useDb,
 } from '@/features/auth';
+import { Sen } from '@/features/sen';
 import type { Revealed } from '@/features/transactions';
 import { type TxId, TxIdSchema } from '@/models/transaction';
+import { copySensitive } from '@/services/clipboard';
 import { playHaptic } from '@/services/haptics';
 import { QK } from '@/services/query-client';
 import { getRevealedTransaction, getTransaction } from '@/services/tx-repo';
@@ -23,6 +27,8 @@ export const detailKeys = {
   row: (id: TxId | null) => [...QK.tx, 'detail', id] as const,
   amount: (id: TxId | null) => [...QK.revealed, 'detail', id] as const,
 };
+
+const COPIED_MS = 2500;
 
 /** The route param is untrusted: a bad id is a missing row, never a throw. */
 function parseId(raw: unknown): TxId | null {
@@ -37,6 +43,13 @@ export function DetailScreen(): ReactNode {
   const router = useRouter();
   const hidden = useAmountsHidden();
   const biometric = useBiometric().kind;
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   const row = useQuery({
     queryKey: detailKeys.row(id),
@@ -56,6 +69,20 @@ export function DetailScreen(): ReactNode {
       : row.data === null
         ? { kind: 'missing' }
         : { kind: 'found', row: row.data };
+  const copy = async (reference: string) => {
+    if (!(await copySensitive(reference))) {
+      toast.show({ title: 'Couldn’t copy', detail: 'Press and hold the reference to copy it.' });
+      return;
+    }
+    playHaptic('copy');
+    setCopied(true);
+    toast.show({
+      title: 'Reference copied',
+      ttl: COPIED_MS,
+      mark: <Sen pose={hidden ? 'masked' : 'revealed'} size={26} />,
+    });
+  };
+
   const revealed: Revealed | null =
     hidden || id === null || amount.data == null ? null : { amounts: new Map([[id, amount.data]]) };
 
@@ -65,6 +92,7 @@ export function DetailScreen(): ReactNode {
       hidden={hidden}
       revealed={revealed}
       biometric={biometric}
+      copied={copied}
       actions={{
         onBack: () => (router.canGoBack() ? router.back() : router.replace('/')),
         onLock: lockNow,
@@ -84,6 +112,9 @@ export function DetailScreen(): ReactNode {
           if (id !== null) router.push(`/transaction/${id}/delete`);
         },
         onRetry: () => void row.refetch(),
+        onCopy: () => {
+          if (row.data != null) void copy(row.data.reference);
+        },
       }}
     />
   );

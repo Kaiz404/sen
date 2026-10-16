@@ -42,6 +42,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | One saved setting, shown until hidden. Showing asks for biometrics |
+| D28 | Copy reference | A local Expo module that marks the clip sensitive |
 
 ---
 
@@ -441,3 +442,16 @@ The phases are in [PLAN.md](PLAN.md).
 - **One state.** A reveal that outlasts lock and restart is the setting itself, so there is one value instead of a session state plus a preference.
 - **Security kept.** `hideAmounts` defaults to on. Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS.
 
+## D28. Copy reference: a local module marks the clip sensitive
+
+**Compared.**
+- `expo-clipboard` 57.0.2. Its `setStringAsync` takes only `inputFormat`, so it can't mark a clip sensitive.
+- React Native's own `Clipboard`. It is deprecated, and `setString` takes text only.
+- A local Expo module, `modules/sen-clipboard`, with one function in Kotlin and Swift.
+
+**Why the local module.**
+- **The flag.** Android 13 and later show a clip marked `ClipDescription.EXTRA_IS_SENSITIVE` as dots in the system's copy preview. Only native code can set it. Below Android 13 the module sets the same key as a string, as Android's copy and paste guide does.
+- **Standard.** Local modules are Expo's documented way to add a little native code, and autolinking finds `modules/` with no config.
+- **iOS.** iOS has no sensitive flag. The module writes the item local only, so Universal Clipboard doesn't send it to other devices, and it expires after two minutes (inferred: not built on a Mac).
+
+**Cost.** One native rebuild. A build without the module reports a failed copy and points at the reference, which is selectable, so nothing breaks.
