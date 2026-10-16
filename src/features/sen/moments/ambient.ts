@@ -72,12 +72,24 @@ export type Ambient = {
   readonly rest?: { readonly after: number; readonly gap: Gap };
 };
 
-/** What a Sen does on its own while it rests in a pose. Idle is eyes only (MAX-Spec). */
+/**
+ * What a Sen does on its own while it rests in a pose. Idle is eyes only (MAX-Spec). Revealed, the
+ * month card Sen of MAX-Moments' Idle tile, only blinks: its face sits at (0, −6), where the glance
+ * would pull it.
+ */
 export const AMBIENT: Readonly<Partial<Record<PoseId, Ambient>>> = {
   idle: {
     beats: [
       { moment: 'blink', weight: 70 },
       { moment: 'glance', weight: 20 },
+      { moment: 'doubleBlink', weight: 10 },
+    ],
+    gap: [4000, 7000],
+    rest: { after: 3, gap: [10000, 15000] },
+  },
+  revealed: {
+    beats: [
+      { moment: 'blink', weight: 70 },
       { moment: 'doubleBlink', weight: 10 },
     ],
     gap: [4000, 7000],

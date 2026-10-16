@@ -108,6 +108,28 @@ test('a hero Sen resting idle blinks on its own after 4 to 7 s, and a 32 pt mark
   jest.restoreAllMocks();
 });
 
+test('the month card Sen resting revealed blinks over its grin and keeps its face up', async () => {
+  jest.spyOn(Math, 'random').mockReturnValue(0);
+  await render(<Sen id="a" pose="revealed" size={92} />);
+
+  await at(3990);
+  const eye: number[] = [];
+  const grin: number[] = [];
+  const faceY: number[] = [];
+  for (let t = 0; t < 300; t += 4) {
+    await at(4);
+    eye.push(eyeOpen('a'));
+    grin.push(prop('a', 'mo-grin', 'opacity') as number);
+    faceY.push((prop('a', 'lk', 'matrix') as number[])[5]!);
+  }
+
+  expect(Math.min(...eye)).toBeCloseTo(0.1, 1);
+  expect(eye[eye.length - 1]).toBe(1);
+  expect(new Set(grin)).toEqual(new Set([1]));
+  expect(new Set(faceY)).toEqual(new Set([-6]));
+  jest.restoreAllMocks();
+});
+
 test('the masked Sen on Lock peeks toward Unlock every 6 to 9 s and closes its eye again', async () => {
   jest.spyOn(Math, 'random').mockReturnValue(0);
   await render(<Sen id="a" pose="masked" size={230} />);

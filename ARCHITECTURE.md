@@ -591,7 +591,7 @@ type Command = { type: 'play'; sen; moment; token } | { type: 'settle'; sen };  
 - **Level.** The director doesn't know the motion level. Each rig compiles the form for its own level when it plays.
 - **API.** `playMoment(senId, momentId)`, `stopMoment(senId)`, `senGate(patch)` and `senScroll(scrolling)` from `@/features/sen`. A Sen's `id` is the name other features use.
 - **Pose changes.** A rig whose `pose` changes asks for `TRANSITIONS['<from>><to>']` (`moments/index.ts`) when there is one, and eases into the pose otherwise. After a moment it snaps to the moment's end pose, which draws the same, then eases to its `pose` prop if that differs.
-- **Ambient.** A rig resting in a pose with an `AMBIENT` entry schedules its own P0 beats with a JS timer, `nextBeat(ambient, played, random)`. Idle blinks 70%, glances 20% and double-blinks 10%, every 4 to 7 s, and rests 10 to 15 s after 3 beats. Masked peeks every 6 to 9 s. Worried blinks slowly every 4 to 7 s. From 48 to 120 pt a Sen only blinks, and under 48 pt it stays still. Off schedules nothing.
+- **Ambient.** A rig resting in a pose with an `AMBIENT` entry schedules its own P0 beats with a JS timer, `nextBeat(ambient, played, random)`. Idle blinks 70%, glances 20% and double-blinks 10%, every 4 to 7 s, and rests 10 to 15 s after 3 beats. Revealed, the month card Sen of MAX-Moments' Idle tile, does the same without the glance. A beat plays over the pose the Sen rests in, so a revealed blink keeps the grin and the raised face. Masked peeks every 6 to 9 s. Worried blinks slowly every 4 to 7 s. From 48 to 120 pt a Sen only blinks, and under 48 pt it stays still. Off schedules nothing.
 
 ### Motion levels
 

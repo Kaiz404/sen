@@ -178,8 +178,10 @@ export function SenRig({
       momentFinished(token);
     };
     const unregister = registerSen(id, {
-      play(moment, token) {
+      play(next, token) {
         const r = rest.current;
+        // An ambient beat plays over the pose the Sen rests in, so a blink keeps a revealed grin.
+        const moment = isBeat(next.id) ? { ...next, from: r.pose, to: r.pose } : next;
         const from = poseFrame(moment.from, r.prop);
         const m = formFor(moment, r.level, from, poseFrame(moment.to, r.prop));
         playing.current = { token, moment: m };
