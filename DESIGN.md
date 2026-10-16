@@ -91,7 +91,7 @@ Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it"
 | Size | Where | Drawn |
 | --- | --- | --- |
 | Under 48 pt | Header mark, toasts, app icon | Face and eyes only |
-| 48 to 120 pt | Cards, sheets, the reveal ring | Full rig. Ambient blink by default. The director can still play moments such as Reveal on it |
+| 48 to 120 pt | Cards, sheets | Full rig. Ambient blink by default. The director can still play moments such as Reveal on it |
 | Over 120 pt | Launch, welcome, lock, lockout, errors, empty states | Full rig, full motion |
 
 ### Poses
@@ -100,7 +100,7 @@ Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it"
 | --- | --- | --- | --- |
 | `idle` | Eyes open, smile | Rest | Default |
 | `masked` | Eyes closed arcs, face tucked to (0, 34), small mouth | Rest | Amounts hidden |
-| `peek` | Face slid to (22, 24), right eye a crack, body leans −2.4° | Rest | Face ID in progress, last 10 s of a reveal |
+| `peek` | Face slid to (22, 24), right eye a crack, body leans −2.4° | Rest | Face ID in progress |
 | `revealed` | Face up to (0, −8), eyes open, grin, cheeks | Rest | Amounts showing |
 | `happy` | Happy squint arcs, grin, cheeks | Up at the rim (∓128, −180) | Unlock, reveal success, saved, copied |
 | `look` | Face slid to (64, −44), body +2.6° | Rest | Watching something, such as the amount being typed |
@@ -113,7 +113,7 @@ Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it"
 
 ### Placement
 
-- Sen lives on edges. It perches on the month card, sits on the reveal ring, peeks over receipt slips, rises out of the pull-to-refresh gap and leans in from the side on errors.
+- Sen lives on edges. It perches on the month card, peeks over receipt slips, rises out of the pull-to-refresh gap and leans in from the side on errors.
 - Never centred on a blank screen. Never over an amount.
 - Only one Sen animates on screen at a time.
 
@@ -178,7 +178,6 @@ const RM = { reduceMotion: ReduceMotion.System };     // spread into every confi
 | Auth failed | Prompt fails | Eyes pop, face shakes ±16, lean back 4°, frown, paws clutch, eyes close at 1.5 s | Error |
 | Unlock | Auth succeeds | eye-pop with paws up › accent-pop › one flip › land. 1.35 s | Success at 160 ms |
 | Reveal | Reveal auth succeeds | eye-pop and small hop › digits roll in at 200 ms › face slides toward the digits › accents › happy squint | Success at 200 ms |
-| Last 10 s | Reveal time ≤ 10 s | Glances at the ring at 10, 6 and 2 s. Eyes grow heavy at 4 s. eye-close lands at 0 | None |
 | Re-mask | Timeout, Hide now, background | eye-close › face ducks behind the rim › settles masked. Dots replace digits at 120 ms. On background, set the pose instantly | Hide now only: Light |
 | Pull to refresh | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading (at least 600 ms) › stops on heads › lands › wobble-settle › "Updated" pill | Selection at threshold, Light on land |
 | Empty search | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, sinks half hidden | None |
@@ -192,7 +191,7 @@ const RM = { reduceMotion: ReduceMotion.System };     // spread into every confi
 
 - **Reduced motion.**
   - Read the system setting live through `useMotionPolicy()`. Reanimated's `useReducedMotion()` never updates.
-  - Pose changes become 150 ms crossfades, built from the moment data, and blinks stay. The countdown ring keeps running.
+  - Pose changes become 150 ms crossfades, built from the moment data, and blinks stay. The lockout cool-down keeps counting.
   - Hops, spins, flips, rolls, wobbles, stretch and accents are dropped.
   - Haptics still fire.
   - The Settings choice "Sen's animations: Calm" does the same.
@@ -238,8 +237,8 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, passcode, "Not you? Start again" |
 | `SF-LockStates` | Lock states | Checking, didn't match ("2 more tries"), lockout with cool-down, Face ID off, unlocked |
 | `SF-PrivacyCover` | App switcher cover | Lemon full bleed, wordmark, Sen asleep. No amounts or names |
-| `SF-History` | History, masked | Header with face-only Sen mark, "+ Add", settings and lock keys. "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Reveal for 60 seconds". Search, All/In/Out, day slips with masked rows and day nets |
-| `SF-Reveal` | History, revealed | Ink card, 60 s ring with Sen on top and the countdown inside. Split numerals. "Hide now" |
+| `SF-History` | History, masked | Header with face-only Sen mark, "+ Add", settings and lock keys. "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
+| `SF-Reveal` | History, revealed | Ink card with Sen on top. Split numerals. "Hide amounts". The board's 60 s ring and countdown are dropped (D27) |
 | `SF-HistoryStates` | History states | Last 10 s, search results with count and total, empty search, In filter, pull-to-refresh, updated pill with new row, skeleton, offline banner over cached list, full error |
 | `SF-Detail` | Detail, masked | Receipt hero with coins, Sen peeking over the slip, status chip, reveal key, facts table, reference with Copy |
 | `SF-DetailRevealed` | Detail, revealed | Split hero, pending stamp, Authorised › Pending › Posted timeline, copy toast, "Share receipt" |
@@ -274,11 +273,11 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - **No match.** An inline message with the tries left.
 - **Lockout.** The cool-down card and the passcode.
 
-**Reveal.**
-- History › "Reveal for 60 seconds" › OS prompt › revealed.
-- One reveal covers every screen, including Detail.
-- Sen peeks at the ring for the last 10 s.
-- Amounts re-mask on timeout, on "Hide now" and on background.
+**Show and hide amounts.**
+- History › "Show amounts" › OS prompt › revealed.
+- One setting covers every screen, including Detail.
+- Amounts stay shown, through lock, unlock and restart, until "Hide amounts" on History or the Settings switch.
+- Hiding never prompts. Showing always does.
 
 **Detail.**
 - Tap a row › Detail, masked or revealed to match the session.
@@ -317,7 +316,6 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **Background.**
 - `inactive` shows the privacy cover on iOS. Android never emits `inactive`, so FLAG_SECURE blanks the recents view there.
-- `background` re-masks at once.
 - Returning after the "Lock again" window goes to Lock.
 - Idle past "Lock when idle" also goes to Lock.
 
@@ -329,7 +327,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there.
 | --- | --- | --- | --- | --- |
 | Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA | | | |
 | Appearance | Theme | Light · Dark · System | System | `theme` |
-| Security | Reveal amounts for | 30 s · 60 s · 2 min | 60 s | `revealSeconds` |
+| Security | Hide amounts | On · Off | On | `hideAmounts`. Turning it off asks for biometrics |
 | Security | Lock when idle | 2 · 5 · 10 min | 5 min | `idleLock` |
 | Security | Lock again after leaving | Right away · 1 min · 5 min | 1 min | `relockAfter` |
 | Security | Face ID for adding and deleting | Always on (info row) | | |

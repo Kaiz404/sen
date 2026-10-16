@@ -41,6 +41,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D24 | Motion levels | A live policy hook. Calm and Off compiled from the data |
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
+| D27 | Showing amounts | One saved setting, shown until hidden. Showing asks for biometrics |
 
 ---
 
@@ -229,7 +230,7 @@ The implementation is D23 to D26 and ARCHITECTURE.md › Motion.
 
 **Built.**
 1. Biometric unlock with every error mapped, plus the route guard.
-2. Masking and the timed reveal.
+2. Masking and the biometric show toggle (D27).
 3. zod at every boundary.
 4. Step-up on add and delete.
 5. Encryption at rest.
@@ -397,7 +398,7 @@ The phases are in [PLAN.md](PLAN.md).
 **Why.**
 - **Live setting.** `useReducedMotion()` is read once at startup and never updates (V).
 - **Calm.** `ReduceMotion.System` makes animations jump to their end, so DESIGN's 150 ms Calm crossfade has to come from the data.
-- **The ring.** It would empty instantly under reduced motion, so it uses `ReduceMotion.Never`.
+- **Timers.** The lockout cool-down would end instantly under reduced motion, so it uses `ReduceMotion.Never`.
 - **CSS transitions.** They ignore reduced motion, so components zero their duration from the same policy.
 
 ## D25. Animated components: shared primitives
@@ -426,3 +427,17 @@ The phases are in [PLAN.md](PLAN.md).
 - **Motion feel and smoothness.** Judged by eye. Maestro records video for the owner, and the Perf Monitor runs on a release build on the phone. Flashlight over a Maestro flow is optional, as at Bluesky and Rainbow.
 
 **Watch out.** Keep the emulator's animation scales on. Reanimated reads a zero transition scale as reduced motion, so every moment would jump to its end.
+
+## D27. Showing amounts: one saved setting, not a timed reveal
+
+**Compared.**
+- A timed reveal. One biometric check shows amounts for 30 s to 2 min, with a countdown ring, and background re-masks.
+- A show toggle that lasts until the user hides amounts or the app locks.
+- One saved setting, `hideAmounts`, flipped from History or Settings. It survives lock and restart.
+
+**Why one saved setting.**
+- **The brief.** It asks for amounts masked by default and revealed with biometrics. All three meet it.
+- **Familiar.** A persistent hide-balances toggle is the common banking pattern (inferred, not surveyed). A timer that re-hides amounts mid-read fights the user.
+- **One state.** A reveal that outlasts lock and restart is the setting itself, so there is one value instead of a session state plus a preference.
+- **Security kept.** `hideAmounts` defaults to on. Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS.
+

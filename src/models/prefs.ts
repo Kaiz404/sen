@@ -8,7 +8,7 @@ function pref<S extends z.ZodType>(schema: S, fallback: z.infer<S>): Pref<S> {
 
 const TABLE = {
   theme: pref(z.enum(['light', 'dark', 'system']), 'system'),
-  revealSeconds: pref(z.union([z.literal(30), z.literal(60), z.literal(120)]), 60),
+  hideAmounts: pref(z.boolean(), true),
   idleLock: pref(z.union([z.literal(2), z.literal(5), z.literal(10)]), 5),
   relockAfter: pref(z.union([z.literal(0), z.literal(1), z.literal(5)]), 1),
   senMotion: pref(z.enum(['full', 'calm', 'off']), 'full'),

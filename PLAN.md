@@ -57,7 +57,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 
 - [x] zod schemas, the `Transaction` model with `source`, the money helpers (integer sen, the sign added by hand, split numerals, spoken amounts). Also `day`, `draft`, `errors` and the `PREFS` table. Evidence: `src/models/*.test.ts`.
 - [x] Theme tokens for light and dark from DESIGN.md, with typed Unistyles themes and type roles. Evidence: `src/theme/theme.test.ts` (every text token at 4.5:1 or more).
-- [x] Motion contracts in `src/motion/`: `tokens.ts` (the canvas easing curves, springs, durations), `policy.tsx` (`useMotionPolicy`, `<MotionPolicyRoot>`), `timeline.ts` (`kf`, `useLoopClock`), `countdown.ts` (`useSecondsLeft`, `useCountdownProgress`, `ringOffset`, `useRevealPhase`) and `threshold.ts` (`useThreshold`). Evidence: `src/motion/*.test.tsx`.
+- [x] Motion contracts in `src/motion/`: `tokens.ts` (the canvas easing curves, springs, durations), `policy.tsx` (`useMotionPolicy`, `<MotionPolicyRoot>`), `timeline.ts` (`kf`, `useLoopClock`), `countdown.ts` (`useSecondsLeft`; the reveal ring helpers were removed by D27) and `threshold.ts` (`useThreshold`). Evidence: `src/motion/*.test.tsx`.
 - [x] Sen's data in `src/features/sen/`: `channels.ts`, `poses.ts` and `art/` (geometry, `mat()`, `NODES`, `SVG_TREE`), ported from the canvas kit. Evidence: `poses.test.ts`, `art/nodes.test.ts`.
 - [x] `SenStatic` for every pose and tier, drawn from the shared node table. Evidence: `components/sen-static.test.tsx`.
 - [x] Every route stubbed under `Stack.Protected`, and the dev states route behind `__DEV__`. Evidence: `src/__tests__/guard.test.tsx`, `src/__tests__/lock-flow.test.tsx`.
@@ -71,10 +71,10 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 ## Phase 2. Foundations (three parallel lanes)
 
 **Lane 2a. Components and the states gallery.** Owns `src/components/` and `src/features/gallery/`.
-- [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone, Countdown, and `Amount` (coins for `null`, digits otherwise).
+- [ ] Key (Gesture Handler `Pressable`, face sliding onto a static shadow plate), Segmented (percent-translate pill), ReceiptSlip, Stamp, Tag, ToastHost, EnterOnce, Bone and `Amount` (coins for `null`, digits otherwise).
 - [ ] Show every pose and tier on the gallery (`?screen=sen&pose=&size=`). Phase 1 built `SenStatic`.
 - [ ] The gallery renders any screen state from fixtures.
-- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`. The Countdown label reads `0:10 LEFT` at 50 s.
+- **Unit.** A masked `Amount` renders no digits and is labelled "Amount hidden". `pressIn` moves a Key 4 px. Pressing "In" moves the pill to `100%`.
 - **Device.** Gallery screenshots of every component in light and dark. Maestro screenshots of all 12 poses at 32, 72 and 200 pt, compared side by side with the canvas boards and approved by the owner as baselines.
 
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
@@ -96,12 +96,12 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Owns.** `src/features/transactions/` (list, view models, reveal).
 
 - [ ] `buildHistoryRows()`, FlashList with sticky day tops, memoised rows, the month card, search, All/In/Out, pull-to-refresh with Sen spinning in the header, the offline banner and the full error.
-- [ ] Reveal through the revealed-only amounts map and `<RevealProgressProvider>`. The ring (`useCountdownProgress`, `ReduceMotion.Never`), the last 10 s (`useRevealPhase`) and re-mask, with data removed before the coins animate.
+- [ ] Show and hide through the revealed-only amounts map and `<RevealProgressProvider>`, driven by the `hideAmounts` pref. Showing prompts through `useStepUp('reveal')`. Hiding removes the data before the coins animate.
 - [ ] Spike R2. Insert a row under Today with FlashList's keep-scroll-position on, at the top and scrolled 400 px. Pick the setting that slides the row in without a jump.
 - [ ] Spike R3. Profile the reveal commit on a release build with 10k rows. Under 50 ms on the emulator, or switch to one animated view per amount.
 
 **Verify, unit.** 10k rows mount fewer than 60 row components. The list's `data` reference survives reveal. The masked tree has no seeded amount, totals included. Digit column 0 is mid-roll at 100 ms. Zero parent renders during the roll.
-**Verify, device.** Gallery states (loading, empty, offline, bad data) and the reveal flow: reveal, wait for expiry, coins come back.
+**Verify, device.** Gallery states (loading, empty, offline, bad data) and the show flow: show, lock, unlock, amounts still shown, hide, coins come back.
 **Verify, perf.** A Flashlight run on a release build with 10k rows hits 55 FPS or more. Unlock to first paint is 500 ms or less.
 
 ## Phase 4. Features (four parallel lanes)

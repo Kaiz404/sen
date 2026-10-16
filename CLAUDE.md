@@ -52,7 +52,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 - **Motion.**
   - Reanimated on the UI thread.
   - Sen's motion is data. Add or change a moment in `src/features/sen/moments/`, never as a hand-written worklet.
-  - Read the motion level only through `useMotionPolicy()`, never `useReducedMotion()`. Informational timers such as the countdown ring use `ReduceMotion.Never`.
+  - Read the motion level only through `useMotionPolicy()`, never `useReducedMotion()`. Informational timers such as the lockout cool-down use `ReduceMotion.Never`.
   - Only one Sen animates at a time, through the MotionDirector. No Sen inside a list row. No animation state in list rows.
   - Prove motion with `npm run test:motion` (literal values at start, midpoint and end), then the Maestro screenshot flow on settled screens. Never approve your own screenshot baselines. Keep the emulator's animation scales on.
 - **Versions.**
@@ -66,7 +66,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 
 - Work on `main` only. No branches, no PRs.
 - Commit small and often. The history is part of the submission. Every commit builds.
-- Messages are short and lower case, `type: what changed`. Examples: `feat: biometric lock`, `fix: reveal timer drift`, `docs: decision records`.
+- Messages are short and lower case, `type: what changed`. Examples: `feat: biometric lock`, `fix: lockout timer drift`, `docs: decision records`.
 - No AI attribution lines (no `Co-Authored-By`, no "Generated with") in commits.
 - Never commit secrets, `.env` files, keystores or `credentials.json`.
 

@@ -224,8 +224,9 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 
 **Masking (D6).**
 - **Masked queries.** They return `MaskedRow` and never select `amount_minor`. Masked totals return counts only.
-- **On reveal.** One query loads `id → amountMinor` for the loaded range, keyed `['tx','revealed',…]`. Rows read it through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
-- **On re-mask.** `removeQueries(['tx','revealed'])`.
+- **Shown or hidden.** The `hideAmounts` pref decides, not the session. It survives lock and restart. Showing goes through `useStepUp('reveal')`. Hiding never prompts.
+- **On show.** One query loads `id → amountMinor` for the loaded range, keyed `['tx','revealed',…]`. Rows read it through `useAmountView(id)`, which returns `null` while masked. The list's `data` never changes on reveal.
+- **On hide.** `removeQueries(['tx','revealed'])`. Lock also clears it with the whole cache.
 - **Honest limit.** While revealed, amounts sit in JS memory. While masked, no amount exists in JS.
 
 ## State
@@ -335,7 +336,7 @@ Protected routes, which include every sheet and the add flow, are unmounted. A d
 | --- | --- | --- |
 | `sen.db` (SQLCipher) | Bank rows, added rows, sync cursor, activity log | AES-256, whole file |
 | SecureStore `sen.dbKey.v1` | 32 random bytes as 64 hex characters, applied as a raw key (`PRAGMA key = "x'…'"`) so open skips PBKDF2 (V) | Keychain or Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY` |
-| MMKV `prefs` | theme, `revealSeconds`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
+| MMKV `prefs` | theme, `hideAmounts`, `idleLock`, `relockAfter`, `senMotion`, `haptics`, `demo.*` | None. Nothing sensitive |
 
 **Key.** Generated with `getRandomValues`. It is readable only while the phone is unlocked and is never restored to another device (V).
 
@@ -463,7 +464,7 @@ export function direct(s: DirectorState, e: DirectorEvent): [DirectorState, Comm
 - **`<MotionPolicyRoot>`.** Sets `ReducedMotionConfig` to `Never` in Full and `Always` otherwise. It is the live switch for every other worklet animation.
 - **Plumbing.** `src/motion/` can't import services, so the root layout reads the setting through `useSenMotionPreference()` from `@/features/settings` and passes it to `<MotionPolicyRoot preference>`. Without a root, as in a component test, `useMotionPolicy()` returns `'full'`.
 - **CSS transitions.** They ignore reduced motion (V), so components set their duration to 0 from the policy.
-- **Informational timers.** The countdown ring keeps running in every mode, using `ReduceMotion.Never`.
+- **Informational timers.** The lockout cool-down keeps counting in every mode, using `ReduceMotion.Never`.
 
 ### Animated components
 
@@ -472,7 +473,6 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Component | How it moves | Thread and renders | Test |
 | --- | --- | --- | --- |
 | Amount reveal | `<RevealProgressProvider>` holds one shared value. Each digit column has a `useAnimatedStyle` (`digitStyle(p, col)`) | UI. About 20 mounted rows render once when the amounts map arrives, then zero during the roll. The spike measured zero parent re-renders | `toHaveAnimatedStyle` at 100 ms. Commit counter |
-| Countdown ring and label | `useCountdownProgress(deadline)` with a linear `withTiming` and `ReduceMotion.Never`. The ring's offset is a pure `ringOffset()`. The label is a 1 Hz `useSecondsLeft`. `useRevealPhase` flips to `ending` at 10 s | UI ring. Only the label renders, once a second. Rows never subscribe | Pure maths test. Fake clock: `0:10 LEFT` at 50 s |
 | Press keys | Gesture Handler `Pressable` (immune to the Android fast-path press bug, V). The face slides 4 px onto a static ink shadow plate with a 90 ms CSS transition. No shadow animates | UI after one render | `pressIn` gives `translateY: 4` |
 | Segmented control | Absolute pill with a CSS transition on percent `translateX`. Nothing to measure | UI | Press "In" gives `translateX: '100%'` |
 | New row slide-in | `<EnterOnce>` mounts only for the just-added id, set by a store flag cleared at 900 ms. Recycled cells never replay it | UI | The wrapper exists for that id only |
@@ -484,7 +484,7 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
 | Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
 
-Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, `useCountdownProgress`, `ringOffset`, `useRevealPhase`), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf`, and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
+Files: `src/motion/` holds `tokens.ts` (easing, springs, durations, `cubicBezier` CSS ports), `policy.tsx`, `countdown.ts` (`useSecondsLeft`, for the lockout cool-down), `threshold.ts` (`useThreshold`) and `timeline.ts` (`kf`, and `useLoopClock`, a read-only clock derived from one linear run so laps never lose a frame). The components (`key`, `segmented`, `enter-once`, `skeleton`, `toast`, `countdown`) live in `src/components/`. Sen lives in `src/features/sen/` (`art/`, `channels.ts`, `poses.ts`, `timeline/`, `moments/`, `director/`, `components/`).
 
 ### Proving motion works
 
@@ -519,7 +519,7 @@ jest.mock('react-native-svg', () => {
 
 | Layer | What it proves | How |
 | --- | --- | --- |
-| Pure functions | Poses are valid (one mouth, one eye state). Wobble amplitudes, countdown and reveal maths, `digitStyle`, `ringOffset`, Calm and Off forms, the director's priority table | Plain Jest with literal expected numbers. This is the pattern Reanimated Carousel uses |
+| Pure functions | Poses are valid (one mouth, one eye state). Wobble amplitudes, countdown and reveal maths, `digitStyle`, Calm and Off forms, the director's priority table | Plain Jest with literal expected numbers. This is the pattern Reanimated Carousel uses |
 | Component, values at time t | For each interaction, the animated style or SVG prop at the start, one midpoint and the end. Examples: Unlock's face slide at 0, 160 and 1350 ms; digit column 0 at 100 ms; a key at `translateY: 4` on press | `toHaveAnimatedStyle` and `toHaveAnimatedProps` with literal values, written once from DESIGN.md's tables. This is the pattern in Reanimated's docs, Mattermost and Paper |
 | Component, behaviour | Only one Sen animates. Calm leaves the body still. Rows don't re-render during a reveal. The list's data survives reveal | Jest render counters and `toHaveAnimatedStyle` |
 | Device, flows | Unlock, reveal, add, delete and settings work end to end on the emulator | Maestro flows in `.maestro/`, with `waitForAnimationToEnd` before each assertion. Fingerprint through `adb -e emu finger touch 1` |
@@ -543,7 +543,7 @@ Sen has no server. Everything it protects is on the phone.
 | # | Threat | Controls | Where | How a reviewer sees it |
 | --- | --- | --- | --- | --- |
 | T1 | Someone holding the unlocked phone | Lock on launch, protected routes, step-up for every write, idle lock, re-lock after background | `app/_layout.tsx`, `features/auth/` | Kill and reopen: Lock. Delete: Face ID every time |
-| T2 | Shoulder surfing | Masked by default, reveal times out (30 s to 2 min) | `features/transactions/` | The ring counts down, then coins |
+| T2 | Shoulder surfing | Masked by default. Showing needs biometrics. Idle and re-lock windows still lock the app | `features/transactions/` | Coins until a biometric check |
 | T3 | App switcher snapshot | Privacy cover on `inactive` plus `enableAppSwitcherProtectionAsync` (iOS). FLAG_SECURE app-wide in release builds (Android) | `features/security/` | Open recents |
 | T4 | Screenshots and recording | FLAG_SECURE in release (Android). `usePreventScreenCapture` on sensitive screens (iOS 13+). Off in dev builds so agents can screenshot, with a test that release always guards | `features/security/screen-guard.ts` | Screenshot in the release APK: blocked |
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
@@ -559,8 +559,7 @@ Sen has no server. Everything it protects is on the phone.
 | Item | Why |
 | --- | --- |
 | A rooted or instrumented device | The step-up result is a JS boolean. A hooked runtime can skip it. A production app would bind the key to biometrics or verify a signed challenge on a server |
-| Amounts while revealed | They sit in JS memory, the share sheet and the screen reader tree. Masking protects the masked state |
-| Winding the device clock back | It extends a reveal. Background re-masks at once anyway |
+| Amounts while shown | They sit in JS memory, the share sheet and the screen reader tree, and they stay shown after the next unlock until the user hides them. Masking protects the hidden state |
 | Root or jailbreak detection, certificate pinning | Easily patched. No real server to pin |
 
 ## Tests (D16)
@@ -576,7 +575,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | List `data` reference unchanged across reveal and hide | same |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
 | Every state and event pair. `BACKGROUND` during `authenticating` is ignored | `features/auth/machine.test.ts` |
-| Re-lock window (59 s stays, 61 s locks), idle lock, reveal expiry | `features/auth/locks.test.ts` |
+| Re-lock window (59 s stays, 61 s locks), idle lock | `features/auth/locks.test.ts` |
 | Lock clears the cache, closes the database, drops the draft | `features/auth/session.test.ts` |
 | Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/use-step-up.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
