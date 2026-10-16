@@ -49,3 +49,10 @@ test('type roles scale em tracking to the size', () => {
     textTransform: 'uppercase',
   });
 });
+
+test('the plate on a pastel card is the same paper plate in both modes, and its text reads on it', () => {
+  const tokens = ['plate', 'plateInk', 'plateFaint', 'plateCredit'] as const;
+  expect(tokens.map((t) => dark[t])).toEqual(tokens.map((t) => light[t]));
+  for (const t of ['plateInk', 'plateFaint', 'plateCredit'] as const)
+    expect(contrast(dark[t], dark.plate)).toBeGreaterThanOrEqual(4.5);
+});
