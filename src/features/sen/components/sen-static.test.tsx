@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { SEN_COLORS } from '@/theme/colors';
 
 import { Sen } from '../index';
 
@@ -84,4 +85,20 @@ test('an unlabelled Sen is decoration, hidden from screen readers', async () => 
   expect(screen.queryByRole('image')).toBeNull();
   expect(screen.queryByTestId('sen-lk')).toBeNull();
   expect(screen.getByTestId('sen-lk', hidden)).toBeTruthy();
+});
+
+test('the coin back is the bunga flower: five deep mint petals, a lemon eye, a thin ring and no numeral', async () => {
+  await render(<Sen id="test" pose="idle" size={200} />);
+
+  const back = screen.getByTestId('sen-tl', hidden);
+  const kids = back.children as unknown as { type: string; props: Record<string, unknown> }[];
+  const paths = kids.filter((k) => k.type === 'Path');
+  expect(paths).toHaveLength(5);
+  paths.forEach((p) => expect(p.props).toHaveProperty('fill', SEN_COLORS.feature));
+  expect(new Set(paths.map((p) => p.props.d)).size).toBe(5);
+  expect(paths[0]?.props.d).toBe('M-26.2 -77.4A46.2 68.2 0 0 1 66.2 -77.4A46.2 68.2 0 0 1 -26.2 -77.4Z');
+
+  const circles = kids.filter((k) => k.type === 'Circle');
+  expect(circles.map((c) => c.props.r)).toEqual([262, 222, 176, 28.6, 12.1]);
+  expect(kids.some((k) => k.type !== 'Path' && k.type !== 'Circle')).toBe(false);
 });

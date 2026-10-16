@@ -595,7 +595,7 @@ The rig copies the boards' structure (`design/MAX-Library.dc.html`, `design/MAX-
 - **Shared node code.** Both render from the same node functions (`art/nodes.ts`), so the static and animated drawings can't drift.
   - `NODES` gives each part its declared channels and a worklet `read(frame, unit)`. A test calls each `read` through a recording Proxy and checks it reads exactly its channels, because a mapper wakes for every shared value it captures.
   - `SVG_TREE` holds the coin's nesting and draw order as data, in the boards' order: rim and face, cheeks, the clipped `lk` (eyes, mouths, shades), the cap, then the paws. `treeFor(tier)` drops cheeks, mouths, paws and held props at the face tier.
-  - Geometry in `art/geometry.ts` is copied from kit.py, and the tails face, edge pill and accents from MAX-Library and MAX-Moments.
+  - Geometry in `art/geometry.ts` is copied from kit.py, and the Bunga back (DESIGN › Owner overrides), edge pill and accents from MAX-Library and MAX-Moments.
 - **Never in a row.** Sen never goes inside a FlashList row.
 - **Viewbox.** The Svg uses a 680-unit box so raised paws and tilts aren't clipped.
 

@@ -95,6 +95,7 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 | Date | Board | Override |
 | --- | --- | --- |
 | 2026-10-17 | MAX-Moments `.M-lockout` | Sen never spins edge-on into the pill. It naps in the `asleep` pose and breathes for the whole lockout. The owner found the edge-on hold odd |
+| 2026-10-17 | MAX `.tl` | The coin back is Bunga (option B on `SF-CoinBack-Options`): a five-petal flower with a lemon eye, in a thin ring, no numeral. It replaces the plus-and-bar tails. It is symmetric, so the mirror leaves it unchanged. Currency Act 2020 s.19 rules out anything that resembles a Malaysian coin, so no numeral, no crest, no denomination |
 
 Poses come from kit.py, MAX-Moments' static tiles (`.M-err`, `.M-last`, `.M-lockout`, `.M-lock`) and the held frames of MAX-Library's primitives (`.L-peek`, `.L-slide`, `.L-shrug`, `.L-squint`). MAX-Library holds no pose sheet.
 
@@ -105,6 +106,7 @@ Rig units: 1 unit = size / 600 pt. Origin at the face centre.
 | Part | Board | Shape | Notes |
 | --- | --- | --- | --- |
 | Rim | | Circle r 262 at (10, 16), deep mint | The coin edge. The offset gives a hint of depth |
+| Back | `.tl` (owner override) | Ring r 176 stroked 12, five petals (ellipses rx 46.2 ry 68.2, 81.4 from the centre, every 72°) as paths, a lemon eye r 28.6 and a deep mint dot r 12.1, all about (0, 4) | Seen mid-spin only, while `cos θ < 0`. Drawn at x = 20 because `sp` mirrors about x = 10 |
 | Face | | Circle r 222, lemon | Fixed |
 | Face group | `.lk` | Eyes, mouth and sunglasses | Slides across the disc. Clipped to the face circle so it can tuck behind the rim |
 | Eyes | `.el` › `.elb`, `.elc` | Three layers per eye. The pose layer (offset and scale) holds an open ellipse rx 14 ry 20 at (∓72, −38) and a closed arc | A pose holds its eye shape on the pose layer. Blinks, eye-close, peek cracks and squints run on the open and shut layers (scale and opacity), so they play over any held pose. The closed arc scales about its own box centre (∓72, −34) |

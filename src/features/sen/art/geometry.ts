@@ -74,12 +74,31 @@ export const RIM: Shape = { kind: 'circle', cx: 10, cy: 16, r: 262, fill: C.rim 
 export const FACE: Shape = { kind: 'circle', cx: 0, cy: 0, r: 222, fill: C.face };
 export const FACE_CLIP = { cx: 0, cy: 0, r: 222 } as const;
 
+/** The sp node mirrors the coin about x = 10, so the back is drawn at 20 to read centred at 0. */
+const BUNGA = { cx: 20, cy: 4, rx: 46.2, ry: 68.2, lift: 81.4 } as const;
+
+function petal(turns: number): Shape {
+  const { cx, cy, rx, ry, lift } = BUNGA;
+  const rad = (turns * 72 * Math.PI) / 180;
+  const ux = Math.cos(rad);
+  const uy = Math.sin(rad);
+  const mx = cx + lift * Math.sin(rad);
+  const my = cy - lift * Math.cos(rad);
+  const n = (v: number) => Math.round(v * 10) / 10;
+  const from = `${n(mx - rx * ux)} ${n(my - rx * uy)}`;
+  const to = `${n(mx + rx * ux)} ${n(my + rx * uy)}`;
+  const arc = `A${rx} ${ry} ${turns * 72} 0 1`;
+  return { kind: 'path', d: `M${from}${arc} ${to}${arc} ${from}Z`, fill: C.feature };
+}
+
+/** Bunga: five petals around a lemon eye in a thin ring. No numeral, nothing a coin could be mistaken for. */
 export const TAILS: readonly Shape[] = [
   { kind: 'circle', cx: 10, cy: 16, r: 262, fill: C.rim },
   { kind: 'circle', cx: 20, cy: 0, r: 222, fill: C.face },
-  { kind: 'circle', cx: 20, cy: 0, r: 150, stroke: C.feature, strokeWidth: 18 },
-  { kind: 'rect', x: 4, y: -84, width: 32, height: 168, rx: 16, fill: C.feature },
-  { kind: 'rect', x: 4, y: -84, width: 64, height: 32, rx: 16, fill: C.feature },
+  { kind: 'circle', cx: 20, cy: 0, r: 176, stroke: C.feature, strokeWidth: 12 },
+  ...[0, 1, 2, 3, 4].map(petal),
+  { kind: 'circle', cx: 20, cy: 4, r: 28.6, fill: C.face },
+  { kind: 'circle', cx: 20, cy: 4, r: 12.1, fill: C.feature },
 ];
 export const EDGE: Shape = {
   kind: 'rect',
