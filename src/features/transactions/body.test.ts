@@ -20,7 +20,11 @@ test.each<[string, Partial<BodyInput>, string]>([
   ['the first sync failed', { synced: false, sync: offline }, 'failed'],
   ['synced and nothing there', {}, 'empty'],
   ['a search with no match', { filtered: true }, 'no-results'],
-  ['a search with no match after a failed refresh', { filtered: true, sync: offline }, 'no-results'],
+  [
+    'a search with no match after a failed refresh',
+    { filtered: true, sync: offline },
+    'no-results',
+  ],
   ['rows, after a failed refresh', { rows: LIST, sync: offline }, 'list'],
   ['rows, while the first sync still runs', { rows: LIST, synced: false, sync: running }, 'list'],
 ])('%s shows %s', (_name, input, expected) => {

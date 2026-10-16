@@ -57,6 +57,7 @@ test('a row view shows a tag in place of its category, and has no amount', () =>
 
   expect(toRowView(lunch!)).toEqual({
     id: 'm-board-lunch',
+    postedAt: '2026-10-15T05:42:00.000Z',
     title: 'Lunch with Hafiz, cash',
     time: '1:42 pm',
     detail: null,

@@ -31,16 +31,24 @@ export type BodyInput = {
   readonly filtered: boolean;
 };
 
-const syncFailure = (sync: SyncView): SyncFailure | null =>
-  sync.kind === 'failed' && sync.error.kind !== 'invalid_data' && sync.error.kind !== 'db_reset'
-    ? sync.error
-    : null;
+function syncFailure(sync: SyncView): SyncFailure | null {
+  if (sync.kind !== 'failed') return null;
+  switch (sync.error.kind) {
+    case 'offline':
+    case 'timeout':
+    case 'server':
+      return sync.error;
+    default:
+      return null;
+  }
+}
 
 export function historyBody({ rows, synced, sync, filtered }: BodyInput): HistoryBody {
   if (rows === undefined) return { kind: 'loading' };
   if (rows.items.length > 0) return { kind: 'list', rows };
   const failure = syncFailure(sync);
-  if (synced !== true) return failure === null ? { kind: 'loading' } : { kind: 'failed', error: failure };
+  if (synced !== true)
+    return failure === null ? { kind: 'loading' } : { kind: 'failed', error: failure };
   if (filtered) return { kind: 'no-results' };
   return failure === null ? { kind: 'empty' } : { kind: 'failed', error: failure };
 }

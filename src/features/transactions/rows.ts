@@ -9,6 +9,7 @@ export type RowTag = 'pending' | 'added';
 /** What one row shows. Built from a masked row, so it has no amount to carry. */
 export type TxRowView = {
   readonly id: TxId;
+  readonly postedAt: Instant;
   readonly title: string;
   readonly time: string;
   /** The category line. Null when a tag takes its place. */
@@ -31,7 +32,7 @@ export type HistoryItem =
 
 export type HistoryRows = {
   readonly items: readonly HistoryItem[];
-  readonly sticky: readonly number[];
+  readonly sticky: number[];
 };
 
 const GLYPH: Readonly<Record<CategoryId, { readonly icon: IconName; readonly tone: number }>> = {
@@ -115,6 +116,15 @@ function hash(text: string): number {
   return Math.abs(h);
 }
 
+/** Whether a row sorts after `after`, the newest row before a refresh, and so just arrived. */
+export function isArrival(
+  after: { readonly postedAt: Instant; readonly id: TxId } | null,
+  row: { readonly postedAt: Instant; readonly id: TxId },
+): boolean {
+  if (after === null) return false;
+  return row.postedAt > after.postedAt || (row.postedAt === after.postedAt && row.id > after.id);
+}
+
 const views = new WeakMap<MaskedRow, TxRowView>();
 
 /** One view per row object, so a row that comes back from the cache unchanged keeps its view and skips a render. */
@@ -126,13 +136,13 @@ export function toRowView(row: MaskedRow): TxRowView {
   const glyph = GLYPH[row.category];
   const view: TxRowView = {
     id: row.id,
+    postedAt: row.postedAt,
     title: row.description,
     time: clockText(row.postedAt),
     detail: tag === null ? detailFor(row) : null,
     tag,
     direction: row.type,
-    icon:
-      row.category === 'transfer' && row.type === 'debit' ? 'bank-transfer-out' : glyph.icon,
+    icon: row.category === 'transfer' && row.type === 'debit' ? 'bank-transfer-out' : glyph.icon,
     tone: glyph.tone,
     shape: hash(row.id) % GLYPH_SHAPES,
   };
