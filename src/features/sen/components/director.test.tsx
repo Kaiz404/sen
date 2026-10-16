@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
-import { playMoment, senGate } from '../director/store';
+import { playMoment, senGate, senScroll } from '../director/store';
 import { Sen, useSenAppGate } from '../index';
 
 const hidden = { includeHiddenElements: true };
@@ -182,5 +182,23 @@ test('in the background nothing plays, and back in front Sen moves again', async
   await appGoes('inactive');
   await act(() => playMoment('a', 'glance'));
   await at(300);
+  expect(faceX('a')).toBe(-22);
+});
+
+test('a scroll the app leaves mid-fling no longer holds Sen once the app is back', async () => {
+  function Gated() {
+    useSenAppGate();
+    return <TwoSens />;
+  }
+  await render(<Gated />);
+  const appGoes = (state: 'background' | 'active') =>
+    act(() => jest.mocked(AppState.addEventListener).mock.lastCall?.[1](state));
+
+  await act(() => senScroll(true));
+  await appGoes('background');
+  await appGoes('active');
+  await act(() => playMoment('a', 'glance'));
+  await at(300);
+
   expect(faceX('a')).toBe(-22);
 });

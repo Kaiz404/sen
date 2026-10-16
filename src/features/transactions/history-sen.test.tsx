@@ -126,3 +126,21 @@ test('the month card’s Sen holds its blinks while the list scrolls, and blinks
   expect(await shutDuring(9000)).toBe(true);
   jest.restoreAllMocks();
 });
+
+test('a History that unmounts mid-fling leaves Sen free to move on the next screen', async () => {
+  const first = await render(
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
+  await fireEvent(screen.getByTestId('history-list'), 'scrollBeginDrag');
+  await fireEvent(screen.getByTestId('history-list'), 'momentumScrollBegin');
+  await first.unmount();
+
+  await renderHistory();
+  await fireEvent.press(screen.getByRole('button', { name: 'Show amounts' }));
+  await at(780);
+
+  expect(face()).toEqual([18, -10]);
+});

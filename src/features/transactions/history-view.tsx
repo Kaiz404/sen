@@ -1,12 +1,12 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { EnterOnce } from '@/components/enter-once';
 import { Key } from '@/components/key';
 import type { Biometric, DbResetReason } from '@/features/auth';
-import { Sen, senScroll } from '@/features/sen';
+import { releaseSenScroll, Sen, senScroll } from '@/features/sen';
 import type { DayKey, Instant } from '@/models/day';
 import type { TxId } from '@/models/transaction';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
@@ -82,6 +82,9 @@ const NOTICE: Readonly<Record<DbResetReason, string>> = {
 export function HistoryView(props: HistoryViewProps): ReactNode {
   const { body, search, flow, actions, arrival, banner } = props;
   const searching = search.trim() !== '';
+  const listShown = body.kind !== 'failed';
+  // The list can go mid-fling, to a lock or to the full error, before its end event reopens the gate.
+  useEffect(() => (listShown ? releaseSenScroll : undefined), [listShown]);
   const netLabel = searching ? 'MATCHES' : NET_LABEL[flow];
 
   const renderItem = ({ item }: ListRenderItemInfo<HistoryItem>) => {

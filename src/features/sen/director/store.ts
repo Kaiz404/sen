@@ -74,3 +74,12 @@ export function senScroll(scrolling: boolean): void {
       SCROLL_RESUME_MS,
     );
 }
+
+/**
+ * Opens the scroll gate now. A list that unmounts mid-fling, or an app that leaves during one, never
+ * sends the end event, and the gate would stay shut for every Sen.
+ */
+export function releaseSenScroll(): void {
+  clearTimeout(resume);
+  dispatch({ type: 'gate', patch: { scroll: false } });
+}
