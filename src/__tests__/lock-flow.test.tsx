@@ -52,7 +52,10 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
 
   authenticate.mockResolvedValueOnce({ success: true });
   await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
-  expect(await screen.findByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Unlocked' })).toBeDisabled();
+  expect(
+    await screen.findByRole('button', { name: 'Add a transaction' }, { timeout: 3000 }),
+  ).toBeOnTheScreen();
   expect(authenticate).toHaveBeenCalledTimes(2);
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',

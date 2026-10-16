@@ -4,8 +4,9 @@ import { Alert, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
-import { Sen } from '@/features/sen';
+import { Sen, type SenProps, UNLOCK_HOLD } from '@/features/sen';
 import { useSecondsLeft } from '@/motion/countdown';
+import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
 import { useAmountsHidden } from '../amounts';
@@ -16,14 +17,26 @@ import { afterPrompt, initialView, type PromptView } from '../prompt-view';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Brand, Hero, Note, NoteCard, Notice, ProfileRow, TextLink } from './parts';
+import { type PromptAnswers, usePromptMoments } from './prompt-moments';
 
 export type LockState =
-  PromptView | { readonly kind: 'checking' } | { readonly kind: 'signingOut' };
+  | PromptView
+  | { readonly kind: 'checking' }
+  | { readonly kind: 'signingOut' }
+  | { readonly kind: 'unlocked' };
+
+const CHECKING: LockState = { kind: 'checking' };
 
 const FROM_SESSION: Partial<Record<Session['status'], LockState>> = {
-  authenticating: { kind: 'checking' },
+  authenticating: CHECKING,
+  arriving: { kind: 'unlocked' },
   signingOut: { kind: 'signingOut' },
 };
+
+/** Lock's Sen, the hero's and the napping one, which never show together. */
+const LOCK_SEN = 'lock';
+
+const ANSWERS: PromptAnswers = { unlocked: 'unlock', mismatch: 'authFailed', lockout: 'lockout' };
 
 export type LockViewProps = {
   readonly state: LockState;
@@ -38,10 +51,17 @@ export function LockScreen(): ReactNode {
   const support = useBiometric();
   const status = useSessionStatus();
   const amountsHidden = useAmountsHidden();
+  const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
+  // Holds "checking" until the answer lands, so the view moves from checking to the answer in one
+  // step and Sen plays the answer's moment.
+  const [asking, setAsking] = useState(false);
 
   const onUnlock = () => {
-    void unlock().then((outcome) => {
+    if (asking) return;
+    setAsking(true);
+    void unlock(UNLOCK_HOLD[level]).then((outcome) => {
+      setAsking(false);
       if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
     });
   };
@@ -58,7 +78,7 @@ export function LockScreen(): ReactNode {
 
   return (
     <LockView
-      state={FROM_SESSION[status] ?? view}
+      state={FROM_SESSION[status] ?? (asking ? CHECKING : view)}
       biometric={support.kind}
       amountsHidden={amountsHidden}
       onUnlock={onUnlock}
@@ -80,6 +100,7 @@ export function LockView({
   const { name, icon } = copy;
   const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
   const shown: LockState = state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
+  usePromptMoments(LOCK_SEN, shown.kind, ANSWERS);
   if (shown.kind === 'lockout')
     return (
       <Lockout
@@ -91,6 +112,7 @@ export function LockView({
     );
 
   const signingOut = shown.kind === 'signingOut';
+  const unlocked = shown.kind === 'unlocked';
   const unlockKey = (label: string, keyIcon = icon, onPress = onUnlock) => (
     <Key
       testID="unlock"
@@ -98,7 +120,7 @@ export function LockView({
       size="xlarge"
       icon={keyIcon}
       label={label}
-      disabled={shown.kind === 'checking' || signingOut}
+      disabled={shown.kind === 'checking' || signingOut || unlocked}
       onPress={onPress}
     />
   );
@@ -108,7 +130,7 @@ export function LockView({
       size="medium"
       icon="lock-outline"
       label="Use device passcode"
-      disabled={signingOut}
+      disabled={signingOut || unlocked}
       onPress={onUnlock}
     />
   );
@@ -118,10 +140,11 @@ export function LockView({
       case 'idle':
       case 'checking':
       case 'signingOut':
+      case 'unlocked':
         return (
           <>
             <ProfileRow />
-            {unlockKey(shown.kind === 'checking' ? "Checking it's you" : `Unlock with ${name}`)}
+            {unlockKey(UNLOCK_LABEL[shown.kind] ?? `Unlock with ${name}`)}
             {passcode}
             <Note text={amountsNote(amountsHidden)} />
           </>
@@ -165,13 +188,18 @@ export function LockView({
     }
   })();
 
+  const hero = HERO[shown.kind](copy);
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <Hero kind="lock" {...HERO[shown.kind](copy)} />
+      <Hero kind="lock" {...hero} sen={{ ...hero.sen, id: LOCK_SEN }} />
       <View style={styles.actions}>
         {body}
-        <TextLink label="Not you? Start again" disabled={signingOut} onPress={onStartAgain} />
+        <TextLink
+          label="Not you? Start again"
+          disabled={signingOut || unlocked}
+          onPress={onStartAgain}
+        />
       </View>
     </View>
   );
@@ -209,7 +237,7 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
         <Text style={styles.cooldownCaption}>TRY {name.toUpperCase()} AGAIN IN</Text>
         <Text style={styles.clock}>{clock(secondsLeft)}</Text>
         <View style={styles.napping}>
-          <Sen pose="asleep" size={150} />
+          <Sen id={LOCK_SEN} pose="asleep" size={150} />
         </View>
       </View>
       <View style={styles.lockoutKeys}>
@@ -237,7 +265,14 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
   );
 }
 
-type HeroCopy = Pick<Parameters<typeof Hero>[0], 'title' | 'body' | 'sen'>;
+type HeroCopy = Pick<Parameters<typeof Hero>[0], 'title' | 'body'> & {
+  readonly sen: Omit<SenProps, 'size' | 'id'>;
+};
+
+const UNLOCK_LABEL: Partial<Record<LockState['kind'], string>> = {
+  checking: "Checking it's you",
+  unlocked: 'Unlocked',
+};
 
 const IDLE_HERO: HeroCopy = {
   title: ['Welcome', 'back.'],
@@ -250,6 +285,10 @@ const HERO: Readonly<
 > = {
   idle: () => IDLE_HERO,
   signingOut: () => IDLE_HERO,
+  unlocked: () => ({
+    ...IDLE_HERO,
+    sen: { pose: 'happy', label: "Sen, happy it's you" },
+  }),
   checking: () => ({
     title: ['Welcome', 'back.'],
     body: 'Sen opens one eye while your phone checks.',

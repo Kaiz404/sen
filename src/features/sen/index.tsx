@@ -13,5 +13,6 @@ export type { SenProps } from './sen-props';
 export { POSE_IDS, PROP_IDS, type PoseId, type PropId } from './poses';
 export { playMoment, senGate, senScroll, stopMoment } from './director/store';
 export { MOMENT_IDS, type MomentId } from './timeline/types';
+export { UNLOCK_HOLD } from './moments/amounts';
 export { type LaunchTarget, SenLaunch } from './components/sen-launch';
 export { SEN_STATES } from './states';

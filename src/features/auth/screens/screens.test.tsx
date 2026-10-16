@@ -140,6 +140,8 @@ test('the first-run primer turns on the fingerprint and creates the vault', asyn
   await render(<PrimerScreen />);
 
   await fireEvent.press(screen.getByRole('button', { name: 'Turn on fingerprint' }));
+  expect(session()).toEqual({ status: 'arriving', purpose: 'setup', since: 0, db });
+  await act(() => jest.advanceTimersByTime(1370));
 
   expect(session()).toEqual({ status: 'unlocked', since: 0, db });
 });

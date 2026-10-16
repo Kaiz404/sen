@@ -7,8 +7,9 @@ import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type IconName, Key } from '@/components/key';
-import { Sen } from '@/features/sen';
+import { Sen, UNLOCK_HOLD } from '@/features/sen';
 import { useSecondsLeft } from '@/motion/countdown';
+import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
 import { useAmountsHidden } from '../amounts';
@@ -18,8 +19,15 @@ import { afterPrompt, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings } from './device-settings';
 import { Notice } from './parts';
+import { type PromptAnswers, usePromptMoments } from './prompt-moments';
 
-export type PrimerState = PromptView | { readonly kind: 'checking' };
+export type PrimerState =
+  PromptView | { readonly kind: 'checking' } | { readonly kind: 'unlocked' };
+
+const PRIMER_SEN = 'primer';
+
+/** The primer's Sen keeps peeking through a lockout: the notice says it. */
+const ANSWERS: PromptAnswers = { unlocked: 'unlock', mismatch: 'authFailed' };
 
 export type PrimerViewProps = {
   readonly state: PrimerState;
@@ -33,19 +41,31 @@ export type PrimerViewProps = {
 export function PrimerScreen(): ReactNode {
   const router = useRouter();
   const support = useBiometric();
-  const checking = useSessionStatus() === 'authenticating';
+  const status = useSessionStatus();
   const amountsHidden = useAmountsHidden();
+  const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.ready));
+  const [asking, setAsking] = useState(false);
 
   const onTurnOn = () => {
-    void unlock().then((outcome) => {
+    if (asking) return;
+    setAsking(true);
+    void unlock(UNLOCK_HOLD[level]).then((outcome) => {
+      setAsking(false);
       if (!outcome.ok) setView((prev) => afterPrompt(prev, outcome.reason, Date.now()));
     });
   };
 
+  const state: PrimerState =
+    status === 'arriving'
+      ? { kind: 'unlocked' }
+      : status === 'authenticating' || asking
+        ? { kind: 'checking' }
+        : view;
+
   return (
     <PrimerView
-      state={checking ? { kind: 'checking' } : view}
+      state={state}
       biometric={support.kind}
       amountsHidden={amountsHidden}
       onTurnOn={onTurnOn}
@@ -71,6 +91,8 @@ export function PrimerView({
     state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
   const notice = noticeOf(shown, copy, secondsLeft);
   const settings = shown.kind === 'off' && shown.canOpenSettings;
+  const unlocked = shown.kind === 'unlocked';
+  usePromptMoments(PRIMER_SEN, shown.kind, ANSWERS);
 
   return (
     <View style={styles.screen}>
@@ -93,7 +115,14 @@ export function PrimerView({
           <MaterialCommunityIcons name={icon} size={64} color={theme.colors.lemon} />
         </View>
         <View style={styles.sen}>
-          <Sen pose="peek" size={210} label={`Sen, peeking one eye open at the ${name} frame`} />
+          <Sen
+            id={PRIMER_SEN}
+            pose={unlocked ? 'happy' : 'peek'}
+            size={210}
+            label={
+              unlocked ? `Sen, happy ${name} is on` : `Sen, peeking one eye open at the ${name} frame`
+            }
+          />
         </View>
       </View>
       <View style={styles.copy}>
@@ -133,12 +162,24 @@ export function PrimerView({
             tone="lemon"
             size="xlarge"
             icon={icon}
-            label={shown.kind === 'checking' ? "Checking it's you" : `Turn on ${name}`}
-            disabled={shown.kind === 'checking' || shown.kind === 'lockout'}
+            label={
+              shown.kind === 'checking'
+                ? "Checking it's you"
+                : unlocked
+                  ? `${copy.title} is on`
+                  : `Turn on ${name}`
+            }
+            disabled={shown.kind === 'checking' || shown.kind === 'lockout' || unlocked}
             onPress={onTurnOn}
           />
         )}
-        <Key tone="outline" size="medium" label="Use device passcode instead" onPress={onTurnOn} />
+        <Key
+          tone="outline"
+          size="medium"
+          label="Use device passcode instead"
+          disabled={unlocked}
+          onPress={onTurnOn}
+        />
       </View>
     </View>
   );
@@ -152,6 +193,7 @@ function noticeOf(
   switch (state.kind) {
     case 'idle':
     case 'checking':
+    case 'unlocked':
       return null;
     case 'mismatch':
       return triesLeftText(state.triesLeft, name);

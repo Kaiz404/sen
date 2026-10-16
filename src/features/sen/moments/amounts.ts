@@ -1,3 +1,5 @@
+import type { MotionLevel } from '@/motion/policy';
+
 import { poseFrame } from '../poses';
 import type { Moment } from '../timeline/types';
 import { moments, settleInto, startFrom, without } from './build';
@@ -17,6 +19,17 @@ export const unlock: Moment = {
     { at: 160, haptic: 'unlock' },
     { at: 160, accents: true },
   ],
+};
+
+/**
+ * How long the screen that asked for the check stays after it passes, so Sen's Unlock shows before
+ * History. Full plays the whole moment. Calm and Off hold the happy pose 400 ms, as the launch holds
+ * its rest frame.
+ */
+export const UNLOCK_HOLD: Readonly<Record<MotionLevel, number>> = {
+  full: unlock.dur,
+  calm: 400,
+  off: 400,
 };
 
 /**
