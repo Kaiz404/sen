@@ -578,7 +578,7 @@ Shared primitives are built once, so no agent re-implements a pattern.
 | Toasts, offline banner | One `<ToastHost>` at the root with module-level `FadeInDown` and `FadeOutDown`, keyed by id. Features call `toast.show({ title, detail?, action?, ttl?, mark? })`, which returns an id, and `toast.hide(id?)`. One toast at a time: a new one replaces the current one and its timer. The default is 6000 ms. A bar drains over the toast's life at every motion level, because it shows time left rather than decorating. `mark` takes a face-only `<Sen>` | UI | Undo runs once and dismisses. Gone at 6000 ms, not 5999. A replaced toast's timer can't hide the new one (`toast.test.tsx`) |
 | Pull-to-refresh | Phase 1 is FlashList `refreshing` with Sen in an overlay slot. Phase 2, optional on Android, is a `Gesture.Pan` plus `Gesture.Native` with a `pull` shared value and `useThreshold` for the haptic | UI | `fireEvent(list, 'refresh')` calls the sync |
 | Skeleton | `<Bone width height radius?>` with one CSS keyframe band, 1.4 s linear, in Full only. Calm and Off draw still bones | UI, no renders | Pure `bandStyle(level)` test (`bone.test.tsx`) |
-| Launch | MAL2 (`design/MAL-Timelines.dc.html`). One loop clock, `useLoopClock(4200)`. Letters, drop and fade all derive from it through `kf(t, stops, values)`. Hands off to Sen's rig. The native splash is plain ink, hidden on first layout | UI, zero renders | Fake timers at key times |
+| Launch | MAL2 (`design/MAL2-Loading.dc.html`, `design/MAL-Timelines.dc.html`). One loop clock, `useLoopClock(4200)`. Letters, drop and fade all derive from it through `kf(t, stops, values, eases)`, with MAL2's per-segment curves. The native splash equals frame 0: "Sen" on ink at the same scale and position, hidden in the loader's first `onLayout`. On Android 12 and later the system splash shows only a centred icon, so it is a lemon coin that crossfades into frame 0. Lock renders under the loader from frame 0. The handoff (2400 to 3110 ms) grows Sen into Lock's Sen at the same box while the ink panel shrinks into Lock's hero, and the loader unmounts at 3110 | UI, zero renders | Fake timers at key times |
 | Theme switch | Unistyles, instant, no re-render | Native | Device render counter |
 | Privacy cover | iOS: a plain conditional cover on `inactive`, no enter animation. Android: FLAG_SECURE, because Android never emits `inactive` (V) | | iOS: RNTL. Android: recents screenshot |
 | Sheets, modal, pushes | Native stack. Fade in Calm and Off | Native | Device only |
@@ -605,6 +605,8 @@ This follows what Reanimated's docs and large open-source apps actually do. A su
 - **By eye.** Motion quality and smoothness are judged on a release build on a real phone.
 
 No surveyed app pixel-tests frames mid-animation or gates animation FPS in CI, so Sen doesn't either.
+
+**Board to milliseconds.** `python3 -I scripts/board-keyframes.py design/MAX-Moments.dc.html` prints every CSS animation on a board as a timeline: the selector, the keyframes' duration and delay, then each stop in ms with the easing that runs from it and its values. Easings with a token print by the token's name (`out`, `hopIn`). Moments are transcribed from this output, and their tests' literal values come from it.
 
 **Jest setup** (V, spike, and the same as Reanimated's own tests).
 
