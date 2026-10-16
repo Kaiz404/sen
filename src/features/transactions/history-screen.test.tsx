@@ -24,6 +24,10 @@ let mockFocused = true;
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 const mockPush = jest.fn();
+const mockShowAmounts = jest.fn(async () => {
+  jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
+  return { ok: true };
+});
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
   useIsFocused: () => mockFocused,
@@ -32,10 +36,7 @@ jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
-  showAmounts: async () => {
-    jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
-    return { ok: true };
-  },
+  showAmounts: () => mockShowAmounts(),
 }));
 
 const NOW = new Date('2026-10-15T06:00:00.000Z');
@@ -309,4 +310,29 @@ test.each([
     ),
   ).toBeOnTheScreen();
   sessionStore.setState({ dbReset: null });
+});
+
+test.each([
+  ['lockout', 'Too many tries. Use your device passcode.'],
+  ['not_set_up', 'Fingerprint is off. Your device passcode still works.'],
+  ['unknown', 'Something went wrong with the check. Try again.'],
+] as const)('Show amounts refused for %s says why', async (reason, title) => {
+  const shown = jest.spyOn(toast, 'show');
+  mockShowAmounts.mockResolvedValueOnce({ ok: false, reason } as never);
+  await renderHistory();
+  await fireEvent.press(await screen.findByRole('button', { name: 'Show amounts' }));
+
+  await waitFor(() => expect(shown).toHaveBeenCalledWith({ title }));
+  shown.mockRestore();
+});
+
+test('Show amounts cancelled stays silent', async () => {
+  const shown = jest.spyOn(toast, 'show');
+  mockShowAmounts.mockResolvedValueOnce({ ok: false, reason: 'cancelled' } as never);
+  await renderHistory();
+  await fireEvent.press(await screen.findByRole('button', { name: 'Show amounts' }));
+  await act(() => Promise.resolve());
+
+  expect(shown).not.toHaveBeenCalled();
+  shown.mockRestore();
 });

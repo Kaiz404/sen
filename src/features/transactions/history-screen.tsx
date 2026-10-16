@@ -3,10 +3,13 @@ import { type ReactNode, useDeferredValue, useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useStore } from 'zustand';
 
+import { toast } from '@/components/toast';
 import {
+  BIOMETRIC,
   dismissDbResetNotice,
   hideAmounts,
   lockNow,
+  refusalText,
   showAmounts,
   useAmountsHidden,
   useBiometric,
@@ -150,7 +153,11 @@ export function HistoryScreen(): ReactNode {
         onShow: () => {
           // Fired here, not by Sen's Reveal, which a scroll or the background can hold back.
           void showAmounts().then((outcome) => {
-            if (!outcome.ok) return;
+            if (!outcome.ok) {
+              const why = refusalText(outcome.reason, BIOMETRIC[biometric].name);
+              if (why !== null) toast.show({ title: why });
+              return;
+            }
             playHaptic('reveal');
             AccessibilityInfo.announceForAccessibility('Amounts shown');
           });
