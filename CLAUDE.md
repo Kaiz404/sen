@@ -78,7 +78,10 @@ Everything below is decided. Don't reopen it without the owner. Other options we
   - `scripts/emulator.sh` starts the one adb server on Windows and the `Sen_API36` emulator, waits for boot and enters the PIN. It is safe to rerun. It boots cold, because a snapshot restore once left the emulator offline.
   - `. scripts/device-env.sh` points WSL's adb at that server and Metro at `localhost`.
   - `npm start` runs Metro on `localhost`, which the emulator reaches through the `adb reverse` that `emulator.sh` sets.
-  - After route files are added or moved, restart Metro with `npx expo start --localhost --clear`. A long-running Metro once kept serving the old route tree, and every new deep link showed "Unmatched Route".
+  - Use `--clear` only after route files are added or moved or the Babel or Metro config changes: `npx expo start --localhost --clear`. A long-running Metro once kept serving the old route tree, and every new deep link showed "Unmatched Route". Otherwise `npm start` keeps the transform cache.
+  - **Host memory.** The emulator needs about 5.5 GB of Windows RAM, and WSL can take up to its `.wslconfig` cap. When Windows runs short it pages the emulator out and every device step slows 5x to 15x. `emulator.sh` refuses to boot under 6 GB free. Run one heavy thing at a time: no Gradle or native build while the emulator is in use, `./gradlew --stop` after every native build, and quit Docker Desktop when it isn't needed.
+  - After installing a build, run `adb shell cmd package compile -m speed -f com.kaiz404.sen`. Otherwise a cold start can hit "failed to complete startup" on this emulator.
+  - Gallery screenshots go through one `maestro test .maestro/screenshots.yaml`, never `uiautomator dump` polling, which is slow and can break Maestro's driver session.
   - `scripts/unlock-flow.sh` runs the Maestro unlock flow against a running Metro. Maestro runs from WSL as is.
   - The AVD has PIN `1111` and an enrolled fingerprint. Maestro's driver won't start until the PIN has been entered once after boot.
 - Dev builds install on a phone over Tailscale.
