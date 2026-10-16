@@ -1,7 +1,10 @@
 import { type DayKey, InstantSchema, malaysiaDay } from '@/models/day';
-import { type Minor, MinorSchema } from '@/models/money';
+import { type Minor, MinorSchema, minor, signedMinor } from '@/models/money';
 import { type MaskedRow, MaskedRowSchema, type TxId, TxIdSchema } from '@/models/transaction';
 import { DEMO_ACCOUNT, generateBankRows } from '@/services/seed';
+import type { MaskedTotals, RevealedTotals } from '@/services/tx-repo';
+
+import type { Revealed } from './reveal';
 
 /** The boards' moment: Thursday 15 October 2026, 2:00 pm in Kuala Lumpur. */
 export const BOARD_NOW = InstantSchema.parse('2026-10-15T06:00:00.000Z');
@@ -50,3 +53,34 @@ export function manyRows(size: 1000 | 10000): MaskedRow[] {
 }
 
 export const txId = (id: string): TxId => TxIdSchema.parse(id);
+
+const sum = (rows: readonly MaskedRow[], type: 'credit' | 'debit') =>
+  rows.filter((r) => r.type === type).reduce((n, r) => n + (BOARD_AMOUNTS.get(r.id) ?? 0), 0);
+
+/** Counts for the masked card and result line. */
+export function boardCounts(rows: readonly MaskedRow[]): MaskedTotals {
+  return {
+    in: { count: rows.filter((r) => r.type === 'credit').length },
+    out: { count: rows.filter((r) => r.type === 'debit').length },
+  };
+}
+
+/** What the screen holds once amounts are shown, for these rows. */
+export function boardRevealed(rows: readonly MaskedRow[]): Revealed {
+  const totals: RevealedTotals = {
+    in: { count: boardCounts(rows).in.count, minor: minor(sum(rows, 'credit')) },
+    out: { count: boardCounts(rows).out.count, minor: minor(sum(rows, 'debit')) },
+  };
+  const days = [...new Set(rows.map((r) => r.day))];
+  return {
+    amounts: BOARD_AMOUNTS,
+    nets: new Map(
+      days.map((day) => {
+        const of = rows.filter((r) => r.day === day);
+        return [day, signedMinor(sum(of, 'credit') - sum(of, 'debit'))];
+      }),
+    ),
+    month: totals,
+    results: totals,
+  };
+}

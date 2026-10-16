@@ -1,0 +1,66 @@
+import { act, render, screen } from '@testing-library/react-native';
+import { Profiler } from 'react';
+import { getAnimatedStyle } from 'react-native-reanimated';
+
+import { signedMinor } from '@/models/money';
+
+import { BOARD_AMOUNTS } from './fixture-data';
+import { digitStyle, type Revealed, RevealedAmounts, RollAmount } from './reveal';
+
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
+
+const SHOWN: Revealed = { amounts: BOARD_AMOUNTS };
+
+let commits = 0;
+function Card({ value }: { value: Revealed | null }) {
+  return (
+    <Profiler id="card" onRender={() => commits++}>
+      <RevealedAmounts value={value}>
+        <RollAmount value={value === null ? null : signedMinor(-4250)} size="row" />
+      </RevealedAmounts>
+    </Profiler>
+  );
+}
+
+const column = (i: number) => getAnimatedStyle(screen.getAllByTestId('digit-column')[i]!);
+
+test('digit columns start in turn and land together', () => {
+  expect(digitStyle(0, 0, 6)).toEqual({ opacity: 0, transform: [{ translateY: 10 }] });
+  expect(digitStyle(0.35, 0, 6)).toEqual({ opacity: 0.5, transform: [{ translateY: 5 }] });
+  expect(digitStyle(0.35, 5, 6).opacity).toBeCloseTo(0.0714, 4);
+  expect(digitStyle(1, 5, 6)).toEqual({ opacity: 1, transform: [{ translateY: 0 }] });
+  expect(digitStyle(0.5, 1, 30).opacity).toBeCloseTo(0.9655, 4);
+});
+
+test('the digits wait 200 ms, column 0 is mid-roll 100 ms into the roll, and the roll renders nothing', async () => {
+  await render(<Card value={null} />);
+  expect(screen.queryAllByTestId('digit-column')).toHaveLength(0);
+  expect(screen.getByLabelText('Amount hidden')).toBeOnTheScreen();
+
+  await screen.rerender(<Card value={SHOWN} />);
+  const before = commits;
+  expect(screen.getByLabelText('Minus 42 ringgit 50 sen')).toBeOnTheScreen();
+  expect(screen.getAllByTestId('digit-column')).toHaveLength(6);
+
+  await act(() => jest.advanceTimersByTime(100));
+  expect(column(0).opacity).toBe(0);
+
+  await act(() => jest.advanceTimersByTime(200));
+  expect(column(0).opacity).toBeCloseTo(0.951, 2);
+  expect(column(5).opacity).toBeCloseTo(0.522, 2);
+
+  await act(() => jest.advanceTimersByTime(1000));
+  expect(column(5)).toEqual({ opacity: 1, transform: [{ translateY: 0 }] });
+  expect(commits).toBe(before);
+});
+
+test('hiding drops the digits at once', async () => {
+  await render(<Card value={SHOWN} />);
+  await act(() => jest.advanceTimersByTime(1000));
+
+  await screen.rerender(<Card value={null} />);
+
+  expect(screen.queryAllByTestId('digit-column')).toHaveLength(0);
+  expect(screen.getByLabelText('Amount hidden')).toBeOnTheScreen();
+});
