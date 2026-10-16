@@ -49,6 +49,7 @@ export const AUTH_STATES = {
   'lock-checking': () => <Lock state={{ kind: 'checking' }} />,
   'lock-mismatch': () => <Lock state={{ kind: 'mismatch', triesLeft: 2 }} />,
   'lock-lockout': () => <Lockout />,
+  'lock-blocked': () => <Lock state={{ kind: 'blocked' }} />,
   'lock-off': () => <Lock state={{ kind: 'off', canOpenSettings: true }} />,
   'lock-no-lock': () => <Lock state={{ kind: 'noLock' }} />,
   'lock-weak': () => <Lock state={{ kind: 'weak' }} />,

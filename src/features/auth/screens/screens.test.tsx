@@ -57,6 +57,24 @@ test('a lockout counts down, then offers the fingerprint again', async () => {
   expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
 });
 
+test('a second lockout right after the cool-down drops the countdown and leads with the passcode', async () => {
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValue({ success: false, error: 'lockout' });
+  await render(<LockScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await screen.findByText('0:30');
+  await act(() => jest.advanceTimersByTime(30_000));
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+
+  expect(await screen.findByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
+  expect(screen.queryByText(/\d:\d\d/)).not.toBeOnTheScreen();
+  expect(screen.queryByText(/back in/)).not.toBeOnTheScreen();
+  expect(screen.getByText('FINGERPRINT IS PAUSED UNTIL')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Use device passcode' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Fingerprint is paused' })).toBeDisabled();
+});
+
 test('with no fingerprint enrolled, Lock says it is off and offers settings and the passcode', async () => {
   sessionStore.setState({
     session: { status: 'locked', reason: 'launch' },

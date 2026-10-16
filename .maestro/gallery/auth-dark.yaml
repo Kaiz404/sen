@@ -65,6 +65,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-lockout-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-blocked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-blocked-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-blocked-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
 - extendedWaitUntil:
     visible:

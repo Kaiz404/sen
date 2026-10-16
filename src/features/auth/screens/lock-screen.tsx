@@ -77,7 +77,7 @@ export function LockScreen(): ReactNode {
     void unlock(UNLOCK_HOLD[level]).then((outcome) => {
       const now = Date.now();
       const next = outcome.ok ? view : afterUnlock(view, outcome, now);
-      const napping = next.kind === 'lockout' && next.until > now;
+      const napping = next.kind === 'blocked' || (next.kind === 'lockout' && next.until > now);
       setPrompt({ kind: 'answered', outcome, ...(napping && { rest: 'lockoutBreathe' }) });
       setView(next);
     });
@@ -131,11 +131,11 @@ export function LockView({
   const { name, icon } = copy;
   const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
   const shown: LockState = state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
-  if (shown.kind === 'lockout')
+  if (shown.kind === 'lockout' || shown.kind === 'blocked')
     return (
       <Lockout
         copy={copy}
-        secondsLeft={secondsLeft}
+        secondsLeft={shown.kind === 'lockout' ? secondsLeft : null}
         onUnlock={onUnlock}
         onStartAgain={onStartAgain}
       />
@@ -284,7 +284,8 @@ export function LockView({
 
 type LockoutProps = {
   readonly copy: BiometricCopy;
-  readonly secondsLeft: number;
+  /** Null while the lockout has no end the app can promise. */
+  readonly secondsLeft: number | null;
   readonly onUnlock: () => void;
   readonly onStartAgain: () => void;
 };
@@ -304,15 +305,27 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
         <Text style={styles.lockoutAccent}>tries.</Text>
       </Text>
       <Text style={styles.lockoutBody}>
-        {`Your phone paused ${name}. Sen is napping until it's back. Wait, or use your device passcode now.`}
+        {secondsLeft === null
+          ? `Your phone paused ${name}. Use your device passcode to open Sen. ${title} works again after that.`
+          : `Your phone paused ${name}. Sen is napping until it's back. Wait, or use your device passcode now.`}
       </Text>
       <View
         accessible
-        accessibilityLabel={`${title} available again in ${secondsLeft} seconds`}
+        accessibilityLabel={
+          secondsLeft === null
+            ? `${title} is paused until you use your device passcode`
+            : `${title} available again in ${secondsLeft} seconds`
+        }
         style={styles.cooldown}
       >
-        <Text style={styles.cooldownCaption}>TRY {name.toUpperCase()} AGAIN IN</Text>
-        <Text style={styles.clock}>{clock(secondsLeft)}</Text>
+        <Text style={styles.cooldownCaption}>
+          {secondsLeft === null
+            ? `${name.toUpperCase()} IS PAUSED UNTIL`
+            : `TRY ${name.toUpperCase()} AGAIN IN`}
+        </Text>
+        <Text style={secondsLeft === null ? styles.passcodeWord : styles.clock}>
+          {secondsLeft === null ? 'Passcode' : clock(secondsLeft)}
+        </Text>
         <View style={styles.napping}>
           <Sen id={LOCK_SEN} pose="asleep" size={150} />
         </View>
@@ -332,7 +345,9 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
           size="medium"
           surface="hero"
           icon={icon}
-          label={`${title} back in ${clock(secondsLeft)}`}
+          label={
+            secondsLeft === null ? `${title} is paused` : `${title} back in ${clock(secondsLeft)}`
+          }
           disabled
           onPress={onUnlock}
         />
@@ -358,7 +373,10 @@ const IDLE_HERO: HeroCopy = {
 };
 
 const HERO: Readonly<
-  Record<Exclude<LockState['kind'], 'lockout' | 'store'>, (copy: BiometricCopy) => HeroCopy>
+  Record<
+    Exclude<LockState['kind'], 'lockout' | 'blocked' | 'store'>,
+    (copy: BiometricCopy) => HeroCopy
+  >
 > = {
   idle: () => IDLE_HERO,
   signingOut: () => IDLE_HERO,
@@ -431,6 +449,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   cooldownCaption: { ...type.caption(11), color: theme.colors.onHeroMuted },
   clock: { ...type.numerals(88), lineHeight: 84, color: theme.colors.lemon },
+  passcodeWord: { ...type.numerals(56), lineHeight: 84, color: theme.colors.lemon },
   napping: { position: 'absolute', right: 6, top: -104 },
   lockoutKeys: { marginTop: 'auto', gap: 10 },
 }));

@@ -7,6 +7,11 @@ export type PromptView =
   | { readonly kind: 'idle' }
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
   | { readonly kind: 'lockout'; readonly until: number }
+  /**
+   * A second lockout straight after the first cool-down is Android's permanent one, which only the device passcode
+   * lifts. There is no countdown to promise.
+   */
+  | { readonly kind: 'blocked' }
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
   /** The phone has no screen lock, so there is no passcode to fall back on and nothing for Sen to ask. */
   | { readonly kind: 'noLock' }
@@ -57,7 +62,9 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
       return { kind: 'mismatch', triesLeft: Math.max(0, before - 1) };
     }
     case 'lockout':
-      return { kind: 'lockout', until: now + LOCKOUT_MS };
+      return prev.kind === 'lockout' || prev.kind === 'blocked'
+        ? { kind: 'blocked' }
+        : { kind: 'lockout', until: now + LOCKOUT_MS };
     case 'not_set_up':
       return { kind: 'off', canOpenSettings: true };
     case 'unavailable':

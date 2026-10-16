@@ -178,7 +178,7 @@ export function PrimerView({
                     ? 'Use device passcode'
                     : `Turn on ${name}`
             }
-            disabled={shown.kind === 'checking' || shown.kind === 'lockout' || unlocked}
+            disabled={shown.kind === 'checking' || shown.kind === 'lockout' || shown.kind === 'blocked' || unlocked}
             onPress={onTurnOn}
           />
         )}
@@ -206,6 +206,8 @@ function noticeOf(
       return null;
     case 'mismatch':
       return triesLeftText(state.triesLeft, name);
+    case 'blocked':
+      return `Too many tries. Your phone paused ${name}. Use your device passcode now.`;
     case 'lockout':
       return `Too many tries. ${name} is back in ${clock(secondsLeft)}, or use your device passcode now.`;
     case 'weak':
