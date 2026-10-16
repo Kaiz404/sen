@@ -167,6 +167,23 @@ function Column({
   );
 }
 
+/** A whole amount on one animated view. A list mounts many of these, and one view per digit made scrolling stall. */
+function Rolling({ label, children }: { readonly label: string; readonly children: ReactNode }): ReactNode {
+  const progress = useRevealProgress();
+  const roll = useAnimatedStyle(() => digitStyle(progress.get(), 0, 1));
+  return (
+    <Animated.View
+      testID="amount-roll"
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={label}
+      style={[styles.row, roll]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 type RollAmountProps = {
   readonly value: SignedMinor | null;
   readonly size: RollSize;
@@ -175,7 +192,7 @@ type RollAmountProps = {
   readonly direction?: Direction;
 };
 
-/** Four coins while masked. Shown, each digit is its own column and rolls in on the shared progress. */
+/** Four coins while masked. Shown, the hero rolls in digit by digit and smaller amounts roll in whole, on the shared progress. */
 export function RollAmount({
   value,
   size,
@@ -190,6 +207,15 @@ export function RollAmount({
   const parts = moneyParts(value, sign);
   const ink = styles.ink(surface, value > 0);
   const lead = `${parts.sign}${parts.currency}`;
+  if (size !== 'hero') {
+    return (
+      <Rolling label={moneySpoken(value, sign)}>
+        <Text style={[scale.lead, ink, { marginRight: scale.leadGap }]}>{lead}</Text>
+        <Text style={[scale.whole, ink]}>{parts.whole}</Text>
+        <Text style={[scale.fraction, ink]}>{parts.fraction}</Text>
+      </Rolling>
+    );
+  }
   const chars = [...parts.whole, ...parts.fraction];
   const cols = chars.length + 1;
   const amount = (

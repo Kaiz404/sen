@@ -13,11 +13,11 @@ afterEach(() => jest.useRealTimers());
 const SHOWN: Revealed = { amounts: BOARD_AMOUNTS };
 
 let commits = 0;
-function Card({ value }: { value: Revealed | null }) {
+function Card({ value, size = 'hero' }: { value: Revealed | null; size?: 'hero' | 'row' }) {
   return (
     <Profiler id="card" onRender={() => commits++}>
       <RevealedAmounts value={value}>
-        <RollAmount value={value === null ? null : signedMinor(-4250)} size="row" />
+        <RollAmount value={value === null ? null : signedMinor(-4250)} size={size} />
       </RevealedAmounts>
     </Profiler>
   );
@@ -52,6 +52,24 @@ test('the digits wait 200 ms, column 0 is mid-roll 100 ms into the roll, and the
 
   await act(() => jest.advanceTimersByTime(1000));
   expect(column(5)).toEqual({ opacity: 1, transform: [{ translateY: 0 }] });
+  expect(commits).toBe(before);
+});
+
+test('a row amount rolls in whole on one animated view, and the roll renders nothing', async () => {
+  await render(<Card value={null} size="row" />);
+  await screen.rerender(<Card value={SHOWN} size="row" />);
+  const before = commits;
+  const roll = () => getAnimatedStyle(screen.getByTestId('amount-roll'));
+
+  expect(screen.getByLabelText('Minus 42 ringgit 50 sen')).toBeOnTheScreen();
+  expect(screen.queryAllByTestId('digit-column')).toHaveLength(0);
+  expect(screen.getByText('42')).toBeOnTheScreen();
+
+  await act(() => jest.advanceTimersByTime(300));
+  expect(roll().opacity).toBeCloseTo(0.666, 2);
+
+  await act(() => jest.advanceTimersByTime(1000));
+  expect(roll()).toMatchObject({ opacity: 1, transform: [{ translateY: 0 }] });
   expect(commits).toBe(before);
 });
 
