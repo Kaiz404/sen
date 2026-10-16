@@ -1,0 +1,64 @@
+import { type ReactNode, useId } from 'react';
+import { type DimensionValue, View, type ViewStyle } from 'react-native';
+import Animated, { type CSSAnimationKeyframes, type CSSStyle } from 'react-native-reanimated';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { StyleSheet, withUnistyles } from 'react-native-unistyles';
+
+import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
+import { DUR } from '@/motion/tokens';
+
+import { standIn } from './stand-in';
+
+const SWEEP: CSSAnimationKeyframes<ViewStyle> = {
+  from: { transform: [{ translateX: '-100%' }] },
+  to: { transform: [{ translateX: '100%' }] },
+};
+
+/** The board's `shim` band. A looping shimmer is motion, so Calm and Off draw still bones. */
+export function bandStyle(level: MotionLevel): CSSStyle<ViewStyle> | null {
+  if (level !== 'full') return null;
+  return {
+    animationName: SWEEP,
+    animationDuration: DUR.bone,
+    animationTimingFunction: 'linear',
+    animationIterationCount: 'infinite',
+  };
+}
+
+const ShimmerStop = withUnistyles(Stop, (theme, rt) => ({
+  stopColor: standIn(theme.colors, rt.themeName).shimmer,
+}));
+
+type BoneProps = {
+  readonly width: DimensionValue;
+  readonly height: number;
+  readonly radius?: number;
+};
+
+/** A skeleton placeholder block. */
+export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
+  const band = bandStyle(useMotionPolicy());
+  const gradient = useId();
+  return (
+    <View aria-hidden style={[styles.bone, { width, height, borderRadius: radius }]}>
+      {band !== null && (
+        <Animated.View style={[StyleSheet.absoluteFill, band]}>
+          <Svg width="100%" height="100%">
+            <Defs>
+              <LinearGradient id={gradient} x1="0" y1="0" x2="1" y2="0">
+                <ShimmerStop offset="0.2" stopOpacity={0} />
+                <ShimmerStop offset="0.5" stopOpacity={1} />
+                <ShimmerStop offset="0.8" stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+            <Rect width="100%" height="100%" fill={`url(#${gradient})`} />
+          </Svg>
+        </Animated.View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create((theme) => ({
+  bone: { overflow: 'hidden', backgroundColor: theme.colors.chip },
+}));
