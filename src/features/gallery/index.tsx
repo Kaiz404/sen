@@ -63,7 +63,9 @@ export function GalleryBody({
     case 'pose':
       return (
         <Frame caption={`sen · ${query.pose} · ${query.size} pt`} shotId={shotId}>
-          <Sen pose={query.pose} size={query.size} label={`Sen, ${query.pose}`} />
+          <View style={styles.centered}>
+            <Sen pose={query.pose} size={query.size} label={`Sen, ${query.pose}`} />
+          </View>
         </Frame>
       );
     case 'state': {
@@ -135,6 +137,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   bleed: { flex: 1 },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   stage: { flex: 1, justifyContent: 'center' },
+  centered: { alignItems: 'center' },
   reason: { ...type.mono(13), color: theme.colors.ink },
   index: { padding: 20, paddingTop: rt.insets.top + 20, gap: 4 },
   link: {
