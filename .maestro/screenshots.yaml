@@ -5,10 +5,11 @@ appId: com.kaiz404.sen
     clearState: false
 - openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
 - extendedWaitUntil:
-    visible: UNLOCK
-    timeout: 60000
+    visible:
+      id: unlock
+    timeout: 120000
 - tapOn:
-    point: 50%,92%
+    point: 50%,40%
 - openLink: "sen://dev/states?screen=amount&state=masked&theme=light"
 - extendedWaitUntil:
     visible:
@@ -17,14 +18,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/amount-masked-light
-- openLink: "sen://dev/states?screen=amount&state=masked&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-amount-masked-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/amount-masked-dark
 - openLink: "sen://dev/states?screen=amount&state=revealed&theme=light"
 - extendedWaitUntil:
     visible:
@@ -33,14 +26,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/amount-revealed-light
-- openLink: "sen://dev/states?screen=amount&state=revealed&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-amount-revealed-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/amount-revealed-dark
 - openLink: "sen://dev/states?screen=amount&state=loud&theme=light"
 - extendedWaitUntil:
     visible:
@@ -49,14 +34,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/amount-loud-light
-- openLink: "sen://dev/states?screen=amount&state=loud&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-amount-loud-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/amount-loud-dark
 - openLink: "sen://dev/states?screen=key&state=lemon&theme=light"
 - extendedWaitUntil:
     visible:
@@ -65,14 +42,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/key-lemon-light
-- openLink: "sen://dev/states?screen=key&state=lemon&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-key-lemon-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/key-lemon-dark
 - openLink: "sen://dev/states?screen=key&state=loud&theme=light"
 - extendedWaitUntil:
     visible:
@@ -81,14 +50,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/key-loud-light
-- openLink: "sen://dev/states?screen=key&state=loud&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-key-loud-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/key-loud-dark
 - openLink: "sen://dev/states?screen=key&state=paper&theme=light"
 - extendedWaitUntil:
     visible:
@@ -97,14 +58,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/key-paper-light
-- openLink: "sen://dev/states?screen=key&state=paper&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-key-paper-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/key-paper-dark
 - openLink: "sen://dev/states?screen=segmented&state=all&theme=light"
 - extendedWaitUntil:
     visible:
@@ -113,14 +66,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/segmented-all-light
-- openLink: "sen://dev/states?screen=segmented&state=all&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-segmented-all-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/segmented-all-dark
 - openLink: "sen://dev/states?screen=segmented&state=in&theme=light"
 - extendedWaitUntil:
     visible:
@@ -129,14 +74,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/segmented-in-light
-- openLink: "sen://dev/states?screen=segmented&state=in&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-segmented-in-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/segmented-in-dark
 - openLink: "sen://dev/states?screen=segmented&state=direction&theme=light"
 - extendedWaitUntil:
     visible:
@@ -145,14 +82,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/segmented-direction-light
-- openLink: "sen://dev/states?screen=segmented&state=direction&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-segmented-direction-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/segmented-direction-dark
 - openLink: "sen://dev/states?screen=receipt-slip&state=masked&theme=light"
 - extendedWaitUntil:
     visible:
@@ -161,14 +90,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/receipt-slip-masked-light
-- openLink: "sen://dev/states?screen=receipt-slip&state=masked&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-receipt-slip-masked-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/receipt-slip-masked-dark
 - openLink: "sen://dev/states?screen=receipt-slip&state=revealed&theme=light"
 - extendedWaitUntil:
     visible:
@@ -177,14 +98,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/receipt-slip-revealed-light
-- openLink: "sen://dev/states?screen=receipt-slip&state=revealed&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-receipt-slip-revealed-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/receipt-slip-revealed-dark
 - openLink: "sen://dev/states?screen=stamp&state=added&theme=light"
 - extendedWaitUntil:
     visible:
@@ -193,14 +106,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/stamp-added-light
-- openLink: "sen://dev/states?screen=stamp&state=added&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-stamp-added-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/stamp-added-dark
 - openLink: "sen://dev/states?screen=stamp&state=pending&theme=light"
 - extendedWaitUntil:
     visible:
@@ -209,14 +114,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/stamp-pending-light
-- openLink: "sen://dev/states?screen=stamp&state=pending&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-stamp-pending-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/stamp-pending-dark
 - openLink: "sen://dev/states?screen=tag&state=pending&theme=light"
 - extendedWaitUntil:
     visible:
@@ -225,14 +122,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/tag-pending-light
-- openLink: "sen://dev/states?screen=tag&state=pending&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-tag-pending-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/tag-pending-dark
 - openLink: "sen://dev/states?screen=tag&state=added&theme=light"
 - extendedWaitUntil:
     visible:
@@ -241,14 +130,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/tag-added-light
-- openLink: "sen://dev/states?screen=tag&state=added&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-tag-added-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/tag-added-dark
 - openLink: "sen://dev/states?screen=tag&state=draft&theme=light"
 - extendedWaitUntil:
     visible:
@@ -257,14 +138,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/tag-draft-light
-- openLink: "sen://dev/states?screen=tag&state=draft&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-tag-draft-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/tag-draft-dark
 - openLink: "sen://dev/states?screen=toast&state=undo&theme=light"
 - extendedWaitUntil:
     visible:
@@ -273,14 +146,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/toast-undo-light
-- openLink: "sen://dev/states?screen=toast&state=undo&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-toast-undo-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/toast-undo-dark
 - openLink: "sen://dev/states?screen=toast&state=plain&theme=light"
 - extendedWaitUntil:
     visible:
@@ -289,14 +154,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/toast-plain-light
-- openLink: "sen://dev/states?screen=toast&state=plain&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-toast-plain-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/toast-plain-dark
 - openLink: "sen://dev/states?screen=enter-once&state=row&theme=light"
 - extendedWaitUntil:
     visible:
@@ -305,14 +162,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/enter-once-row-light
-- openLink: "sen://dev/states?screen=enter-once&state=row&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-enter-once-row-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/enter-once-row-dark
 - openLink: "sen://dev/states?screen=bone&state=rows&theme=light"
 - extendedWaitUntil:
     visible:
@@ -321,14 +170,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/bone-rows-light
-- openLink: "sen://dev/states?screen=bone&state=rows&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-bone-rows-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/bone-rows-dark
 - openLink: "sen://dev/states?screen=auth&state=welcome&theme=light"
 - extendedWaitUntil:
     visible:
@@ -337,14 +178,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-welcome-light
-- openLink: "sen://dev/states?screen=auth&state=welcome&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-welcome-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-welcome-dark
 - openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=light"
 - extendedWaitUntil:
     visible:
@@ -353,14 +186,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-primer-ready-light
-- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-primer-ready-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-primer-ready-dark
 - openLink: "sen://dev/states?screen=auth&state=primer-off&theme=light"
 - extendedWaitUntil:
     visible:
@@ -369,14 +194,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-primer-off-light
-- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-primer-off-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-primer-off-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=light"
 - extendedWaitUntil:
     visible:
@@ -385,14 +202,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-idle-light
-- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-idle-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-idle-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=light"
 - extendedWaitUntil:
     visible:
@@ -401,14 +210,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-checking-light
-- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-checking-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-checking-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=light"
 - extendedWaitUntil:
     visible:
@@ -417,14 +218,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-mismatch-light
-- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-mismatch-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-mismatch-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=light"
 - extendedWaitUntil:
     visible:
@@ -433,14 +226,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-lockout-light
-- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-lockout-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-lockout-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-off&theme=light"
 - extendedWaitUntil:
     visible:
@@ -449,14 +234,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-off-light
-- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-off-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-off-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=light"
 - extendedWaitUntil:
     visible:
@@ -465,14 +242,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-unavailable-light
-- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-unavailable-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-unavailable-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-error&theme=light"
 - extendedWaitUntil:
     visible:
@@ -481,14 +250,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/auth-lock-error-light
-- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-error-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: shots/2a/auth-lock-error-dark
 - openLink: "sen://dev/states?screen=sen&pose=idle&size=32&theme=light"
 - extendedWaitUntil:
     visible:
@@ -777,3 +538,243 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: shots/2a/pose-cool-200
+- openLink: "sen://dev/states?screen=amount&state=masked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-masked-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-masked-dark
+- openLink: "sen://dev/states?screen=amount&state=revealed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-revealed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-revealed-dark
+- openLink: "sen://dev/states?screen=amount&state=loud&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-amount-loud-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/amount-loud-dark
+- openLink: "sen://dev/states?screen=key&state=lemon&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-lemon-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-lemon-dark
+- openLink: "sen://dev/states?screen=key&state=loud&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-loud-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-loud-dark
+- openLink: "sen://dev/states?screen=key&state=paper&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-key-paper-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/key-paper-dark
+- openLink: "sen://dev/states?screen=segmented&state=all&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-all-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-all-dark
+- openLink: "sen://dev/states?screen=segmented&state=in&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-in-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-in-dark
+- openLink: "sen://dev/states?screen=segmented&state=direction&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-segmented-direction-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/segmented-direction-dark
+- openLink: "sen://dev/states?screen=receipt-slip&state=masked&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-masked-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-masked-dark
+- openLink: "sen://dev/states?screen=receipt-slip&state=revealed&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-receipt-slip-revealed-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/receipt-slip-revealed-dark
+- openLink: "sen://dev/states?screen=stamp&state=added&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-added-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-added-dark
+- openLink: "sen://dev/states?screen=stamp&state=pending&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-stamp-pending-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/stamp-pending-dark
+- openLink: "sen://dev/states?screen=tag&state=pending&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-pending-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-pending-dark
+- openLink: "sen://dev/states?screen=tag&state=added&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-added-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-added-dark
+- openLink: "sen://dev/states?screen=tag&state=draft&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-tag-draft-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/tag-draft-dark
+- openLink: "sen://dev/states?screen=toast&state=undo&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-undo-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-undo-dark
+- openLink: "sen://dev/states?screen=toast&state=plain&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-toast-plain-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/toast-plain-dark
+- openLink: "sen://dev/states?screen=enter-once&state=row&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-enter-once-row-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/enter-once-row-dark
+- openLink: "sen://dev/states?screen=bone&state=rows&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-bone-rows-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/bone-rows-dark
+- openLink: "sen://dev/states?screen=auth&state=welcome&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-welcome-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-welcome-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-ready&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-ready-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-ready-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-primer-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-idle-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-idle-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-checking-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-checking-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-mismatch-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-mismatch-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-lockout-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-lockout-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-off-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-off-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-unavailable-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-unavailable-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-error-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: shots/2a/auth-lock-error-dark

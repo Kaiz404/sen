@@ -6,26 +6,24 @@ import type { ScreenStates } from './registry';
 
 export type Shot = { readonly name: string; readonly link: string };
 
-const THEMES: readonly ThemeName[] = ['light', 'dark'];
 const LINK = 'sen://dev/states';
 
-/** Every screenshot the gallery owes: each state in both themes, then each pose at each tier. */
+/** Every screenshot the gallery owes, grouped by theme so the slow theme switch happens once: light states, poses, dark states. */
 export function shots(screens: Readonly<Record<string, ScreenStates>>): Shot[] {
-  const states = Object.entries(screens).flatMap(([screen, byState]) =>
-    Object.keys(byState).flatMap((state) =>
-      THEMES.map((theme) => ({
+  const states = (theme: ThemeName) =>
+    Object.entries(screens).flatMap(([screen, byState]) =>
+      Object.keys(byState).map((state) => ({
         name: shotName({ kind: 'state', screen, state }, theme)!,
         link: `${LINK}?screen=${screen}&state=${state}&theme=${theme}`,
       })),
-    ),
-  );
+    );
   const poses = POSE_IDS.flatMap((pose) =>
     SEN_SIZES.map((size) => ({
       name: shotName({ kind: 'pose', pose, size }, 'light')!,
       link: `${LINK}?screen=sen&pose=${pose}&size=${size}&theme=light`,
     })),
   );
-  return [...states, ...poses];
+  return [...states('light'), ...poses, ...states('dark')];
 }
 
 /**
@@ -47,9 +45,10 @@ export function screenshotFlow(list: readonly Shot[]): string {
     '---\n',
     '- launchApp:\n    clearState: false\n',
     '- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081\n',
-    '- extendedWaitUntil:\n    visible: UNLOCK\n    timeout: 60000\n',
-    // A tap leaves Android's keyboard mode, which otherwise paints a focus highlight on the first key.
-    '- tapOn:\n    point: 50%,92%\n',
+    '- extendedWaitUntil:\n    visible:\n      id: unlock\n    timeout: 120000\n',
+    // A tap leaves Android's keyboard mode, which otherwise paints a focus highlight on the first key. It lands
+    // on Lock's hero, which has nothing to press.
+    '- tapOn:\n    point: 50%,40%\n',
     ...steps,
   ].join('');
 }

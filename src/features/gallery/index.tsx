@@ -27,6 +27,13 @@ function useForcedTheme(theme: ThemeName | undefined) {
   );
 }
 
+/** A shot's ready id appears only once the forced theme has applied, so a flow never captures a half-switched frame. */
+function useShotId(shot: string | undefined, theme: ThemeName | undefined): string | undefined {
+  const { rt } = useUnistyles();
+  if (shot === undefined || (theme !== undefined && rt.themeName !== theme)) return undefined;
+  return `shot-${shot}`;
+}
+
 export function StatesScreen(): ReactNode {
   const params = useLocalSearchParams();
   const theme = parseTheme(params);
@@ -55,6 +62,7 @@ export function GalleryBody({
   theme?: ThemeName;
 }): ReactNode {
   const shot = shotName(query, theme);
+  const shotId = useShotId(shot, theme);
   switch (query.kind) {
     case 'index':
       return <Index />;
@@ -62,7 +70,7 @@ export function GalleryBody({
       return <PoseIndex />;
     case 'pose':
       return (
-        <Frame caption={`sen · ${query.pose} · ${query.size} pt`} shot={shot}>
+        <Frame caption={`sen · ${query.pose} · ${query.size} pt`} shotId={shotId}>
           <Sen pose={query.pose} size={query.size} label={`Sen, ${query.pose}`} />
         </Frame>
       );
@@ -70,12 +78,12 @@ export function GalleryBody({
       const drawn = SCREENS[query.screen]?.[query.state]?.();
       if (!isComponent(query.screen))
         return (
-          <View testID={`shot-${shot}`} style={styles.bleed}>
+          <View testID={shotId} style={styles.bleed}>
             {drawn}
           </View>
         );
       return (
-        <Frame caption={`${query.screen} · ${query.state}`} shot={shot}>
+        <Frame caption={`${query.screen} · ${query.state}`} shotId={shotId}>
           {drawn}
         </Frame>
       );
@@ -91,16 +99,16 @@ export function GalleryBody({
 
 function Frame({
   caption,
-  shot,
+  shotId,
   children,
 }: {
   caption: string;
-  shot?: string;
+  shotId?: string;
   children: ReactNode;
 }) {
   const { rt } = useUnistyles();
   return (
-    <View testID={shot && `shot-${shot}`} style={styles.frame}>
+    <View testID={shotId} style={styles.frame}>
       {/* A hero screen under the gallery, such as Welcome, would otherwise keep its light status bar. */}
       <StatusBar style={rt.themeName === 'dark' ? 'light' : 'dark'} />
       <Text style={styles.caption}>{caption}</Text>

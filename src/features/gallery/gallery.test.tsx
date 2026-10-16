@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { UnistylesRuntime } from 'react-native-unistyles';
 
 import { toast, ToastHost } from '@/components/toast';
 
@@ -58,9 +59,19 @@ test('an unknown query says why', async () => {
   expect(screen.getByText('No screen "history".')).toBeOnTheScreen();
 });
 
-test('a drawn state carries its shot name, so the flow can wait for the right screen', async () => {
+test('a drawn state carries its shot name once its theme has applied', async () => {
+  Object.assign(UnistylesRuntime, { themeName: 'light' });
+  await render(
+    <GalleryBody query={{ kind: 'state', screen: 'key', state: 'lemon' }} theme="light" />,
+  );
+  expect(screen.getByTestId('shot-key-lemon-light')).toBeOnTheScreen();
+});
+
+test('a state still waiting for its theme carries no shot name, so a flow never captures it', async () => {
+  Object.assign(UnistylesRuntime, { themeName: 'light' });
   await render(
     <GalleryBody query={{ kind: 'state', screen: 'key', state: 'lemon' }} theme="dark" />,
   );
-  expect(screen.getByTestId('shot-key-lemon-dark')).toBeOnTheScreen();
+  expect(screen.queryByTestId('shot-key-lemon-dark')).toBeNull();
+  expect(screen.getByText('key · lemon')).toBeOnTheScreen();
 });
