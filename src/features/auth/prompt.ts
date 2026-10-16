@@ -1,13 +1,17 @@
 import {
   AuthenticationType,
   authenticateAsync,
+  getEnrolledLevelAsync,
   type LocalAuthenticationError,
+  SecurityLevel,
   supportedAuthenticationTypesAsync,
 } from 'expo-local-authentication';
 import { Platform } from 'react-native';
 
-export type AuthFailure = 'cancelled' | 'mismatch' | 'lockout' | 'not_set_up' | 'unavailable' | 'unknown';
-export type AuthOutcome = { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
+export type AuthFailure =
+  'cancelled' | 'mismatch' | 'lockout' | 'not_set_up' | 'unavailable' | 'unknown';
+export type AuthOutcome =
+  { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
 
 /**
  * `user_fallback` only fires when the passcode button is hidden. Sen always allows the device fallback, so the
@@ -54,14 +58,23 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
 
 export type Biometric = 'faceId' | 'touchId' | 'face' | 'fingerprint';
 
-export function biometricOf(os: typeof Platform.OS, types: readonly AuthenticationType[]): Biometric {
+export function biometricOf(
+  os: typeof Platform.OS,
+  types: readonly AuthenticationType[],
+): Biometric {
   const face = types.includes(AuthenticationType.FACIAL_RECOGNITION);
   const finger = types.includes(AuthenticationType.FINGERPRINT);
   if (os === 'ios') return finger && !face ? 'touchId' : 'faceId';
   return face && !finger ? 'face' : 'fingerprint';
 }
 
-export async function detectBiometric(): Promise<Biometric> {
-  const types = await supportedAuthenticationTypesAsync().catch(() => []);
-  return biometricOf(Platform.OS, types);
+/** `ready` means a strong biometric is enrolled. Without one the prompt goes straight to the passcode. */
+export type BiometricSupport = { readonly kind: Biometric; readonly ready: boolean };
+
+export async function detectBiometric(): Promise<BiometricSupport> {
+  const [types, level] = await Promise.all([
+    supportedAuthenticationTypesAsync().catch(() => []),
+    getEnrolledLevelAsync().catch(() => SecurityLevel.NONE),
+  ]);
+  return { kind: biometricOf(Platform.OS, types), ready: level >= SecurityLevel.BIOMETRIC_STRONG };
 }

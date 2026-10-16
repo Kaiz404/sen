@@ -20,8 +20,8 @@ import {
 import {
   authenticate,
   type AuthOutcome,
-  type Biometric,
   biometricOf,
+  type BiometricSupport,
   detectBiometric,
 } from './prompt';
 
@@ -29,13 +29,13 @@ export type DbResetReason = Extract<AppError, { kind: 'db_reset' }>['reason'];
 
 type SessionStore = {
   readonly session: Session;
-  readonly biometric: Biometric;
+  readonly biometric: BiometricSupport;
   readonly dbReset: DbResetReason | null;
 };
 
 export const sessionStore = createStore<SessionStore>(() => ({
   session: INITIAL,
-  biometric: biometricOf(Platform.OS, []),
+  biometric: { kind: biometricOf(Platform.OS, []), ready: true },
   dbReset: null,
 }));
 
@@ -127,7 +127,8 @@ export function useDb(): OpenDb {
   const [last, setLast] = useState(db);
   if (db !== null && db !== last) setLast(db);
   const held = db ?? last;
-  if (held === null) throw new Error('useDb is for protected screens, which mount only while unlocked.');
+  if (held === null)
+    throw new Error('useDb is for protected screens, which mount only while unlocked.');
   return held;
 }
 
@@ -135,7 +136,7 @@ export function useDbResetNotice(): DbResetReason | null {
   return useStore(sessionStore, (s) => s.dbReset);
 }
 
-export function useBiometric(): Biometric {
+export function useBiometric(): BiometricSupport {
   return useStore(sessionStore, (s) => s.biometric);
 }
 

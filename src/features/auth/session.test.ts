@@ -89,6 +89,23 @@ test('a cancelled unlock stays on Lock and leaves the vault shut', async () => {
   expect(openVault).not.toHaveBeenCalled();
 });
 
+test('a second unlock while the prompt is up opens no second prompt', async () => {
+  const db = await openTestDb();
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+  openVault.mockResolvedValueOnce({ kind: 'opened', db });
+
+  const first = unlock();
+  const second = await unlock();
+  answer({ success: true });
+
+  expect(second).toEqual({ ok: false, reason: 'cancelled' });
+  expect(await first).toEqual({ ok: true });
+  expect(authenticate).toHaveBeenCalledTimes(1);
+  expect(session()).toMatchObject({ status: 'unlocked', db });
+});
+
 test('a vault that fails to open stays on Lock', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockResolvedValueOnce({ success: true });
