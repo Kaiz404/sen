@@ -110,13 +110,14 @@ export function biometricOf(
   return face && !finger ? 'face' : 'fingerprint';
 }
 
-/** What the phone has enrolled: no screen lock, a passcode only, or strong biometrics. */
-export type EnrolledLevel = 'none' | 'passcode' | 'strong';
+/** What the phone has enrolled. `weak` is a Class 2 biometric, such as many phones' face unlock, which Sen cannot accept. */
+export type EnrolledLevel = 'none' | 'passcode' | 'weak' | 'strong';
 
 export type BiometricSupport = { readonly kind: Biometric; readonly level: EnrolledLevel };
 
 function levelOf(level: SecurityLevel): EnrolledLevel {
   if (level >= SecurityLevel.BIOMETRIC_STRONG) return 'strong';
+  if (level >= SecurityLevel.BIOMETRIC_WEAK) return 'weak';
   return level === SecurityLevel.NONE ? 'none' : 'passcode';
 }
 

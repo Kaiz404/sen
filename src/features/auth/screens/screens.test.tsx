@@ -150,6 +150,22 @@ test('turning the fingerprint on in settings clears the off view when the app co
   expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
 });
 
+test('a phone with only weak face unlock says what Sen needs instead of "is off"', async () => {
+  sessionStore.setState({
+    session: { status: 'locked', reason: 'launch' },
+    biometric: { kind: 'face', level: 'weak' },
+  });
+
+  await render(<LockScreen />);
+
+  expect(screen.getByRole('header', { name: 'Use your passcode.' })).toBeOnTheScreen();
+  expect(
+    screen.getByText('Sen needs fingerprint or your passcode on this phone.'),
+  ).toBeOnTheScreen();
+  expect(screen.queryByText(/is off/)).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Use device passcode' })).toBeEnabled();
+});
+
 describe('a phone with no screen lock', () => {
   const noLock = { kind: 'fingerprint', level: 'none' } as const;
   beforeEach(() => {

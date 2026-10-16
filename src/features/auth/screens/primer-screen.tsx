@@ -18,6 +18,7 @@ import {
   type BiometricCopy,
   clock,
   STORE_COPY,
+  WEAK_BIOMETRIC,
   triesLeftText,
 } from '../copy';
 import type { Biometric } from '../prompt';
@@ -173,7 +174,9 @@ export function PrimerView({
                 ? "Checking it's you"
                 : unlocked
                   ? `${copy.title} is on`
-                  : `Turn on ${name}`
+                  : shown.kind === 'weak'
+                    ? 'Use device passcode'
+                    : `Turn on ${name}`
             }
             disabled={shown.kind === 'checking' || shown.kind === 'lockout' || unlocked}
             onPress={onTurnOn}
@@ -205,6 +208,8 @@ function noticeOf(
       return triesLeftText(state.triesLeft, name);
     case 'lockout':
       return `Too many tries. ${name} is back in ${clock(secondsLeft)}, or use your device passcode now.`;
+    case 'weak':
+      return WEAK_BIOMETRIC;
     case 'noLock':
       return 'Set a screen lock to use Sen.';
     case 'off':

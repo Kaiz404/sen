@@ -10,6 +10,8 @@ export type PromptView =
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
   /** The phone has no screen lock, so there is no passcode to fall back on and nothing for Sen to ask. */
   | { readonly kind: 'noLock' }
+  /** Only a weak biometric is enrolled. The passcode works. */
+  | { readonly kind: 'weak' }
   | { readonly kind: 'error' }
   /** The vault would not open. `failures` counts opens in a row, and a reset is offered from the second. */
   | { readonly kind: 'store'; readonly cause: StoreCause; readonly failures: number };
@@ -26,6 +28,8 @@ export function initialView(level: EnrolledLevel): PromptView {
       return IDLE;
     case 'passcode':
       return { kind: 'off', canOpenSettings: true };
+    case 'weak':
+      return { kind: 'weak' };
     case 'none':
       return { kind: 'noLock' };
   }
@@ -36,7 +40,10 @@ export function initialView(level: EnrolledLevel): PromptView {
  * mismatch, lockout or store view stays, since those describe an attempt.
  */
 export function afterRecheck(prev: PromptView, level: EnrolledLevel): PromptView {
-  return prev.kind === 'idle' || prev.kind === 'off' || prev.kind === 'noLock'
+  return prev.kind === 'idle' ||
+    prev.kind === 'off' ||
+    prev.kind === 'noLock' ||
+    prev.kind === 'weak'
     ? initialView(level)
     : prev;
 }

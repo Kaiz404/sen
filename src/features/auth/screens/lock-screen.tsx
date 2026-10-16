@@ -16,6 +16,7 @@ import {
   type BiometricCopy,
   clock,
   RESET_COST,
+  WEAK_BIOMETRIC,
   STORE_COPY,
   triesLeftText,
 } from '../copy';
@@ -216,6 +217,20 @@ export function LockView({
             />
           </>
         );
+      case 'weak':
+        return (
+          <>
+            <ProfileRow />
+            {unlockKey('Use device passcode', 'lock-outline')}
+            <Key
+              tone="outline"
+              size="medium"
+              icon="cog"
+              label="Open device settings"
+              onPress={onOpenSettings}
+            />
+          </>
+        );
       case 'store':
         return (
           <>
@@ -365,6 +380,11 @@ const HERO: Readonly<
     title: ['Set a', 'screen lock.'],
     body: "Set a screen lock to use Sen. Your phone's lock is what keeps your money private.",
     sen: { pose: 'shrug', label: 'Sen, shrugging because the phone has no screen lock' },
+  }),
+  weak: () => ({
+    title: ['Use your', 'passcode.'],
+    body: WEAK_BIOMETRIC,
+    sen: { pose: 'shrug', label: 'Sen, shrugging because this phone only has weak face unlock' },
   }),
   off: ({ title }) => ({
     title: [title, 'is off.'],

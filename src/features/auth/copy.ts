@@ -63,4 +63,6 @@ export const STORE_COPY: Readonly<
   },
 };
 
+export const WEAK_BIOMETRIC = 'Sen needs fingerprint or your passcode on this phone.';
+
 export const RESET_COST = 'Your bank history syncs back. Rows you added are erased.';

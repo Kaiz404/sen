@@ -108,6 +108,7 @@ describe('the dev auth override', () => {
 test.each([
   ['no screen lock', LocalAuthentication.SecurityLevel.NONE, 'none'],
   ['a passcode only', LocalAuthentication.SecurityLevel.SECRET, 'passcode'],
+  ['a Class 2 biometric', LocalAuthentication.SecurityLevel.BIOMETRIC_WEAK, 'weak'],
   ['strong biometrics', LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG, 'strong'],
 ])('%s maps to its enrolled level', async (_, level, expected) => {
   jest.mocked(LocalAuthentication.getEnrolledLevelAsync).mockResolvedValueOnce(level);
