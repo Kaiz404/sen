@@ -32,3 +32,10 @@ test('a timing is written as its mark and whole milliseconds', () => {
 
   expect(info.mock.calls).toEqual([['[sen] perf history.painted +912ms']]);
 });
+
+test('free text cannot reach the log as a timing mark', () => {
+  // @ts-expect-error a mark is one of the unlock steps, not free text
+  logTiming('RM 42.50', 1);
+
+  expect(info.mock.calls).toEqual([['[sen] perf RM 42.50 +1ms']]);
+});

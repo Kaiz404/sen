@@ -1,17 +1,4 @@
-import { logTiming } from './logger';
-
-/** The steps from a passed biometric prompt to History's first paint, in the order they happen. */
-export const UNLOCK_MARKS = [
-  'unlock.ok',
-  'vault.opened',
-  'arriving',
-  'arrived',
-  'history.mounted',
-  'history.rows',
-  'history.painted',
-] as const;
-
-export type UnlockMark = (typeof UNLOCK_MARKS)[number];
+import { logTiming, type UnlockMark } from './logger';
 
 let origin: number | null = null;
 const seen = new Set<UnlockMark>();

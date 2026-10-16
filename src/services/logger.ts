@@ -21,8 +21,21 @@ export function logEvent(code: LogCode): void {
   console[EVENTS[code]](`[sen] ${code}`);
 }
 
+/** The steps from a passed biometric prompt to History's first paint, in the order they happen. */
+export const UNLOCK_MARKS = [
+  'unlock.ok',
+  'vault.opened',
+  'arriving',
+  'arrived',
+  'history.mounted',
+  'history.rows',
+  'history.painted',
+] as const;
+
+export type UnlockMark = (typeof UNLOCK_MARKS)[number];
+
 /** A dev-only timing line, `[sen] perf <mark> +<ms>`, for the coordinator to read from logcat. */
-export function logTiming(mark: string, ms: number): void {
+export function logTiming(mark: UnlockMark, ms: number): void {
   if (!__DEV__) return;
   console.info(`[sen] perf ${mark} +${Math.round(ms)}ms`);
 }
