@@ -242,86 +242,123 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 ## State
 
 **Session.**
-- **Reducer.** A pure reducer in `features/auth/machine.ts`, a discriminated union with an exhaustive `switch` and no timers.
-- **Store.** A Zustand store wraps it.
+- **Reducer.** A pure reducer in `features/auth/machine.ts`, a discriminated union with an exhaustive `switch`, no timers and no I/O. An event that does not apply returns the same object, so the store skips the notify.
+- **Store.** A Zustand store in `features/auth/session.ts` wraps it. `dispatch` runs the reducer, then the effects of the transition (On `LOCK`).
 - **React.** Components select narrow slices. Rows never subscribe to the session.
-- **Outside React.** Handlers such as AppState, the idle tick and lock call `store.getState()`.
+- **Outside React.** AppState, the tick and the actions read `sessionStore.getState()`.
+- **Not in the session.** Whether amounts show is the `hideAmounts` pref (D27), so it survives lock and restart. See Showing and hiding amounts below.
 
-**The open database.** The session store holds the one `OpenDb` while unlocked. `openVault()` gives it on unlock and the store closes it on lock. Screens read it with `useDb()` from `@/features/auth` and pass it to service functions, which never hold one.
+**The open database.** The unlocked states carry the one `OpenDb`, so "unlocked with no database" can't be written down. `openVault()` gives it on unlock and the store closes it when the session leaves the unlocked states. Screens read it with `useDb()` from `@/features/auth` and pass it to service functions, which never hold one. A screen still animating out after a lock keeps the closed handle, so a late query rejects with "The database is closed." instead of the screen throwing (inferred: react-native-screens keeps a closing screen mounted for its exit animation).
 
 **Screen-local state.** Search text, filter and the add draft stay in `useState` or `useReducer` in their screen. The draft lives in memory only.
 
 ```
-            UNLOCK_OK                    REVEAL_OK
- locked ─────────────► unlocked ───────────────────► revealed{until}
-   ▲  ▲ AUTH_FAIL/       │  ▲      REVEAL_EXPIRED,    │
-   │  └─ CANCEL ◄─ authenticating   HIDE, BACKGROUND  │
-   │                     │  └─────────────────────────┘
-   │ LOCK (idle, background past window, Lock now)    │
-   └─────────────────────┴────────────────────────────┘
+ launching ──LAUNCHED, no vault──► welcome ◄─────────────────── RESET ────────────────────┐
+     │                              │   ▲                                                 │
+     │                   AUTH_START ▼   │ AUTH_FAIL                                       │
+     │                     authenticating{setup}                                          │
+     │                              │ UNLOCK_OK                                           │
+     │                              ▼                                                     │
+     │                      unlocked{since, db} ◄── STEP_UP_DONE ──┐                      │
+     │                         │        │                          │                      │
+     │                    LOCK │        └── STEP_UP_START ──► stepUp{action, returnTo}    │
+     │                         ▼                                                          │
+     └──LAUNCHED, vault──► locked{reason} ────────────────────────────────────────────────┘
+                              │   ▲
+                   AUTH_START ▼   │ AUTH_FAIL
+                    authenticating{unlock} ──UNLOCK_OK──► unlocked
 ```
 
-| State | Holds | Routes allowed |
+| Event | From | To |
 | --- | --- | --- |
-| `locked` | `reason`: launch, idle, background, manual, signout | `lock`, welcome, primer |
-| `authenticating` | `purpose`: unlock or a step-up action | Current screen stays |
-| `unlocked` | `since` | All protected routes, amounts masked |
-| `revealed` | `until` (epoch ms) | Same, amounts shown |
-| `stepUp` | `action`, `returnTo` | Current screen stays |
+| `LAUNCHED` | `launching` | `locked{launch}` with a vault, `welcome` without |
+| `AUTH_START` | `welcome`, `locked` | `authenticating{setup}`, `authenticating{unlock}` |
+| `UNLOCK_OK` | `authenticating` | `unlocked{since, db}` |
+| `AUTH_FAIL` | `authenticating` | Back to `welcome` or `locked{reason}` |
+| `STEP_UP_START` | `unlocked` | `stepUp{action, returnTo}` |
+| `STEP_UP_DONE` | `stepUp` | `returnTo` |
+| `LOCK` | `unlocked` | `locked{reason}` |
+| `RESET` | `locked` | `welcome` |
 
-**Step-up.** `useStepUp(action)` returns `{ ok: true } | { ok: false; reason }`. It is never cached, so every write prompts.
+Every other pair returns the state unchanged. `machine.test.ts` checks all 63 pairs.
+
+| State | Holds | Gate | Routes allowed |
+| --- | --- | --- | --- |
+| `launching` | Nothing. The splash stays up | `locked` | `lock` |
+| `welcome` | Nothing. No vault yet | `welcome` | `welcome`, `primer` |
+| `locked` | `reason`: launch, idle, background, manual, signout | `locked` | `lock` |
+| `authenticating` | `purpose`: `unlock` from Lock, or `setup` from the primer | `locked` or `welcome` | Current screen stays |
+| `unlocked` | `since`, `db` | `unlocked` | All protected routes. Amounts follow `hideAmounts` |
+| `stepUp` | `action`, `returnTo` (the unlocked state, `db` included) | `unlocked` | Current screen stays |
+
+- **Launch.** `SessionRoot` runs `hasVault()` and `detectBiometric()` once. No vault goes to Welcome. A vault, or a failed check, goes to Lock, so Welcome never opens over existing data. The splash lifts after the gate is known.
+- **Unlock.** `unlock()` prompts, then calls `openVault()`. A `reset` result leaves a `db_reset` notice that History reads with `useDbResetNotice()` and clears with `dismissDbResetNotice()`. A vault that fails to open returns to Lock with the generic error.
+- **Sign out.** `signOut()` serves Settings and "Not you? Start again" on Lock. It locks, waits for the database to close, calls `destroyVault()` (which also clears prefs), then shows Welcome.
+- **Biometric name.** Copy names the device's own biometric: Face ID or Touch ID on iOS, fingerprint or face unlock on Android, from `supportedAuthenticationTypesAsync()`. `ready` is a strong biometric enrolled (`getEnrolledLevelAsync()`). When it is false, Lock and the primer open on "is off".
+- **Exports.** `useRouteGate`, `useDb`, `useStepUp`, `useAmountsHidden`, `showAmounts`, `hideAmounts`, `useDbResetNotice`, `useBiometric`, `lockNow`, `signOut`, `armLockout` (the reviewer lockout control) and `dismissDbResetNotice`. The screens export a prop-driven view next to each container (`LockView`, `PrimerView`, `WelcomeView`) for the gallery.
+
+**Showing and hiding amounts (D27).** `features/auth/amounts.ts` owns the `hideAmounts` pref's behaviour.
+- `useAmountsHidden()` reads the pref through `useSyncExternalStore` on `subscribePrefs`, so every writer re-renders it.
+- `showAmounts()` runs step-up `reveal` and writes `hideAmounts: false` only when the check passes. A cancel writes nothing.
+- `hideAmounts()` writes `true` and never prompts.
+- `SessionRoot` runs `dropRevealedOnHide()`. Whenever the pref reads hidden after a change, from any writer including `clearPrefs`, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
+- Lock and the primer say "Amounts stay hidden until you choose to show them." only while the pref hides them.
+
+**Step-up.** `useStepUp(action)` returns a function. Each call prompts and resolves to `{ ok: true } | { ok: false; reason }`, with `reason` one of `cancelled`, `mismatch`, `lockout`, `not_set_up`, `unavailable` or `unknown`. Nothing is cached, so every write prompts. A call while another prompt is up resolves `cancelled` without a second prompt.
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
-| `reveal` | "Reveal amounts" | `revealed{until: now + revealSeconds}` | Stay masked, silently |
+| `reveal` | "Show amounts" | `showAmounts()` writes `hideAmounts: false` | Stay hidden, silently |
 | `add` | "Save this transaction" | DB write, log `tx.added` | "Not saved. Your draft is still here." |
 | `delete` | "Delete this transaction" | DB delete, log `tx.deleted` | Sheet stays |
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing |
 | `erase` | "Erase transactions you added" | Manual rows deleted, log `data.erased` | Nothing |
 
-Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it is logged.
+The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it is logged.
 
-**`authenticateAsync` options.**
+**`authenticateAsync` options.** One path, `authenticate()` in `features/auth/prompt.ts`, serves unlock and step-up.
 - `biometricsSecurityLevel: 'strong'`.
 - `disableDeviceFallback: false`.
-- A ref guard blocks a second prompt while one is open.
+- `isAuthenticatingRef` is set before the prompt and cleared in `finally`. A prompt requested while it is set resolves `cancelled`.
 
 How the first two combine on a phone with only weak biometrics isn't documented, so it gets tested on a device.
 
-**Error codes**
+**Error codes.** The table `FAILURE` in `prompt.ts` types every `LocalAuthenticationError`, so a new code fails `tsc`.
 
-| Codes | Meaning | UI |
+| Codes | Reason | Lock and primer UI |
 | --- | --- | --- |
-| `user_cancel`, `system_cancel`, `app_cancel` | Cancelled | Return silently. Not an error |
-| `authentication_failed` | No match | Inline message, retry |
-| `lockout` | Locked out | Cool-down card, device passcode |
-| `not_enrolled`, `passcode_not_set` | Not set up | Explain, open device settings, passcode |
-| `not_available` | No hardware | Explain, passcode |
-| `user_fallback` | Chose passcode | Continue with fallback |
-| Anything else | Unknown | Generic retry |
+| `user_cancel`, `system_cancel`, `app_cancel` | `cancelled` | Return silently. Not an error |
+| `user_fallback` | `cancelled` | Sen always allows the passcode, so the OS handles it. Treated as a cancel |
+| `authentication_failed` | `mismatch` | "Not quite." with "2 more tries before fingerprint locks". Three tries are shown (inferred). At zero it points to the passcode |
+| `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode |
+| `not_enrolled`, `passcode_not_set` | `not_set_up` | "Fingerprint is off." Open device settings, or the passcode |
+| `not_available` | `unavailable` | Explain, passcode |
+| `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown` | `unknown` | "Something went wrong." Generic retry |
 
-**Lock triggers**
+**Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself. "Not quite." appears on iOS, where LocalAuthentication reports the failure.
+
+**Lock triggers** (`features/auth/locks.ts`, wired by `SessionRoot`).
 
 | Trigger | Mechanism |
 | --- | --- |
-| Background | AppState `background` re-masks at once and stores `backgroundedAt` |
+| Background | AppState `background` stores `backgroundedAt`, unless a prompt is up. It does not hide amounts (D27) |
 | Return | On `active`, lock if `now − backgroundedAt > relockAfter`. Never auto-prompt |
-| Idle | `onTouchStart` on the root resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock` and pauses in background |
-| Reveal expiry | The same tick compares with `until`. The ring animates on the UI thread |
-| Manual | "Lock now" |
+| Idle | `onTouchStart` on the `SessionRoot` view resets `lastTouch`, a plain module variable. A 15 s tick compares it with `idleLock`. The tick skips while backgrounded, and `active` restarts the count |
+| Manual | "Lock now" calls `lockNow()` |
 
 **The iOS inactive trap.** The Face ID sheet itself sends the app to `inactive` and back. So:
 - `isAuthenticatingRef` is set before the prompt and cleared in `finally`.
-- Only `background` locks or re-masks. `inactive` only shows the privacy cover.
-- The reducer ignores `BACKGROUND` while in `authenticating` or `stepUp`.
+- Only `background` starts the re-lock window. `inactive` only shows the privacy cover, which the security feature owns.
+- A `background` while a prompt is up is ignored, so a passcode screen that leaves the app does not count as leaving.
+- The reducer ignores `LOCK` while in `authenticating` or `stepUp`, so an idle tick never cuts a prompt short.
 
 **On `LOCK`:**
 - `queryClient.clear()`.
 - Close the database.
-- Drop the draft.
-- Re-mask.
+- Drop the draft. Protected routes, which include every sheet and the add flow, unmount.
+- Leave `hideAmounts` as it is. Amounts shown before the lock show again after the next unlock.
 
-Protected routes, which include every sheet and the add flow, are unmounted. A deep link that arrives while locked lands on Lock and is not replayed after unlock.
+A deep link that arrives while locked lands on Lock and is not replayed after unlock.
 
 ## Errors (D15)
 
@@ -599,10 +636,12 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | No amount in JS while masked, totals included. Rendered tree has no digits | `features/transactions/masking.test.tsx` |
 | List `data` reference unchanged across reveal and hide | same |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
-| Every state and event pair. `BACKGROUND` during `authenticating` is ignored | `features/auth/machine.test.ts` |
+| Every state and event pair. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
 | Re-lock window (59 s stays, 61 s locks), idle lock | `features/auth/locks.test.ts` |
-| Lock clears the cache, closes the database, drops the draft | `features/auth/session.test.ts` |
-| Step-up prompts every time with `'strong'`. Cancel writes nothing | `features/auth/use-step-up.test.ts` |
+| Lock clears the cache and closes the database | `features/auth/session.test.ts` |
+| Unlock opens History, and a lock unmounts it, which drops the draft with every protected route | `__tests__/lock-flow.test.tsx` |
+| Step-up prompts every time with `'strong'`. A second call while prompting opens no second prompt | `features/auth/use-step-up.test.ts` |
+| Showing prompts every time with `'strong'`. Cancel leaves amounts hidden. Hiding never prompts and drops the revealed queries, `clearPrefs` included. Shown amounts survive lock and unlock | `features/auth/amounts.test.ts` |
 | Locked deep link renders Lock | `__tests__/guard.test.tsx` |
 | Sync twice and interrupted give the same table hash. A page whose write fails keeps none of its rows. Bad rows are dropped and counted. A bank row never overwrites an added row | `services/sync.test.ts` |
 | Search "entral" matches a JS filter on 10k rows. Masked reads hold no amounts, totals included. `%` and `_` match only themselves. Add is idempotent. Delete refuses bank rows. Undo restores the same row | `services/tx-repo.test.ts` |

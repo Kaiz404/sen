@@ -86,10 +86,11 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 - **Perf.** Jest benches on 10k rows stay inside the D20 budgets (`services/tx-repo.bench.test.ts`, numbers in ARCHITECTURE.md › Data layer › Reads).
 
 **Lane 2c. Auth.** Owns `src/features/auth/`.
-- [ ] The session reducer as a pure table, the Zustand store holding the open database (`useDb()`), `useStepUp`, the AppState and idle locks, and the iOS inactive guard.
-- [ ] Welcome, the Face ID primer and the Lock screens with every error code mapped.
-- **Unit.** Every state and event pair. `BACKGROUND` during `authenticating` is ignored. Re-lock at 61 s, not 59 s.
-- **Device.** Launch, Lock, `finger touch`, then History. A wrong finger shows "Not quite."
+- [x] The session reducer as a pure table, the Zustand store holding the open database (`useDb()`), `useStepUp`, the AppState and idle locks, and the iOS inactive guard. Evidence: `features/auth/machine.test.ts` (all 63 state and event pairs), `locks.test.ts`, `session.test.ts`, `use-step-up.test.ts`.
+- [x] Show and hide amounts as the saved `hideAmounts` pref (D27). `useAmountsHidden`, `showAmounts` (step-up `reveal`) and `hideAmounts`, with the revealed queries dropped on every hide. Evidence: `features/auth/amounts.test.ts`, `src/__tests__/lock-flow.test.tsx` (the app root drops them).
+- [x] Welcome, the Face ID primer and the Lock screens with every error code mapped. Evidence: `features/auth/use-step-up.test.ts` (every code), `features/auth/screens/screens.test.tsx` (lockout, off, cancel, start again, primer, the hidden-amounts note), `src/__tests__/lock-flow.test.tsx`.
+- **Unit.** Every state and event pair. `LOCK` during a prompt is ignored. Re-lock at 61 s, not 59 s. Showing prompts every time with `'strong'`, cancel leaves amounts hidden, hiding never prompts, and shown amounts survive lock and unlock.
+- **Device.** Launch, Lock, `finger touch`, then History (`scripts/unlock-flow.sh`). A wrong finger shows "Not quite." on iOS. On Android the system sheet shows the miss and stays open, because expo-local-authentication never reports `authentication_failed` there (V, module source). Run `.maestro/auth-lock-prompt.yaml`, `adb -e emu finger touch 2`, then `.maestro/auth-wrong-finger.yaml`.
 
 ## Phase 3. History list (one agent)
 
