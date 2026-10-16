@@ -491,13 +491,13 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Unlock | Read the key, open the database |
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
-| Erase | Step-up, then the sign-out wipe. The vault, key and prefs are gone, and Welcome shows (D28) |
+| Erase | Step-up, then the sign-out wipe. The vault, key and prefs are gone, and Welcome shows (D31) |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
 | Database unreadable or newer than the app | Same, as `corrupt` |
 | One bad row | Drop it, count it, show "1 item couldn't be read" |
 
-**Activity log (D28).**
+**Activity log (D31).**
 - **Rows.** At most 50 `{ id, at, code, meta }`, kept by the `activity_log_cap` trigger. `id` is the time plus a counter, so events that share a millisecond keep their order.
 - **The shape.** `models/activity.ts` holds `ActivityEventSchema`, a strict union per `code`. No code has a numeric amount field and an extra key is refused on write and on read. A row that no longer parses is skipped and counted.
 - **Codes.** `auth.unlocked`, `auth.failed` (`mismatch` or `lockout`), `lock.locked` (`idle`, `background` or `manual`), `amounts.revealed`, `amounts.hidden`, `tx.added`, `tx.deleted`, `tx.undone` (`add` or `delete`), `settings.weakened` (the idle or leave window got longer), `demo.reset` and `log.cleared`. Each is also a logger code, checked by a type.

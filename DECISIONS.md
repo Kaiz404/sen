@@ -42,7 +42,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
-| D28 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase is a full wipe behind step-up |
+| D31 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase is a full wipe behind step-up |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
@@ -458,7 +458,7 @@ The phases are in [PLAN.md](PLAN.md).
 - 2026-10-16. First answer: one saved setting, shown until hidden, surviving lock and restart. Reason: one value instead of a session state plus a preference, and no timer.
 - 2026-10-17. Reopened by the owner. The brief says masked by default, and a reviewer relaunching must see masked. Changed to session state. The saved setting and its "survives lock" tests were removed.
 
-## D28. Security activity log and erase
+## D31. Security activity log and erase
 
 **Compared.**
 - **Where the log lives.** The `activity_log` table in the SQLCipher file, a separate MMKV list, or nothing persisted.
