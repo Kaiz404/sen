@@ -11,11 +11,9 @@ export function standIn(colors: Palette, themeName: string | undefined) {
     keyPlate: dark ? colors.canvas : colors.ink,
     /** Paper key border. Board: ink in light, #4A4E55 in dark. */
     keyEdge: dark ? colors.rule : colors.ink,
-    /** The one loud fill per screen (reveal card, Add key). Board: ink in light, lemon in dark. */
+    /** The one loud fill per screen (the Add key, hero cards). Board: ink in light, lemon in dark. */
     loud: dark ? colors.lemon : colors.ink,
     onLoud: dark ? colors.onPastel : colors.lemon,
-    /** Secondary text on the loud fill. Board: #D8D2C4 in light, #3A3320 in dark. */
-    onLoudMuted: dark ? colors.onPastel : colors.canvas,
     /** Skeleton highlight band. Board: #F7F2E8 in light. No dark board. */
     shimmer: dark ? colors.rule : colors.canvas,
   };
