@@ -4,7 +4,7 @@ import Animated, { type CSSAnimationKeyframes, type CSSStyle } from 'react-nativ
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { type MotionLevel, useLoopLevel } from '@/motion/policy';
+import { type MotionLevel, useEffectiveMotionLevel } from '@/motion/policy';
 import { DUR } from '@/motion/tokens';
 
 const SWEEP: CSSAnimationKeyframes<ViewStyle> = {
@@ -29,7 +29,7 @@ type BoneProps = {
 };
 
 export function Bone({ width, height, radius = 8 }: BoneProps): ReactNode {
-  const band = bandStyle(useLoopLevel());
+  const band = bandStyle(useEffectiveMotionLevel());
   const gradient = useId();
   const { theme } = useUnistyles();
   return (

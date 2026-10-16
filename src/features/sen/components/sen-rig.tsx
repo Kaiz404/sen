@@ -13,7 +13,7 @@ import Animated, {
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 import Svg, { Circle, ClipPath, Defs, G } from 'react-native-svg';
 
-import { type MotionLevel, useLoopLevel } from '@/motion/policy';
+import { type MotionLevel, useEffectiveMotionLevel } from '@/motion/policy';
 import { playHaptic } from '@/services/haptics';
 import type { SenAccentTone } from '@/theme/colors';
 
@@ -146,7 +146,7 @@ export function SenRig({
   label,
   surface = 'onCanvas',
 }: SenProps & { id: string }): ReactNode {
-  const level = useLoopLevel();
+  const level = useEffectiveMotionLevel();
   const [rig] = useState(() => makeRig(poseFrame(pose, prop)));
   const [clock] = useState(() => makeMutable(0));
   const [fx] = useState(() => makeMutable(ACCENT_MS));

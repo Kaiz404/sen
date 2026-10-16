@@ -52,7 +52,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 - **Motion.**
   - Reanimated on the UI thread.
   - Sen's motion is data. Add or change a moment in `src/features/sen/moments/`, never as a hand-written worklet.
-  - Read the motion level only through `useMotionPolicy()`, never `useReducedMotion()`. Informational timers such as the lockout cool-down use `ReduceMotion.Never`.
+  - Read the motion level only through `useMotionPolicy()`, or `useEffectiveMotionLevel()` when the gallery's `FrozenMotion` must win, never `useReducedMotion()`. Informational timers such as the lockout cool-down use `ReduceMotion.Never`.
   - Only one Sen animates at a time, through the MotionDirector. No Sen inside a list row. No animation state in list rows.
   - Prove motion with `npm run test:motion` (literal values at start, midpoint and end), then the Maestro screenshot flow on settled screens. Never approve your own screenshot baselines. Keep the device's animation scales on.
 - **Versions.**
