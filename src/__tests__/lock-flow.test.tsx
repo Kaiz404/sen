@@ -1,17 +1,30 @@
 import { readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType, ReactNode } from 'react';
 
-jest.mock('expo-local-authentication', () => ({ authenticateAsync: jest.fn() }));
+import { hideAmounts, lockNow } from '@/features/auth';
+import type { OpenDb } from '@/services/db';
+import { writePref } from '@/services/prefs';
+import { queryClient } from '@/services/query-client';
+import * as Vault from '@/services/vault';
+
+jest.mock('expo-local-authentication', () => ({
+  ...jest.requireActual('expo-local-authentication'),
+  authenticateAsync: jest.fn(),
+  supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
+  getEnrolledLevelAsync: jest.fn(async () => 3),
+}));
+jest.mock('@/services/vault', () => ({ hasVault: jest.fn(), openVault: jest.fn() }));
 // expo-router/testing-library swaps Reanimated for its mock, which has no ReducedMotionConfig.
 jest.mock('@/motion/policy', () => ({
   MotionPolicyRoot: ({ children }: { children: ReactNode }) => children,
 }));
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
+const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 
 const APP = join(__dirname, '..', 'app');
 
@@ -22,22 +35,48 @@ const routes = Object.fromEntries(
     .map((name) => [name, jest.requireActual<{ default: ComponentType }>(`@/app/${name}`).default]),
 );
 
-test('a wrong finger stays on Lock, then a matched finger unlocks into History', async () => {
+test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite.", a match opens History, a lock closes it', async () => {
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db });
   await renderRouter(routes, { initialUrl: '/' });
-  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
 
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
-  await fireEvent.press(screen.getByRole('button', { name: 'UNLOCK' }));
-  expect(screen.getByText('Not quite.')).toBeOnTheScreen();
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await fireEvent.press(screen.getByRole('button', { name: "Checking it's you" }));
+  expect(authenticate).toHaveBeenCalledTimes(1);
+
+  answer({ success: false, error: 'authentication_failed' });
+  expect(await screen.findByRole('header', { name: 'Not quite.' })).toBeOnTheScreen();
+  expect(
+    screen.getByText("Didn't match. 2 more tries before fingerprint locks."),
+  ).toBeOnTheScreen();
   expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
 
   authenticate.mockResolvedValueOnce({ success: true });
-  await fireEvent.press(screen.getByRole('button', { name: 'UNLOCK' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
+  expect(await screen.findByText('HISTORY')).toBeOnTheScreen();
+  expect(authenticate).toHaveBeenCalledTimes(2);
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',
     biometricsSecurityLevel: 'strong',
     disableDeviceFallback: false,
   });
-  expect(screen.getByText('HISTORY')).toBeOnTheScreen();
-  expect(screen.queryByRole('button', { name: 'UNLOCK' })).not.toBeOnTheScreen();
+  expect(screen.queryByRole('header', { name: 'Not quite.' })).not.toBeOnTheScreen();
+
+  await act(() => lockNow());
+  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
+  expect(screen.queryByText('HISTORY')).not.toBeOnTheScreen();
+});
+
+test('the app root drops revealed amounts whenever they are hidden', async () => {
+  jest.mocked(Vault.hasVault).mockResolvedValue(true);
+  await renderRouter(routes, { initialUrl: '/' });
+  await act(() => writePref('hideAmounts', false));
+  queryClient.setQueryData(['tx', 'revealed', 0], { t1: 4250 });
+
+  await act(() => hideAmounts());
+
+  expect(queryClient.getQueryData(['tx', 'revealed', 0])).toBeUndefined();
 });
