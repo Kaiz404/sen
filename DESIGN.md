@@ -77,33 +77,43 @@ Rules:
 
 Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`react-native-svg`) and animated with Reanimated. The idle and masked art is in `assets/brand/`.
 
-**Source of truth.** Sen's look and motion come from the canvas boards, copied into [`design/`](design/). The tables below summarise them. Where a table and a board differ, the board wins, and the table gets fixed.
+**Source of truth.** Sen's look and motion come from the canvas boards, copied into [`design/`](design/). The tables below summarise them and name the board selector each row comes from. Where a table and a board differ, the board wins, and the table gets fixed. `python3 -I scripts/board-keyframes.py <board>` prints any board's animations in milliseconds.
 
 | Board | Holds |
 | --- | --- |
-| `design/MAX-Library.dc.html` | MAX · Motion primitives. The character sheet: rig, poses, primitives and accents |
-| `design/MAX-Moments.dc.html` | MAX · App moments, hands (interactive). Every app moment's keyframes and haptic beat |
-| `design/MAX-Spec.dc.html` | MAX · Reanimated spec |
-| `design/MAL2-Loading.dc.html`, `design/MAL-Timelines.dc.html` | MAL2 · Sen is the dot. The launch, its timeline and the handoff to Lock |
+| `design/MAX-Library.dc.html` | MAX · Motion primitives. The rig, the 15 primitives (`.L-*`), the accent layer and the house rules |
+| `design/MAX-Moments.dc.html` | MAX · App moments, hands (interactive). Every app moment's keyframes and haptic beat (`.M-*`), and the static tiles that settle several poses |
+| `design/MAX-Spec.dc.html` | MAX · Reanimated spec. Its Launch row is superseded by MAL2 |
+| `design/MAL2-Loading.dc.html`, `design/MAL-Timelines.dc.html` | MAL2 · Sen is the dot. The launch, its timeline and the handoff to Lock. It supersedes `.M-launch`, MAX-Spec's Launch row, the `SF-Launch` board and every older launch |
 | `design/kit.py` | Every pose as SVG, the geometry phase 1 ported |
+
+Poses come from kit.py, MAX-Moments' static tiles (`.M-err`, `.M-last`, `.M-lockout`, `.M-lock`) and the held frames of MAX-Library's primitives (`.L-peek`, `.L-slide`, `.L-shrug`, `.L-squint`). MAX-Library holds no pose sheet.
 
 ### Anatomy
 
 Rig units: 1 unit = size / 600 pt. Origin at the face centre.
 
-| Part | Shape | Notes |
-| --- | --- | --- |
-| `rim` | Circle r 262 at (10, 16), deep mint | The coin edge. The offset gives a hint of depth |
-| `face` | Circle r 222, lemon | Fixed |
-| `lk` (face group) | Eyes and mouth | Slides across the disc. Clipped to the face circle so it can tuck behind the rim |
-| `eye-l`, `eye-r` | Ellipse rx 14 ry 20 at (∓72, −38), plus a closed arc | Open and closed crossfade. Blink is scaleY |
-| `mouth` | Six pre-drawn paths: smile, small, grin, frown, flat, o | Crossfade, never morph |
-| `paw-l`, `paw-r` | Ellipse rx 46 ry 36 at (∓106, 152), deep mint | Wave, perch, hold one prop, celebrate. **Never cover the eyes.** The lower face is fine, as in `worried` |
-| `cheeks` | Two ellipses, opacity 0 to 0.3 | Happy only |
-| Props | Magnifier, plug, nightcap, sunglasses | One per moment |
-| Accents | 3 sparkle stars, 3 ticks, 1 swoosh | Separate layer. Launch, unlock, reveal and copy only |
+| Part | Board | Shape | Notes |
+| --- | --- | --- | --- |
+| Rim | | Circle r 262 at (10, 16), deep mint | The coin edge. The offset gives a hint of depth |
+| Face | | Circle r 222, lemon | Fixed |
+| Face group | `.lk` | Eyes, mouth and sunglasses | Slides across the disc. Clipped to the face circle so it can tuck behind the rim |
+| Eyes | `.el` › `.elb`, `.elc` | Three layers per eye. The pose layer (offset and scale) holds an open ellipse rx 14 ry 20 at (∓72, −38) and a closed arc | A pose holds its eye shape on the pose layer. Blinks, eye-close, peek cracks and squints run on the open and shut layers (scale and opacity), so they play over any held pose. The closed arc scales about its own box centre (∓72, −34) |
+| Mouth | `.mo` | Six pre-drawn paths: smile, small, grin, frown, flat, o | Crossfade, never morph. The group scales about the smile's centre (MAL2's wink, 1.6 by 1.8) |
+| Paws | `.pl` › `.plf` | Ellipse rx 46 ry 36 at (∓106, 152), deep mint. Two layers per paw, each with translate, rotate and scale | The pose layer waves, perches and celebrates. The secondary layer trails a lean or a hop. A held prop rides the right paw's secondary layer, behind the paw. **Never cover the eyes.** The lower face is fine, as in `worried` |
+| Cheeks | `.ck` | Two ellipses, opacity 0 to 0.3 | Happy, revealed and copy |
+| Props | `.cap`, `.shades`, `.prop` | Magnifier, plug, nightcap, sunglasses | One per moment. The nightcap sits above the clip. The sunglasses ride the face group. The cap and sunglasses can move, tilt and fade |
+| Accents | `.fx`, `.fxb` | 3 sparkle stars (filled, stroked 10 with round joins), 3 ticks (stroked 18), 1 swoosh (`M-330 60 Q-330 250 -140 300`, stroked 44, round caps) | Inside `mv`, so they follow travel but never the spin. The swoosh draws behind the coin. Stars and ticks draw in front. Launch, unlock, reveal and copy only |
 
 Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it", never "he" or "she".
+
+Accent colours follow the surface Sen sits on (MAX-Moments `--fx` and `--sw`). Tokens: `SEN_ACCENT_TONES` in `src/theme/colors.ts`.
+
+| Surface | Stars and ticks | Swoosh |
+| --- | --- | --- |
+| Pastel, such as a lilac card (`onPastel`) | Ink `#17181A` | Paper `rgba(255,253,248,.75)` |
+| Ink hero (`onHero`) | Lemon `#F2DC72` | Lemon `rgba(242,220,114,.22)` |
+| Cream canvas (`onCanvas`) | Deep `#236B47` | Deep `rgba(35,107,71,.16)` |
 
 ### Size tiers
 
@@ -115,20 +125,25 @@ Sen's colours are the same in light and dark mode. In copy, Sen is "Sen" or "it"
 
 ### Poses
 
-| Pose | Face | Paws | Means |
-| --- | --- | --- | --- |
-| `idle` | Eyes open, smile | Rest | Default |
-| `masked` | Eyes closed arcs, face tucked to (0, 34), small mouth | Rest | Amounts hidden |
-| `peek` | Face slid to (22, 24), right eye a crack, body leans −2.4° | Rest | Face ID in progress |
-| `revealed` | Face up to (0, −8), eyes open, grin, cheeks | Rest | Amounts showing |
-| `happy` | Happy squint arcs, grin, cheeks | Up at the rim (∓128, −180) | Unlock, reveal success, saved, copied |
-| `look` | Face slid to (64, −44), body +2.6° | Rest | Watching something, such as the amount being typed |
-| `lookdown` | Face slid to (−64, 70) | Rest | Glancing at the ring |
-| `worried` | Smaller eyes nudged in, frown, body −4° | Clutch the rim | Auth failed, network error (with plug) |
-| `asleep` | Closed eyes, face tucked to (0, 48), nightcap | Folded | Lockout, app switcher cover |
-| `shrug` | Face (−16, −14), flat mouth | Out and up | Empty search (with magnifier), not found, Face ID off |
-| `squint` | Eyes (1.15, 0.35), flat mouth | Rest | Switched to light mode |
-| `cool` | Sunglasses | Rest | Switched to dark mode |
+Every lean pairs with a counter skewX, as on the boards. "Body" is `sq` (rotate, skewX and scale about the contact point) and `mv` (lift).
+
+| Pose | Board | Face | Body | Paws | Means |
+| --- | --- | --- | --- | --- | --- |
+| `idle` | kit.py | Eyes open, smile | Rest | Rest | Default |
+| `masked` | `.M-lock` | Eyes closed arcs, face tucked to (0, 34), small mouth | Rest | Rest | Amounts hidden |
+| `peek` | `.L-peek` | Face slid to (22, 24), left eye shut, right eye a crack (1.05, 0.45), small mouth | Leans −2.4°, skewX 2° | Rest | Face ID in progress |
+| `revealed` | `.M-reveal` | Face up to (0, −6), eyes open, grin, cheeks | Rest | Rest | Amounts showing |
+| `happy` | `.M-last` | Face (0, −6), open eyes squinted to (1.15, 0.45), grin, cheeks | Rest | Up at the rim (∓128, −180) | Unlock, reveal success, saved, copied |
+| `look` | `.L-slide` | Face slid to (64, −44) | Leans 2.6°, skewX −2.4° | Rest | Watching something, such as the amount being typed |
+| `lookdown` | `.L-slide` | Face slid to (−64, 70) | Leans −3°, skewX 3° | Rest | Glancing at the ring |
+| `worried` | `.M-err` | Eyes at 0.85 nudged in to (±10, 8), frown | Leans −4°, skewX 3° | Clutch the rim at (±66, −56), scale 0.9 | Auth failed, network error (with plug) |
+| `asleep` | `.M-lockout` | Closed eyes, face tucked to (0, 48), nightcap | Rest | Folded (±36, −6) | Lockout, app switcher cover |
+| `shrug` | `.L-shrug` | Face (−16, −14), flat mouth | Lifts 14, stretches 0.98 by 1.03, leans 2°, skewX −2° | Out and up at (∓70, −80), turned ∓20° | Empty search (with magnifier), not found, Face ID off |
+| `squint` | `.L-squint` | Eyes (1.15, 0.35), flat mouth | Rest | Rest | Switched to dark mode, mid adjustment. The moment relaxes to idle |
+| `cool` | `.M-dark` | Sunglasses | Rest | Rest | Switched to light mode. The sunglasses stay on |
+
+- `revealed` and `happy` settle the face at (0, −6), MAX-Moments' settled value (`.M-unlock`, `.M-reveal`). MAX-Library's eye-pop primitive stops at −8.
+- `shrug` uses MAX-Library's primitive. MAX-Moments' Empty search ends with the right paw at (20, −70), holding the magnifier.
 
 ### Placement
 
@@ -144,10 +159,13 @@ References: Phantom's onboarding (tilted mid-motion character, flat sparkle acce
 
 ### Rig for Reanimated
 
-- Body transforms run on nested `Animated.View` wrappers, outside in: `mv` (translate) › `rl` (rotate about the coin centre) › `sq` (rotate, skewX and scale about the contact point (10, 278)) › `sp` (scaleX for the edge spin). Pivots use a static `transformOrigin`.
+- Body transforms run on nested `Animated.View` wrappers, outside in: `mv` (translate and the rig's opacity) › `rl` (rotate about the coin centre) › `sq` (rotate, skewX and scale about the contact point (10, 278)) › `sp` (scaleX for the edge spin). Pivots use a static `transformOrigin`.
+- `sp`'s scaleX is `cos θ`, never closer to zero than 0.02, so the coin keeps a sliver edge-on.
+- The edge pill draws in its own SVG inside `sq`, after `sp`, so it never takes the spin's scale. It shows while `|cos θ| < 0.12`.
+- Accents draw in two SVG layers inside `mv`: the swoosh before `rl`, behind the coin, and the stars and ticks after it. They follow travel and never the spin.
 - Face parts are SVG `G` elements driven by `useAnimatedProps`, transformed with a worklet-computed `matrix`. Keep the number of SVG nodes changing per frame near 12, and measure it.
 - Wrap `lk` in a static `G` with `clipPath` (the face circle) so the clip stays put while the face slides.
-- The implementation model (channels, moments as data) is in ARCHITECTURE.md › Motion.
+- The implementation model (channels, layers, moments as data) is in ARCHITECTURE.md › Motion.
 
 ```ts
 const EASE = {
@@ -157,6 +175,12 @@ const EASE = {
   sine: Easing.inOut(Easing.sin),          // holds, returns
   inS:  Easing.in(Easing.sin),             // spin toward edge-on
   outS: Easing.out(Easing.sin),            // spin away from edge-on
+};
+const MAL = {                              // the launch, from MAL-Timelines
+  malSpring: Easing.bezier(0.34, 1.56, 0.64, 1), // one overshoot. As a spring: damping 12, stiffness 180
+  handoff:   Easing.bezier(0.3, 1.25, 0.5, 1),   // Sen grows into Lock's Sen
+  hopOut:    Easing.bezier(0.2, 0.7, 0.4, 1),    // rising out of a hop
+  hopIn:     Easing.bezier(0.6, 0, 0.8, 0.3),    // falling into a landing
 };
 const SPRING = {
   pop:    { damping: 14, stiffness: 260, mass: 0.7 }, // ~15% overshoot
@@ -168,51 +192,62 @@ const RM = { reduceMotion: ReduceMotion.System };     // spread into every confi
 
 ### Primitives
 
-| Primitive | Duration | What moves |
-| --- | --- | --- |
-| blink | 140 ms | Eyes scaleY 1 › 0.1 (60 ms, inQ) › 1 (80 ms, outQ). Optional double blink after 90 ms |
-| look-left/right | 1.3 s with hold | `lk` x ∓26 (140 ms, out) with one blink. Body leans ∓2.6° at +80 ms (settle). Back at 1100 ms |
-| lean-in | 640 ms | Counter-lean +2° (100 ms), then −7° and skewX 10° (pop). Eyes lead by 80 ms |
-| squash-hop | 700 ms | Squash 1.12/0.86 › rise −80 (230 ms, outQ) › stretch › fall (170 ms, inQ) › land squash 1.16/0.84 › pop |
-| wobble-settle (Euler) | ~1.15 s | Rotate ±A, A0 11°, A × 0.72 and duration × 0.8 per swing, 10 swings. Final clack 1.03/0.97 › settle. Build the step array once |
-| edge-spin | 240 ms per quarter | θ drives `sp` scaleX = cos θ. Heads and tails swap on sign. An edge pill shows near edge-on. Stop by springing to the next 2πk so it lands heads |
-| flip | 960 ms | Squash › arc −150 › θ 0 to 4π linear › land squash › pop |
-| roll | 900 ms in, 550 ms out | `rl` rotate derived from translateX / 262. Skew into travel. Eyes lead the exit |
-| eye-close | 450 ms | Eyes squeeze to 0.15 › closed arcs spring in › face tucks to (0, 34) › mouth small |
-| eye-pop | 420 ms | Face presses to 46 › springs up to −8 (pop) › eyes open 0.1 › 1.12 › 1 › small hop › grin, cheeks, accents |
-| eye-peek | 240 ms open, 160 ms back | Face slides to (22, 24) › right eye opens a crack (1.05, 0.45) › one blink › back |
-| face-slide | 240 ms, body +80 ms | Face slides to a target: ring (−64, 70), card (64, −44), pull gap (0, −60). Hide at (120, 168) or (−28, 190) |
-| squint | 800 ms | Eyes (1.15, 0.35), recoil +6, flat mouth |
-| shrug | 1.3 s | Face (−16, −14), paws out and up (∓70, −80), body squash and lift −14, one bounce back |
-| accent-pop | 900 ms | Stars 0.2 › 1.18 › 1 with 50 ms stagger, ticks fly out, swoosh draws on, all fade at 600 ms, then unmount |
+Each row is a MAX-Library tile. Its board selector holds the keyframes.
+
+| Primitive | Board | Duration | What moves |
+| --- | --- | --- | --- |
+| blink | `.L-blink` | 140 ms | Open layer scaleY 1 › 0.1 (60 ms, inQ) › 1 (80 ms, outQ). Optional double blink after 90 ms |
+| look-left/right | `.L-look` | 1.3 s with hold | `lk` x ∓26 (140 ms, out) with one blink. Body leans ∓2.6° with skewX ±2.4° at +80 ms (settle, overshooting to ∓3.4°). Back at 1100 ms |
+| lean-in | `.L-lean` | 640 ms | Counter-lean +2° with skewX −3° (100 ms), then −7° with skewX 10° and 0.97 by 1.03 (pop). Face leads to (−22, −6) by 80 ms. Paws trail +14 on the secondary layer |
+| squash-hop | `.L-hop` | 700 ms | Squash 1.12/0.86 › rise −80 (230 ms, outQ) › stretch with −2° and skewX 4° › fall (170 ms, inQ) › land squash 1.16/0.84 › pop. Paws bounce 18, −12, 10 on the secondary layer. Eyes squash to 0.6 on landing |
+| wobble-settle (Euler) | `.L-wob` | ~1.15 s | Rotate ±A, A0 11°, A × 0.72 and duration × 0.8 per swing, 10 swings. Final clack 1.03/0.97 › settle. Build the step array once |
+| edge-spin | `.L-edge` | 240 ms, then 600 ms per turn | θ drives `sp` scaleX = cos θ, never closer to zero than 0.02. The first quarter runs 240 ms inS to edge-on, then θ turns linearly at 600 ms per turn. Heads and tails swap on the sign. The edge pill shows while `\|cos θ\| < 0.12`. Stop by springing to the next 2πk so it lands heads |
+| flip | `.L-flip` | 960 ms | Squash › arc −150 › θ 0 to 4π linear › land squash › pop |
+| roll | `.L-roll` | 900 ms in, 550 ms out | `rl` rotate derived from translateX / 262. Skew into travel. Eyes lead the exit |
+| eye-close | `.L-close` | 450 ms | Open layer squeezes to 1.1 by 0.15 › closed arcs spring in (0.7/0.3 › 1.08/1.15 › 1) › face tucks to (0, 34) › mouth small |
+| eye-pop | `.L-pop` | 420 ms | Face presses to 46 › springs up to −8 (pop) › eyes open 0.1 › 1.12 › 1 › small hop › grin, cheeks, accents |
+| eye-peek | `.L-peek` | 240 ms open, 160 ms back | Face slides to (22, 24) › body leans −2.4° with skewX 2° at +80 ms › right eye opens a crack (1.05, 0.45) › one blink › back |
+| face-slide | `.L-slide` | 240 ms, body +80 ms | Face slides to a target: ring (−64, 70), card (64, −44), pull gap (0, −60). Body leans ±3° with skewX ∓3° toward it. Hide at (120, 168) or (−28, 190) |
+| squint | `.L-squint` | 800 ms | Eyes (1.15, 0.35), recoil +6, flat mouth |
+| shrug | `.L-shrug` | 1.3 s | Face (−16, −14), paws out and up (∓70, −80) and turned ∓20°, body squash 1.04/0.96 then stretch 0.98/1.03 with 2° and skewX −2°, lift −14, one bounce back |
+| accent-pop | `.L-fx`, `.L-pop` | 900 ms | Stars 0.2 › 1.18 › 1 with 50 ms stagger, ticks fly out, swoosh draws on, all fade at 600 ms, then unmount |
 
 ### App moments
 
-| Moment | Trigger | Sequence | Haptic |
-| --- | --- | --- | --- |
-| Launch | Cold start | MAL2, Sen is the dot. Sen falls onto the S, hops to the e and the n, leaps and lands as the period (squash, sparkles, ticks), winks, settles into the period, then grows into Lock's Sen while the ink panel shrinks into Lock's hero. Loop 4200 ms, handoff 2400 to 3110 ms. Wait loop: a small hop on the period. See `design/MAL-Timelines.dc.html` | Light impact at 1512 ms |
-| Idle | 4 to 7 s with no touch | Blink 70%, look with blink 20%, double blink 10%. After 3 beats, wait 10 to 15 s | None |
-| Lock, waiting | Lock screen | Masked pose. Every 6 to 9 s, eye-peek toward Unlock, blink, close | None |
-| Face ID in progress | Prompt open | Peek left and right in a 1.6 s loop | None |
-| Auth failed | Prompt fails | Eyes pop, face shakes ±16, lean back 4°, frown, paws clutch, eyes close at 1.5 s | Error |
-| Unlock | Auth succeeds | eye-pop with paws up › accent-pop › one flip › land. 1.35 s | Success at 160 ms |
-| Reveal | Reveal auth succeeds | eye-pop and small hop › digits roll in at 200 ms › face slides toward the digits › accents › happy squint | Success at 200 ms |
-| Re-mask | Timeout, Hide now, background | eye-close › face ducks behind the rim › settles masked. Dots replace digits at 120 ms. On background, set the pose instantly | Hide now only: Light |
-| Pull to refresh | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading (at least 600 ms) › stops on heads › lands › wobble-settle › "Updated" pill | Selection at threshold, Light on land |
-| Empty search | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, sinks half hidden | None |
-| Network error | Fetch fails | Worried, leans back −8°, paws hold the plug. Slow blink every 4 to 7 s. On Retry, glances at the button | Warning, once |
-| Lockout | Biometric lockout | Asleep with nightcap › sigh squash › spins edge-on › breathes › turns back when the cool-down ends | Error |
-| Copy | Reference copied | Small hop out from the slip, paws up, grin, accents. 800 ms | Light |
-| Saved, added | Add succeeds | As unlock, smaller. Row slides in under Today | Success |
-| Theme change | Theme switches while active | To light: hard squint and recoil, sunglasses drop in. To dark: squint, scan, relax | Selection (in-app toggle only) |
+Each row is a MAX-Moments tile unless it names another board.
+
+| Moment | Board | Trigger | Sequence | Haptic |
+| --- | --- | --- | --- | --- |
+| Launch | MAL2 (`MAL2-Loading`, `MAL-Timelines`) | Cold start | Sen is the dot. Frame 0 is the splash: "Sen" with no period, and Sen small (0.22) off to the left, stretched and leaning −6°. 0 to 380 ms it falls onto the S. 380 to 710 ms it hops to the e, and 710 to 1050 ms to the n, each letter dipping as it lands. 1050 to 1510 ms it leaps to the period with the swoosh trailing. At 1512 ms it lands as the period: squash 1.3/0.7, then spring, with sparkles and ticks. 1720 to 1830 ms it winks (right eye scaleY 0.12, smile scaled 1.6 by 1.8, cheeks). 1930 to 2100 ms it settles into the period. Handoff 2400 to 3110 ms: Sen grows into Lock's Sen while the ink panel shrinks into Lock's hero, the wordmark rises and fades, and Lock's UI fades in. The loader unmounts at 3110 ms. Loop 4200 ms. Wait loop: a small hop on the period, 600 ms, no haptic. Supersedes `.M-launch`, MAX-Spec's Launch row and the `SF-Launch` board | Light impact at 1512 ms |
+| Idle | `.M-idle` | 4 to 7 s with no touch | Eyes only, no body motion. Blink 70%, look with blink 20% (face to (−22, 0) and back), double blink 10%. After 3 beats, wait 10 to 15 s | None |
+| Lock, waiting | `.M-lock` | Lock screen | Masked pose. Every 6 to 9 s the face slides to (20, 26) toward Unlock, the right eye opens a crack (1.05, 0.45), blinks once, and closes. No lean | None |
+| Face ID in progress | `.M-face.ph-scan` | Prompt open | Peek left (−20, 24) with the left eye cracked, then right (20, 24) with the right eye, in a 1.6 s loop | None |
+| Auth failed | `.M-face.ph-fail` | Prompt fails | Eyes pop open at 0.9, face shakes ±16 and settles at (0, 10), counter-lean then lean back to −4° with skewX 4°, frown, paws clutch (±40, −24) at 0.9, eyes close at 1.5 s | Error |
+| Unlock | `.M-unlock` | Auth succeeds | eye-pop with paws up › face settles at (0, −6) › accent-pop › one flip › land. Happy squint (1.15, 0.45) from 1250 ms. 1.35 s | Success at 160 ms |
+| Reveal | `.M-reveal` | Amounts shown, after biometrics (D27: a saved setting, no timer) | eye-pop and small hop, paws up › digits roll in at 200 ms › face at (0, −6) › accents › face slides toward the digits (18, −10) at 640 ms › happy squint (1.15, 0.45). Accents pop before the slide | Success at 200 ms |
+| Re-mask | `.M-remask` | Timeout, Hide now, background | eye-close › face ducks behind the rim › settles masked. Dots replace digits at 120 ms. On background, set the pose instantly | Hide now only: Light |
+| Pull to refresh | `.M-ref` | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading (at least 600 ms) › stops on heads › lands › wobble-settle › "Updated" pill | Selection at threshold, Light on land |
+| Empty search | `.M-empty` | 0 results, 300 ms after typing stops | Rises from behind the slip, looks left and right with the magnifier, shrugs, sinks half hidden | None |
+| Network error | `.M-err` | Fetch fails | Worried, leans back to −8° with skewX 7°, holds at −6.5° with 5.5°, then returns to the worried lean. Paws squeeze the plug on the secondary layer (0.9). Slow blink every 4 to 7 s. On Retry, glances at the button | Warning, once |
+| Lockout | `.M-lockout` | Biometric lockout | Asleep with nightcap › sigh squash › spins edge-on › breathes › turns back when the cool-down ends | Error |
+| Copy | `.M-copy` | Reference copied | From a base lean of 3° with skewX −4°: hop −60 out from the slip, paws up (∓60, −90), happy squint, grin, cheeks, accents. 800 ms | Light |
+| Saved, added | No board | Add succeeds | As unlock, smaller. It reuses the unlock and reveal vocabulary. Row slides in under Today | Success |
+| Theme change | `.M-dark` | Theme switches while active | To light: hard squint (1.2, 0.3) and recoil +8, then the sunglasses drop in with one overshoot and stay (ends `cool`). To dark: squint (1.15, 0.5), eyes scan ±12, relax with a blink (ends `idle`) | In-app toggle only: Selection, Android `Toggle_On` or `Toggle_Off` |
 
 ### Motion rules
 
+- **House rules** (MAX-Library).
+  - Eyes lead. The body follows 80 ms later.
+  - Lean into a move: tilt and shear about the contact point, not only scale.
+  - Quick anticipation, one clean overshoot, settle.
+  - Accents pop on launch, unlock, reveal and copy only, then leave.
+- **Ambient loops.** kit.py's `bob` and `breathe` loops are not used, because idle is eyes only (MAX-Spec). The lockout keeps its breathing.
 - **Reduced motion.**
   - Read the system setting live through `useMotionPolicy()`. Reanimated's `useReducedMotion()` never updates.
   - Pose changes become 150 ms crossfades, built from the moment data, and blinks stay. The lockout cool-down keeps counting.
   - Hops, spins, flips, rolls, wobbles, stretch and accents are dropped.
-  - Haptics still fire.
+  - Haptics still fire, except at launch.
+  - **Launch.** Show the rest frame, hold 400 ms, then crossfade to Lock in 200 ms. No travel, no accents, no haptic (MAL-Timelines).
   - The Settings choice "Sen's animations: Calm" does the same.
 - **Never during scroll.**
   - Pause on scroll start and resume 1.5 s after momentum ends.
@@ -243,8 +278,10 @@ One haptic per moment, fired from the named step, not at gesture start.
 | Unlock, reveal, saved | `notificationAsync(Success)` | `AndroidHaptics.Confirm` |
 | Auth failed, lockout | `notificationAsync(Error)` | `AndroidHaptics.Reject` |
 | Network error | `notificationAsync(Warning)` | `AndroidHaptics.Reject` |
+| Launch landing | `impactAsync(Light)` | `impactAsync(Light)`. MAL-Timelines names no Android constant |
 | Copy, refresh landed, Hide now | `impactAsync(Light)` | `Context_Click`, `Clock_Tick`, `Toggle_Off` |
 | Segmented controls, refresh threshold | `selectionAsync()` | `Segment_Tick` |
+| Theme change, in-app toggle only | `selectionAsync()` | `Toggle_On` or `Toggle_Off`, matching the new state (inferred: MAX-Moments names both without a mapping) |
 
 ## Screens
 
