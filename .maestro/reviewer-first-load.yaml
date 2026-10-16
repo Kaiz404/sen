@@ -1,0 +1,44 @@
+# The full-screen error: arm Offline, then switch the dataset, so History's first sync fails with nothing
+# to show (on a phone with no added rows, which keep a list on screen). The error says the fault is
+# simulated and links back to the reviewer controls. Retry loads the
+# rows, and the dataset row shows its progress line while they load.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- tapOn: Settings
+- scrollUntilVisible:
+    element: Offline
+    direction: DOWN
+    centerElement: true
+- tapOn: Offline
+- tapOn: "20"
+- tapOn: Back to history
+- extendedWaitUntil:
+    visible: Can't load your history
+    timeout: 15000
+- assertVisible: .*SIMULATED.*
+- assertVisible: Reviewer settings
+- takeScreenshot: reviewer-first-load
+- tapOn: Retry
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000
+- takeScreenshot: reviewer-first-load-recovered
+- tapOn: Settings
+- scrollUntilVisible:
+    element: 10k
+    direction: DOWN
+    centerElement: true
+- tapOn: 10k
+- extendedWaitUntil:
+    visible: Loading .* of 10,000 rows…
+    timeout: 10000
+- takeScreenshot: reviewer-dataset-loading
+- extendedWaitUntil:
+    visible: Reloads the bank rows.*
+    timeout: 60000
+- tapOn: "1k"
+- extendedWaitUntil:
+    visible: Reloads the bank rows.*
+    timeout: 30000

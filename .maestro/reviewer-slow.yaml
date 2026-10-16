@@ -1,0 +1,24 @@
+# Reviewer control "Slow network": a pull holds Sen in the pull slot for 3 s before the new row lands.
+# Turning it off again makes the next pull land at once.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Slow network, add 3 s
+      SHOT: slow-on
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- takeScreenshot: reviewer-slow-waiting
+- extendedWaitUntil:
+    visible: .*1 new.*
+    timeout: 15000
+- takeScreenshot: reviewer-slow-landed
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Slow network, add 3 s
+      SHOT: slow-off

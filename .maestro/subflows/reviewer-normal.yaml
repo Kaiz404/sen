@@ -1,0 +1,11 @@
+# Opens Settings and checks the one-shot fault has gone back to Normal, then returns to History.
+appId: com.kaiz404.sen
+---
+- tapOn: Settings
+- scrollUntilVisible:
+    element:
+      text: Normal
+      checked: true
+    direction: DOWN
+    centerElement: true
+- tapOn: Back to history

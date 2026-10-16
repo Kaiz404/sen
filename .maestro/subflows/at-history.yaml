@@ -1,0 +1,13 @@
+# Cold-starts Sen, unlocks through the dev auth override and waits for History's rows.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: at-lock.yaml
+    env:
+      AUTH: pass
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000

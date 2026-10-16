@@ -1,0 +1,37 @@
+# Reset demo data: arm a fault and slow mode, then reset. The sheet confirms, History reloads the sample
+# rows, and every reviewer control reads its default again.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- tapOn: Settings
+- scrollUntilVisible:
+    element: Server error 500
+    direction: DOWN
+    centerElement: true
+- tapOn: Server error 500
+- tapOn: Slow network, add 3 s
+- scrollUntilVisible:
+    element: Reset demo data
+    direction: DOWN
+    centerElement: true
+- tapOn: Reset demo data
+- extendedWaitUntil:
+    visible: Reset demo data?
+    timeout: 10000
+- takeScreenshot: reviewer-reset-sheet
+- tapOn:
+    text: Reset demo data
+    index: 1
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 30000
+- takeScreenshot: reviewer-reset-done
+- tapOn: Settings
+- scrollUntilVisible:
+    element:
+      text: Normal
+      checked: true
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: reviewer-reset-controls

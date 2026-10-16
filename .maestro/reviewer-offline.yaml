@@ -1,0 +1,27 @@
+# Reviewer control "Offline": a pull keeps the list under the "You're offline" banner, which says the fault is simulated.
+# The fault covers that one request, so Retry recovers and Settings reads Normal again.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Offline
+      SHOT: offline
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    visible: You're offline
+    timeout: 15000
+- assertVisible: Simulated.*
+- takeScreenshot: reviewer-offline
+- tapOn: Retry
+- extendedWaitUntil:
+    notVisible: You're offline
+    timeout: 15000
+- assertVisible:
+    id: tx-row
+- takeScreenshot: reviewer-offline-recovered
+- runFlow: subflows/reviewer-normal.yaml

@@ -1,0 +1,27 @@
+# Reviewer control "Bad data": a pull keeps the good rows and says two couldn't be read. The next pull is
+# clean again and Settings reads Normal.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Bad data
+      SHOT: bad-data
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    visible: 2 items couldn't be read
+    timeout: 15000
+- takeScreenshot: reviewer-bad-data
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    notVisible: 2 items couldn't be read
+    timeout: 15000
+- takeScreenshot: reviewer-bad-data-recovered
+- runFlow: subflows/reviewer-normal.yaml

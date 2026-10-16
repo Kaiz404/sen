@@ -1,0 +1,20 @@
+# From History, opens Settings, taps the reviewer control matching ${CONTROL} (a regex), shoots it as
+# ${SHOT}, then goes back to History.
+appId: com.kaiz404.sen
+---
+- tapOn: Settings
+- extendedWaitUntil:
+    visible:
+      id: settings
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${CONTROL}
+    direction: DOWN
+    centerElement: true
+- tapOn: ${CONTROL}
+- takeScreenshot: reviewer-control-${SHOT}
+- tapOn: Back to history
+- extendedWaitUntil:
+    visible:
+      id: tx-row
+    timeout: 10000

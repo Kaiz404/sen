@@ -1,0 +1,27 @@
+# Reviewer control "Timeout (8 s)": a pull keeps the list under the "Taking too long" banner, which says the fault is simulated.
+# The fault covers that one request, so Retry recovers and Settings reads Normal again.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Timeout \(8 s\)
+      SHOT: timeout
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    visible: Taking too long
+    timeout: 25000
+- assertVisible: Simulated.*
+- takeScreenshot: reviewer-timeout
+- tapOn: Retry
+- extendedWaitUntil:
+    notVisible: Taking too long
+    timeout: 15000
+- assertVisible:
+    id: tx-row
+- takeScreenshot: reviewer-timeout-recovered
+- runFlow: subflows/reviewer-normal.yaml

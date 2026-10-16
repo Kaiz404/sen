@@ -1,0 +1,27 @@
+# Reviewer control "Server error 500": a pull keeps the list under the "Something broke on our side" banner, which says the fault is simulated.
+# The fault covers that one request, so Retry recovers and Settings reads Normal again.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: Server error 500
+      SHOT: server
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    visible: Something broke on our side
+    timeout: 15000
+- assertVisible: Simulated.*
+- takeScreenshot: reviewer-server
+- tapOn: Retry
+- extendedWaitUntil:
+    notVisible: Something broke on our side
+    timeout: 15000
+- assertVisible:
+    id: tx-row
+- takeScreenshot: reviewer-server-recovered
+- runFlow: subflows/reviewer-normal.yaml
