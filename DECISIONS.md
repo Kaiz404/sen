@@ -700,4 +700,4 @@ The phases are in [PLAN.md](PLAN.md).
 - **Clock.** 60 s for the sensor alone, 5 minutes for the combined sheet and the screen lock (see the D36 revision).
 - **Naming.** The key names a sensor only when a strong biometric is enrolled, and says "biometrics" when Android cannot say which. Otherwise it says "Unlock". Android's credential is "screen lock" in copy, because it may be a PIN, pattern or password, and iOS says "passcode".
 
-**Cost.** A small native module, written once in Kotlin and needing a rebuild. The Android 9 and 10 hand-over, the credential activity's `AppState` and `lockout` from the combined sheet are not verified without a device.
+**Cost.** A small native module, written once in Kotlin and needing a rebuild. The Android 9 and 10 hand-over, the credential activity's `AppState` and `lockout` from the combined sheet are not verified without a device. Accepted risk: a user who cancels the screen-lock activity on API below 30 after Sen was force-stopped has no way to be told; the next unlock simply asks again.

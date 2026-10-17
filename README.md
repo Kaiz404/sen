@@ -51,7 +51,7 @@ Design canvas (private, ask the owner for access): https://claude.ai/artifact/8d
 
 **Easiest: install the Android APK.** Download it from the latest GitHub release, install it, and enrol a fingerprint on the device or emulator first. No accounts or tools needed.
 
-**From source (Android).**
+**From source (Android).** After pulling, rebuild the dev client: the local native module `modules/sen-auth` (screen-lock check) needs a native build.
 
 ```bash
 # Node 22.13+, JDK 17, Android SDK

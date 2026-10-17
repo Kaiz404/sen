@@ -7,7 +7,7 @@ import { confirmDeviceCredential } from '@/services/device-credential';
 
 import { startLockTriggers, TICK_MS, touch } from './locks';
 import type { Session } from './machine';
-import { sessionStore } from './session';
+import { dispatch, sessionStore } from './session';
 import { stepUp } from './use-step-up';
 
 jest.mock('expo-local-authentication', () => ({
@@ -47,6 +47,8 @@ function appGoes(state: AppStateStatus) {
 const status = () => sessionStore.getState().session;
 
 beforeEach(() => {
+  authenticate.mockReset();
+  mockCredential.mockReset();
   jest.useFakeTimers({ now: 0 });
   mockPrefs = {};
   sessionStore.setState(sessionStore.getInitialState());
@@ -131,6 +133,35 @@ test('a sensor lockout that hands over to the screen lock keeps the away time fo
   await confirmed;
   api29.mockRestore();
   expect(status()).toEqual({ status: 'locked', reason: 'background' });
+});
+
+test('a hand-over a lock cancels leaves no away time behind for the next prompt', async () => {
+  mockCredential.mockClear();
+  mockPrefs = { relockAfter: 5 };
+  start({ status: 'unlocked', since: 0, db });
+  const api29 = jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+
+  const first = stepUp('delete');
+  appGoes('background');
+  jest.advanceTimersByTime(30_000);
+  appGoes('active');
+  dispatch({ type: 'LOCK', reason: 'manual' });
+  answer({ success: false, error: 'lockout' });
+  await first;
+  expect(status()).toEqual({ status: 'locked', reason: 'manual' });
+  expect(mockCredential).not.toHaveBeenCalled();
+
+  // A fresh session, much later: a cancel with no trip away must not inherit the old one.
+  sessionStore.setState({ session: { status: 'unlocked', since: 0, db } });
+  jest.setSystemTime(Date.now() + 2 * 60 * MINUTE);
+  touch();
+  authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
+  await stepUp('delete');
+  api29.mockRestore();
+
+  expect(status()).toEqual({ status: 'unlocked', since: 0, db });
 });
 
 test('a short absence with the prompt still up on return does not lock', async () => {

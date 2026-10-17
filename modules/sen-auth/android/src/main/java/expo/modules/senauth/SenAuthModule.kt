@@ -61,8 +61,16 @@ class SenAuthModule : Module() {
     AsyncFunction("cancelAsync") {
       val current = pending
       prompt?.cancelAuthentication()
+      // Below Android 11 the screen lock is a separate system activity. Close it, or it stays up over Sen.
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        (appContext.currentActivity as? FragmentActivity)?.finishActivity(CREDENTIAL_REQUEST)
+      }
       if (current != null) settle(current, failure("user_cancel"))
     }.runOnQueue(Queues.MAIN)
+
+    OnDestroy {
+      handler.removeCallbacksAndMessages(null)
+    }
 
     // Android 9 and 10 answer through the system's confirm-credential screen, which returns here.
     OnActivityResult { _, (requestCode, resultCode, _) ->
@@ -76,6 +84,8 @@ class SenAuthModule : Module() {
     if (pending !== promise) return
     pending = null
     prompt = null
+    // The show watchdog and the detach poll belong to this promise.
+    handler.removeCallbacksAndMessages(null)
     promise.resolve(result)
   }
 

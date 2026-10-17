@@ -142,6 +142,7 @@ export function onAuthenticationEnd(listener: (answer: Answer) => void): () => v
 
 /** A prompt asked for while another is up. No check happened, so it reads as a cancel. */
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
+const CANCEL_ANSWER: Answer = { ok: false, reason: 'cancelled' };
 
 /**
  * A prompt the OS never answers, such as one the app was backgrounded under, would leave Lock on "Checking it's
@@ -197,7 +198,11 @@ export async function authenticate(
     first !== 'credential' &&
     (answer.reason === 'lockout' || (first === 'sensor' && answer.reason === 'unavailable'));
   if (!handOver) return { ok: false, reason: answer.reason === 'lockout' ? 'unknown' : answer.reason };
-  if (beforeHandOver?.(answer.reason === 'lockout' ? 'lockout' : 'unavailable') === false) return BUSY;
+  if (beforeHandOver?.(answer.reason === 'lockout' ? 'lockout' : 'unavailable') === false) {
+    // The first prompt's end was heard as a lockout, which listeners wait on for a second prompt that is not coming.
+    endListeners.forEach((listener) => listener(CANCEL_ANSWER));
+    return BUSY;
+  }
   const second = await askOnce(promptMessage, 'credential');
   return second.ok ? second : { ok: false, reason: second.reason === 'lockout' ? 'unknown' : second.reason };
 }
