@@ -142,7 +142,8 @@ const styles = StyleSheet.create((theme, rt) => ({
   noticeText: { flex: 1, gap: 2 },
   noticeTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.ink },
   noticeBody: { fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
-  fieldError: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // Shrinks beside the character counter on Details, so a long message wraps instead of pushing it off screen.
+  fieldError: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
   fieldErrorText: { flex: 1, fontSize: 13, lineHeight: 18, color: theme.colors.danger },
   scrim: {
     ...StyleSheet.absoluteFillObject,
