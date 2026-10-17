@@ -9,7 +9,7 @@
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000020)
 ![Platform Android](https://img.shields.io/badge/platform-Android-3ddc84)
-![1,699 tests](https://img.shields.io/badge/tests-1%2C699%20passing-2e7d32)
+![1,781 tests](https://img.shields.io/badge/tests-1%2C781%20passing-2e7d32)
 
 Sen the coin is the app's mascot. It keeps its eyes shut while amounts are hidden, and it is the friendly part of a security-first app. The security model comes first in this README and the mascot comes after.
 
@@ -112,19 +112,22 @@ Sen has no server, so everything it protects is on the phone. [ARCHITECTURE.md](
 
 ## Features
 
-Screens from a real Android phone. The top row is the light theme and the bottom row is the dark theme.
+Screens from a real Android phone. In the first table the top row is the light theme and the bottom row is the dark theme.
 
 | Hidden amounts | Shown amounts |
 | :---: | :---: |
 | <img src="docs/media/screens/history-masked-light.png" alt="History, light theme, amounts shown as four coins" width="240"> | <img src="docs/media/screens/history-shown-light.png" alt="History, light theme, amounts shown" width="240"> |
 | <img src="docs/media/screens/history-masked-dark.png" alt="History, dark theme, amounts shown as four coins" width="240"> | <img src="docs/media/screens/history-shown-dark.png" alt="History, dark theme, amounts shown" width="240"> |
 
-<!-- SHOT: lock-light, lock-dark. Lock with the single Unlock key (the old shot has the two-key layout) -->
-<!-- SHOT: history-header. History header with the "?" key and the privacy explainer sheet -->
-<!-- SHOT: add-amount. Add amount step with the sizing tiers -->
-<!-- SHOT: add-date. Add details step with the picked date -->
-<!-- SHOT: detail-timeline. Detail with the completed Authorised, Pending, Posted timeline -->
-<!-- SHOT: error-offline. History full error with Retry -->
+| Lock, light | Lock, dark | Privacy explainer |
+| :---: | :---: | :---: |
+| <img src="docs/media/screens/lock-idle-light.png" alt="Lock screen, light theme, with one Unlock with fingerprint key and the demo user card" width="240"> | <img src="docs/media/screens/lock-idle-dark.png" alt="Lock screen, dark theme, with one Unlock with fingerprint key" width="240"> | <img src="docs/media/screens/privacy-light.png" alt="The privacy sheet, How Sen keeps amounts private, listing masked by default, fingerprint to show them, locked when you leave and nothing leaves this phone" width="240"> |
+
+The History header (see the screens above) has three keys: **?** opens the privacy sheet, the padlock locks Sen and the cog opens Settings.
+
+| Add amount | Add details | Detail | Error with Retry |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/media/screens/add-amount-light.png" alt="Add amount step with the keypad, the amount RM 99,999.99 shrunk to its smallest size tier and the over-limit message" width="240"> | <img src="docs/media/screens/add-date-light.png" alt="Add details step with a description, categories and a picked date of Sat 3 Oct" width="240"> | <img src="docs/media/screens/detail-timeline-light.png" alt="Transaction detail for TNB electricity with a completed Authorised, Pending, Posted timeline" width="240"> | <img src="docs/media/screens/error-offline-light.png" alt="History full error saying Cannot load your history, with a Retry key and a Reviewer settings link" width="240"> |
 
 - **Unlock.** One key. With a strong biometric enrolled, Android shows the fingerprint or face sheet, and the same sheet offers the screen lock (PIN, pattern or password). With none, the screen lock opens directly. On Android 9 and 10 a lockout hands over to the screen lock. There is no password inside Sen, and a phone with no screen lock is refused (D28, D40). The 60 second prompt timeout says "the check timed out" (D36).
 - **Masked by default.** Every amount is `RM` and four coins. **Show amounts** asks for biometrics. Amounts re-mask when Sen locks or restarts (D27). Settings' Hide amounts switch reads On after every unlock, and turning it off asks for biometrics.
@@ -150,11 +153,11 @@ Sen reacts to what the security layer is doing. These clips come from a physical
 | Check | Command | What it covers |
 | --- | --- | --- |
 | Everything CI runs | `npm run check` | Typecheck, lint, the Jest suite and the performance benches |
-| Unit and component tests | `npm test` | 1,699 tests in 112 suites on `jest-expo` and React Native Testing Library. The database runs real SQL through a `node:sqlite` adapter |
+| Unit and component tests | `npm test` | 1,781 tests on `jest-expo` and React Native Testing Library. The database runs real SQL through a `node:sqlite` adapter |
 | Motion | `npm run test:motion` | Sen's moments and the shared components, at literal values |
 | Release safety | `npm run release:auth-check` | The dev auth override is absent from a production bundle |
 
-Tests call the code the way a user does. The security properties in [ARCHITECTURE.md](ARCHITECTURE.md#tests-d16) each have a named test, for example `masking.test.tsx` (no digit in the rendered tree while masked), `session.test.tsx` and `lock-flow.test.tsx`. The count came from `npm run check` on the `readme` branch, rebased on `main` at b29d7d6.
+Tests call the code the way a user does. The security properties in [ARCHITECTURE.md](ARCHITECTURE.md#tests-d16) each have a named test, for example `masking.test.tsx` (no digit in the rendered tree while masked), `session.test.tsx` and `lock-flow.test.tsx`. The count came from `npm run check` on the `readme` branch, rebased on `main` at 5dc6956.
 
 **On a real phone.** The author drives an arm64 Android phone with [Maestro](https://maestro.mobile.dev) flows from `.maestro/`, which agents use to verify their work. `npm run device:verify` runs every flow, and `npm run device:shots` captures every gallery screen into `shots/runs/<timestamp>/png`. Both need a phone set up as described in [CLAUDE.md](CLAUDE.md). The screenshots and clips on this page come from that loop, and `node scripts/media.mjs` crops them. The flows are not a shipped end-to-end suite, and the unit tests are the suite.
 
