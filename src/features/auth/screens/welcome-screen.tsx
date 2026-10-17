@@ -2,12 +2,13 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Amount } from '@/components/amount';
 import { type IconName, Key } from '@/components/key';
 import { ReceiptSlip } from '@/components/receipt-slip';
+import { ScrollView } from '@/components/scroll-view';
 import type { LaunchTarget } from '@/features/sen';
 import { type } from '@/theme/type';
 

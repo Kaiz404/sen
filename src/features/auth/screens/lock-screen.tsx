@@ -1,9 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
+import { ScrollView } from '@/components/scroll-view';
 import { type LaunchTarget, type SenProps, UNLOCK_HOLD } from '@/features/sen';
 import { useMotionPolicy } from '@/motion/policy';
 import type { StoreCause } from '@/services/store-fault';
