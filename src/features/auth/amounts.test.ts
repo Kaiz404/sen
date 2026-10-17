@@ -47,6 +47,20 @@ test('showing asks for strong biometrics every time', async () => {
   expect(shown()).toBe(true);
 });
 
+test('a lock while the check is up leaves amounts hidden even when the check passes', async () => {
+  authenticate.mockImplementation(async () => {
+    dispatch({ type: 'LOCK', reason: 'background' });
+    return { success: true };
+  });
+
+  const outcome = await showAmounts();
+  authenticate.mockReset();
+
+  expect(outcome).toEqual({ ok: false, reason: 'cancelled' });
+  expect(sessionStore.getState().session).toEqual({ status: 'locked', reason: 'background' });
+  expect(shown()).toBe(false);
+});
+
 test('a cancelled check leaves amounts hidden', async () => {
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
 
