@@ -89,7 +89,8 @@ const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 /**
  * A prompt the OS never answers, such as one the app was backgrounded under, would leave Lock on "Checking it's
  * you" with every key disabled. After this long in the foreground the prompt is cancelled and counts as a cancel.
- * Time spent in the background does not count, since a passcode screen can take a while.
+ * Time away from `active` does not count. iOS cannot cancel its sheet, and the Face ID and passcode sheets make the
+ * app `inactive`, so an answer entered late must still land.
  */
 export const PROMPT_TIMEOUT_MS = 60_000;
 
@@ -97,10 +98,10 @@ const TIMED_OUT = Symbol('timed out');
 
 let guard: { pause(): void; resume(): void } | null = null;
 
-/** The app moved to `background` or came back to `active`. The pending prompt's clock follows. */
+/** The app left `active` or came back to it. The pending prompt's clock stops, and starts again from zero. */
 export function promptAppState(state: AppStateStatus): void {
-  if (state === 'background') guard?.pause();
-  else if (state === 'active') guard?.resume();
+  if (state === 'active') guard?.resume();
+  else guard?.pause();
 }
 
 export async function authenticate(promptMessage: string): Promise<AuthOutcome> {

@@ -135,6 +135,21 @@ describe('a prompt the OS never answers', () => {
     expect(await authenticate('Unlock Sen')).toEqual({ ok: true });
   });
 
+  test('does not count the time the system sheet holds the app inactive, as the Face ID and passcode sheets do', async () => {
+    const pending = authenticate('Unlock Sen');
+    await jest.advanceTimersByTimeAsync(30_000);
+    promptAppState('inactive');
+    await jest.advanceTimersByTimeAsync(10 * 60_000);
+    expect(LocalAuthentication.cancelAuthenticate).not.toHaveBeenCalled();
+    promptAppState('active');
+
+    await jest.advanceTimersByTimeAsync(59_999);
+    expect(LocalAuthentication.cancelAuthenticate).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+
+    expect(await pending).toEqual({ ok: false, reason: 'cancelled' });
+  });
+
   test('does not count the time the app is in the background, but starts again when it returns', async () => {
     const pending = authenticate('Unlock Sen');
     await jest.advanceTimersByTimeAsync(30_000);
