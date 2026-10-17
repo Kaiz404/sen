@@ -82,6 +82,9 @@ export function Segmented<T extends string>({
                 />
               )}
               <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
                 style={[styles.label, { color: selected ? theme.colors.canvas : theme.colors.ink }]}
               >
                 {o.label}
@@ -117,5 +120,6 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     gap: 4,
   },
-  label: { fontFamily: FONT.numerals, fontSize: 16 },
+  // One line in the fixed 44 pt segment. Large system text shrinks to fit rather than wrap and clip.
+  label: { flexShrink: 1, fontFamily: FONT.numerals, fontSize: 16 },
 }));
