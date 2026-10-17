@@ -9,7 +9,9 @@
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000020)
 ![Platform Android](https://img.shields.io/badge/platform-Android-3ddc84)
-![1,781 tests](https://img.shields.io/badge/tests-1%2C781%20passing-2e7d32)
+![1,802 tests](https://img.shields.io/badge/tests-1%2C802%20passing-2e7d32)
+
+[![Watch the demo on YouTube](https://img.shields.io/badge/Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/1sL0TQZxvww)
 
 ## Try it
 
@@ -78,7 +80,7 @@ npx expo run:android
 
 ## Tests
 
-`npm run check` runs the typecheck, lint, 1,781 Jest tests and the performance benches.
+`npm run check` runs the typecheck, lint, 1,802 Jest tests and the performance benches.
 
 ## Docs
 
@@ -87,4 +89,3 @@ npx expo run:android
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Layers, state machine, storage, threat model, tests |
 | [DECISIONS.md](DECISIONS.md) | Alternatives compared and why each choice won (D1 to D40) |
 | [DESIGN.md](DESIGN.md) | Visual system, the mascot, motion, screens, settings |
-| [PLAN.md](PLAN.md) | Build order and how each phase is verified |

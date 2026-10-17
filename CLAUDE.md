@@ -5,7 +5,6 @@ Sen is a take-home assignment: a secure transaction history module in React Nati
 Read before working:
 - [DESIGN.md](DESIGN.md) for any UI, Sen or motion work. For Sen, also the boards in [`design/`](design/), which win over DESIGN's tables except the owner overrides DESIGN lists.
 - [DECISIONS.md](DECISIONS.md) for every technical choice and why it won. Don't reopen one without the owner.
-- [PLAN.md](PLAN.md) for the build order, lanes and the checks each phase must pass.
 - [ARCHITECTURE.md](ARCHITECTURE.md) for any code.
 - [README.md](README.md) for what the reviewer sees.
 
@@ -99,7 +98,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 
 ## Docs
 
-- Keep six docs: README.md, DESIGN.md, ARCHITECTURE.md, DECISIONS.md, PLAN.md and CLAUDE.md.
+- Keep five docs: README.md, DESIGN.md, ARCHITECTURE.md, DECISIONS.md and CLAUDE.md.
 - Update the matching doc in the same commit as the change.
 - Record decisions as current state, not history.
 - Write short declarative sentences in plain words, with no long dashes. Use tables where they help.
