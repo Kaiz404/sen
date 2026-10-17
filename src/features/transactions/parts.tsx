@@ -73,7 +73,7 @@ export function Header({
 const MONTH_SEN = 'month';
 
 /** True from the second frame on, so work behind it starts after the first frame has drawn. */
-function useAfterFirstPaint(): boolean {
+export function useAfterFirstPaint(): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let second = 0;

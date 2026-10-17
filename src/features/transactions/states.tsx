@@ -8,6 +8,7 @@ import { playMoment, Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
 import type { ReadFailure, SyncFailure } from './body';
+import { useAfterFirstPaint } from './parts';
 
 const BONE_ROWS = [0, 1, 2, 3] as const;
 
@@ -40,10 +41,12 @@ export function SkeletonSlips(): ReactNode {
   );
 }
 
+const EMPTY_SEN = 'history-empty';
+
 export function EmptyHistory(): ReactNode {
   return (
     <View testID="history-empty" style={styles.state}>
-      <Sen pose="idle" size={140} />
+      <Sen id={EMPTY_SEN} pose="idle" size={140} />
       <Text accessibilityRole="header" style={styles.title}>
         Nothing here yet
       </Text>
@@ -66,15 +69,19 @@ export function NoResults({
   useEffect(() => {
     playMoment(NO_RESULTS_SEN, 'emptySearch');
   }, []);
+  // The moment opens hidden below the slip. Showing Sen after first paint skips the frame before the rig has begun.
+  const begun = useAfterFirstPaint();
   return (
     <View testID="history-no-results" style={styles.state}>
-      <Sen
-        id={NO_RESULTS_SEN}
-        pose="shrug"
-        prop="magnifier"
-        size={140}
-        label="Sen, shrugging with a magnifier"
-      />
+      <View testID="history-no-results-sen" style={{ opacity: begun ? 1 : 0 }}>
+        <Sen
+          id={NO_RESULTS_SEN}
+          pose="shrug"
+          prop="magnifier"
+          size={140}
+          label="Sen, shrugging with a magnifier"
+        />
+      </View>
       <Text accessibilityRole="header" style={styles.title}>
         {term === '' ? 'Nothing in this view' : `No “${term}” here`}
       </Text>
@@ -128,6 +135,9 @@ const SIMULATED: ReadonlySet<string> = new Set<SyncFailure['kind']>([
   'server',
 ]);
 
+/** The failed state's Sen, which the screen also asks to play Network error when a retry fails. */
+export const FAILED_SEN = 'history-failed';
+
 export function FullError({
   error,
   onRetry,
@@ -139,10 +149,23 @@ export function FullError({
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
   const simulated = SIMULATED.has(error.kind);
+  useEffect(() => {
+    playMoment(FAILED_SEN, 'networkError');
+  }, []);
+  const retry = () => {
+    playMoment(FAILED_SEN, 'networkRetry');
+    onRetry();
+  };
   return (
     <View testID="history-failed" style={styles.failed}>
       <View style={styles.failedSen}>
-        <Sen pose="worried" prop="plug" size={176} label="Sen, holding an unplugged cable" />
+        <Sen
+          id={FAILED_SEN}
+          pose="worried"
+          prop="plug"
+          size={176}
+          label="Sen, holding an unplugged cable"
+        />
       </View>
       <View style={styles.failedText}>
         <Text style={styles.caption}>{simulated ? `${caption} · SIMULATED` : caption}</Text>
@@ -152,7 +175,7 @@ export function FullError({
         <Text style={styles.failedBody}>{body}</Text>
       </View>
       <View style={styles.failedActions}>
-        <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={onRetry} />
+        <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={retry} />
         {simulated && (
           <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
             <Text style={styles.linkText}>Reviewer settings</Text>

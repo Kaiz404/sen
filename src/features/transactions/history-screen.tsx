@@ -17,6 +17,7 @@ import {
   useDb,
   useDbResetNotice,
 } from '@/features/auth';
+import { playMoment } from '@/features/sen';
 import { malaysiaDay, toInstant } from '@/models/day';
 import { DUR } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
@@ -36,6 +37,7 @@ import {
 import { HistoryView } from './history-view';
 import type { PullStatus } from './pull/pull-refresh';
 import { clockText } from './rows';
+import { FAILED_SEN } from './states';
 
 const PILL_MS = 2500;
 
@@ -125,7 +127,8 @@ export function HistoryScreen(): ReactNode {
       },
       () => {
         if (pulled) setPull('idle');
-        playHaptic('networkError');
+        // The moment buzzes at its own mark. Without the failed state on screen, the haptic stands alone.
+        if (!playMoment(FAILED_SEN, 'networkError')) playHaptic('networkError');
       },
     );
   };
