@@ -49,14 +49,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: add-details-problems-light
-- openLink: "sen://dev/states?screen=add&state=details-picker&theme=light"
+- openLink: "sen://dev/states?screen=add&state=details-picked&theme=light"
 - extendedWaitUntil:
     visible:
-      id: shot-add-details-picker-light
+      id: shot-add-details-picked-light
     timeout: 15000
 - waitForAnimationToEnd:
     timeout: 3000
-- takeScreenshot: add-details-picker-light
+- takeScreenshot: add-details-picked-light
 - openLink: "sen://dev/states?screen=add&state=review-ready&theme=light"
 - extendedWaitUntil:
     visible:

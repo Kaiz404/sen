@@ -95,6 +95,7 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 
 | Date | Board | Override |
 | --- | --- | --- |
+| 2026-10-17 | `SF-AddDetails` | Pick a date opens the platform calendar (D37), not a drawer of days. The Today and Yesterday chips and the Pick a date chip keep their look. Once a day is picked the chip reads that day, such as "Mon 5 Oct". The dialog takes its accent, text and window colours from the light and dark tokens and follows the phone's mode. The calendar greys out every day beyond 90 days ago and after today |
 | 2026-10-17 | `SF-AddNav-Options` option A | The Add key is icon only, a loud 60 × 60 "+" with the label "Add a transaction", never an "Add" word. It floats 20 from the right edge and 16 above the bottom inset on History alone, with no bar. It rises 92 pt above the undo toast on the toast's own 300 ms in and 250 ms out, instantly outside Full motion. The error screen and the search keyboard hide it. The list ends 104 pt above the inset so the last row and caption clear it. TalkBack reaches it right after the header |
 | 2026-10-17 | `SF-History`, `SF-Settings` | "How Sen keeps amounts private" is a question-mark key in History's header, left of Settings, in the same icon-key style. Settings has no About row. The month card and the Detail receipt have no "Asks for … first" helper line under Show amounts. The card's hero and Money in rows have fixed heights (96 and 58), and a long amount scales to one line inside them, so the card is the same height hidden or shown |
 | 2026-10-17 | MAX-Moments `.M-lockout` | Sen never spins edge-on into the pill. It naps in the `asleep` pose and breathes for the whole lockout. The owner found the edge-on hold odd |
@@ -316,7 +317,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-DetailStates` | Detail states | Skeleton, share text preview, not found, error with Retry |
 | `SF-DetailManual` | Detail, added by you | ADDED BY YOU stamp, "Added on this phone" source row, "Delete transaction". Bank rows read "From your bank · read only" |
 | `SF-AddAmount` | Add 1/3, amount | Money out or in. Huge amount. Custom 3 × 4 keypad. Sen watching |
-| `SF-AddDetails` | Add 2/3, details | Description with counter, 8 category chips, Today / Yesterday / Pick a date, live mini receipt |
+| `SF-AddDetails` | Add 2/3, details | Description with counter, 8 category chips, Today / Yesterday / Pick a date, live mini receipt. Pick a date opens the system calendar (Android dialog, iOS inline calendar), not the board's drawer; see below |
 | `SF-AddReview` | Add 3/3, review | Full draft receipt with reference, Sen peeking, "Save with Face ID". Screenshots blocked |
 | `SF-AddStates` | Add states | Validation errors, Face ID checking, cancelled, couldn't save securely, discard draft, saved with Undo |
 | `SF-DeleteStates` | Delete states | Confirm sheet, Face ID step-up, deleted with Undo, Face ID failed |

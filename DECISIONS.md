@@ -51,6 +51,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D34 | Catching up | History finishes only a cut-short first sync, so ordinary unlocks send nothing |
 | D35 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
 | D38 | Bottom sheets | Keep the expo-router native formSheet and tune it: 30 corners, iOS grabber, a drawn handle on Android |
+| D37 | Date picker | The system calendar from `@react-native-community/datetimepicker`, not a drawer of 91 rows |
 
 ---
 
@@ -611,3 +612,22 @@ The phases are in [PLAN.md](PLAN.md).
 **Chosen (c).** It is Expo's documented route, already a route under `Stack.Protected`, hardware back pops it, the labels reach Maestro as before, and it adds no dependency. The shared `sheetOptions` in `src/app/_layout.tsx` set 30 corners on both platforms (`sheetCornerRadius`, read by iOS and by Android in `ScreenStackFragment.kt:415-427`), an Android `sheetElevation`, the native grabber on iOS, and a `contentStyle` surface from the theme's `canvas` token. Android never reads `sheetGrabberVisible`, so `SheetSurface` (`src/components/sheet-surface.tsx`) draws a decorative Material 3 handle (32 x 4 dp, 22 dp top area, `inkMuted`, hidden from accessibility) on Android only. It also replaces the surface style each view repeated.
 
 **Watch out.** `SheetSurface` paints the `canvas` surface itself because the gallery and tests render the views outside the route. The board draws the sheet on `paper` with `canvas` rows, while the app has `canvas` sheets with `paper` rows, and this change keeps the app's version. Research and the constraint grid: `~/sen-pickup/p5/sheets-research.md`.
+
+## D37. The date is picked in the system calendar
+
+**Compared.**
+- A custom bottom drawer listing the 91 allowed days (kept until now). It is fully on brand, but it shows no month grid, so a user cannot see which weekday a date falls on or jump a month.
+- `@expo/ui`'s date picker. It would match the bottom-sheet lane's package, but it is the newer, less used surface (inferred), and it would tie this field to a package another lane is still evaluating. For a date-only field it offers nothing the community package lacks.
+- A custom calendar grid drawn by us. It would take weeks to make accessible, localised and correct across month lengths, for no gain over a system control.
+- `@react-native-community/datetimepicker`, installed with `npx expo install` (9.1.0). It is the long-standing standard, wraps the platform dialog, and has an imperative Android API.
+
+**Chosen.** The last.
+- **Android.** `DateTimePickerAndroid.open({ mode: 'date' })` opens the system calendar dialog. The default dialog is used, not `design: 'material'`, because Material 3 pickers need the app theme to inherit `Theme.Material3.DayNight` and the app's theme is AppCompat.
+- **iOS.** `<DateTimePicker display="inline">` sits in the sheet the drawer used, with the same title and close key. A pick applies and closes. This cannot be verified locally (inferred).
+- **The field.** The row of Today, Yesterday and Pick a date stays. Pick a date keeps its look and shows the chosen day, such as "Mon 5 Oct", once one is picked.
+- **Rules kept.** `minimumDate` is the first allowed day at 00:00 and `maximumDate` is today at 23:59:59.999, so the calendar greys every day outside the add window. The result is checked again with `isInAddWindow` before it reaches the draft, so a date the dialog should refuse still cannot be saved. The default stays today. The add form picks a day only, never a time, so there is no time step.
+- **Time zones.** A `DayKey` is a Malaysia day. A day crosses to the picker as the same year, month and day on the device clock, at noon, and comes back the same way.
+- **Never stuck.** Dismissing the dialog calls nothing, so the old date and the whole draft stay.
+- **Theme.** The package's config plugin sets the dialog's accent, text and window colours from the light and dark tokens. The dialog follows the phone's light or dark mode, not Sen's Theme setting, so a phone in dark mode with Sen set to Light shows a dark dialog. It stays readable because the plugin sets the pair together.
+
+**Cost.** A native rebuild, since the package adds a native module and a config plugin changes `colors.xml` and `styles.xml`. The look of the open dialog is the system's, so no gallery state shows it. The gallery shows the field with a picked date instead.

@@ -17,6 +17,7 @@ import { type } from '@/theme/type';
 import { todayInMalaysia, useDraft } from './add-layout';
 import { CATEGORY_ICON, dayText, nearDayText } from './copy';
 import { cleanDescription, type DraftInput, descriptionTooShort } from './draft';
+import { useDayPicker } from './day-picker';
 import { DiscardDialog, FieldError, StepHeader } from './parts';
 import { useCloseGuard } from './use-close-guard';
 
@@ -34,13 +35,14 @@ export type DetailsViewProps = {
   readonly today: DayKey;
   /** Next was pressed with a field still missing, so the problems show. */
   readonly showProblems: boolean;
-  readonly picking: boolean;
+  /** The iOS inline calendar sheet, or null where the system dialog does the work. */
+  readonly picker: ReactNode;
   readonly discarding: boolean;
   readonly onDescription: (text: string) => void;
   readonly onDescriptionDone: () => void;
   readonly onCategory: (category: AddCategoryId) => void;
   readonly onDay: (day: DayKey) => void;
-  readonly onPick: (open: boolean) => void;
+  readonly onPick: () => void;
   readonly onNext: () => void;
   readonly onBack: () => void;
   readonly onClose: () => void;
@@ -134,17 +136,7 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
           onPress={props.onNext}
         />
       </View>
-      {props.picking && (
-        <DayPicker
-          day={draft.day}
-          today={today}
-          onDay={(day) => {
-            props.onDay(day);
-            props.onPick(false);
-          }}
-          onClose={() => props.onPick(false)}
-        />
-      )}
+      {props.picker}
       {props.discarding && (
         <DiscardDialog
           detail="Sen drops what you typed. Nothing was saved, so nothing else changes."
@@ -194,7 +186,7 @@ function DateChips({
   day: DayKey;
   today: DayKey;
   onDay: (day: DayKey) => void;
-  onPick: (open: boolean) => void;
+  onPick: () => void;
 }) {
   const yesterday = addDays(today, -1);
   const picked = day !== today && day !== yesterday;
@@ -206,7 +198,8 @@ function DateChips({
         label={picked ? dayText(day) : 'Pick a date'}
         icon="calendar-blank-outline"
         selected={picked}
-        onPress={() => onPick(true)}
+        hint="Opens the calendar"
+        onPress={onPick}
       />
     </View>
   );
@@ -215,11 +208,13 @@ function DateChips({
 function DayChip({
   label,
   icon,
+  hint,
   selected,
   onPress,
 }: {
   label: string;
   icon?: IconName;
+  hint?: string;
   selected: boolean;
   onPress: () => void;
 }) {
@@ -228,6 +223,7 @@ function DayChip({
     <Pressable
       accessibilityRole="radio"
       accessibilityLabel={label}
+      accessibilityHint={hint}
       accessibilityState={{ checked: selected }}
       onPress={onPress}
       style={styles.dayChip(selected)}
@@ -242,60 +238,6 @@ function DayChip({
       <Text style={styles.dayChipLabel(selected)}>{label}</Text>
     </Pressable>
   );
-}
-
-/** Every day the add window allows, newest first. No date beyond it can be picked. */
-export function addWindow(today: DayKey): DayKey[] {
-  return Array.from({ length: DRAFT_LIMITS.daysBack + 1 }, (_, i) => addDays(today, -i));
-}
-
-function DayPicker({
-  day,
-  today,
-  onDay,
-  onClose,
-}: {
-  day: DayKey;
-  today: DayKey;
-  onDay: (day: DayKey) => void;
-  onClose: () => void;
-}) {
-  return (
-    <View style={styles.scrim}>
-      <View style={styles.backdrop} />
-      <View accessibilityViewIsModal style={styles.picker}>
-        <View style={styles.fieldTop}>
-          <Text accessibilityRole="header" style={styles.pickerTitle}>
-            Pick a date
-          </Text>
-          <Key icon="close" accessibilityLabel="Close date picker" onPress={onClose} />
-        </View>
-        <ScrollView accessibilityRole="radiogroup" contentContainerStyle={styles.pickerList}>
-          {addWindow(today).map((d) => (
-            <Pressable
-              key={d}
-              accessibilityRole="radio"
-              accessibilityLabel={pickerLabel(d, today)}
-              accessibilityState={{ checked: d === day }}
-              onPress={() => onDay(d)}
-              style={styles.pickerRow(d === day)}
-            >
-              <Text style={styles.pickerLabel(d === day)}>{nearDayText(d, today)}</Text>
-              {d !== today && d !== addDays(today, -1) ? null : (
-                <Text style={styles.pickerAside(d === day)}>{dayText(d)}</Text>
-              )}
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-    </View>
-  );
-}
-
-function pickerLabel(day: DayKey, today: DayKey): string {
-  const near = nearDayText(day, today);
-  const full = dayText(day);
-  return near === full ? full : `${near}, ${full}`;
 }
 
 function Preview({ draft, today }: { draft: DraftInput; today: DayKey }) {
@@ -331,19 +273,24 @@ export function DetailsStep(): ReactNode {
   const router = useRouter();
   const guard = useCloseGuard(draft, false);
   const [showProblems, setShowProblems] = useState(false);
-  const [picking, setPicking] = useState(false);
+  const today = todayInMalaysia();
+  const picker = useDayPicker({
+    day: draft.day,
+    today,
+    onDay: (day) => dispatch({ type: 'day', day }),
+  });
   return (
     <DetailsView
       draft={draft}
-      today={todayInMalaysia()}
+      today={today}
       showProblems={showProblems}
-      picking={picking}
+      picker={picker.panel}
       discarding={guard.discarding}
       onDescription={(text) => dispatch({ type: 'description', text })}
       onDescriptionDone={() => dispatch({ type: 'description', text: cleanDescription(draft) })}
       onCategory={(category) => dispatch({ type: 'category', category })}
       onDay={(day) => dispatch({ type: 'day', day })}
-      onPick={setPicking}
+      onPick={picker.open}
       onNext={() => {
         if (descriptionTooShort(draft) || draft.category === null) setShowProblems(true);
         else router.push('/add/review');
@@ -426,35 +373,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontSize: 15,
     fontWeight: '700',
     color: selected ? theme.colors.canvas : theme.colors.ink,
-  }),
-  scrim: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', padding: 16 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.colors.hero, opacity: 0.5 },
-  picker: {
-    maxHeight: '75%',
-    gap: 12,
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: theme.colors.canvas,
-  },
-  pickerTitle: { ...type.words(28), color: theme.colors.ink },
-  pickerList: { gap: 6 },
-  pickerRow: (selected: boolean) => ({
-    minHeight: theme.shape.touchMin,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    backgroundColor: selected ? theme.colors.ink : theme.colors.paper,
-  }),
-  pickerLabel: (selected: boolean) => ({
-    fontSize: 16,
-    fontWeight: '600',
-    color: selected ? theme.colors.canvas : theme.colors.ink,
-  }),
-  pickerAside: (selected: boolean) => ({
-    ...type.mono(12),
-    color: selected ? theme.colors.canvas : theme.colors.inkMuted,
   }),
   preview: { gap: 8 },
   previewBody: { gap: 10, paddingVertical: 4 },

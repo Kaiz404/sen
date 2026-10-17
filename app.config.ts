@@ -1,5 +1,7 @@
 import type { ExpoConfig } from 'expo/config';
 
+import { dark, light } from './src/theme/colors';
+
 const INK = '#17181A';
 
 const fonts = {
@@ -43,6 +45,19 @@ const config: ExpoConfig = {
     ['expo-sqlite', { useSQLCipher: true }],
     ['expo-secure-store', { configureAndroidBackup: false }],
     './plugins/with-no-backup',
+    [
+      '@react-native-community/datetimepicker',
+      {
+        android: {
+          datePicker: {
+            colorAccent: { light: light.loud, dark: dark.loud },
+            textColorPrimary: { light: light.ink, dark: dark.ink },
+            textColorSecondary: { light: light.inkMuted, dark: dark.inkMuted },
+            windowBackground: { light: light.canvas, dark: dark.canvas },
+          },
+        },
+      },
+    ],
     [
       'expo-build-properties',
       {

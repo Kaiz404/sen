@@ -1,3 +1,4 @@
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
@@ -44,6 +45,7 @@ const FILLED: DraftInput = {
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   mockStepUp.mockReset();
+  jest.mocked(DateTimePickerAndroid.open).mockReset();
   Object.values(mockRouter).forEach((fn) => fn.mockClear());
   queryClient.clear();
   mockDb = await openTestDb();
@@ -164,18 +166,57 @@ test('Next with a short description and no category shows both problems', async 
   expect(mockRouter.push).toHaveBeenCalledWith('/add/review');
 });
 
-test('Pick a date offers today back to 90 days ago and nothing else', async () => {
+type PickerOptions = {
+  mode: string;
+  value: Date;
+  minimumDate: Date;
+  maximumDate: Date;
+  onValueChange: (event: unknown, date: Date) => void;
+  onDismiss?: () => void;
+};
+const lastPicker = (): PickerOptions =>
+  jest.mocked(DateTimePickerAndroid.open).mock.lastCall![0] as unknown as PickerOptions;
+
+test('Pick a date opens the system calendar on today, limited to the last 90 days', async () => {
   await renderStep(<DetailsStep />, FILLED);
   await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
 
-  expect(screen.getByRole('radio', { name: 'Today, Thu 15 Oct' })).toBeChecked();
-  expect(screen.getByRole('radio', { name: 'Yesterday, Wed 14 Oct' })).toBeOnTheScreen();
-  expect(screen.getByRole('radio', { name: 'Fri 17 Jul' })).toBeOnTheScreen();
-  expect(screen.queryByRole('radio', { name: 'Thu 16 Jul' })).toBeNull();
-  expect(screen.queryByRole('radio', { name: 'Fri 16 Oct' })).toBeNull();
+  expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(1);
+  const picker = lastPicker();
+  expect(picker.mode).toBe('date');
+  expect(picker.value).toEqual(new Date(2026, 9, 15, 12));
+  expect(picker.minimumDate).toEqual(new Date(2026, 6, 17, 0, 0, 0, 0));
+  expect(picker.maximumDate).toEqual(new Date(2026, 9, 15, 23, 59, 59, 999));
+});
+
+test('a date chosen in the calendar becomes the draft date and the field says which', async () => {
+  await renderStep(<DetailsStep />, FILLED);
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  await act(async () => lastPicker().onValueChange({}, new Date(2026, 9, 5, 12)));
+
+  expect(screen.getByRole('radio', { name: 'Mon 5 Oct' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Today' })).not.toBeChecked();
 
   await fireEvent.press(screen.getByRole('radio', { name: 'Mon 5 Oct' }));
+  expect(lastPicker().value).toEqual(new Date(2026, 9, 5, 12));
+});
+
+test('dismissing the calendar keeps the date and everything typed', async () => {
+  await renderStep(<DetailsStep />, { ...FILLED, day: DayKeySchema.parse('2026-10-05') });
+  await fireEvent.press(screen.getByRole('radio', { name: 'Mon 5 Oct' }));
+  await act(async () => lastPicker().onDismiss?.());
+
   expect(screen.getByRole('radio', { name: 'Mon 5 Oct' })).toBeChecked();
+  expect(screen.getByLabelText('Description').props.value).toBe('Lunch with Hafiz, cash');
+});
+
+test('a date outside the add window never reaches the draft', async () => {
+  await renderStep(<DetailsStep />, FILLED);
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  await act(async () => lastPicker().onValueChange({}, new Date(2026, 9, 16, 12)));
+  await act(async () => lastPicker().onValueChange({}, new Date(2026, 6, 16, 12)));
+
+  expect(screen.getByRole('radio', { name: 'Today' })).toBeChecked();
 });
 
 test('a double tap on Save prompts once and stores one row, then Undo removes it without a prompt', async () => {

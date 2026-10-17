@@ -13,6 +13,14 @@ jest.mock('react-native-svg', () => {
   return { ...svg, default: svg.Svg };
 });
 
+// The date picker is a native view and a native module that jest cannot load. Tests read what the app asked the
+// Android dialog to open with from `DateTimePickerAndroid.open`.
+jest.mock('@react-native-community/datetimepicker', () => ({
+  __esModule: true,
+  default: () => null,
+  DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() },
+}));
+
 // ReducedMotionConfig warns on every mount. Tests mount it on purpose.
 const warn = console.warn;
 jest.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {

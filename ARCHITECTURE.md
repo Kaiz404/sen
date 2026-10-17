@@ -14,6 +14,8 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 | Need | Package | Version | Notes |
 | --- | --- | --- | --- |
 | Navigation | `expo-router` | ~57.0.26 | Native stack, `Stack.Protected`, form sheets as routes (D9), styled by `sheetOptions` in the root layout (D38) |
+| Navigation | `expo-router` | ~57.0.26 | Native stack, `Stack.Protected`, form sheets as routes (D9) |
+| Date picker | `@react-native-community/datetimepicker` | 9.1.0 | The system calendar dialog on Android, an inline calendar on iOS (D37) |
 | Database | `expo-sqlite` with `useSQLCipher` | ~57.0.4 | Encrypted at rest (D1) |
 | Preferences | `react-native-mmkv` + `react-native-nitro-modules` | 4.3.x / ≥ 0.37.1 | Not sensitive. Synchronous read for the theme |
 | Styling | `react-native-unistyles` | 3.x | Typed tokens, theme switch without re-renders (D8) |
@@ -525,7 +527,9 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed. The draft keeps the text as typed. The counter, the preview, the review and the stored row read it through the sanitiser, and the field shows the cleaned text when editing ends | `services/sanitize.ts`, `features/add/draft.ts` |
 | Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"`, `maxLength={60}` | `features/add/details-step.tsx` |
 | Category | Enum of eight | `models/category.ts` |
-| Date | Today, Yesterday, or a list of every day back to 90 days ago. Never future | `models/draft.ts`, `features/add/details-step.tsx` |
+| Date | Today, Yesterday, or the system calendar limited to the last 90 days (D37). Never future. A picked day is checked with `isInAddWindow` again before it reaches the draft | `models/draft.ts`, `features/add/day-picker.tsx` |
+
+**Date picker.** `useDayPicker` in `features/add/day-picker.tsx` returns `open` and a `panel`. On Android `open` calls `DateTimePickerAndroid.open` with the draft day as `value`, `minimumDate` the first allowed day at 00:00 and `maximumDate` today at 23:59:59.999. Its `onValueChange` hands the day to the draft reducer only when `isInAddWindow` agrees. A dismiss has no handler, so nothing changes. On iOS `open` shows `InlineDayPanel`, an inline `DateTimePicker` in a sheet. Days cross to the picker as local-clock dates at noon (`dayToLocalDate`) and back through `localDateToDay`. Jest mocks the package in `jest.setup.ts`, and tests read the options passed to `open`. `app.config.ts` sets the Android dialog colours through the package's config plugin from `theme/colors.ts`.
 
 **Why a custom keypad.** No amount ever reaches a keyboard that learns, suggests or syncs. The input space is exactly ten digits and delete.
 

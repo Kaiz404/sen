@@ -60,18 +60,16 @@ function Amount({
 function Details({
   draft = DRAFT,
   showProblems = false,
-  picking = false,
 }: {
   draft?: DraftInput;
   showProblems?: boolean;
-  picking?: boolean;
 }) {
   return (
     <DetailsView
       draft={draft}
       today={TODAY}
       showProblems={showProblems}
-      picking={picking}
+      picker={null}
       discarding={false}
       onDescription={noop}
       onDescriptionDone={noop}
@@ -126,7 +124,7 @@ export const ADD_STATES = {
   'details-problems': () => (
     <Details draft={{ ...DRAFT, description: 'L', category: null }} showProblems />
   ),
-  'details-picker': () => <Details picking />,
+  'details-picked': () => <Details draft={{ ...DRAFT, day: addDays(TODAY, -12) }} />,
   'review-ready': () => <Review state={{ kind: 'ready' }} />,
   'review-checking': () => <Review state={{ kind: 'checking' }} />,
   'review-cancelled': () => <Review state={{ kind: 'refused', reason: 'cancelled' }} />,
