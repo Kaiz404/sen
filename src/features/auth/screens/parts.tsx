@@ -142,6 +142,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     minHeight: 300,
     paddingTop: rt.insets.top + 26,
     paddingHorizontal: 22,
+    paddingBottom: 24,
     overflow: 'hidden',
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
