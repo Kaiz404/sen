@@ -6,6 +6,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { sessionStore } from '@/features/auth/session';
 import { TxIdSchema } from '@/models/transaction';
 import type { OpenDb } from '@/services/db';
+import { toast } from '@/components/toast';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
@@ -251,4 +252,19 @@ test('a screen reader can refresh without the pull gesture', async () => {
   });
 
   expect(await screen.findAllByText('1 new', { exact: false }, LONG)).not.toHaveLength(0);
+});
+
+test('while the undo toast shows, the list ends above the lifted Add key', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  const footer = () => screen.getByTestId('history-footer');
+  expect(footer()).toHaveStyle({ paddingBottom: 104 });
+
+  await act(async () => {
+    toast.show({ title: 'Added', detail: 'Lunch with Hafiz, cash · stored encrypted' });
+  });
+  expect(footer()).toHaveStyle({ paddingBottom: 196 });
+
+  await act(async () => toast.hide());
+  expect(footer()).toHaveStyle({ paddingBottom: 104 });
 });

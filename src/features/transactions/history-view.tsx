@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { EnterOnce } from '@/components/enter-once';
 import { Key } from '@/components/key';
+import { useToastShowing } from '@/components/toast';
 import type { Biometric, DbResetReason } from '@/features/auth';
 import { releaseSenScroll, Sen, senScroll } from '@/features/sen';
 import type { DayKey } from '@/models/day';
@@ -13,7 +14,7 @@ import { mark } from '@/services/perf';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
 import { type } from '@/theme/type';
 
-import { ADD_KEY_CLEARANCE, AddKey } from './add-key';
+import { ADD_KEY_CLEARANCE, ADD_KEY_LIFT, AddKey } from './add-key';
 import type { Banner, HistoryBody } from './body';
 import {
   DayNet,
@@ -92,6 +93,7 @@ const NOTICE: Readonly<Record<DbResetReason, string>> = {
 export function HistoryView(props: HistoryViewProps): ReactNode {
   const { body, search, flow, actions, arrival, banner } = props;
   const searching = search.trim() !== '';
+  const toastUp = useToastShowing();
   const listShown = body.kind !== 'failed';
   // The list can go mid-fling, to a lock or to the full error, before its end event reopens the gate.
   useEffect(() => (listShown ? releaseSenScroll : undefined), [listShown]);
@@ -208,7 +210,10 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
                   ListHeaderComponent={top}
                   ListEmptyComponent={empty}
                   ListFooterComponent={
-                    <View style={styles.footer}>
+                    <View
+                      testID="history-footer"
+                      style={[styles.footer, toastUp && styles.footerLifted]}
+                    >
                       {banner !== null && body.kind === 'list' && (
                         <Text style={styles.footerText}>PULL DOWN TO TRY AGAIN</Text>
                       )}
@@ -265,6 +270,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingBottom: rt.insets.bottom + ADD_KEY_CLEARANCE,
     alignItems: 'center',
   },
+  footerLifted: { paddingBottom: rt.insets.bottom + ADD_KEY_CLEARANCE + ADD_KEY_LIFT },
   footerText: { ...type.caption(11), color: theme.colors.inkMuted },
   pill: {
     position: 'absolute',

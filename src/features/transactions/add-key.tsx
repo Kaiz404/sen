@@ -14,7 +14,8 @@ const KEY_HEIGHT = 64;
 /** List-end padding above the bottom inset, so the last row and caption stay clear of the key. */
 export const ADD_KEY_CLEARANCE = REST_BOTTOM + KEY_HEIGHT + 24;
 const TOAST_GAP = 16;
-const LIFT = TOAST_RISE + TOAST_GAP - REST_BOTTOM;
+/** How far the key rises clear of the undo toast. */
+export const ADD_KEY_LIFT = TOAST_RISE + TOAST_GAP - REST_BOTTOM;
 
 function useKeyboardUp(): boolean {
   const [up, setUp] = useState(false);
@@ -44,7 +45,7 @@ export function AddKey({ onPress }: { readonly onPress: () => void }): ReactNode
       style={[
         styles.dock,
         {
-          transform: [{ translateY: lifted ? -LIFT : 0 }],
+          transform: [{ translateY: lifted ? -ADD_KEY_LIFT : 0 }],
           transitionProperty: 'transform',
           transitionDuration: cssMs(level, lifted ? TOAST_ENTER_MS : TOAST_EXIT_MS),
           transitionTimingFunction: EASE_CSS.out,
