@@ -307,9 +307,10 @@ export function useHistoryData(db: Db, { filter, month, today, hidden }: History
       if (pages.hasNextPage && !pages.isFetchingNextPage) void pages.fetchNextPage();
     },
     unreadable: pages.isError || syncState.isError,
-    retryReads: () => {
-      void pages.refetch();
-      void syncState.refetch();
+    /** Reads again, and says whether both reads now succeed. */
+    retryReads: async () => {
+      const [page, state] = await Promise.all([pages.refetch(), syncState.refetch()]);
+      return !page.isError && !state.isError;
     },
     synced: syncState.data === undefined ? undefined : syncState.data.cursor > 0,
     interrupted:

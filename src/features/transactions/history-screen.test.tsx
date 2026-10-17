@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { toast } from '@/components/toast';
-import { playMoment } from '@/features/sen';
+import { playMoment, Sen } from '@/features/sen';
 import { sessionStore } from '@/features/auth/session';
 import { TxIdSchema } from '@/models/transaction';
 import type { OpenDb } from '@/services/db';
@@ -280,28 +280,70 @@ test('a failed pull over a list buzzes once, from the banner path', async () => 
   expect(buzzes()).toHaveLength(1);
 });
 
-test('Sen holds still while another screen covers History, and moves again when it is back', async () => {
-  const { rerender } = await renderHistory();
+test('covering History holds its own Sens still while another screen’s Sen carries on', async () => {
+  const tree = () => (
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+      <Sen id="other" pose="idle" size={60} />
+    </QueryClientProvider>
+  );
+  const { rerender } = await render(tree());
   expect(await screen.findByText('Tealive')).toBeOnTheScreen();
   await act(() => jest.advanceTimersByTime(100));
   expect(playMoment('month', 'blink')).toBe(true);
   await act(() => jest.advanceTimersByTime(300));
 
   mockFocused = false;
-  await rerender(
-    <QueryClientProvider client={queryClient}>
-      <HistoryScreen />
-    </QueryClientProvider>,
-  );
+  await rerender(tree());
   expect(playMoment('month', 'blink')).toBe(false);
+  expect(playMoment('other', 'blink')).toBe(true);
+  await act(() => jest.advanceTimersByTime(300));
 
   mockFocused = true;
-  await rerender(
+  await rerender(tree());
+  expect(playMoment('month', 'blink')).toBe(true);
+});
+
+test('an unreadable history buzzes once on arrival, not on re-renders or refocus, and once per failed Retry', async () => {
+  jest.spyOn(txRepo, 'readPage').mockRejectedValue(new Error('disk'));
+  const tree = () => (
     <QueryClientProvider client={queryClient}>
       <HistoryScreen />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  expect(playMoment('month', 'blink')).toBe(true);
+  const { rerender } = await render(tree());
+  expect(
+    await screen.findByRole('header', { name: "Sen couldn't read your history" }, LONG),
+  ).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(2500));
+  expect(buzzes()).toHaveLength(1);
+
+  mockFocused = false;
+  await rerender(tree());
+  mockFocused = true;
+  await rerender(tree());
+  await act(() => jest.advanceTimersByTime(2500));
+  expect(buzzes()).toHaveLength(1);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+  await waitFor(() => expect(buzzes()).toHaveLength(2), LONG);
+  await act(() => jest.advanceTimersByTime(2500));
+  expect(buzzes()).toHaveLength(2);
+  jest.mocked(txRepo.readPage).mockRestore();
+});
+
+test('a failure with no full error to show still buzzes once: skipped rows on a pull over an empty history', async () => {
+  const run = jest
+    .spyOn(syncService, 'sync')
+    .mockResolvedValueOnce({ ok: true, value: { received: 0 } } as never)
+    .mockRejectedValueOnce({ kind: 'invalid_data', skipped: 2 });
+  await renderHistory();
+  await act(() => jest.advanceTimersByTime(500));
+  const before = buzzes().length;
+
+  await act(() => pullDown());
+  await waitFor(() => expect(buzzes()).toHaveLength(before + 1), LONG);
+  run.mockRestore();
 });
 
 test('the fault banner says the fault is simulated and links to the reviewer controls', async () => {

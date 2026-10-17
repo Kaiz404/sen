@@ -18,6 +18,7 @@ import {
   useDbResetNotice,
 } from '@/features/auth';
 import { senGate } from '@/features/sen';
+import { toAppError } from '@/models/errors';
 import { malaysiaDay, toInstant } from '@/models/day';
 import { DUR } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
@@ -25,6 +26,7 @@ import { mark } from '@/services/perf';
 import type { Flow } from '@/services/tx-repo';
 
 import {
+  asSyncFailure,
   historyBody,
   type HistoryBody,
   type ReadFailure,
@@ -43,8 +45,11 @@ import {
 import { HistoryView } from './history-view';
 import type { PullStatus } from './pull/pull-refresh';
 import { clockText } from './rows';
+import { HISTORY_SENS } from './sens';
 
 const PILL_MS = 2500;
+
+const showsList = (body: HistoryBody) => body.kind === 'list' || body.kind === 'no-results';
 
 export function HistoryScreen(): ReactNode {
   const db = useDb();
@@ -56,7 +61,7 @@ export function HistoryScreen(): ReactNode {
   const [flow, setFlow] = useState<Flow>('all');
   const [updated, setUpdated] = useState<number | null>(null);
   const [pull, setPull] = useState<PullStatus>('idle');
-  const [retrying, setRetrying] = useState(false);
+  const [retrying, setRetrying] = useState<'sync' | 'reads' | null>(null);
   const [retryFailures, setRetryFailures] = useState(0);
   /** The failure the running Retry started from, which the full error keeps showing meanwhile. */
   const [retryFrom, setRetryFrom] = useState<SyncFailure | ReadFailure | null>(null);
@@ -73,10 +78,10 @@ export function HistoryScreen(): ReactNode {
   const after = useStore(arrivals, (s) => s.after);
   const added = useStore(arrivals, (s) => s.added);
   const focused = useIsFocused();
-  // Sen's ambient beats stop while Add, Detail or Settings covers History.
+  // History's own Sens hold still while Add, Detail or Settings covers it. Other screens' Sens carry on.
   useEffect(() => {
-    senGate({ focused });
-    return () => senGate({ focused: true });
+    senGate({ covered: focused ? [] : HISTORY_SENS });
+    return () => senGate({ covered: [] });
   }, [focused]);
   // A row added on the Add screen lands while History is covered, so it slides in once History is back.
   const arrival = { after, added: focused ? added : null };
@@ -132,29 +137,40 @@ export function HistoryScreen(): ReactNode {
   const refresh = (trigger: 'pull' | 'retry') => {
     const pulled = trigger === 'pull';
     if (pulled) setPull('loading');
-    // When the full error is, or is about to be, the failure state, its Sen owns the buzz through
-    // the Network error moment's mark. Over a list the banner has no Sen, so the haptic stands alone.
-    const fullError = body.kind !== 'list' && body.kind !== 'no-results';
     const retried = !pulled && body.kind === 'failed';
-    if (retried) {
-      setRetryFrom(body.error);
-      setRetrying(true);
-    }
+    if (retried) holdFailure(body.error, 'sync');
     syncing.mutateAsync(trigger).then(
       (summary) => {
-        setRetrying(false);
+        setRetrying(null);
         // A pull's landing moment plays the haptic itself, at the touchdown.
         if (pulled) setPull((now) => (now === 'loading' ? 'landed' : now));
         else playHaptic('refreshLanded');
         setUpdated(summary.received);
       },
-      () => {
-        if (retried) setRetryFailures((n) => n + 1);
-        setRetrying(false);
+      (thrown: unknown) => {
+        setRetrying(null);
         if (pulled) setPull('idle');
-        if (!fullError) playHaptic('networkError');
+        // The full error's Sen buzzes through the Network error moment's mark: on arrival, and again
+        // for each failed Retry. Every other failure that shows something (a banner over a list, the
+        // skipped-rows note, a reset notice) gets the plain haptic. One of the two, never both.
+        const fills = asSyncFailure(toAppError(thrown)) !== null && !showsList(body);
+        if (fills && retried) setRetryFailures((n) => n + 1);
+        if (!fills) playHaptic('networkError');
       },
     );
+  };
+
+  const holdFailure = (error: SyncFailure | ReadFailure, work: 'sync' | 'reads') => {
+    setRetryFrom(error);
+    setRetrying(work);
+  };
+
+  const retryReads = () => {
+    if (body.kind === 'failed') holdFailure(body.error, 'reads');
+    void data.retryReads().then((ok) => {
+      setRetrying(null);
+      if (!ok) setRetryFailures((n) => n + 1);
+    });
   };
 
   // Backstop: a pull cannot be loading while no sync runs.
@@ -170,7 +186,8 @@ export function HistoryScreen(): ReactNode {
   });
   // A retry's running sync would read as the skeleton or the empty list. The failure stays up, with
   // Retry busy, until the sync lands rows or fails again.
-  const holding = retrying && syncing.isPending && retryFrom !== null;
+  const holding =
+    retryFrom !== null && (retrying === 'reads' || (retrying === 'sync' && syncing.isPending));
   const body: HistoryBody = holding ? { kind: 'failed', error: retryFrom } : shown;
   const notes = syncNotes(sync, body, data.syncedAt === null ? null : clockText(data.syncedAt));
 
@@ -220,7 +237,7 @@ export function HistoryScreen(): ReactNode {
         onPullSettled: () => setPull('idle'),
         onRetry: () =>
           body.kind === 'failed' && body.error.kind === 'unreadable'
-            ? data.retryReads()
+            ? retryReads()
             : refresh('retry'),
         onEndReached: data.loadMore,
         onAdd: () => router.push('/add'),

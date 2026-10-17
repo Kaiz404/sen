@@ -34,6 +34,7 @@ import { EASE } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
 import { type } from '@/theme/type';
 
+import { PULL_SEN } from '../sens';
 import { dragStep, PULL, readiness, stretchFor } from './pull-math';
 
 /** idle: nothing runs. loading: the bank is being asked. landed: the data is back, Sen lands. */
@@ -41,7 +42,7 @@ export type PullStatus = 'idle' | 'loading' | 'landed';
 
 /** `refreshLand` runs 120 ms of rise and 1161 ms of drop and wobble (moments/history.ts). */
 export const LAND_MS = 1281;
-const SEN = 'pull';
+const SEN = PULL_SEN;
 const GAP_SEN = 56;
 const COLLAPSE_MS = 250;
 const REFRESH_ACTIONS = [{ name: 'refresh', label: 'Refresh' }] as const;

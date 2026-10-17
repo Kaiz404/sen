@@ -14,6 +14,8 @@ export type Gate = {
   readonly scroll: boolean;
   readonly focused: boolean;
   readonly appActive: boolean;
+  /** Sens whose screen sits under another, which hold still while every other Sen carries on. */
+  readonly covered: readonly SenId[];
 };
 
 type Playing = { readonly sen: SenId; readonly moment: MomentId; readonly token: number };
@@ -50,7 +52,7 @@ export type Command =
 
 export const INITIAL: DirectorState = {
   sens: [],
-  gate: { scroll: false, focused: true, appActive: true },
+  gate: { scroll: false, focused: true, appActive: true, covered: [] },
   playing: null,
   queued: null,
   held: null,
@@ -108,7 +110,7 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
     case 'request': {
       if (!s.sens.includes(e.sen)) return [s, []];
       const p = info(e.moment).priority;
-      if (!isOpen(s.gate)) {
+      if (!isOpen(s.gate) || s.gate.covered.includes(e.sen)) {
         return p === 0 ? [s, []] : [release(s, e.sen), [{ type: 'settle', sen: e.sen }]];
       }
       if (!s.playing) return play(s, e.sen, e.moment);
@@ -146,6 +148,20 @@ export function direct(s: DirectorState, e: DirectorEvent, info: MomentInfo): Re
     case 'gate': {
       const gate = { ...s.gate, ...e.patch };
       if (isOpen(gate)) {
+        const under = [s.playing?.sen, s.queued?.sen].filter(
+          (x): x is SenId => x !== undefined && gate.covered.includes(x),
+        );
+        if (under.length > 0) {
+          const t = {
+            ...s,
+            gate,
+            held: null,
+            playing: s.playing && gate.covered.includes(s.playing.sen) ? null : s.playing,
+            queued: s.queued && gate.covered.includes(s.queued.sen) ? null : s.queued,
+          };
+          const [u, commands] = next(t);
+          return [u, [...under.map((sen) => ({ type: 'settle' as const, sen })), ...commands]];
+        }
         const t = { ...s, gate, held: null };
         return s.held && s.sens.includes(s.held.sen) ? play(t, s.held.sen, s.held.moment) : [t, []];
       }

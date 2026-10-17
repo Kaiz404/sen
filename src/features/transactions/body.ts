@@ -16,6 +16,9 @@ export type SyncView =
 /** A read from the database rejected, which no retry of the bank sync fixes. */
 export type ReadFailure = { readonly kind: 'unreadable' };
 
+/** One shared value, so a screen that rebuilds its body keeps the same failure. */
+const UNREADABLE: ReadFailure = { kind: 'unreadable' };
+
 /** What fills the screen under the header. */
 export type HistoryBody =
   | { readonly kind: 'loading' }
@@ -39,25 +42,29 @@ export type BodyInput = {
   readonly unreadable: boolean;
 };
 
-function syncFailure(sync: SyncView): SyncFailure | null {
-  if (sync.kind !== 'failed') return null;
-  switch (sync.error.kind) {
+/** The sync errors that fill the screen or raise the banner. Others (bad rows, a reset) have their own notes. */
+export function asSyncFailure(error: AppError): SyncFailure | null {
+  switch (error.kind) {
     case 'offline':
     case 'timeout':
     case 'server':
     case 'storage':
     case 'unknown':
-      return sync.error;
+      return error;
     default:
       return null;
   }
+}
+
+function syncFailure(sync: SyncView): SyncFailure | null {
+  return sync.kind === 'failed' ? asSyncFailure(sync.error) : null;
 }
 
 export function historyBody({ rows, synced, sync, filtered, unreadable }: BodyInput): HistoryBody {
   if (rows !== undefined && rows.items.length > 0) return { kind: 'list', rows };
   // TanStack keeps the last good data through a failed refetch, so stale empty rows or a stale `synced`
   // must not hide that the reads now reject.
-  if (unreadable) return { kind: 'failed', error: { kind: 'unreadable' } };
+  if (unreadable) return { kind: 'failed', error: UNREADABLE };
   if (rows === undefined) return { kind: 'loading' };
   const failure = syncFailure(sync);
   if (synced !== true)

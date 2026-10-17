@@ -51,6 +51,21 @@ test('Off shows the shrug still, with no rise', async () => {
   expect(rise()).toBeCloseTo(-14 * UNIT, 1);
 });
 
+test('Off shows the Sen at once, and while it is hidden a screen reader skips it', async () => {
+  const view = await render(<NoResults search="z" onClear={jest.fn()} />);
+  const sen = () => screen.getByTestId('history-no-results-sen', hidden);
+  expect(sen()).toHaveProp('importantForAccessibility', 'no-hide-descendants');
+  await view.unmount();
+
+  await render(
+    <MotionPolicyRoot preference="off">
+      <NoResults search="z" onClear={jest.fn()} />
+    </MotionPolicyRoot>,
+  );
+  expect(sen()).toHaveStyle({ opacity: 1 });
+  expect(sen()).toHaveProp('importantForAccessibility', 'auto');
+});
+
 test('Sen stays hidden until the typing pause ends, and typing on restarts the pause without replaying', async () => {
   const view = await render(<NoResults search="z" onClear={jest.fn()} />);
   const sen = () => screen.getByTestId('history-no-results-sen', hidden);

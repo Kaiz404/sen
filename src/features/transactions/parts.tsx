@@ -21,6 +21,7 @@ import { type } from '@/theme/type';
 import type { Banner } from './body';
 import { RollAmount, useAmountView, useDayNetView, useRevealed } from './reveal';
 import type { TxRowView } from './rows';
+import { MONTH_SEN } from './sens';
 
 const BIOMETRIC_ICON = {
   faceId: 'face-recognition',
@@ -69,9 +70,6 @@ export function Header({
     </View>
   );
 }
-
-/** The month card's Sen. Showing amounts plays Reveal on it, hiding plays Re-mask. */
-const MONTH_SEN = 'month';
 
 /**
  * The rig makes a shared value per channel and an animated mapper per part. The first frame draws the same
