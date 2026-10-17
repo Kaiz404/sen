@@ -196,6 +196,8 @@ type RollAmountProps = {
   readonly surface?: AmountSurface;
   readonly sign?: SignMode;
   readonly direction?: Direction;
+  /** Fill the free width, right aligned, and scale a long amount down to it instead of wrapping. */
+  readonly fit?: boolean;
 };
 
 /** Four coins while masked. Shown, the hero rolls in digit by digit and smaller amounts roll in whole, on the shared progress. */
@@ -205,6 +207,7 @@ export function RollAmount({
   surface = 'plain',
   sign = 'auto',
   direction,
+  fit = false,
 }: RollAmountProps): ReactNode {
   if (value === null) {
     return <Amount value={null} size={size} surface={surface} sign={sign} direction={direction} />;
@@ -214,13 +217,14 @@ export function RollAmount({
   const ink = styles.ink(surface, value > 0);
   const lead = `${parts.sign}${parts.currency}`;
   if (size !== 'hero') {
-    return (
+    const rolling = (
       <Rolling label={moneySpoken(value, sign)}>
         <Text style={[scale.lead, ink, { marginRight: scale.leadGap }]}>{lead}</Text>
         <Text style={[scale.whole, ink]}>{parts.whole}</Text>
         <Text style={[scale.fraction, ink]}>{parts.fraction}</Text>
       </Rolling>
     );
+    return fit ? <FitWidth end>{rolling}</FitWidth> : rolling;
   }
   const chars = [...parts.whole, ...parts.fraction];
   const cols = chars.length + 1;
@@ -252,7 +256,13 @@ export function RollAmount({
 type Size = { readonly width: number; readonly height: number };
 
 /** Scales a hero amount down to the card's width, so the sen digits of a large total never clip. */
-export function FitWidth({ children }: { readonly children: ReactNode }): ReactNode {
+export function FitWidth({
+  children,
+  end = false,
+}: {
+  readonly children: ReactNode;
+  readonly end?: boolean;
+}): ReactNode {
   const [box, setBox] = useState(0);
   const [content, setContent] = useState<Size | null>(null);
   const scale = content !== null && box > 0 && content.width > box ? box / content.width : 1;
@@ -260,12 +270,12 @@ export function FitWidth({ children }: { readonly children: ReactNode }): ReactN
     <View
       testID="fit-box"
       onLayout={(e) => setBox(e.nativeEvent.layout.width)}
-      style={styles.fitBox(content === null ? undefined : content.height * scale)}
+      style={styles.fitBox(content === null ? undefined : content.height * scale, end)}
     >
       <View
         testID="fit-content"
         onLayout={(e) => setContent(e.nativeEvent.layout)}
-        style={styles.fitContent(scale)}
+        style={styles.fitContent(scale, end)}
       >
         {children}
       </View>
@@ -275,13 +285,15 @@ export function FitWidth({ children }: { readonly children: ReactNode }): ReactN
 
 const styles = StyleSheet.create((theme) => ({
   row: { flexDirection: 'row', alignItems: 'baseline' },
-  fitBox: (height: number | undefined) => ({
+  fitBox: (height: number | undefined, end: boolean) => ({
     flexDirection: 'row',
     alignItems: 'flex-end',
+    justifyContent: end ? 'flex-end' : 'flex-start',
+    ...(end && { flex: 1, marginLeft: 8 }),
     height,
   }),
-  fitContent: (scale: number) => ({
-    transformOrigin: 'left bottom',
+  fitContent: (scale: number, end: boolean) => ({
+    transformOrigin: end ? 'right bottom' : 'left bottom',
     transform: [{ scale }],
   }),
   ink: (surface: AmountSurface, credit: boolean) => ({

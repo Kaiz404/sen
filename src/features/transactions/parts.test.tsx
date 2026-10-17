@@ -86,8 +86,11 @@ test.each([
   await view.rerender(shown(value ?? null, false));
   if (value !== undefined) {
     // A wide hero scales down inside its slot; the slot itself never moves.
-    await fireEvent(screen.getByTestId('fit-box'), 'layout', LAYOUT(300));
-    await fireEvent(screen.getByTestId('fit-content'), 'layout', LAYOUT(900));
+    // The hero is the first fit box, the Money in amount the second.
+    await fireEvent(screen.getAllByTestId('fit-box')[0]!, 'layout', LAYOUT(300));
+    await fireEvent(screen.getAllByTestId('fit-content')[0]!, 'layout', LAYOUT(900));
+    await fireEvent(screen.getAllByTestId('fit-box')[1]!, 'layout', LAYOUT(120));
+    await fireEvent(screen.getAllByTestId('fit-content')[1]!, 'layout', LAYOUT(240));
   }
 
   expect(heights()).toEqual(hidden);
@@ -100,4 +103,16 @@ test('the Show and Hide keys are the same size', async () => {
   const hiddenKey = key();
   await view.rerender(shown(totals(1, 1), false));
   expect(key()).toBe(hiddenKey);
+});
+
+test('a long Money in amount scales to one line inside its row instead of wrapping or clipping', async () => {
+  await render(shown(totals(99999999999, 1), false));
+  await fireEvent(screen.getAllByTestId('fit-box')[1]!, 'layout', LAYOUT(120));
+  await fireEvent(screen.getAllByTestId('fit-content')[1]!, 'layout', LAYOUT(240));
+
+  expect(screen.getAllByTestId('fit-content')[1]).toHaveStyle({
+    transform: [{ scale: 0.5 }],
+    transformOrigin: 'right bottom',
+  });
+  expect(StyleSheet.flatten(screen.getByTestId('money-in').props.style).height).toBe(58);
 });

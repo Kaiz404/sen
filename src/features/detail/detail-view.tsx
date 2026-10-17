@@ -233,9 +233,6 @@ function Receipt({
                 label="Show amounts"
                 onPress={onShow}
               />
-              <Text
-                style={styles.note}
-              >{`Asks for ${sensor.name} first. Stays shown until you hide it or Sen locks.`}</Text>
             </View>
           )}
           <Source row={row} />

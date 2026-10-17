@@ -136,14 +136,11 @@ test('while hidden the receipt shows every field but the amount, and no amount i
   ]);
 });
 
-test('the masked receipt says how long a reveal lasts', async () => {
+test('the masked receipt has the Show amounts key and no helper line', async () => {
   await renderDetail(tnb);
 
-  expect(
-    await screen.findByText(
-      'Asks for fingerprint first. Stays shown until you hide it or Sen locks.',
-    ),
-  ).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
+  expect(screen.queryByText(/Asks for .* first\. Stays shown/)).not.toBeOnTheScreen();
 });
 
 test('Show amounts rolls the amount in, and Hide amounts takes it out of the tree', async () => {

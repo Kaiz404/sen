@@ -286,7 +286,7 @@ export function MonthCard({
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
         ) : (
-          <RollAmount value={inMinor} size="card" surface="plate" direction="credit" />
+          <RollAmount value={inMinor} size="card" surface="plate" direction="credit" fit />
         )}
       </View>
       {hidden ? (
