@@ -71,6 +71,7 @@ const EXPECTED: Record<StateName, Partial<Record<EventName, Session>>> = {
     SIGN_OUT_START: { status: 'signingOut' },
   },
   stepUp: {
+    LOCK: { status: 'stepUp', action: 'delete', returnTo: unlocked, lockPending: 'manual' },
     STEP_UP_DONE: { status: 'unlocked', since: 1_000, db },
   },
   signingOut: {
@@ -105,4 +106,13 @@ test.each([
   ['signingOut', 'locked'],
 ] as const)('%s routes as %s', (stateName, gate) => {
   expect(gateOf(STATES[stateName])).toBe(gate);
+});
+
+test('a lock that arrives during a step-up applies when it ends, and the first one keeps its reason', () => {
+  const held = reduce(
+    reduce(STATES.stepUp, { type: 'LOCK', reason: 'background' }),
+    { type: 'LOCK', reason: 'idle' },
+  );
+
+  expect(reduce(held, { type: 'STEP_UP_DONE' })).toEqual({ status: 'locked', reason: 'background' });
 });

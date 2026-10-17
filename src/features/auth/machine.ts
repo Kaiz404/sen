@@ -24,7 +24,13 @@ export type Session =
   | { readonly status: 'authenticating'; readonly purpose: 'unlock'; readonly reason: LockReason }
   | Arriving
   | Unlocked
-  | { readonly status: 'stepUp'; readonly action: StepUpAction; readonly returnTo: Unlocked }
+  | {
+      readonly status: 'stepUp';
+      readonly action: StepUpAction;
+      readonly returnTo: Unlocked;
+      /** A lock that arrived while the prompt was up. It applies when the prompt ends, however it ends. */
+      readonly lockPending?: LockReason;
+    }
   | { readonly status: 'signingOut' };
 
 export type SessionEvent =
@@ -73,9 +79,14 @@ export function reduce(state: Session, event: SessionEvent): Session {
       return { status: 'stepUp', action: event.action, returnTo: state };
 
     case 'STEP_UP_DONE':
-      return state.status === 'stepUp' ? state.returnTo : state;
+      if (state.status !== 'stepUp') return state;
+      return state.lockPending === undefined
+        ? state.returnTo
+        : { status: 'locked', reason: state.lockPending };
 
     case 'LOCK':
+      if (state.status === 'stepUp')
+        return state.lockPending === undefined ? { ...state, lockPending: event.reason } : state;
       if (state.status !== 'unlocked' && state.status !== 'arriving') return state;
       return { status: 'locked', reason: event.reason };
 

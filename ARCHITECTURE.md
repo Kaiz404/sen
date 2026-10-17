@@ -294,8 +294,8 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 | `ARRIVED` | `arriving` | `unlocked{since, db}` |
 | `AUTH_FAIL` | `authenticating` | Back to `welcome` or `locked{reason}` |
 | `STEP_UP_START` | `unlocked` | `stepUp{action, returnTo}` |
-| `STEP_UP_DONE` | `stepUp` | `returnTo` |
-| `LOCK` | `unlocked`, `arriving` | `locked{reason}` |
+| `STEP_UP_DONE` | `stepUp` | `returnTo`, or `locked{lockPending}` when a lock arrived meanwhile |
+| `LOCK` | `unlocked`, `arriving`, `stepUp` | `locked{reason}`, or `stepUp` with `lockPending` set (the first reason is kept) |
 | `SIGN_OUT_START` | `locked`, `unlocked` | `signingOut` |
 | `SIGN_OUT_DONE` | `signingOut` | `welcome` |
 | `SIGN_OUT_FAIL` | `signingOut` | `locked{signout}` |
@@ -310,7 +310,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 | `authenticating` | `purpose`: `unlock` from Lock, or `setup` from the primer | `locked` or `welcome` | Current screen stays |
 | `arriving` | `purpose`, `since`, `db` | `locked` or `welcome` | Current screen stays while Sen plays Unlock |
 | `unlocked` | `since`, `db` | `unlocked` | All protected routes. Amounts follow `amountsHidden`, which is true on every arrival |
-| `stepUp` | `action`, `returnTo` (the unlocked state, `db` included) | `unlocked` | Current screen stays |
+| `stepUp` | `action`, `returnTo` (the unlocked state, `db` included), `lockPending?` | `unlocked`, or `locked` when `lockPending` is set | Current screen stays |
 | `signingOut` | Nothing. The vault is being destroyed | `locked` | `lock`, with every key disabled |
 
 - **Launch.** `SessionRoot` runs `hasVault()` and `detectBiometric()` once. No vault goes to Welcome. A vault, or a failed check, goes to Lock, so Welcome never opens over existing data. The native splash (plain ink) stays up until `LaunchCover` covers the first screen with the MAL2 launch, so the hand-over can't be seen. Lock and Welcome report their hero's box from `onLayout` (`reportLaunchTarget` in `launch.ts`; the hero sits at the window's top left). A first screen with no hero in 500 ms, such as a dev deep link, skips the launch and lifts the splash. The launch plays once per process.
@@ -392,8 +392,8 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 
 **The iOS inactive trap.** The Face ID sheet itself sends the app to `inactive` and back. So:
 - Only `background` starts the re-lock window. `inactive` only shows the privacy cover, which the security feature owns.
-- A prompt still open on `active`, such as a passcode screen that leaves the app, does not lock, because the reducer ignores `LOCK` while it holds. A prompt the OS cancelled on the way out, such as Home on a step-up sheet, leaves the window running.
-- The reducer ignores `LOCK` while in `authenticating` or `stepUp`, so an idle tick never cuts a prompt short.
+- A prompt still open on `active`, such as a passcode screen that leaves the app, cannot lock mid-prompt. The reducer records the lock as `lockPending` on `stepUp` and applies it when the prompt ends, whatever the outcome, so a long absence is never forgotten. `stepUp()` then returns `cancelled`, so the action it guarded does not run on a closed database. A prompt the OS cancelled on the way out, such as Home on a step-up sheet, leaves the window running.
+- The reducer ignores `LOCK` while in `authenticating`, and defers it while in `stepUp`, so an idle tick never cuts a prompt short.
 
 **On `LOCK`, and on any move out of the unlocked states, sign-out included:**
 - `queryClient.clear()`.
@@ -794,8 +794,8 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | Share receipt is offered only while shown and sends the board's plain text | `features/detail/detail-screen.test.tsx`, `features/detail/receipt.test.ts` |
 | Detail: every field shows while hidden, and no amount is in the tree or the cache. A bad, missing or deleted id shows not found. A read that throws shows Retry | `features/detail/detail-screen.test.tsx`, `features/detail/receipt.test.ts` |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
-| Every state and event pair, `signingOut` included. `LOCK` during `authenticating` or `stepUp` is ignored | `features/auth/machine.test.ts` |
-| Re-lock window (59 s stays, 61 s locks), idle lock. Home on a step-up prompt still locks. A clock set back locks, away and idle | `features/auth/locks.test.ts` |
+| Every state and event pair, `signingOut` included. `LOCK` during `authenticating` is ignored, and during `stepUp` it waits for the prompt to end | `features/auth/machine.test.ts` |
+| Re-lock window (59 s stays, 61 s locks), idle lock. Home on a step-up prompt still locks. A long absence with the prompt still up locks when it ends, cancelled or not, and the next unlock is masked. A clock set back locks, away and idle | `features/auth/locks.test.ts` |
 | Lock clears the cache, closes the database and hides the toast. An unlock during sign-out opens no prompt, and sign-out ends on Welcome. A lockout armed before sign out never reaches the next demo user | `features/auth/session.test.tsx` |
 | A native auth error outside the typed union maps to `unknown` | `features/auth/prompt.test.ts` |
 | Unlock opens History, and a lock unmounts it, which drops the draft with every protected route | `__tests__/lock-flow.test.tsx` |

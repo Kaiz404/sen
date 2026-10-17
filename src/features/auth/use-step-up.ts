@@ -12,13 +12,16 @@ const PROMPT: Readonly<Record<StepUpAction, string>> = {
   erase: 'Erase transactions you added',
 };
 
+const CANCELLED: StepUpResult = { ok: false, reason: 'cancelled' };
+
 export async function stepUp(action: StepUpAction): Promise<StepUpResult> {
   const { status } = sessionStore.getState().session;
-  if (status !== 'unlocked') return { ok: false, reason: 'cancelled' };
+  if (status !== 'unlocked') return CANCELLED;
   dispatch({ type: 'STEP_UP_START', action });
 
   const outcome = await authenticate(PROMPT[action]);
   dispatch({ type: 'STEP_UP_DONE' });
+  if (sessionStore.getState().session.status !== 'unlocked') return CANCELLED;
   return outcome;
 }
 
