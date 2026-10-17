@@ -47,6 +47,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D31 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase deletes only the rows the user added, behind step-up |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
 | D33 | Adding a transaction | A floating Add key on History, no bar |
+| D34 | Catching up | History finishes only a cut-short first sync, so ordinary unlocks send nothing |
 | D35 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
 
 ---
