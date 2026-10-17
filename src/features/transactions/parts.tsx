@@ -65,8 +65,8 @@ export function Header({
           accessibilityLabel="How Sen keeps amounts private"
           onPress={onPrivacy}
         />
-        <Key tone="paper" icon="cog" accessibilityLabel="Settings" onPress={onSettings} />
         <Key tone="paper" icon="lock-outline" accessibilityLabel="Lock Sen now" onPress={onLock} />
+        <Key tone="paper" icon="cog" accessibilityLabel="Settings" onPress={onSettings} />
       </View>
     </View>
   );

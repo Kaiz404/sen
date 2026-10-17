@@ -149,14 +149,14 @@ test('large text shrinks a short hero to its slot', async () => {
   expect(screen.getAllByTestId('fit-content')[0]).toHaveStyle({ transform: [{ scale: 0.5 }] });
 });
 
-test('the header keys read privacy, settings, lock', async () => {
+test('the header keys read privacy, lock, settings', async () => {
   await render(
     <Header inset onPrivacy={() => {}} onSettings={() => {}} onLock={() => {}} />,
   );
 
   expect(screen.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
     'How Sen keeps amounts private',
-    'Settings',
     'Lock Sen now',
+    'Settings',
   ]);
 });
