@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
+import { activity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
 import { queryClient } from '@/services/query-client';
 import * as Vault from '@/services/vault';
@@ -12,7 +13,10 @@ jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
 }));
-jest.mock('@/services/vault', () => ({ openVault: jest.fn(), destroyVault: jest.fn(async () => undefined) }));
+jest.mock('@/services/vault', () => ({
+  openVault: jest.fn(),
+  destroyVault: jest.fn(async () => undefined),
+}));
 
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
@@ -167,6 +171,7 @@ test('the hook follows show, hide and lock', async () => {
 
 test('a check left unanswered for 60 s times out and amounts stay hidden', async () => {
   jest.useFakeTimers();
+  const record = jest.spyOn(activity, 'record');
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
 
   const pending = showAmounts();
@@ -175,5 +180,10 @@ test('a check left unanswered for 60 s times out and amounts stay hidden', async
   expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
   expect(shown()).toBe(false);
   expect(sessionStore.getState().session).toMatchObject({ status: 'unlocked' });
+  expect(record).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ code: 'auth.failed' }),
+  );
+  record.mockRestore();
   jest.useRealTimers();
 });

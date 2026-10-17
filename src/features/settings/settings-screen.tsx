@@ -14,7 +14,7 @@ import {
   hideAmounts,
   lockNow,
   recordActivity,
-  refusalText,
+  revealRefusalText,
   showAmounts,
   useAmountsHidden,
   useBiometric,
@@ -427,7 +427,7 @@ export function SettingsScreen(): ReactNode {
           playHaptic('reveal');
           return;
         }
-        const why = refusalText(outcome.reason, name);
+        const why = revealRefusalText(outcome.reason, name);
         if (why !== null) toast.show({ title: why });
       });
     },

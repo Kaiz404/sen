@@ -35,7 +35,7 @@ export function triesLeftText(triesLeft: number, name: string): string {
 }
 
 /** Why a step-up check refused, for a screen that has nothing of its own to say. Null for a cancel, which is silent. */
-export function refusalText(reason: AuthFailure, name: string): string | null {
+export function revealRefusalText(reason: AuthFailure, name: string): string | null {
   switch (reason) {
     case 'cancelled':
       return null;

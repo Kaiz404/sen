@@ -124,6 +124,16 @@ test('a finger that does not match says nothing was deleted and offers another t
   expect(await added()).not.toBeNull();
 });
 
+test('a check that times out says nothing was deleted and offers another try', async () => {
+  mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'timedOut' });
+  await renderSheet(ADDED);
+  await fireEvent.press(await screen.findByRole('button', { name: 'Delete with fingerprint' }));
+
+  expect(screen.getByText('The check timed out. Nothing was deleted.')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Try again with fingerprint' })).toBeEnabled();
+  expect(await added()).not.toBeNull();
+});
+
 test('a bank row is read only: no delete key and no prompt', async () => {
   await renderSheet('bk-20');
 
@@ -141,22 +151,24 @@ test('a row that is gone says so', async () => {
   ).toBeOnTheScreen();
 });
 
-test.each([['an id over 64 characters', 'm-'.padEnd(65, 'x')], ['an empty id', '']])(
-  'a link with %s says the row is gone instead of throwing',
-  async (_case, id) => {
-    await renderSheet(id);
-    expect(
-      await screen.findByRole('header', { name: "This transaction isn't here any more." }),
-    ).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: /Delete with/ })).toBeNull();
-  },
-);
+test.each([
+  ['an id over 64 characters', 'm-'.padEnd(65, 'x')],
+  ['an empty id', ''],
+])('a link with %s says the row is gone instead of throwing', async (_case, id) => {
+  await renderSheet(id);
+  expect(
+    await screen.findByRole('header', { name: "This transaction isn't here any more." }),
+  ).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: /Delete with/ })).toBeNull();
+});
 
 test('on iOS the delete sheet, which sits above the root cover, draws its own cover while inactive', async () => {
   Object.defineProperty(Platform, 'OS', { value: 'ios' });
   try {
     await renderSheet(ADDED);
-    expect(await screen.findByRole('header', { name: 'Delete this transaction?' })).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('header', { name: 'Delete this transaction?' }),
+    ).toBeOnTheScreen();
     expect(screen.queryByTestId('privacy-cover')).not.toBeOnTheScreen();
 
     await act(async () => {

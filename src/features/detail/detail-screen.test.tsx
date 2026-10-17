@@ -20,6 +20,7 @@ import { DetailScreen } from './detail-screen';
 
 let mockDb: OpenDb;
 let mockId = '';
+let mockShowResult: { ok: false; reason: string } | null = null;
 const mockRouter = { back: jest.fn(), replace: jest.fn(), push: jest.fn(), canGoBack: jest.fn() };
 
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
@@ -34,6 +35,7 @@ jest.mock('@/features/auth', () => ({
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
   showAmounts: async () => {
+    if (mockShowResult) return mockShowResult;
     jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
     return { ok: true };
   },
@@ -47,6 +49,7 @@ let tnb = '';
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   clearPrefs();
+  mockShowResult = null;
   sessionStore.setState({ amountsHidden: true });
   Object.values(mockRouter).forEach((fn) => fn.mockReset());
   mockRouter.canGoBack.mockReturnValue(true);
@@ -137,7 +140,9 @@ test('the masked receipt says how long a reveal lasts', async () => {
   await renderDetail(tnb);
 
   expect(
-    await screen.findByText('Asks for fingerprint first. Stays shown until you hide it or Sen locks.'),
+    await screen.findByText(
+      'Asks for fingerprint first. Stays shown until you hide it or Sen locks.',
+    ),
   ).toBeOnTheScreen();
 });
 
@@ -154,6 +159,34 @@ test('Show amounts rolls the amount in, and Hide amounts takes it out of the tre
 
   expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
   expect(tree()).not.toMatch(/\d\.\d\d|ringgit|142/);
+});
+
+test.each([
+  ['mismatch', "Fingerprint didn't match."],
+  ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
+] as const)('Show amounts refused for %s says why and keeps them hidden', async (reason, title) => {
+  const shown = jest.spyOn(toast, 'show');
+  mockShowResult = { ok: false, reason };
+  await renderDetail(tnb);
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Show amounts' }));
+  await act(() => Promise.resolve());
+
+  expect(shown).toHaveBeenCalledWith({ title });
+  expect(sessionStore.getState().amountsHidden).toBe(true);
+  shown.mockRestore();
+});
+
+test('Show amounts cancelled stays silent', async () => {
+  const shown = jest.spyOn(toast, 'show');
+  mockShowResult = { ok: false, reason: 'cancelled' };
+  await renderDetail(tnb);
+
+  await fireEvent.press(await screen.findByRole('button', { name: 'Show amounts' }));
+  await act(() => Promise.resolve());
+
+  expect(shown).not.toHaveBeenCalled();
+  shown.mockRestore();
 });
 
 test('an added row offers delete through the sheet, and says where it came from', async () => {

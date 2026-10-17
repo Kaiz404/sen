@@ -110,6 +110,25 @@ test('showing needs the check and is logged, hiding is logged only when amounts 
   expect(sessionStore.getState().amountsHidden).toBe(true);
 });
 
+test('a prompt that times out is logged as nothing, on Lock and on a step-up', async () => {
+  jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockReturnValueOnce(new Promise(() => undefined));
+  const locked = unlock();
+  await jest.advanceTimersByTimeAsync(60_000);
+  expect(await locked).toEqual({ ok: false, reason: 'timedOut' });
+
+  await unlockWith(true);
+  dispatch({ type: 'ARRIVED' });
+  authenticate.mockReturnValueOnce(new Promise(() => undefined));
+  const stepping = stepUp('add');
+  await jest.advanceTimersByTimeAsync(60_000);
+  expect(await stepping).toEqual({ ok: false, reason: 'timedOut' });
+  jest.useRealTimers();
+
+  expect((await codes()).map((e) => e.code)).toEqual(['auth.unlocked']);
+});
+
 test('a step-up that does not match is logged, a cancelled one is not', async () => {
   await unlockWith(true);
   dispatch({ type: 'ARRIVED' });

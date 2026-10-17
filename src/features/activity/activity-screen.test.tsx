@@ -112,6 +112,19 @@ test('a check that does not match keeps the log and says so', async () => {
   expect((await readActivity(mockDb)).entries).toHaveLength(3);
 });
 
+test('a check that times out keeps the log and says so', async () => {
+  await seed();
+  mockStepUp = async () => ({ ok: false, reason: 'timedOut' });
+  await open();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Clear log' }));
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'The check timed out. The log is as it was.',
+  );
+  expect((await readActivity(mockDb)).entries).toHaveLength(3);
+});
+
 test('a cancelled check leaves the log and says nothing', async () => {
   await seed();
   mockStepUp = async () => ({ ok: false, reason: 'cancelled' });

@@ -9,7 +9,7 @@ import {
   BIOMETRIC,
   hideAmounts,
   lockNow,
-  refusalText,
+  revealRefusalText,
   showAmounts,
   useAmountsHidden,
   useBiometric,
@@ -103,7 +103,7 @@ export function DetailScreen(): ReactNode {
         onShow: () => {
           void showAmounts().then((outcome) => {
             if (!outcome.ok) {
-              const why = refusalText(outcome.reason, BIOMETRIC[biometric].name);
+              const why = revealRefusalText(outcome.reason, BIOMETRIC[biometric].name);
               if (why !== null) toast.show({ title: why });
               return;
             }

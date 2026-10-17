@@ -53,7 +53,7 @@ function HeldLinkOpener(): null {
 const styles = StyleSheet.create({ root: { flex: 1 } });
 
 export { hideAmounts, showAmounts, useAmountsHidden } from './amounts';
-export { BIOMETRIC, type BiometricCopy, refusalText } from './copy';
+export { BIOMETRIC, type BiometricCopy, revealRefusalText } from './copy';
 export { AUTH_STATES } from './fixtures';
 export type { LockReason, RouteGate, StepUpAction } from './machine';
 export {

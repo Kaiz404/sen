@@ -215,6 +215,17 @@ test('a date that is in the future after the clock moved back says so, not "90 d
   expect(screen.getByRole('button', { name: 'Save with fingerprint' })).toBeDisabled();
 });
 
+test('a check that times out writes nothing, says so and keeps the draft on review', async () => {
+  mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'timedOut' });
+  await renderStep(<ReviewStep />, FILLED);
+
+  await press('Save with fingerprint');
+
+  expect(screen.getByText("The check timed out. Save again when you're ready.")).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Save with fingerprint' })).toBeEnabled();
+  expect(await manualRows()).toEqual([]);
+});
+
 test('a cancelled prompt writes nothing and keeps the draft on review', async () => {
   mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
   await renderStep(<ReviewStep />, FILLED);
