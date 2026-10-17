@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
@@ -11,7 +11,7 @@ import {
   type SignedMinor,
   type SignMode,
 } from '@/models/money';
-import { useMotionPolicy } from '@/motion/policy';
+import { type MotionLevel, useMotionPolicy } from '@/motion/policy';
 import { EASE_CSS } from '@/motion/tokens';
 import type { Palette } from '@/theme/colors';
 import { type, type TypeRole } from '@/theme/type';
@@ -118,7 +118,12 @@ export const HERO_TIERS: readonly { readonly upTo: number; readonly factor: numb
   { upTo: 8, factor: 0.66 },
   { upTo: Infinity, factor: 0.54 },
 ];
-const HERO_SHRINK_MS = 160;
+const HERO_GROW_MS = 160;
+
+/** Growth eases and shrinking is instant, so a longer figure never draws wide for a frame. */
+export function heroEaseMs(level: MotionLevel, grew: boolean): number {
+  return cssMs(level, grew ? HERO_GROW_MS : 0);
+}
 
 export function heroFactor(digitChars: number): number {
   return (HERO_TIERS.find((t) => digitChars <= t.upTo) ?? HERO_TIERS[HERO_TIERS.length - 1]!).factor;
@@ -151,6 +156,11 @@ export function Amount({
 }: AmountProps): ReactNode {
   const level = useMotionPolicy();
   const scale = SCALE[size];
+  const hero = size === 'hero';
+  const parts = value === null ? null : moneyParts(value, sign);
+  const f = hero && parts !== null ? heroFactor(parts.whole.length + parts.fraction.length) : 1;
+  const [tier, setTier] = useState({ f, grew: false });
+  if (tier.f !== f) setTier({ f, grew: f > tier.f });
 
   if (value === null) {
     const mark =
@@ -192,17 +202,15 @@ export function Amount({
     );
   }
 
-  const parts = moneyParts(value, sign);
+  if (parts === null) return null;
   const ink = styles.ink(surface, value > 0);
   const split = scale.fraction !== scale.whole;
-  const hero = size === 'hero';
-  const f = hero ? heroFactor(parts.whole.length + parts.fraction.length) : 1;
   const wholeSize = Math.round(scale.whole * f);
   const fractionSize = Math.round(scale.fraction * f);
   const fade = hero
     ? {
         transitionProperty: 'fontSize' as const,
-        transitionDuration: cssMs(level, HERO_SHRINK_MS),
+        transitionDuration: heroEaseMs(level, tier.grew),
         transitionTimingFunction: EASE_CSS.out,
       }
     : undefined;
@@ -235,7 +243,7 @@ export function Amount({
     >
       {scale.currency !== null && (
         <Currency
-          maxFontSizeMultiplier={1}
+          maxFontSizeMultiplier={1.3}
           style={[
             FACE[scale.currency.face](Math.round(scale.currency.size * f)),
             ink,

@@ -23,8 +23,12 @@ const DIRECTIONS: readonly SegmentOption<Direction>[] = [
   { id: 'credit', label: 'Money in', icon: 'arrow-bottom-left' },
 ];
 
-/** Sen's box on the left edge. The amount keeps clear of it, so even the longest figure never overlaps it. */
-const SEN_GUTTER = 32;
+/** Sen's box beside the amount, relative to the amount block. `bleed` is how far its pose draws past the box. */
+const SEN_BOX = { left: -38, top: 38, size: 64, bleed: 4, gap: 6 } as const;
+/** The amount keeps this far in from the left, so even the longest figure never overlaps Sen. */
+const SEN_GUTTER = SEN_BOX.left + SEN_BOX.size + SEN_BOX.gap;
+/** The block never gets shorter than Sen's bottom edge, so a smaller tier can't pull the error up under Sen. */
+const AMOUNT_MIN_HEIGHT = SEN_BOX.top + SEN_BOX.size + SEN_BOX.bleed;
 
 const KEY_LABEL: Partial<Record<PadKey, string>> = {
   '00': 'Double zero',
@@ -67,7 +71,7 @@ export function AmountView({
       />
       <View style={styles.amount}>
         <View style={styles.sen}>
-          <Sen pose="look" size={64} label="Sen, leaning in to watch the amount" />
+          <Sen pose="look" size={SEN_BOX.size} label="Sen, leaning in to watch the amount" />
         </View>
         <View
           style={styles.figure}
@@ -158,8 +162,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingBottom: rt.insets.bottom + 24,
     backgroundColor: theme.colors.canvas,
   },
-  amount: { alignItems: 'flex-end', gap: 6, paddingTop: 10 },
-  sen: { position: 'absolute', left: -38, top: 38 },
+  amount: { alignItems: 'flex-end', gap: 6, paddingTop: 10, minHeight: AMOUNT_MIN_HEIGHT },
+  sen: { position: 'absolute', left: SEN_BOX.left, top: SEN_BOX.top },
   figure: { marginLeft: SEN_GUTTER },
   fill: { flex: 1 },
   pad: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
