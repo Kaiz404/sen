@@ -274,7 +274,7 @@ function Receipt({
 }
 
 function Timeline({ steps }: { readonly steps: readonly PaymentStep[] | null }) {
-  const { theme } = useUnistyles();
+  const c = useUnistyles().theme.colors;
   if (steps === null) return null;
   const now = steps.findIndex((s) => s.state === 'now');
   const current = now === -1 ? steps.length : now + 1;
@@ -289,7 +289,7 @@ function Timeline({ steps }: { readonly steps: readonly PaymentStep[] | null }) 
           <View style={styles.stepTrack}>
             <View style={styles.marker(step.state)}>
               {step.state === 'done' && (
-                <MaterialCommunityIcons name="check" size={14} color={theme.colors.paper} />
+                <MaterialCommunityIcons name="check" size={14} color={c.paper} />
               )}
               {step.state === 'now' && <View style={styles.markerDot} />}
             </View>

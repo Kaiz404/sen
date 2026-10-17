@@ -36,9 +36,30 @@ configureThemes('system');
   };
   runtime.getTheme = () => themes[live];
   Object.defineProperty(runtime, 'themeName', { get: () => live, configurable: true });
+  // As on the device (useProxifiedUnistyles), each component keeps its own theme from mount and subscribes only once
+  // render has read a property of it. A component that skipped the theme on one render keeps a stale theme later.
   function useUnistyles() {
-    const name = React.useSyncExternalStore(subscribe, () => live);
-    return { theme: themes[name], rt: runtime };
+    const [name, setName] = React.useState(() => live);
+    const read = React.useRef(false);
+    const unsubscribe = React.useRef<(() => void) | null>(null);
+    React.useLayoutEffect(() => {
+      if (read.current && unsubscribe.current === null)
+        unsubscribe.current = subscribe(() => setName(live));
+    });
+    React.useEffect(
+      () => () => {
+        unsubscribe.current?.();
+        unsubscribe.current = null;
+      },
+      [],
+    );
+    const theme = new Proxy(themes[name]!, {
+      get: (target, prop) => {
+        read.current = true;
+        return Reflect.get(target, prop);
+      },
+    });
+    return { theme, rt: runtime };
   }
   unistyles.useUnistyles = useUnistyles;
   beforeEach(() => set('light'));

@@ -212,13 +212,14 @@ export function RollAmount({
   direction,
   fit,
 }: RollAmountProps): ReactNode {
-  const { theme } = useUnistyles();
+  // Read before the masked return: Unistyles re-renders a component on a theme switch only once it has read the theme.
+  const c = useUnistyles().theme.colors;
   if (value === null) {
     return <Amount value={null} size={size} surface={surface} sign={sign} direction={direction} />;
   }
   const scale = SCALE[size];
   const parts = moneyParts(value, sign);
-  const ink = { color: amountInk(theme.colors, surface, value > 0) };
+  const ink = { color: amountInk(c, surface, value > 0) };
   const lead = `${parts.sign}${parts.currency}`;
   if (size !== 'hero') {
     const rolling = (
