@@ -29,3 +29,17 @@ export function stretchFor(ready: number): { readonly sx: number; readonly sy: n
   'worklet';
   return { sx: 1 - 0.1 * ready, sy: 1 + 0.18 * ready };
 }
+
+/** Where a drag stands: the finger travel that counts as zero, the gap it opens, and whether a release refreshes. */
+export type Drag = { readonly origin: number; readonly gap: number; readonly armed: boolean };
+
+/**
+ * One finger update. While the list is scrolled the drag moves the list, so the gap shuts and the count starts
+ * again from here, which also disarms: easing back up after arming cancels the pull.
+ */
+export function dragStep(origin: number, translationY: number, scrollY: number): Drag {
+  'worklet';
+  if (scrollY > 1) return { origin: translationY, gap: 0, armed: false };
+  const gap = gapFor(translationY - origin);
+  return { origin, gap, armed: gap >= PULL.threshold };
+}

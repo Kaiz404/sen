@@ -32,7 +32,7 @@ import { EASE } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
 import { type } from '@/theme/type';
 
-import { gapFor, PULL, readiness, stretchFor } from './pull-math';
+import { dragStep, PULL, readiness, stretchFor } from './pull-math';
 
 /** idle: nothing runs. loading: the bank is being asked. landed: the data is back, Sen lands. */
 export type PullStatus = 'idle' | 'loading' | 'landed';
@@ -111,19 +111,14 @@ export function PullToRefresh({
       scheduleOnRN(setDragging, true);
     })
     .onUpdate((e) => {
-      if (scrollY.get() > 1) {
-        origin.set(e.translationY);
-        gap.set(0);
-        return;
-      }
-      const next = gapFor(e.translationY - origin.get());
-      gap.set(next);
-      ready.set(readiness(next));
-      const over = next >= PULL.threshold;
-      if (over !== armed.get()) {
-        armed.set(over);
-        scheduleOnRN(setLabelArmed, over);
-        if (over) scheduleOnRN(playHaptic, 'refreshThreshold');
+      const next = dragStep(origin.get(), e.translationY, scrollY.get());
+      origin.set(next.origin);
+      gap.set(next.gap);
+      ready.set(readiness(next.gap));
+      if (next.armed !== armed.get()) {
+        armed.set(next.armed);
+        scheduleOnRN(setLabelArmed, next.armed);
+        if (next.armed) scheduleOnRN(playHaptic, 'refreshThreshold');
       }
     })
     .onFinalize((_e, success) => {

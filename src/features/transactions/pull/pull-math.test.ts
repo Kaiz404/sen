@@ -1,4 +1,4 @@
-import { gapFor, PULL, readiness, stretchFor } from './pull-math';
+import { dragStep, gapFor, PULL, readiness, stretchFor } from './pull-math';
 
 test('the gap follows the finger at 0.6 and never passes the board maximum', () => {
   expect(gapFor(-40)).toBe(0);
@@ -20,4 +20,15 @@ test('Sen is ready at the threshold and stretches to the board scale', () => {
   expect(stretchFor(0)).toEqual({ sx: 1, sy: 1 });
   expect(stretchFor(1).sx).toBeCloseTo(0.9, 5);
   expect(stretchFor(1).sy).toBeCloseTo(1.18, 5);
+});
+
+test('easing back up into a scrolled list after arming shuts the gap and disarms, then it can arm again', () => {
+  const armedAt = dragStep(0, 200, 0);
+  expect(armedAt).toMatchObject({ gap: gapFor(200), armed: true });
+
+  const scrolled = dragStep(armedAt.origin, 150, 12);
+  expect(scrolled).toEqual({ origin: 150, gap: 0, armed: false });
+
+  expect(dragStep(scrolled.origin, 250, 0).armed).toBe(false);
+  expect(dragStep(scrolled.origin, 290, 0).armed).toBe(true);
 });
