@@ -27,7 +27,7 @@ import { saveDraft, undoAdd } from './actions';
 import { todayInMalaysia, useDraft } from './add-layout';
 import { BIOMETRIC_ICON, BIOMETRIC_NAME, CATEGORY_ICON, dayText } from './copy';
 import { cleanDescription, type DraftInput, toDraft } from './draft';
-import { DiscardDialog, Notice, ScreenshotsBlocked, StepHeader } from './parts';
+import { DiscardDialog, Notice, StepHeader } from './parts';
 import { useCloseGuard } from './use-close-guard';
 
 /** Where the review stands. A save that lands leaves the screen, so it has no state here. */
@@ -129,7 +129,6 @@ export function ReviewView({
         <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
           <Text style={styles.backText}>Back to edit</Text>
         </Pressable>
-        <ScreenshotsBlocked />
       </View>
       {discarding && (
         <DiscardDialog

@@ -91,6 +91,29 @@ test('keys fill the amount from the right, and Next waits for one', async () => 
   expect(mockRouter.push).toHaveBeenCalledWith('/add/details');
 });
 
+test('the header names the step, announces it, and the Amount page carries no explainer copy', async () => {
+  await renderStep(<AmountStep />);
+
+  expect(screen.getByRole('header', { name: 'Amount, step 1 of 3' })).toHaveTextContent('Amount');
+  expect(screen.getByLabelText('Step 1 of 3')).toBeOnTheScreen();
+  expect(screen.queryByText(/STEP 1 OF 3/i)).toBeNull();
+  expect(screen.queryByText('Add a transaction')).toBeNull();
+  expect(screen.queryByText(/AMOUNT · MONEY/)).toBeNull();
+  expect(screen.queryByText(/Digits fill from the right/)).toBeNull();
+  expect(screen.queryByText(/own keypad/)).toBeNull();
+  expect(screen.getByRole('radio', { name: 'Money out' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Money in' })).toBeOnTheScreen();
+});
+
+test('the largest amount the keypad takes is RM 99,999.99 and draws in the smallest size', async () => {
+  await renderStep(<AmountStep />);
+  for (let i = 0; i < 8; i++) await press('9');
+
+  expect(screen.getByTestId('add-amount')).toHaveAccessibleName('RM 99,999.99');
+  expect(screen.getByText('99,999', { exact: false })).toHaveStyle({ fontSize: 52 });
+  expect(screen.getByText('RM')).toHaveStyle({ fontSize: 16 });
+});
+
 test('an amount over RM 50,000.00 says so and cannot go on', async () => {
   await renderStep(<AmountStep />);
   for (const key of ['5', '2', '0', 'Double zero', 'Double zero']) await press(key);

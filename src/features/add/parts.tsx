@@ -6,7 +6,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { type IconName, Key } from '@/components/key';
 import { type } from '@/theme/type';
 
-const STEPS = ['AMOUNT', 'DETAILS', 'REVIEW'] as const;
+const STEPS = ['Amount', 'Details', 'Review'] as const;
 
 export function StepHeader({
   step,
@@ -25,12 +25,13 @@ export function StepHeader({
         ) : (
           <Key icon="arrow-left" accessibilityLabel="Back" onPress={onBack} />
         )}
-        <View style={styles.titles}>
-          <Text accessibilityRole="header" style={styles.title}>
-            Add a transaction
-          </Text>
-          <Text style={styles.step}>{`STEP ${step} OF 3 · ${STEPS[step - 1]}`}</Text>
-        </View>
+        <Text
+          accessibilityRole="header"
+          accessibilityLabel={`${STEPS[step - 1]}, step ${step} of 3`}
+          style={styles.title}
+        >
+          {STEPS[step - 1]}
+        </Text>
         <Key icon="close" accessibilityLabel="Close" onPress={onClose} />
       </View>
       <View
@@ -117,23 +118,11 @@ export function DiscardDialog({
   );
 }
 
-export function ScreenshotsBlocked(): ReactNode {
-  const { theme } = useUnistyles();
-  return (
-    <View style={styles.blocked}>
-      <MaterialCommunityIcons name="eye-off-outline" size={14} color={theme.colors.inkMuted} />
-      <Text style={styles.blockedText}>SCREENSHOTS BLOCKED ON THIS SCREEN</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create((theme) => ({
   headerBlock: { gap: 14 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   spacer: { width: 46 },
-  titles: { alignItems: 'center', gap: 3 },
-  title: { ...type.words(26), color: theme.colors.ink },
-  step: { ...type.mono(10, 600), letterSpacing: 1.6, color: theme.colors.inkMuted },
+  title: { ...type.words(26), flex: 1, textAlign: 'center', color: theme.colors.ink },
   progress: { flexDirection: 'row', gap: 6 },
   bar: (done: boolean) => ({
     flex: 1,
@@ -169,6 +158,4 @@ const styles = StyleSheet.create((theme) => ({
   },
   dialogTitle: { ...type.words(28), color: theme.colors.ink },
   dialogBody: { fontSize: 15, lineHeight: 21, color: theme.colors.inkMuted, marginBottom: 4 },
-  blocked: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  blockedText: { ...type.caption(10), color: theme.colors.inkMuted },
 }));

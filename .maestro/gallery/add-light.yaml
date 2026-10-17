@@ -25,6 +25,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: add-amount-over-limit-light
+- openLink: "sen://dev/states?screen=add&state=amount-max&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-add-amount-max-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: add-amount-max-light
 - openLink: "sen://dev/states?screen=add&state=amount-discard&theme=light"
 - extendedWaitUntil:
     visible:

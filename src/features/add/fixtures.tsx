@@ -119,6 +119,7 @@ export const ADD_STATES = {
   'amount-empty': () => <Amount amountMinor={0} />,
   'amount-typed': () => <Amount amountMinor={4250} />,
   'amount-over-limit': () => <Amount amountMinor={5_200_000} />,
+  'amount-max': () => <Amount amountMinor={9_999_999} />,
   'amount-discard': () => <Amount amountMinor={4250} discarding />,
   'details-filled': () => <Details />,
   'details-problems': () => (

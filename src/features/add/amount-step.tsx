@@ -23,6 +23,9 @@ const DIRECTIONS: readonly SegmentOption<Direction>[] = [
   { id: 'credit', label: 'Money in', icon: 'arrow-bottom-left' },
 ];
 
+/** Sen's box on the left edge. The amount keeps clear of it, so even the longest figure never overlaps it. */
+const SEN_GUTTER = 32;
+
 const KEY_LABEL: Partial<Record<PadKey, string>> = {
   '00': 'Double zero',
   back: 'Delete last digit',
@@ -66,10 +69,8 @@ export function AmountView({
         <View style={styles.sen}>
           <Sen pose="look" size={64} label="Sen, leaning in to watch the amount" />
         </View>
-        <Text style={styles.caption}>
-          {direction === 'debit' ? 'AMOUNT · MONEY OUT' : 'AMOUNT · MONEY IN'}
-        </Text>
         <View
+          style={styles.figure}
           accessible
           accessibilityLiveRegion="polite"
           accessibilityLabel={moneyText(value, 'never')}
@@ -78,15 +79,10 @@ export function AmountView({
           <Amount value={value} size="hero" sign="never" />
         </View>
       </View>
-      {problem === 'over_limit' ? (
+      {problem === 'over_limit' && (
         <FieldError text="That's over the limit. One transaction can be up to RM 50,000.00." />
-      ) : (
-        <Text style={styles.hint}>
-          Digits fill from the right, like an ATM. Type 4 2 5 0 for RM 42.50.
-        </Text>
       )}
       <View style={styles.fill} />
-      <PrivacyNote />
       <View accessibilityLabel="Amount keypad" style={styles.pad}>
         {PAD_KEYS.map((key) => (
           <PadButton key={key} padKey={key} onPress={() => onKey(key)} />
@@ -111,19 +107,6 @@ export function AmountView({
 export function discardDetail(amountMinor: number): string {
   const what = amountMinor > 0 ? `the ${moneyText(signedMinor(amountMinor), 'never')}` : 'what';
   return `Sen drops ${what} you typed. Nothing was saved, so nothing else changes.`;
-}
-
-function PrivacyNote() {
-  const { theme } = useUnistyles();
-  return (
-    <View style={styles.note}>
-      <MaterialCommunityIcons name="lock-outline" size={17} color={theme.colors.deep} />
-      <Text style={styles.noteText}>
-        Sen&apos;s own keypad. Amounts never pass through your phone&apos;s keyboard, so
-        autocorrect, predictions and keyboard apps never see them.
-      </Text>
-    </View>
-  );
 }
 
 function PadButton({ padKey, onPress }: { padKey: PadKey; onPress: () => void }) {
@@ -176,29 +159,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: theme.colors.canvas,
   },
   amount: { alignItems: 'flex-end', gap: 6, paddingTop: 10 },
-  sen: { position: 'absolute', left: -38, top: 58 },
-  caption: { ...type.caption(11), color: theme.colors.inkMuted },
-  hint: {
-    alignSelf: 'flex-end',
-    maxWidth: 260,
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'right',
-    color: theme.colors.inkMuted,
-  },
+  sen: { position: 'absolute', left: -38, top: 38 },
+  figure: { marginLeft: SEN_GUTTER },
   fill: { flex: 1 },
-  note: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.rule,
-    backgroundColor: theme.colors.paper,
-  },
-  noteText: { flex: 1, fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   pad: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   padKey: {
     width: '31%',

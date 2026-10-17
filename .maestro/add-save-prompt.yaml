@@ -8,7 +8,7 @@ appId: com.kaiz404.sen
     timeout: 20000
 - tapOn: Add a transaction
 - extendedWaitUntil:
-    visible: STEP 1 OF 3 · AMOUNT
+    visible: Amount, step 1 of 3
     timeout: 10000
 - tapOn: "4"
 - tapOn: "2"
@@ -17,7 +17,7 @@ appId: com.kaiz404.sen
 - takeScreenshot: shots/4b/flow-add-amount
 - tapOn: Next
 - extendedWaitUntil:
-    visible: STEP 2 OF 3 · DETAILS
+    visible: Details, step 2 of 3
     timeout: 10000
 - tapOn: Description
 - inputText: Lunch with Hafiz, cash
@@ -26,7 +26,7 @@ appId: com.kaiz404.sen
 - takeScreenshot: shots/4b/flow-add-details
 - tapOn: Next
 - extendedWaitUntil:
-    visible: STEP 3 OF 3 · REVIEW
+    visible: Review, step 3 of 3
     timeout: 10000
 - takeScreenshot: shots/4b/flow-add-review
 - tapOn: Save with fingerprint

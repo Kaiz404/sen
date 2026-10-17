@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
 import {
@@ -10,8 +11,12 @@ import {
   type SignedMinor,
   type SignMode,
 } from '@/models/money';
+import { useMotionPolicy } from '@/motion/policy';
+import { EASE_CSS } from '@/motion/tokens';
 import type { Palette } from '@/theme/colors';
 import { type, type TypeRole } from '@/theme/type';
+
+import { cssMs } from './motion-level';
 
 export type AmountSize = 'hero' | 'card' | 'row' | 'net' | 'tile';
 export type AmountSurface = 'plain' | 'pastel' | 'plate' | 'loud';
@@ -102,6 +107,23 @@ const SCALE: Readonly<Record<AmountSize, Scale>> = {
   },
 };
 
+/**
+ * The hero steps down by how many characters the digits take (whole part with its commas, plus the fraction), so
+ * the biggest amount still fits one line beside Sen at 360 dp. The Add keypad stops at 7 digits, so the longest
+ * is "99,999.99" (9). Lengths of 7 never occur: a whole part is 1-3 digits (4-6 chars) or has a comma (8-9).
+ * Checked against the 360 dp budget at the tier's size in amount.test.tsx.
+ */
+export const HERO_TIERS: readonly { readonly upTo: number; readonly factor: number }[] = [
+  { upTo: 6, factor: 1 },
+  { upTo: 8, factor: 0.66 },
+  { upTo: Infinity, factor: 0.54 },
+];
+const HERO_SHRINK_MS = 160;
+
+export function heroFactor(digitChars: number): number {
+  return (HERO_TIERS.find((t) => digitChars <= t.upTo) ?? HERO_TIERS[HERO_TIERS.length - 1]!).factor;
+}
+
 const FACE: Readonly<Record<Face, (size: number) => TypeRole>> = {
   words: (size) => ({ ...type.words(size), letterSpacing: 0 }),
   numerals: type.numerals,
@@ -127,6 +149,7 @@ export function Amount({
   sign = 'auto',
   direction,
 }: AmountProps): ReactNode {
+  const level = useMotionPolicy();
   const scale = SCALE[size];
 
   if (value === null) {
@@ -172,21 +195,36 @@ export function Amount({
   const parts = moneyParts(value, sign);
   const ink = styles.ink(surface, value > 0);
   const split = scale.fraction !== scale.whole;
+  const hero = size === 'hero';
+  const f = hero ? heroFactor(parts.whole.length + parts.fraction.length) : 1;
+  const wholeSize = Math.round(scale.whole * f);
+  const fractionSize = Math.round(scale.fraction * f);
+  const fade = hero
+    ? {
+        transitionProperty: 'fontSize' as const,
+        transitionDuration: cssMs(level, HERO_SHRINK_MS),
+        transitionTimingFunction: EASE_CSS.out,
+      }
+    : undefined;
+  const Digits = hero ? Animated.Text : Text;
   const digits = (
-    <Text
+    <Digits
       numberOfLines={1}
       adjustsFontSizeToFit
-      style={[FACE[scale.face](scale.whole), ink, styles.shrink]}
+      // Display type is already large, so the system font scale doesn't grow it past its tier.
+      maxFontSizeMultiplier={hero ? 1 : undefined}
+      style={[FACE[scale.face](wholeSize), ink, styles.shrink, fade]}
     >
       {scale.currency === null && `${parts.sign}${parts.currency}${THIN_SPACE}`}
       {parts.whole}
       {split ? (
-        <Text style={[FACE[scale.face](scale.fraction), styles.fraction]}>{parts.fraction}</Text>
+        <Digits style={[FACE[scale.face](fractionSize), styles.fraction, fade]}>{parts.fraction}</Digits>
       ) : (
         parts.fraction
       )}
-    </Text>
+    </Digits>
   );
+  const Currency = hero ? Animated.Text : Text;
 
   return (
     <View
@@ -196,9 +234,17 @@ export function Amount({
       style={[styles.row, styles.baseline]}
     >
       {scale.currency !== null && (
-        <Text style={[FACE[scale.currency.face](scale.currency.size), ink, styles.heroCurrency]}>
+        <Currency
+          maxFontSizeMultiplier={1}
+          style={[
+            FACE[scale.currency.face](Math.round(scale.currency.size * f)),
+            ink,
+            styles.heroCurrency,
+            fade,
+          ]}
+        >
           {`${parts.sign}${parts.currency}`}
-        </Text>
+        </Currency>
       )}
       {digits}
     </View>
