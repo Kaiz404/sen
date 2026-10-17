@@ -247,7 +247,7 @@ test('History’s first page is read as the unlock passes, while Lock holds for 
     [vault, { filter: { flow: 'all', search: '' }, after: null }],
   ]);
 
-  screen.unmount();
+  await screen.unmount();
   readPage.mockRestore();
   jest.useRealTimers();
 });
