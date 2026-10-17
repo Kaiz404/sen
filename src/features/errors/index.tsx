@@ -20,5 +20,5 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps): ReactNode {
     logEvent('ui.render_error');
     lockNow();
   }, []);
-  return <ErrorView onRetry={() => void retry()} onHome={() => router.replace('/')} />;
+  return <ErrorView onRetry={() => void retry()} onHome={() => router.dismissTo('/')} />;
 }

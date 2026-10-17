@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { router } from 'expo-router';
+import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 import { ErrorBoundary } from '@/features/errors';
@@ -49,12 +50,15 @@ test('Try again renders the screen again', async () => {
   expect(await screen.findByText('screen:fixed')).toBeOnTheScreen();
 });
 
-test('Back to History leaves the broken screen', async () => {
-  await renderRouter(routes, { initialUrl: '/broken' });
+test('Back to History leaves the broken screen and the stack holds only History', async () => {
+  await renderRouter(routes, { initialUrl: '/' });
+  await act(() => router.push('/broken'));
+  expect(await screen.findByRole('header', { name: 'Something went wrong.' })).toBeOnTheScreen();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Back to History' }));
 
   expect(await screen.findByText('screen:history')).toBeOnTheScreen();
+  expect(router.canGoBack()).toBe(false);
 });
 
 test('the root layout and every protected route export the boundary', () => {
