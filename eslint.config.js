@@ -35,8 +35,10 @@ const nodeSqliteAtRuntime = {
 };
 
 const showAmountsWithoutStepUp = {
-  selector: "Property[key.name='amountsHidden'][value.value=false]",
-  message: 'Show amounts with showAmounts() from @/features/auth. Showing needs step-up.',
+  selector:
+    "Property:matches([key.name='amountsHidden'], [key.value='amountsHidden']):not([value.value=true])",
+  message:
+    'Only amountsHidden: true may be written here. Show amounts with showAmounts() from @/features/auth. Showing needs step-up.',
 };
 
 const restrictedImports = {

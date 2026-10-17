@@ -446,7 +446,7 @@ The phases are in [PLAN.md](PLAN.md).
 - **Cold start is masked by construction.** An in-memory flag starts true. A pref with a reset on launch needs a write that runs after the first frame, and any path that skips it (a crash, a new entry point) shows amounts.
 - **One narrow reset.** The session's close path already clears the query cache and the toast on every lock and sign-out. The flag resets in the same `setState`, so idle, background, manual and sign-out locks are covered together.
 - **No persisted sensitive-adjacent state.** MMKV keeps no amounts key. A `hideAmounts` left by an earlier build is never read.
-- **Security kept.** Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS. The lint rule moves with the value: only `amounts.ts` may write `amountsHidden: false`.
+- **Security kept.** Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS. The lint rule moves with the value: outside `amounts.ts` and tests, an `amountsHidden` property may only be the literal `true`.
 
 **What the user sees.** Unlock lands masked, Settings' Hide amounts switch reads On, and the month card's Sen starts masked. A lock unmounts History, so the next mount starts in the masked pose and Re-mask does not play on unlock. Re-mask still plays on "Hide amounts". Copy says "Stays shown until you hide it or Sen locks."
 

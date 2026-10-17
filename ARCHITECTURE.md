@@ -325,7 +325,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - `showAmounts()` runs step-up `reveal` and sets `amountsHidden: false` only when the check passes. A cancel changes nothing.
 - `hideAmounts()` sets it back to true and never prompts.
 - **Re-hide on lock.** `dispatch` sets `amountsHidden: true` in the same `setState` that leaves the unlocked states, next to `queryClient.clear()`. Idle, background, manual and sign-out all pass through it. A cold start needs nothing, because the store's initial value is true.
-- Lint bans the property write `amountsHidden: false` outside `amounts.ts` and tests, so no other code can show amounts without step-up.
+- Lint bans any `amountsHidden` property whose value is not the literal `true` (`false`, a variable, shorthand, a quoted key) outside `amounts.ts` and tests, so no other code can show amounts without step-up. A computed key such as `[name]: false` is not caught.
 - `SessionRoot` runs `dropRevealedOnHide()`. Whenever `amountsHidden` turns true, it runs `removeQueries(['tx','revealed'])`. Masked pages stay cached.
 - Lock and the primer always say "Amounts stay hidden until you choose to show them."
 - The month card's Sen (`id="month"`) rests `masked` or `revealed` with `amountsHidden`, so showing plays Reveal and hiding plays Re-mask. A lock unmounts History and the next unlock mounts it masked, so a Sen starts in `masked` and Re-mask does not play on unlock (`src/__tests__/lock-flow.test.tsx`). History fires Reveal's success haptic itself when the check passes, and the moment carries none, because a scroll or the background can hold the moment back and the buzz must still come once. "Hide amounts" fires the light `hideNow` haptic itself too, as DESIGN says.
