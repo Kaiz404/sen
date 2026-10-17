@@ -19,6 +19,7 @@ import {
 import { PrivacyCover } from '@/features/security';
 import { ADD_CATEGORIES, type CategoryId } from '@/models/category';
 import { minor, type SignedMinor, signed } from '@/models/money';
+import { capital } from '@/models/text';
 import { type MaskedRow, type TxId, TxIdSchema } from '@/models/transaction';
 import type { Db } from '@/services/db';
 import { QK } from '@/services/query-client';
@@ -142,10 +143,6 @@ export function DeleteView({
       <Key tone="outline" size="large" label="Keep it" onPress={onKeep} />
     </View>
   );
-}
-
-function capital(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function isAddCategory(id: CategoryId): id is (typeof ADD_CATEGORIES)[number] {

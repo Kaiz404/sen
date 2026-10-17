@@ -8,10 +8,11 @@ import { type IconName, Key } from '@/components/key';
 import { toast } from '@/components/toast';
 import { type Biometric, signOut, useBiometric, useDb } from '@/features/auth';
 import { Sen } from '@/features/sen';
+import { capital } from '@/models/text';
 import { type } from '@/theme/type';
 
 import { resetDemo } from './actions';
-import { BIOMETRIC_ICON, BIOMETRIC_NAME, capital } from './copy';
+import { BIOMETRIC_ICON, BIOMETRIC_NAME } from './copy';
 
 type Pledge = { readonly icon: IconName; readonly title: string; readonly body: string };
 

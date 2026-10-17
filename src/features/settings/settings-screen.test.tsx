@@ -117,6 +117,38 @@ test('turning off Hide amounts asks for biometrics, and a cancel leaves them hid
   expect(checked('switch', 'Hide amounts')).toBe(true);
 });
 
+test.each([
+  ['lockout', 'Too many tries. Use your device passcode.'],
+  ['not_set_up', 'Fingerprint is off. Your device passcode still works.'],
+  ['unknown', 'Something went wrong with the check. Try again.'],
+] as const)(
+  'turning off Hide amounts refused for %s says why and keeps them hidden',
+  async (reason, title) => {
+    const shown = jest.spyOn(toast, 'show');
+    mockShow.mockResolvedValueOnce({ ok: false, reason });
+    await renderSettings();
+
+    await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
+    await act(() => Promise.resolve());
+
+    expect(shown).toHaveBeenCalledWith({ title });
+    expect(sessionStore.getState().amountsHidden).toBe(true);
+    shown.mockRestore();
+  },
+);
+
+test('turning off Hide amounts cancelled stays silent', async () => {
+  const shown = jest.spyOn(toast, 'show');
+  mockShow.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
+  await renderSettings();
+
+  await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
+  await act(() => Promise.resolve());
+
+  expect(shown).not.toHaveBeenCalled();
+  shown.mockRestore();
+});
+
 test('turning Hide amounts back on hides at once, with no prompt', async () => {
   sessionStore.setState({ amountsHidden: false });
   await renderSettings();

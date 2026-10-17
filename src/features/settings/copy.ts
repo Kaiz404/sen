@@ -44,17 +44,13 @@ export const DATASET_CHOICES: readonly Choice<PrefValue<'demo.datasetSize'>>[] =
   { id: 10000, label: '10k' },
 ];
 
-/** As it reads mid-sentence. `capital` starts a sentence with it. */
+/** As it reads mid-sentence. `capital` (from auth) starts a sentence with it. */
 export const BIOMETRIC_NAME: Readonly<Record<Biometric, string>> = {
   faceId: 'Face ID',
   touchId: 'Touch ID',
   face: 'face unlock',
   fingerprint: 'fingerprint',
 };
-
-export function capital(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 export const BIOMETRIC_ICON: Readonly<Record<Biometric, IconName>> = {
   faceId: 'face-recognition',

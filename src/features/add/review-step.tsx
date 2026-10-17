@@ -15,6 +15,7 @@ import { CATEGORY_LABEL } from '@/models/category';
 import { type DayKey, toInstant } from '@/models/day';
 import { isInAddWindow } from '@/models/draft';
 import { minor, moneyText, signed, signedMinor } from '@/models/money';
+import { capital } from '@/models/text';
 import type { TxId } from '@/models/transaction';
 import type { Db } from '@/services/db';
 import { playHaptic } from '@/services/haptics';
@@ -44,10 +45,6 @@ const REFUSED: Readonly<Record<AuthFailure, (name: string) => string>> = {
   unavailable: (name) => `${capital(name)} isn't available right now. Try again soon.`,
   unknown: () => 'Something went wrong with the check. Save again when you are ready.',
 };
-
-function capital(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 export type ReviewViewProps = {
   readonly draft: DraftInput;

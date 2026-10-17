@@ -1,3 +1,5 @@
+import { capital } from '@/models/text';
+
 import type { AuthFailure, Biometric } from './prompt';
 import type { IconName } from './screens/parts';
 
@@ -23,10 +25,6 @@ export function clock(seconds: number): string {
 export function triesLeftText(triesLeft: number, name: string): string {
   if (triesLeft === 0) return "Didn't match. Use your device passcode.";
   return `Didn't match. ${triesLeft} more ${triesLeft === 1 ? 'try' : 'tries'} before ${name} locks.`;
-}
-
-function capital(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** Why a step-up check refused, for a screen that has nothing of its own to say. Null for a cancel, which is silent. */

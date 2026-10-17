@@ -13,6 +13,7 @@ import {
   disarmLockout,
   hideAmounts,
   lockNow,
+  refusalText,
   showAmounts,
   useAmountsHidden,
   useBiometric,
@@ -22,6 +23,7 @@ import {
 import { Sen } from '@/features/sen';
 import { type SyncProgress, useSyncProgress } from '@/features/transactions';
 import type { PrefKey, Prefs, PrefValue } from '@/models/prefs';
+import { capital } from '@/models/text';
 import { playHaptic } from '@/services/haptics';
 import { writePref } from '@/services/prefs';
 import { type } from '@/theme/type';
@@ -30,7 +32,6 @@ import { switchDataset } from './actions';
 import {
   BIOMETRIC_ICON,
   BIOMETRIC_NAME,
-  capital,
   DATASET_CHOICES,
   datasetLine,
   IDLE_CHOICES,
@@ -392,7 +393,12 @@ export function SettingsScreen(): ReactNode {
         return;
       }
       void showAmounts().then((outcome) => {
-        if (outcome.ok) playHaptic('reveal');
+        if (outcome.ok) {
+          playHaptic('reveal');
+          return;
+        }
+        const why = refusalText(outcome.reason, name);
+        if (why !== null) toast.show({ title: why });
       });
     },
     onDataset: (size) => {
