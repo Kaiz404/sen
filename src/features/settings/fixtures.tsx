@@ -18,7 +18,6 @@ const NO_ACTIONS: SettingsActions = {
   onDataset: noop,
   onLockout: noop,
   onResetDemo: noop,
-  onPrivacy: noop,
   onActivity: noop,
   onErase: noop,
   onLockNow: noop,

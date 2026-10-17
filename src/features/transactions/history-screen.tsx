@@ -191,6 +191,7 @@ export function HistoryScreen(): ReactNode {
             : refresh('retry'),
         onEndReached: data.loadMore,
         onAdd: () => router.push('/add'),
+        onPrivacy: () => router.push('/settings/privacy'),
         onSettings: () => router.push('/settings'),
         onReviewerSettings: () => router.push('/settings?focus=reviewers'),
         onLock: lockNow,

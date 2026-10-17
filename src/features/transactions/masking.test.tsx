@@ -103,12 +103,11 @@ test('while hidden no seeded amount is in the tree or the cache, totals included
     expect(tree()).not.toContain(moneySpoken(signed(row.amountMinor as never, row.type), 'never'));
 });
 
-test('the month card says how long a reveal lasts', async () => {
+test('the month card carries no helper line about how long a reveal lasts', async () => {
   await renderHistory();
 
-  expect(
-    await screen.findByText('Asks for fingerprint first. Stays shown until you hide it or Sen locks.'),
-  ).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
+  expect(screen.queryByText(/Asks for .* first/)).not.toBeOnTheScreen();
 });
 
 test('show and hide keep the list data, roll amounts in and take them out again', async () => {

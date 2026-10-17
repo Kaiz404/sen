@@ -215,6 +215,16 @@ test('a failed first load fills the screen, says the fault is simulated, and lin
   expect(mockPush).toHaveBeenCalledWith('/settings?focus=reviewers');
 });
 
+test('the header question mark opens the privacy explainer, beside Settings', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'How Sen keeps amounts private' }));
+
+  expect(mockPush).toHaveBeenCalledWith('/settings/privacy');
+  expect(screen.getByRole('button', { name: 'Settings' })).toBeOnTheScreen();
+});
+
 test('the fault banner says the fault is simulated and links to the reviewer controls', async () => {
   await renderHistory();
   expect(await screen.findByText('Tealive')).toBeOnTheScreen();

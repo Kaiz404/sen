@@ -35,13 +35,19 @@ const BIOMETRIC_ICON = {
   fingerprint: 'fingerprint',
 } as const satisfies Record<Biometric, string>;
 
+/** The hero and Money in rows have fixed heights, so the card is the same height hidden or shown. */
+const HERO_HEIGHT = 96;
+const MONEY_IN_HEIGHT = 58;
+
 export function Header({
   inset,
+  onPrivacy,
   onSettings,
   onLock,
 }: {
   /** False under the sync banner, which takes the status bar inset instead. */
   readonly inset: boolean;
+  readonly onPrivacy: () => void;
   readonly onSettings: () => void;
   readonly onLock: () => void;
 }): ReactNode {
@@ -52,6 +58,12 @@ export function Header({
         <Text style={styles.wordmark}>Sen</Text>
       </View>
       <View style={styles.keys}>
+        <Key
+          tone="paper"
+          icon="help-circle-outline"
+          accessibilityLabel="How Sen keeps amounts private"
+          onPress={onPrivacy}
+        />
         <Key tone="paper" icon="cog" accessibilityLabel="Settings" onPress={onSettings} />
         <Key tone="paper" icon="lock-outline" accessibilityLabel="Lock Sen now" onPress={onLock} />
       </View>
@@ -245,14 +257,16 @@ export function MonthCard({
         <MonthSen hidden={hidden} />
       </View>
       <Text style={styles.cardLabel(hidden)}>{label}</Text>
-      <RollAmount
-        value={hero}
-        size="hero"
-        surface={surface}
-        sign={hero === null && flow !== 'in' ? 'never' : 'auto'}
-        direction={main.direction}
-      />
-      <View style={styles.moneyIn}>
+      <View testID="hero-slot" style={styles.heroSlot}>
+        <RollAmount
+          value={hero}
+          size="hero"
+          surface={surface}
+          sign={hero === null && flow !== 'in' ? 'never' : 'auto'}
+          direction={main.direction}
+        />
+      </View>
+      <View testID="money-in" style={styles.moneyIn}>
         <View style={styles.moneyInLabel}>
           <MaterialCommunityIcons
             name={flow === 'out' ? 'arrow-top-right' : 'arrow-bottom-left'}
@@ -276,18 +290,13 @@ export function MonthCard({
         )}
       </View>
       {hidden ? (
-        <>
-          <Key
-            tone="lemon"
-            size="large"
-            icon={BIOMETRIC_ICON[biometric]}
-            label="Show amounts"
-            onPress={onShow}
-          />
-          <Text style={styles.cardNote}>
-            {`Asks for ${BIOMETRIC_NAME[biometric]} first. Stays shown until you hide it or Sen locks.`}
-          </Text>
-        </>
+        <Key
+          tone="lemon"
+          size="large"
+          icon={BIOMETRIC_ICON[biometric]}
+          label="Show amounts"
+          onPress={onShow}
+        />
       ) : (
         <Key
           tone="paper"
@@ -589,13 +598,13 @@ const styles = StyleSheet.create((theme, rt) => ({
     textTransform: 'uppercase',
     color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
   }),
-  cardNote: { fontSize: 13, textAlign: 'center', color: theme.colors.onPastel },
+  heroSlot: { height: HERO_HEIGHT, justifyContent: 'center' },
   counting: { ...type.words(34), color: theme.colors.onPastel, paddingVertical: 24 },
   moneyIn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    height: MONEY_IN_HEIGHT,
     paddingHorizontal: 14,
     borderRadius: 18,
     backgroundColor: theme.colors.plate,

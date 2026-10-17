@@ -21,6 +21,7 @@ export const NO_ACTIONS: HistoryActions = {
   onRetry: noop,
   onEndReached: noop,
   onAdd: noop,
+  onPrivacy: noop,
   onSettings: noop,
   onReviewerSettings: noop,
   onLock: noop,

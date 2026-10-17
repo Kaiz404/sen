@@ -235,16 +235,15 @@ test('opened at the reviewer controls, the screen scrolls there once and then le
   scrollTo.mockRestore();
 });
 
-test('the sheets open as their routes', async () => {
+test('the sheets open as their routes, and the privacy explainer is not in Settings', async () => {
   await renderSettings();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Reset demo data' }));
-  await fireEvent.press(screen.getByRole('button', { name: 'How Sen keeps amounts private' }));
   await fireEvent.press(screen.getByRole('button', { name: 'Sign out of demo' }));
 
+  expect(screen.queryByText('How Sen keeps amounts private')).not.toBeOnTheScreen();
   expect(mockPush.mock.calls).toEqual([
     ['/settings/reset-demo'],
-    ['/settings/privacy'],
     ['/settings/sign-out'],
   ]);
 });

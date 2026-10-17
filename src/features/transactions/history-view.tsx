@@ -45,6 +45,7 @@ export type HistoryActions = {
   readonly onRetry: () => void;
   readonly onEndReached: () => void;
   readonly onAdd: () => void;
+  readonly onPrivacy: () => void;
   readonly onSettings: () => void;
   /** Settings scrolled to the reviewer controls, from a simulated fault. */
   readonly onReviewerSettings: () => void;
@@ -180,7 +181,12 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
             onSettings={actions.onReviewerSettings}
           />
         )}
-        <Header inset={banner === null} onSettings={actions.onSettings} onLock={actions.onLock} />
+        <Header
+          inset={banner === null}
+          onPrivacy={actions.onPrivacy}
+          onSettings={actions.onSettings}
+          onLock={actions.onLock}
+        />
         {listShown && <AddKey onPress={actions.onAdd} />}
         {body.kind === 'failed' ? (
           <FullError

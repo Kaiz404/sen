@@ -74,7 +74,6 @@ export type SettingsActions = {
   readonly onDataset: (size: PrefValue<'demo.datasetSize'>) => void;
   readonly onLockout: () => void;
   readonly onResetDemo: () => void;
-  readonly onPrivacy: () => void;
   readonly onActivity: () => void;
   readonly onErase: () => void;
   readonly onLockNow: () => void;
@@ -266,16 +265,6 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
         <Reviewers values={values} actions={actions} name={name} />
       </View>
 
-      <Section title="ABOUT">
-        <Card>
-          <NavRow
-            title="How Sen keeps amounts private"
-            chip={{ icon: 'shield-lock-outline', pastel: PASTEL.butter }}
-            onPress={actions.onPrivacy}
-          />
-        </Card>
-      </Section>
-
       <Section title="ACCOUNT">
         <Key
           tone="lemon"
@@ -457,7 +446,6 @@ export function SettingsScreen(): ReactNode {
       });
     },
     onResetDemo: () => router.push('/settings/reset-demo'),
-    onPrivacy: () => router.push('/settings/privacy'),
     onActivity: () => router.push('/settings/activity'),
     onErase: () => router.push('/settings/erase'),
     onLockNow: lockNow,
