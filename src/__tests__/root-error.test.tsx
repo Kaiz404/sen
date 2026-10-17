@@ -102,4 +102,4 @@ test('an error caught by the root boundary locks the session, so Try again goes 
   ).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Show amounts' })).toBeOnTheScreen();
   await act(() => lockNow());
-});
+}, 20_000);

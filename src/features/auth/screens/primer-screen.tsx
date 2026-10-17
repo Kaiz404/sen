@@ -24,7 +24,7 @@ import {
 import type { Biometric } from '../prompt';
 import { afterRecheck, afterUnlock, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
-import { openDeviceSettings } from './device-settings';
+import { openDeviceSettings, openLockScreenSettings } from './device-settings';
 import { Notice } from './parts';
 import { NOT_ASKED, type Prompt, type PromptAnswers, usePromptMoments } from './prompt-moments';
 
@@ -41,6 +41,7 @@ export type PrimerViewProps = {
   readonly biometric: Biometric;
   readonly onTurnOn: () => void;
   readonly onOpenSettings: () => void;
+  readonly onOpenLockSettings: () => void;
   readonly onBack: () => void;
 };
 
@@ -81,6 +82,7 @@ export function PrimerScreen(): ReactNode {
       biometric={support.kind}
       onTurnOn={onTurnOn}
       onOpenSettings={openDeviceSettings}
+      onOpenLockSettings={openLockScreenSettings}
       onBack={() => router.back()}
     />
   );
@@ -91,6 +93,7 @@ export function PrimerView({
   biometric,
   onTurnOn,
   onOpenSettings,
+  onOpenLockSettings,
   onBack,
 }: PrimerViewProps): ReactNode {
   const { theme, rt } = useUnistyles();
@@ -164,8 +167,8 @@ export function PrimerView({
             tone="lemon"
             size="xlarge"
             icon="cog"
-            label="Open device settings"
-            onPress={onOpenSettings}
+            label={shown.kind === 'noLock' ? 'Open lock-screen settings' : 'Open device settings'}
+            onPress={shown.kind === 'noLock' ? onOpenLockSettings : onOpenSettings}
           />
         ) : (
           <Key
@@ -182,7 +185,12 @@ export function PrimerView({
                     ? 'Use device passcode'
                     : `Turn on ${name}`
             }
-            disabled={shown.kind === 'checking' || shown.kind === 'lockout' || shown.kind === 'blocked' || unlocked}
+            disabled={
+              shown.kind === 'checking' ||
+              shown.kind === 'lockout' ||
+              shown.kind === 'blocked' ||
+              unlocked
+            }
             onPress={onTurnOn}
           />
         )}
@@ -190,7 +198,7 @@ export function PrimerView({
           tone="outline"
           size="medium"
           label="Use device passcode instead"
-          disabled={unlocked}
+          disabled={unlocked || shown.kind === 'noLock'}
           onPress={onTurnOn}
         />
       </View>

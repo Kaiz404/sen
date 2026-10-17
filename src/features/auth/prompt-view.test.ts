@@ -1,4 +1,5 @@
 import {
+  afterRecheck,
   afterUnlock,
   BLOCKED_FOR_MS,
   canReset,
@@ -57,4 +58,13 @@ describe('repeated lockouts', () => {
   test('an unlock that goes through clears it', () => {
     expect(afterUnlock({ kind: 'blocked', since: 1 }, { ok: true }, 2)).toEqual(IDLE);
   });
+});
+
+test('a phone that loses its screen lock shows the no-lock view over any earlier attempt', () => {
+  const error: PromptView = { kind: 'error' };
+  const mismatch: PromptView = { kind: 'mismatch', triesLeft: 1 };
+
+  expect(afterRecheck(error, 'none')).toEqual({ kind: 'noLock' });
+  expect(afterRecheck(mismatch, 'none')).toEqual({ kind: 'noLock' });
+  expect(afterRecheck(mismatch, 'strong')).toEqual(mismatch);
 });

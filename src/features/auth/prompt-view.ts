@@ -53,9 +53,11 @@ export function initialView(level: EnrolledLevel): PromptView {
 
 /**
  * The app came back to the front. A view about what the phone has set up follows what the phone says now. A
- * mismatch, lockout or store view stays, since those describe an attempt.
+ * mismatch, lockout or store view stays, since those describe an attempt, unless the phone now has no screen lock,
+ * which nothing can unlock.
  */
 export function afterRecheck(prev: PromptView, level: EnrolledLevel): PromptView {
+  if (level === 'none') return initialView(level);
   return prev.kind === 'idle' ||
     prev.kind === 'off' ||
     prev.kind === 'noLock' ||

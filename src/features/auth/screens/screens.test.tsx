@@ -220,6 +220,15 @@ describe('a phone with no screen lock', () => {
     expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
   });
 
+  test('the primer sends the settings key to the lock-screen settings and offers no passcode to use', async () => {
+    sessionStore.setState({ session: { status: 'welcome' }, biometric: noLock });
+    await render(<PrimerScreen />);
+
+    expect(screen.getByRole('button', { name: 'Use device passcode instead' })).toBeDisabled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Open lock-screen settings' }));
+    expect(Linking.sendIntent).toHaveBeenCalledWith('android.app.action.SET_NEW_PASSWORD');
+  });
+
   test('Welcome swaps Continue for the same key', async () => {
     sessionStore.setState({ session: { status: 'welcome' }, biometric: noLock });
     await render(<WelcomeScreen />);

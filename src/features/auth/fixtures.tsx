@@ -30,6 +30,7 @@ function Primer({ state }: { state: PrimerState }) {
       biometric={BIOMETRIC}
       onTurnOn={noop}
       onOpenSettings={noop}
+      onOpenLockSettings={noop}
       onBack={noop}
     />
   );
