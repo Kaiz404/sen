@@ -40,6 +40,16 @@ test.each<[string, Partial<BodyInput>, string]>([
     { synced: undefined, unreadable: true },
     'failed',
   ],
+  [
+    'reads that rejected after the first sync, on stale empty rows and a stale no-cursor state',
+    { synced: false, unreadable: true },
+    'failed',
+  ],
+  [
+    'reads that rejected on stale empty rows after a finished sync',
+    { synced: true, unreadable: true },
+    'failed',
+  ],
   ['a read that rejected while rows are on screen', { rows: LIST, unreadable: true }, 'list'],
   ['rows, after a failed refresh', { rows: LIST, sync: offline }, 'list'],
   ['rows, while the first sync still runs', { rows: LIST, synced: false, sync: running }, 'list'],

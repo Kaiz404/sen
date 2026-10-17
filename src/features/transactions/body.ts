@@ -50,10 +50,11 @@ function syncFailure(sync: SyncView): SyncFailure | null {
 }
 
 export function historyBody({ rows, synced, sync, filtered, unreadable }: BodyInput): HistoryBody {
-  if (rows === undefined)
-    return unreadable ? { kind: 'failed', error: { kind: 'unreadable' } } : { kind: 'loading' };
-  if (rows.items.length > 0) return { kind: 'list', rows };
-  if (synced === undefined && unreadable) return { kind: 'failed', error: { kind: 'unreadable' } };
+  if (rows !== undefined && rows.items.length > 0) return { kind: 'list', rows };
+  // TanStack keeps the last good data through a failed refetch, so stale empty rows or a stale `synced`
+  // must not hide that the reads now reject.
+  if (unreadable) return { kind: 'failed', error: { kind: 'unreadable' } };
+  if (rows === undefined) return { kind: 'loading' };
   const failure = syncFailure(sync);
   if (synced !== true)
     return failure === null ? { kind: 'loading' } : { kind: 'failed', error: failure };

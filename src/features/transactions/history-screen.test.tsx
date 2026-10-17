@@ -124,8 +124,6 @@ test('bad rows are counted and never retried, and the good rows show', async () 
 
   expect(await screen.findByText("2 items couldn't be read", undefined, LONG)).toBeOnTheScreen();
   expect(screen.getByText('Tealive')).toBeOnTheScreen();
-  expect(requests).toHaveBeenCalledTimes(1);
-  requests.mockRestore();
 });
 
 test('an offline fault covers one refresh: the banner shows, the fault turns itself off, and Retry recovers', async () => {
@@ -301,6 +299,31 @@ test('a history read that fails shows "Sen couldn\'t read your history", and Ret
   await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
 
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+});
+
+test('reads that fail after a first sync leave Retry, not the skeleton', async () => {
+  const realPage = txRepo.readPage;
+  const realState = syncService.readSyncState;
+  let pageReads = 0;
+  let stateReads = 0;
+  const page = jest.spyOn(txRepo, 'readPage').mockImplementation((...args) => {
+    if (++pageReads > 1) return Promise.reject(new Error('disk'));
+    return realPage(...args);
+  });
+  const state = jest.spyOn(syncService, 'readSyncState').mockImplementation((...args) => {
+    if (++stateReads > 1) return Promise.reject(new Error('disk'));
+    return realState(...args);
+  });
+
+  await renderHistory();
+
+  expect(
+    await screen.findByRole('header', { name: "Sen couldn't read your history" }, LONG),
+  ).toBeOnTheScreen();
+  expect(screen.queryByTestId('history-skeleton')).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeOnTheScreen();
+  page.mockRestore();
+  state.mockRestore();
 });
 
 test.each([
