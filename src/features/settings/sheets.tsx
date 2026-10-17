@@ -55,7 +55,7 @@ export function PrivacyView({
     <SheetSurface>
       <View style={styles.top}>
         <Sen pose="masked" size={56} label="Sen, eyes closed" />
-        <Text style={styles.caption}>ABOUT · PRIVACY</Text>
+        <Text style={styles.caption}>PRIVACY</Text>
       </View>
       <Text accessibilityRole="header" style={styles.title}>
         How Sen keeps amounts private

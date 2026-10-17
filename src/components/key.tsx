@@ -47,6 +47,8 @@ const SIZE = {
 } as const satisfies Record<KeySize, unknown>;
 
 const KEY_DROP = 4;
+/** Android's smallest touch target. An icon-only key is as wide as it is tall, so it grows its hit area, not its look. */
+const ANDROID_TOUCH = 48;
 
 export function Key({
   onPress,
@@ -64,6 +66,7 @@ export function Key({
   const level = useMotionPolicy();
   const s = SIZE[size];
   const iconOnly = label === undefined;
+  const slop = Math.max(0, Math.ceil((ANDROID_TOUCH - s.height) / 2));
   const { theme } = useUnistyles();
   const palette = surface === 'hero' ? dark : theme.colors;
   const c = keyColors(palette, disabled)[tone];
@@ -78,6 +81,7 @@ export function Key({
       accessibilityState={{ disabled }}
       disabled={disabled}
       testID={testID}
+      hitSlop={iconOnly ? { left: slop, right: slop } : undefined}
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}

@@ -107,3 +107,28 @@ test('a hero that fits keeps its size', async () => {
   expect(screen.getByTestId('fit-content')).toHaveStyle({ transform: [{ scale: 1 }] });
   expect(screen.getByTestId('fit-box')).toHaveStyle({ height: 100 });
 });
+
+test('a tall hero scales to its maximum height, and its box takes that height', async () => {
+  await render(
+    <RevealedAmounts value={SHOWN}>
+      <RollAmount value={signedMinor(-1230)} size="hero" fit={{ maxHeight: 96 }} />
+    </RevealedAmounts>,
+  );
+  await fireEvent(screen.getByTestId('fit-box'), 'layout', layout(300, 120));
+  await fireEvent(screen.getByTestId('fit-content'), 'layout', layout(200, 192));
+
+  expect(screen.getByTestId('fit-content')).toHaveStyle({ transform: [{ scale: 0.5 }] });
+  expect(screen.getByTestId('fit-box')).toHaveStyle({ height: 96 });
+});
+
+test('a hero stays unseen until it is measured, so a long amount never flashes unscaled', async () => {
+  await render(
+    <RevealedAmounts value={SHOWN}>
+      <RollAmount value={signedMinor(-245210)} size="hero" />
+    </RevealedAmounts>,
+  );
+  expect(screen.getByTestId('fit-content')).toHaveStyle({ opacity: 0 });
+
+  await fireEvent(screen.getByTestId('fit-content'), 'layout', layout(280, 100));
+  expect(screen.getByTestId('fit-content')).toHaveStyle({ opacity: 1 });
+});

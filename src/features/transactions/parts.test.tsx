@@ -1,12 +1,18 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 import type { Minor } from '@/models/money';
 
-import { MonthCard } from './parts';
+import { Header, MonthCard } from './parts';
 import { type Revealed, RevealedAmounts } from './reveal';
 
-beforeEach(() => jest.useFakeTimers());
+const setFontScale = (fontScale: number) =>
+  Dimensions.set({ window: { ...Dimensions.get('window'), fontScale } });
+
+beforeEach(() => {
+  jest.useFakeTimers();
+  setFontScale(1);
+});
 afterEach(() => jest.useRealTimers());
 
 const card = (hidden: boolean) => (
@@ -115,4 +121,42 @@ test('a long Money in amount scales to one line inside its row instead of wrappi
     transformOrigin: 'right bottom',
   });
   expect(StyleSheet.flatten(screen.getByTestId('money-in').props.style).height).toBe(58);
+});
+
+test('the slots grow with the system font scale, and stay equal hidden and shown', async () => {
+  setFontScale(1.3);
+  const view = await render(shown(null, true));
+  expect(heights()).toEqual([125, 75]);
+
+  await view.rerender(shown(totals(120000, 98765), false));
+  expect(heights()).toEqual([125, 75]);
+});
+
+test('the slots stop growing at a font scale of 1.5', async () => {
+  setFontScale(2);
+  await render(shown(null, true));
+  expect(heights()).toEqual([144, 87]);
+});
+
+test('large text shrinks a short hero to its slot', async () => {
+  setFontScale(1.5);
+  await render(shown(totals(1230, 0), false));
+  await fireEvent(screen.getAllByTestId('fit-box')[0]!, 'layout', LAYOUT(300));
+  await fireEvent(screen.getAllByTestId('fit-content')[0]!, 'layout', {
+    nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 288 } },
+  });
+
+  expect(screen.getAllByTestId('fit-content')[0]).toHaveStyle({ transform: [{ scale: 0.5 }] });
+});
+
+test('the header keys read privacy, settings, lock', async () => {
+  await render(
+    <Header inset onPrivacy={() => {}} onSettings={() => {}} onLock={() => {}} />,
+  );
+
+  expect(screen.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual([
+    'How Sen keeps amounts private',
+    'Settings',
+    'Lock Sen now',
+  ]);
 });

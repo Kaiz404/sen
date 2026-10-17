@@ -196,8 +196,11 @@ type RollAmountProps = {
   readonly surface?: AmountSurface;
   readonly sign?: SignMode;
   readonly direction?: Direction;
-  /** Fill the free width, right aligned, and scale a long amount down to it instead of wrapping. */
-  readonly fit?: boolean;
+  /**
+   * Fit the amount to its slot, on one line. A hero fills the width from the left. A smaller amount takes the free
+   * width of its row, right aligned.
+   */
+  readonly fit?: { readonly maxHeight: number };
 };
 
 /** Four coins while masked. Shown, the hero rolls in digit by digit and smaller amounts roll in whole, on the shared progress. */
@@ -207,7 +210,7 @@ export function RollAmount({
   surface = 'plain',
   sign = 'auto',
   direction,
-  fit = false,
+  fit,
 }: RollAmountProps): ReactNode {
   if (value === null) {
     return <Amount value={null} size={size} surface={surface} sign={sign} direction={direction} />;
@@ -224,7 +227,13 @@ export function RollAmount({
         <Text style={[scale.fraction, ink]}>{parts.fraction}</Text>
       </Rolling>
     );
-    return fit ? <FitWidth end>{rolling}</FitWidth> : rolling;
+    return fit ? (
+      <FitWidth end maxHeight={fit.maxHeight}>
+        {rolling}
+      </FitWidth>
+    ) : (
+      rolling
+    );
   }
   const chars = [...parts.whole, ...parts.fraction];
   const cols = chars.length + 1;
@@ -250,22 +259,32 @@ export function RollAmount({
       ))}
     </View>
   );
-  return size === 'hero' ? <FitWidth>{amount}</FitWidth> : amount;
+  return <FitWidth maxHeight={fit?.maxHeight}>{amount}</FitWidth>;
 }
 
 type Size = { readonly width: number; readonly height: number };
 
-/** Scales a hero amount down to the card's width, so the sen digits of a large total never clip. */
+/**
+ * Scales an amount down to its slot: to the width when it is wider, and to `maxHeight` when large system text makes
+ * it taller. The fitted box takes the scaled height, and the content stays unseen until it is measured.
+ */
 export function FitWidth({
   children,
   end = false,
+  maxHeight,
 }: {
   readonly children: ReactNode;
   readonly end?: boolean;
+  readonly maxHeight?: number;
 }): ReactNode {
   const [box, setBox] = useState(0);
   const [content, setContent] = useState<Size | null>(null);
-  const scale = content !== null && box > 0 && content.width > box ? box / content.width : 1;
+  const byWidth = content !== null && box > 0 && content.width > box ? box / content.width : 1;
+  const byHeight =
+    content !== null && maxHeight !== undefined && content.height > maxHeight
+      ? maxHeight / content.height
+      : 1;
+  const scale = Math.min(byWidth, byHeight);
   return (
     <View
       testID="fit-box"
@@ -275,7 +294,7 @@ export function FitWidth({
       <View
         testID="fit-content"
         onLayout={(e) => setContent(e.nativeEvent.layout)}
-        style={styles.fitContent(scale, end)}
+        style={styles.fitContent(scale, end, content !== null)}
       >
         {children}
       </View>
@@ -292,7 +311,8 @@ const styles = StyleSheet.create((theme) => ({
     ...(end && { flex: 1, marginLeft: 8 }),
     height,
   }),
-  fitContent: (scale: number, end: boolean) => ({
+  fitContent: (scale: number, end: boolean, measured: boolean) => ({
+    opacity: measured ? 1 : 0,
     transformOrigin: end ? 'right bottom' : 'left bottom',
     transform: [{ scale }],
   }),

@@ -1,12 +1,14 @@
 import { type ReactNode, useEffect } from 'react';
 
 import { toast } from '@/components/toast';
+import type { Minor } from '@/models/money';
 import type { MaskedRow } from '@/models/transaction';
 import type { Flow } from '@/services/tx-repo';
 
 import type { HistoryBody } from './body';
 import { BOARD_ROWS, BOARD_TODAY, boardCounts, boardRevealed } from './fixture-data';
 import { type HistoryActions, HistoryView, type HistoryViewProps } from './history-view';
+import type { Revealed } from './reveal';
 import { buildHistoryRows, NO_ARRIVAL } from './rows';
 
 const noop = () => {};
@@ -67,6 +69,15 @@ function WithToast(): ReactNode {
   return <HistoryView {...BASE} />;
 }
 
+/** The longest totals the card has to hold. */
+const LONGEST: Revealed = {
+  ...boardRevealed(BOARD_ROWS),
+  month: {
+    in: { count: 12, minor: 99999999999 as Minor },
+    out: { count: 40, minor: 99999999999 as Minor },
+  },
+};
+
 const GRAB = BOARD_ROWS.filter((r) => r.description.toLowerCase().includes('grab'));
 const byFlow = (flow: Flow) =>
   BOARD_ROWS.filter((r) => flow === 'all' || (flow === 'in') === (r.type === 'credit'));
@@ -78,6 +89,9 @@ export const HISTORY_STATES = {
   'add-key': () => <HistoryView {...BASE} />,
   'add-key-lifted': () => <WithToast />,
   shown: () => <HistoryView {...BASE} hidden={false} revealed={boardRevealed(BOARD_ROWS)} />,
+  'shown-long': () => (
+    <HistoryView {...BASE} hidden={false} revealed={LONGEST} />
+  ),
   search: () => (
     <HistoryView {...BASE} search="grab" body={list(GRAB)} resultCounts={boardCounts(GRAB)} />
   ),

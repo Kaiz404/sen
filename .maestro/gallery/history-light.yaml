@@ -49,6 +49,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: history-shown-light
+- openLink: "sen://dev/states?screen=history&state=shown-long&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-shown-long-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-shown-long-light
 - openLink: "sen://dev/states?screen=history&state=search&theme=light"
 - extendedWaitUntil:
     visible:

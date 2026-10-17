@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles, withUnistyles } from 'react-native-unistyles';
 
@@ -21,13 +21,6 @@ import type { Banner } from './body';
 import { RollAmount, useAmountView, useDayNetView, useRevealed } from './reveal';
 import type { TxRowView } from './rows';
 
-export const BIOMETRIC_NAME: Readonly<Record<Biometric, string>> = {
-  faceId: 'Face ID',
-  touchId: 'Touch ID',
-  face: 'face unlock',
-  fingerprint: 'fingerprint',
-};
-
 const BIOMETRIC_ICON = {
   faceId: 'face-recognition',
   touchId: 'fingerprint',
@@ -38,6 +31,11 @@ const BIOMETRIC_ICON = {
 /** The hero and Money in rows have fixed heights, so the card is the same height hidden or shown. */
 const HERO_HEIGHT = 96;
 const MONEY_IN_HEIGHT = 58;
+const SLOT_MARGIN = 8;
+
+/** A slot grows with the system font scale, up to 1.5, so large text fits and both states stay equal. */
+export const slotHeight = (base: number, fontScale: number): number =>
+  Math.round(base * Math.min(Math.max(fontScale, 1), 1.5));
 
 export function Header({
   inset,
@@ -236,6 +234,9 @@ export function MonthCard({
   onHide,
 }: CardProps): ReactNode {
   const { theme } = useUnistyles();
+  const { fontScale } = useWindowDimensions();
+  const heroHeight = slotHeight(HERO_HEIGHT, fontScale);
+  const moneyInHeight = slotHeight(MONEY_IN_HEIGHT, fontScale);
   const totals = useRevealed()?.month;
   const main = side(flow);
   const heroMinor =
@@ -257,16 +258,17 @@ export function MonthCard({
         <MonthSen hidden={hidden} />
       </View>
       <Text style={styles.cardLabel(hidden)}>{label}</Text>
-      <View testID="hero-slot" style={styles.heroSlot}>
+      <View testID="hero-slot" style={styles.heroSlot(heroHeight)}>
         <RollAmount
           value={hero}
           size="hero"
           surface={surface}
           sign={hero === null && flow !== 'in' ? 'never' : 'auto'}
           direction={main.direction}
+          fit={{ maxHeight: heroHeight }}
         />
       </View>
-      <View testID="money-in" style={styles.moneyIn}>
+      <View testID="money-in" style={styles.moneyIn(moneyInHeight)}>
         <View style={styles.moneyInLabel}>
           <MaterialCommunityIcons
             name={flow === 'out' ? 'arrow-top-right' : 'arrow-bottom-left'}
@@ -286,7 +288,10 @@ export function MonthCard({
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
         ) : (
-          <RollAmount value={inMinor} size="card" surface="plate" direction="credit" fit />
+          <RollAmount value={inMinor} size="card" surface="plate"
+            direction="credit"
+            fit={{ maxHeight: moneyInHeight - SLOT_MARGIN }}
+          />
         )}
       </View>
       {hidden ? (
@@ -598,17 +603,17 @@ const styles = StyleSheet.create((theme, rt) => ({
     textTransform: 'uppercase',
     color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
   }),
-  heroSlot: { height: HERO_HEIGHT, justifyContent: 'center' },
+  heroSlot: (height: number) => ({ height, justifyContent: 'center' }),
   counting: { ...type.words(34), color: theme.colors.onPastel, paddingVertical: 24 },
-  moneyIn: {
+  moneyIn: (height: number) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: MONEY_IN_HEIGHT,
+    height,
     paddingHorizontal: 14,
     borderRadius: 18,
     backgroundColor: theme.colors.plate,
-  },
+  }),
   moneyInLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   moneyInText: { fontSize: 14, fontWeight: '600', color: theme.colors.plateInk },
   plateCaption: { ...type.caption(10), color: theme.colors.plateFaint },
