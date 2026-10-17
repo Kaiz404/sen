@@ -291,8 +291,10 @@ test('a slide-in marked before a lock does not wait to play after the unlock', a
   expect(arrivals.getState().added).toBeNull();
 });
 
-test('a history read that fails shows "Sen couldn\'t read your history", and Retry reads it again', async () => {
+test('a history read that fails shows "Sen couldn\'t read your history", and Retry reads it again without syncing', async () => {
   const read = jest.spyOn(txRepo, 'readPage').mockRejectedValue(new Error('disk'));
+  const requests = jest.spyOn(bank, 'under');
+  const run = jest.spyOn(syncService, 'sync');
 
   await renderHistory();
 
@@ -300,11 +302,16 @@ test('a history read that fails shows "Sen couldn\'t read your history", and Ret
     await screen.findByRole('header', { name: "Sen couldn't read your history" }, LONG),
   ).toBeOnTheScreen();
   expect(screen.queryByTestId('history-skeleton')).not.toBeOnTheScreen();
+  await waitFor(() => expect(syncProgress.getState().progress).toBeNull());
+  const before = [requests.mock.calls.length, run.mock.calls.length];
 
   read.mockRestore();
   await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
 
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  expect([requests.mock.calls.length, run.mock.calls.length]).toEqual(before);
+  requests.mockRestore();
+  run.mockRestore();
 });
 
 test('reads that fail after a first sync leave Retry, not the skeleton', async () => {
