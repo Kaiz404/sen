@@ -1,6 +1,12 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
-import { type ReactNode, useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { type ReactNode, useEffect, useState } from 'react';
+import {
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Text,
+  View,
+} from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { EnterOnce } from '@/components/enter-once';
@@ -14,7 +20,7 @@ import { mark } from '@/services/perf';
 import type { Flow, MaskedTotals } from '@/services/tx-repo';
 import { type } from '@/theme/type';
 
-import { ADD_KEY_CLEARANCE, ADD_KEY_LIFT, AddKey } from './add-key';
+import { ADD_KEY_CLEARANCE, ADD_KEY_LIFT, AddKey, keyCoversContent } from './add-key';
 import type { Banner, HistoryBody } from './body';
 import {
   DayNet,
@@ -107,6 +113,16 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
   const listShown = body.kind !== 'failed';
   // The list can go mid-fling, to a lock or to the full error, before its end event reopens the gate.
   useEffect(() => (listShown ? releaseSenScroll : undefined), [listShown]);
+  const [slotKey, setSlotKey] = useState<Span | null>(null);
+  const [filters, setFilters] = useState<Span | null>(null);
+  const [offTop, setOffTop] = useState(0);
+  const covers =
+    slotKey !== null && filters !== null && keyCoversContent(slotKey, toastUp, filters, offTop);
+  /** Past the filter row nothing can sit under the key, so the offset stops counting there. */
+  const trackOffset = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const past = filters === null ? 0 : filters.y + filters.height;
+    setOffTop(Math.max(0, Math.min(e.nativeEvent.contentOffset.y, past)));
+  };
   const netLabel = searching ? 'MATCHES' : NET_LABEL[flow];
 
   const renderItem = ({ item }: ListRenderItemInfo<HistoryItem>) => {
@@ -155,6 +171,7 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
         flow={flow}
         onSearch={actions.onSearch}
         onFlow={actions.onFlow}
+        onLayout={(e) => setFilters(span(e))}
       />
       {searching && <ResultLine counts={props.resultCounts} hidden={props.hidden} />}
       {props.skipped > 0 && (
@@ -196,7 +213,9 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
           onSettings={actions.onSettings}
           onLock={actions.onLock}
         />
-        {listShown && <AddKey onPress={actions.onAdd} />}
+        {props.skippedNotice !== null && (
+          <SkippedNotice count={props.skippedNotice} onDismiss={actions.onDismissSkipped} />
+        )}
         {body.kind === 'failed' ? (
           <FullError
             error={body.error}
@@ -240,6 +259,10 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
                   }
                   onEndReached={actions.onEndReached}
                   onEndReachedThreshold={0.5}
+                  onScroll={(e) => {
+                    pullList.onScroll(e);
+                    trackOffset(e);
+                  }}
                   onScrollBeginDrag={scrolling}
                   onMomentumScrollBegin={scrolling}
                   onScrollEndDrag={still}
@@ -249,9 +272,7 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
                 />
               )}
             </PullToRefresh>
-            {props.skippedNotice !== null && (
-              <SkippedNotice count={props.skippedNotice} onDismiss={actions.onDismissSkipped} />
-            )}
+            <AddKey onPress={actions.onAdd} hidden={covers} onLayout={(e) => setSlotKey(span(e))} />
             {props.updated !== null && (
               <View pointerEvents="none" accessibilityLiveRegion="polite" style={styles.pill}>
                 <Sen pose="happy" size={22} />
@@ -268,6 +289,9 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
     </RevealedAmounts>
   );
 }
+
+type Span = { readonly y: number; readonly height: number };
+const span = (e: LayoutChangeEvent): Span => e.nativeEvent.layout;
 
 const painted = () => mark('history.painted');
 

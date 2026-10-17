@@ -91,9 +91,7 @@ export const HISTORY_STATES = {
   'add-key': () => <HistoryView {...BASE} />,
   'add-key-lifted': () => <WithToast />,
   shown: () => <HistoryView {...BASE} hidden={false} revealed={boardRevealed(BOARD_ROWS)} />,
-  'shown-long': () => (
-    <HistoryView {...BASE} hidden={false} revealed={LONGEST} />
-  ),
+  'shown-long': () => <HistoryView {...BASE} hidden={false} revealed={LONGEST} />,
   search: () => (
     <HistoryView {...BASE} search="grab" body={list(GRAB)} resultCounts={boardCounts(GRAB)} />
   ),

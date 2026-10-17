@@ -1,6 +1,13 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
-import { Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import {
+  type LayoutChangeEvent,
+  Pressable,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles, withUnistyles } from 'react-native-unistyles';
 
@@ -139,15 +146,17 @@ export function SearchAndFilter({
   flow,
   onSearch,
   onFlow,
+  onLayout,
 }: {
   readonly search: string;
   readonly flow: Flow;
   readonly onSearch: (text: string) => void;
   readonly onFlow: (flow: Flow) => void;
+  readonly onLayout?: (e: LayoutChangeEvent) => void;
 }): ReactNode {
   const { theme } = useUnistyles();
   return (
-    <View style={styles.filters}>
+    <View testID="history-filters" style={styles.filters} onLayout={onLayout}>
       <View style={styles.search}>
         <MaterialCommunityIcons
           name="magnify"
@@ -277,7 +286,10 @@ export function MonthCard({
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
         ) : (
-          <RollAmount value={inMinor} size="card" surface="plate"
+          <RollAmount
+            value={inMinor}
+            size="card"
+            surface="plate"
             direction="credit"
             fit={{ maxHeight: moneyInHeight - SLOT_MARGIN }}
           />
@@ -539,8 +551,9 @@ export function NoteLine({
 }
 
 /**
- * Floats over the top of the list after a sync that skipped rows it couldn't read, so the reviewer sees it
- * where the sync ran. Informational: the rest of the data is fine, and it dismisses itself.
+ * Sits in the flow between the header and the list after a sync that skipped rows it couldn't read, so it
+ * pushes the content down and never covers it. Informational: the rest of the data is fine, and it
+ * dismisses itself.
  */
 export function SkippedNotice({
   count,
@@ -565,10 +578,8 @@ export function SkippedNotice({
 
 const styles = StyleSheet.create((theme, rt) => ({
   skipped: {
-    position: 'absolute',
-    top: 10,
-    left: 16,
-    right: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,

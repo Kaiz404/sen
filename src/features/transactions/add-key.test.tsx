@@ -3,7 +3,7 @@ import { DeviceEventEmitter } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 
-import { AddKey } from './add-key';
+import { AddKey, keyCoversContent } from './add-key';
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(async () => {
@@ -54,4 +54,13 @@ test('it gets out of the way of the search keyboard and returns with it gone', a
 test('it floats 16 above the gesture bar', async () => {
   await render(<AddKey onPress={jest.fn()} />);
   expect(dock()).toHaveStyle({ bottom: 34 + 16 });
+});
+
+test('it covers content under its resting place, or under its lifted place while a toast is up', () => {
+  const key = { y: 620, height: 64 };
+  expect(keyCoversContent(key, false, { y: 600, height: 50 }, 0)).toBe(true);
+  expect(keyCoversContent(key, false, { y: 400, height: 50 }, 0)).toBe(false);
+  expect(keyCoversContent(key, false, { y: 560, height: 50 }, 0)).toBe(false);
+  expect(keyCoversContent(key, true, { y: 560, height: 50 }, 0)).toBe(true);
+  expect(keyCoversContent(key, true, { y: 560, height: 50 }, 100)).toBe(false);
 });

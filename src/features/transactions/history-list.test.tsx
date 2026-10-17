@@ -1,7 +1,9 @@
 import '@shopify/flash-list/jestSetup';
 
-import { render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
+
+import { toast, ToastHost } from '@/components/toast';
 
 import { BOARD_ROWS, BOARD_TODAY, manyRows } from './fixture-data';
 import { NO_ACTIONS } from './fixtures';
@@ -79,4 +81,61 @@ test('a row the user just added slides in wherever it sorts, and no other row do
 
   expect(screen.getAllByTestId('enter-once')).toHaveLength(1);
   expect(within(screen.getByTestId('enter-once')).getByText(added.description)).toBeOnTheScreen();
+});
+
+const layout = (id: string, y: number, height: number) =>
+  fireEvent(screen.getByTestId(id), 'layout', {
+    nativeEvent: { layout: { x: 0, y, width: 300, height } },
+  });
+
+test('the skipped-rows notice sits in the flow above the list, never over the month title', async () => {
+  await render(<List skippedNotice={2} />);
+
+  const notice = screen.getByTestId('skipped-notice');
+  expect(notice).not.toHaveStyle({ position: 'absolute' });
+  expect(within(screen.getByTestId('history-list')).queryByTestId('skipped-notice')).toBeNull();
+  expect(
+    screen.getByText("2 items couldn't be read and were skipped. The rest is fine."),
+  ).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Got it' })).toBeOnTheScreen();
+});
+
+test('the Add key steps aside while a toast lifts it over the filter row, and returns when the toast goes', async () => {
+  jest.useFakeTimers();
+  await render(
+    <>
+      <List />
+      <ToastHost />
+    </>,
+  );
+  // The key rests at 620 to 684 in the slot, and 528 to 592 once a toast lifts it.
+  await act(async () => {
+    layout('add-key', 620, 64);
+    layout('history-filters', 600, 50);
+  });
+  expect(screen.getByTestId('add-key', { includeHiddenElements: true })).toHaveStyle({
+    opacity: 0,
+  });
+
+  await act(async () => {
+    layout('history-filters', 400, 50);
+  });
+  expect(screen.getByTestId('add-key', { includeHiddenElements: true })).toHaveStyle({
+    opacity: 1,
+  });
+
+  await act(async () => toast.show({ title: 'Added' }));
+  expect(screen.getByTestId('add-key', { includeHiddenElements: true })).toHaveStyle({
+    opacity: 1,
+  });
+  await act(async () => layout('history-filters', 560, 50));
+  expect(screen.getByTestId('add-key', { includeHiddenElements: true })).toHaveStyle({
+    opacity: 0,
+  });
+
+  await act(async () => toast.hide());
+  expect(screen.getByTestId('add-key', { includeHiddenElements: true })).toHaveStyle({
+    opacity: 1,
+  });
+  jest.useRealTimers();
 });

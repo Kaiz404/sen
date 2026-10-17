@@ -83,7 +83,9 @@ test('hiding drops the digits at once', async () => {
   expect(screen.getByLabelText('Amount hidden')).toBeOnTheScreen();
 });
 
-const layout = (width: number, height: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height } } });
+const layout = (width: number, height: number) => ({
+  nativeEvent: { layout: { x: 0, y: 0, width, height } },
+});
 
 async function hero(content: number, box: number) {
   await render(
