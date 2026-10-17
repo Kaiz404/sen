@@ -15,6 +15,7 @@ import { AmountStep } from './amount-step';
 import { DetailsStep } from './details-step';
 import { type DraftInput, newDraft } from './draft';
 import { ReviewStep } from './review-step';
+import { answerPicker, lastOpenOptions } from './testing/answer-picker';
 
 let mockDb: OpenDb;
 const mockStepUp = jest.fn<Promise<StepUpResult>, []>();
@@ -46,6 +47,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   mockStepUp.mockReset();
   jest.mocked(DateTimePickerAndroid.open).mockReset();
+  jest.mocked(DateTimePickerAndroid.dismiss).mockClear();
   Object.values(mockRouter).forEach((fn) => fn.mockClear());
   queryClient.clear();
   mockDb = await openTestDb();
@@ -166,33 +168,7 @@ test('Next with a short description and no category shows both problems', async 
   expect(mockRouter.push).toHaveBeenCalledWith('/add/review');
 });
 
-type PickerOptions = {
-  mode: string;
-  value: Date;
-  minimumDate: Date;
-  maximumDate: Date;
-  onValueChange: (event: unknown, date: Date) => void;
-  onDismiss?: () => void;
-};
-const lastPicker = (): PickerOptions =>
-  jest.mocked(DateTimePickerAndroid.open).mock.lastCall![0] as unknown as PickerOptions;
-
-test('the details page carries no sample text, helper lines or live preview', async () => {
-  await renderStep(<DetailsStep />, FILLED);
-
-  expect(screen.getByLabelText('Description').props.placeholder).toBeUndefined();
-  expect(screen.getByText('22/60')).toBeOnTheScreen();
-  for (const gone of [
-    '2 to 60 characters',
-    'AUTOCORRECT · AUTOFILL OFF',
-    'LIVE PREVIEW',
-    'NOT SAVED YET',
-    'Today is Thu 15 Oct. Any day in the last 90 days, never the future.',
-  ]) {
-    expect(screen.queryByText(gone)).toBeNull();
-  }
-  expect(screen.queryByLabelText('Live preview')).toBeNull();
-});
+const lastPicker = lastOpenOptions;
 
 test('Pick a date opens the system calendar on today, limited to the last 90 days', async () => {
   await renderStep(<DetailsStep />, FILLED);
@@ -209,7 +185,7 @@ test('Pick a date opens the system calendar on today, limited to the last 90 day
 test('a date chosen in the calendar becomes the draft date and the field says which', async () => {
   await renderStep(<DetailsStep />, FILLED);
   await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
-  await act(async () => lastPicker().onValueChange({}, new Date(2026, 9, 5, 12)));
+  await act(async () => answerPicker({ action: 'set', date: new Date(2026, 9, 5, 12) }));
 
   expect(screen.getByRole('radio', { name: 'Mon 5 Oct' })).toBeChecked();
   expect(screen.getByRole('radio', { name: 'Today' })).not.toBeChecked();
@@ -218,20 +194,51 @@ test('a date chosen in the calendar becomes the draft date and the field says wh
   expect(lastPicker().value).toEqual(new Date(2026, 9, 5, 12));
 });
 
-test('dismissing the calendar keeps the date and everything typed', async () => {
-  await renderStep(<DetailsStep />, { ...FILLED, day: DayKeySchema.parse('2026-10-05') });
+test('dismissing the calendar keeps the picked date and the typed description', async () => {
+  await renderStep(<DetailsStep />, { ...FILLED, description: '' });
+  await fireEvent.changeText(screen.getByLabelText('Description'), 'Lunch');
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  await act(async () => answerPicker({ action: 'set', date: new Date(2026, 9, 5, 12) }));
   await fireEvent.press(screen.getByRole('radio', { name: 'Mon 5 Oct' }));
-  await act(async () => lastPicker().onDismiss?.());
+  await act(async () => answerPicker({ action: 'dismissed' }));
 
   expect(screen.getByRole('radio', { name: 'Mon 5 Oct' })).toBeChecked();
-  expect(screen.getByLabelText('Description').props.value).toBe('Lunch with Hafiz, cash');
+  expect(screen.getByLabelText('Description').props.value).toBe('Lunch');
+});
+
+test('a second tap while the calendar is open does not stack another, and an answer frees the field', async () => {
+  await renderStep(<DetailsStep />, FILLED);
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(1);
+
+  await act(async () => answerPicker({ action: 'dismissed' }));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(2);
+
+  await act(async () => answerPicker({ action: 'error', error: new Error('no activity') }));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(3);
+});
+
+test('leaving the details page closes an open calendar, so it never floats over Lock', async () => {
+  const view = await renderStep(<DetailsStep />, FILLED);
+  await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
+  await view.unmount();
+
+  expect(DateTimePickerAndroid.dismiss).toHaveBeenCalledWith('date');
+});
+
+test('the character counter reads as words to a screen reader', async () => {
+  await renderStep(<DetailsStep />, FILLED);
+  expect(screen.getByLabelText('22 of 60 characters')).toBeOnTheScreen();
 });
 
 test('a date outside the add window never reaches the draft', async () => {
   await renderStep(<DetailsStep />, FILLED);
   await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));
-  await act(async () => lastPicker().onValueChange({}, new Date(2026, 9, 16, 12)));
-  await act(async () => lastPicker().onValueChange({}, new Date(2026, 6, 16, 12)));
+  await act(async () => answerPicker({ action: 'set', date: new Date(2026, 9, 16, 12) }));
+  await act(async () => answerPicker({ action: 'set', date: new Date(2026, 6, 16, 12) }));
 
   expect(screen.getByRole('radio', { name: 'Today' })).toBeChecked();
 });

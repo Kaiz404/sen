@@ -16,6 +16,9 @@ jest.mock('@react-native-community/datetimepicker', () => ({
   DateTimePickerAndroid: { open: jest.fn() },
 }));
 
+beforeEach(() => jest.useFakeTimers({ now: new Date('2026-10-15T06:00:00.000Z') }));
+afterEach(() => jest.useRealTimers());
+
 const TODAY = DayKeySchema.parse('2026-10-15');
 
 test('the iOS panel shows the inline calendar over the same 90-day range, and a pick closes it', async () => {

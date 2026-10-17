@@ -9,13 +9,7 @@ import { Key } from '@/components/key';
 import { Leader, ReceiptSlip, SlipRule } from '@/components/receipt-slip';
 import { Tag } from '@/components/tag';
 import { toast } from '@/components/toast';
-import {
-  type AuthFailure,
-  type Biometric,
-  useBiometric,
-  useDb,
-  useStepUp,
-} from '@/features/auth';
+import { type AuthFailure, type Biometric, useBiometric, useDb, useStepUp } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { CATEGORY_LABEL } from '@/models/category';
 import { type DayKey, toInstant } from '@/models/day';

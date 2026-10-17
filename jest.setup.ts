@@ -18,7 +18,7 @@ jest.mock('react-native-svg', () => {
 jest.mock('@react-native-community/datetimepicker', () => ({
   __esModule: true,
   default: () => null,
-  DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() },
+  DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn(() => Promise.resolve(true)) },
 }));
 
 // ReducedMotionConfig warns on every mount. Tests mount it on purpose.

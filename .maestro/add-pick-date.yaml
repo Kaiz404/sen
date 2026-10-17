@@ -1,7 +1,7 @@
 # Not run yet: needs a device. Unlocks to History first. On Details, Pick a date opens the system calendar, which
-# is not Sen's own view, so its buttons are found by their text (OK, Cancel). The 1st of the current month is
-# always inside the last 90 days and never in the future, so the flow picks it whatever today is.
-# Cancel keeps that date. The dialog follows the phone's light or dark mode.
+# is not Sen's own view, so its controls are found by Android's view ids, not by text, and the flow works in any
+# language. The 15th of last month is always inside the last 90 days and never in the future, so the flow picks
+# it whatever today is. Cancel keeps that date. The dialog follows the phone's light or dark mode.
 appId: com.kaiz404.sen
 ---
 - runFlow: subflows/at-history.yaml
@@ -19,20 +19,26 @@ appId: com.kaiz404.sen
     timeout: 10000
 - tapOn: Pick a date
 - extendedWaitUntil:
-    visible: OK
+    visible:
+      id: android:id/button1
     timeout: 10000
 - takeScreenshot: shots/4b/flow-add-calendar
-- tapOn: "1"
-- tapOn: OK
+- tapOn:
+    id: android:id/prev
+- tapOn: "15"
+- tapOn:
+    id: android:id/button1
 - extendedWaitUntil:
-    visible: "[A-Z][a-z]{2} 1 [A-Z][a-z]{2}"
+    visible: "[A-Z][a-z]{2} 15 [A-Z][a-z]{2}"
     timeout: 10000
 - takeScreenshot: shots/4b/flow-add-date-picked
-- tapOn: "[A-Z][a-z]{2} 1 [A-Z][a-z]{2}"
+- tapOn: "[A-Z][a-z]{2} 15 [A-Z][a-z]{2}"
 - extendedWaitUntil:
-    visible: Cancel
+    visible:
+      id: android:id/button2
     timeout: 10000
-- tapOn: Cancel
+- tapOn:
+    id: android:id/button2
 - extendedWaitUntil:
-    visible: "[A-Z][a-z]{2} 1 [A-Z][a-z]{2}"
+    visible: "[A-Z][a-z]{2} 15 [A-Z][a-z]{2}"
     timeout: 10000

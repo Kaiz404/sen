@@ -1,7 +1,5 @@
 import type { ExpoConfig } from 'expo/config';
 
-import { dark, light } from './src/theme/colors';
-
 const INK = '#17181A';
 
 const fonts = {
@@ -49,11 +47,16 @@ const config: ExpoConfig = {
       '@react-native-community/datetimepicker',
       {
         android: {
+          // Hex copies of `src/theme/colors.ts`. Expo loads this file alone, so it cannot import the app's
+          // source. `src/__tests__/app-config.test.ts` fails when they drift. The Inverse pair is the text on
+          // the accent: the header and the selected day.
           datePicker: {
-            colorAccent: { light: light.loud, dark: dark.loud },
-            textColorPrimary: { light: light.ink, dark: dark.ink },
-            textColorSecondary: { light: light.inkMuted, dark: dark.inkMuted },
-            windowBackground: { light: light.canvas, dark: dark.canvas },
+            colorAccent: { light: '#17181A', dark: '#F2DC72' },
+            textColorPrimary: { light: '#17181A', dark: '#F3EEE3' },
+            textColorSecondary: { light: '#5F5A50', dark: '#ABA595' },
+            windowBackground: { light: '#F6F2E9', dark: '#121315' },
+            textColorPrimaryInverse: { light: '#F6F2E9', dark: '#17181A' },
+            textColorSecondaryInverse: { light: '#D8D2C4', dark: '#3F3B34' },
           },
         },
       },

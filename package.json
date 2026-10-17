@@ -66,7 +66,7 @@
     "test": "jest",
     "test:motion": "jest src/motion src/features/sen src/components",
     "test:bench": "jest --ci --runInBand --passWithNoTests --testPathIgnorePatterns /node_modules/ --testPathPattern '\\.bench\\.test\\.ts$'",
-    "check": "tsc --noEmit && expo lint && jest --ci && npm run test:bench",
+    "check": "tsc --noEmit && expo config --type public > /dev/null && expo lint && jest --ci && npm run test:bench",
     "prepare": "git config core.hooksPath .githooks",
     "format": "prettier --write .",
     "device:verify": "scripts/verify-device.sh",

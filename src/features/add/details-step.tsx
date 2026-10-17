@@ -71,9 +71,7 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
         </View>
 
         <View style={styles.field}>
-          <View style={styles.fieldTop}>
-            <Text style={styles.label}>Description</Text>
-          </View>
+          <Text style={styles.label}>Description</Text>
           <TextInput
             {...PRIVATE_INPUT}
             accessibilityLabel="Description"
@@ -86,7 +84,12 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
           />
           <View style={styles.fieldTop}>
             {tooShort && <FieldError text="Add at least 2 characters, like “Lunch with Hafiz”." />}
-            <Text style={styles.counter}>{`${length}/${DRAFT_LIMITS.descriptionMax}`}</Text>
+            <Text
+              accessibilityLabel={`${length} of ${DRAFT_LIMITS.descriptionMax} characters`}
+              style={styles.counter}
+            >
+              {`${length}/${DRAFT_LIMITS.descriptionMax}`}
+            </Text>
           </View>
         </View>
 
@@ -282,7 +285,6 @@ const styles = StyleSheet.create((theme, rt) => ({
   fieldTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   label: { fontSize: 17, fontWeight: '700', color: theme.colors.ink },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
-  hint: { flex: 1, fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
   counter: { ...type.mono(12, 600), marginLeft: 'auto', color: theme.colors.inkMuted },
   input: {
     minHeight: 56,

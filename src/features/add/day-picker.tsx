@@ -1,5 +1,5 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -7,6 +7,8 @@ import { Key } from '@/components/key';
 import { addDays, type DayKey, DayKeySchema } from '@/models/day';
 import { DRAFT_LIMITS, isInAddWindow } from '@/models/draft';
 import { type } from '@/theme/type';
+
+import { todayInMalaysia } from './add-layout';
 
 /**
  * The native pickers speak in `Date`s on the device's clock, and a `DayKey` is a Malaysia day. The picker only
@@ -36,10 +38,13 @@ export function pickerRange(today: DayKey): { minimumDate: Date; maximumDate: Da
   return { minimumDate: first, maximumDate: last };
 }
 
-/** Gives a chosen date to the draft only when the add window allows it. A dismissed picker never calls this. */
-function acceptDate(date: Date, today: DayKey, onDay: (day: DayKey) => void): void {
+/**
+ * Gives a chosen date to the draft only when the add window allows it. Today is read now, not when the picker
+ * opened, so a dialog left open past midnight still refuses tomorrow.
+ */
+function acceptDate(date: Date, onDay: (day: DayKey) => void): void {
   const day = localDateToDay(date);
-  if (day !== null && isInAddWindow(day, today)) onDay(day);
+  if (day !== null && isInAddWindow(day, todayInMalaysia())) onDay(day);
 }
 
 type DayPickerArgs = {
@@ -57,16 +62,33 @@ export function useDayPicker({ day, today, onDay }: DayPickerArgs): {
   readonly panel: ReactNode;
 } {
   const [shown, setShown] = useState(false);
-  const range = pickerRange(today);
+  const isOpen = useRef(false);
+  useEffect(
+    () => () => {
+      if (isOpen.current) DateTimePickerAndroid.dismiss('date').catch(() => {});
+    },
+    [],
+  );
   if (Platform.OS !== 'ios') {
+    const close = () => {
+      isOpen.current = false;
+    };
     return {
-      open: () =>
+      open: () => {
+        if (isOpen.current) return;
+        isOpen.current = true;
         DateTimePickerAndroid.open({
           mode: 'date',
           value: dayToLocalDate(day),
-          ...range,
-          onValueChange: (_event, date) => acceptDate(date, today, onDay),
-        }),
+          ...pickerRange(today),
+          onValueChange: (_event, date) => {
+            close();
+            acceptDate(date, onDay);
+          },
+          onDismiss: close,
+          onError: close,
+        });
+      },
       panel: null,
     };
   }
@@ -108,9 +130,9 @@ export function InlineDayPanel({
           display="inline"
           value={dayToLocalDate(day)}
           {...pickerRange(today)}
-          accentColor={theme.colors.ink}
+          accentColor={theme.colors.loud}
           themeVariant={rt.themeName === 'dark' ? 'dark' : 'light'}
-          onValueChange={(_event, date) => acceptDate(date, today, onDay)}
+          onValueChange={(_event, date) => acceptDate(date, onDay)}
         />
       </View>
     </View>

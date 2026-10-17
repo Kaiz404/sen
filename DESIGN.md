@@ -14,7 +14,6 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| 2026-10-17 | `SF-AddDetails` | The page is bare. The description field has no placeholder, no "2 to 60 characters" line and no "AUTOCORRECT · AUTOFILL OFF" caption, and the "n/60" counter is the only limit cue. The live mini receipt and the date helper line are gone. The 90-day and no-future rule lives in the calendar's limits. Autocorrect and autofill stay off in the input. The label "Description" stays for screen readers |
 | `canvas` | `#F6F2E9` cream | `#121315` | Screen background |
 | `paper` | `#FFFDF8` | `#1E2023` | Cards, receipt slips, inputs |
 | `ink` | `#17181A` | `#F3EEE3` | Text, key borders and shadows |
@@ -96,6 +95,7 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 
 | Date | Board | Override |
 | --- | --- | --- |
+| 2026-10-17 | `SF-AddDetails` | The page is bare. The description field has no placeholder, no "2 to 60 characters" line and no "AUTOCORRECT · AUTOFILL OFF" caption, and the "n/60" counter is the only limit cue. The live mini receipt and the date helper line are gone. The 90-day and no-future rule lives in the calendar's limits. Autocorrect and autofill stay off in the input. The label "Description" stays for screen readers |
 | 2026-10-17 | `SF-AddDetails` | Pick a date opens the platform calendar (D37), not a drawer of days. The Today and Yesterday chips and the Pick a date chip keep their look. Once a day is picked the chip reads that day, such as "Mon 5 Oct". The dialog takes its accent, text and window colours from the light and dark tokens and follows the phone's mode. The calendar greys out every day beyond 90 days ago and after today |
 | 2026-10-17 | `SF-AddNav-Options` option A | The Add key is icon only, a loud 60 × 60 "+" with the label "Add a transaction", never an "Add" word. It floats 20 from the right edge and 16 above the bottom inset on History alone, with no bar. It rises 92 pt above the undo toast on the toast's own 300 ms in and 250 ms out, instantly outside Full motion. The error screen and the search keyboard hide it. The list ends 104 pt above the inset so the last row and caption clear it. TalkBack reaches it right after the header |
 | 2026-10-17 | `SF-History`, `SF-Settings` | "How Sen keeps amounts private" is a question-mark key in History's header, left of Settings, in the same icon-key style. Settings has no About row. The month card and the Detail receipt have no "Asks for … first" helper line under Show amounts. The card's hero and Money in rows have fixed heights (96 and 58), and a long amount scales to one line inside them, so the card is the same height hidden or shown |
