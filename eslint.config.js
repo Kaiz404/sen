@@ -85,14 +85,14 @@ const withTestOnly = (options) => ({
   ],
 });
 
-/** Tests drive the session store directly. */
+/** Tests drive the session store and the held link directly. */
 const withTestStores = (options) => ({
   paths: options.paths,
   patterns: options.patterns.map((pattern) =>
     pattern.group[0] === '@/features/*/**'
       ? {
           ...pattern,
-          group: [...pattern.group, '!@/features/auth/session'],
+          group: [...pattern.group, '!@/features/auth/session', '!@/features/auth/held-link'],
         }
       : pattern,
   ),

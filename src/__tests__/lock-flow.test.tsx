@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { act, fireEvent } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { renderRouter, screen } from 'expo-router/testing-library';
@@ -16,12 +16,13 @@ import {
 } from 'react-native';
 
 import { hideAmounts, lockNow, showAmounts } from '@/features/auth';
+import { takeHeldLink } from '@/features/auth/held-link';
 import { sessionStore } from '@/features/auth/session';
 import { playMoment } from '@/features/sen';
 import { InstantSchema, malaysiaDay } from '@/models/day';
 import { draftSchema } from '@/models/draft';
 import { openTestDb } from '@/services/db/testing/node-adapter';
-import { writePref } from '@/services/prefs';
+import { clearPrefs, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import * as TxRepo from '@/services/tx-repo';
 import * as Vault from '@/services/vault';
@@ -47,6 +48,26 @@ const routes = Object.fromEntries(
     .map((f) => relative(APP, join(APP, f)).replace(/\.tsx$/, ''))
     .map((name) => [name, jest.requireActual<{ default: ComponentType }>(`@/app/${name}`).default]),
 );
+
+// `renderRouter` turns on fake timers, which run Reanimated's jest frame (a 0 ms timeout) once per fake millisecond.
+// Sen's 1.4 s Unlock hold then stepped some 40 animations 1,400 times each, so the first test's real time grew with
+// machine load past the 5 s limit. Frames come at 60 Hz, as on the phone.
+globalThis.requestAnimationFrame = (callback) =>
+  setTimeout(() => callback(performance.now()), 1000 / 60) as unknown as number;
+
+// Every test starts from a cold app, so one that fails before its own `lockNow()` fails alone. The small demo bank
+// keeps each History render cheap.
+beforeEach(() => {
+  sessionStore.setState(sessionStore.getInitialState());
+  takeHeldLink();
+  queryClient.clear();
+  clearPrefs();
+  writePref('demo.datasetSize', 20);
+  authenticate.mockReset();
+  jest.mocked(Vault.hasVault).mockReset();
+  jest.mocked(Vault.openVault).mockReset();
+});
+afterEach(() => jest.useRealTimers());
 
 test('Lock ignores a second tap while prompting, a failed check shows "Something went wrong.", a match opens History, a lock closes it', async () => {
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
@@ -97,7 +118,6 @@ test('a detail link opened while locked shows Lock, then opens that receipt over
     day: malaysiaDay(now),
   });
   await TxRepo.insertManual(vault, draft, now);
-  writePref('demo.datasetSize', 20);
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
   jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: vault });
   jest.spyOn(Linking, 'getInitialURL').mockResolvedValueOnce(`sen://transaction/m-${key}`);
@@ -154,7 +174,6 @@ async function unlockedOnHistoryWithLunch(): Promise<string> {
     day: malaysiaDay(now),
   });
   await TxRepo.insertManual(vault, draft, now);
-  writePref('demo.datasetSize', 20);
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
   // A lock closes the database. The app opens a new one per unlock, so this one in-memory copy stays open.
   const reopened = { ...vault, close: async () => undefined };
@@ -258,7 +277,6 @@ test('amounts shown before a lock are masked after the next unlock, on History a
     .mocked(Vault.openVault)
     .mockResolvedValueOnce({ kind: 'opened', db: await openTestDb() })
     .mockResolvedValueOnce({ kind: 'opened', db: await openTestDb() });
-  sessionStore.setState(sessionStore.getInitialState());
   const played = jest.mocked(playMoment);
   played.mockClear();
   await renderRouter(routes, { initialUrl: '/' });
@@ -269,13 +287,17 @@ test('amounts shown before a lock are masked after the next unlock, on History a
   await screen.findByRole('button', { name: 'Show amounts' }, { timeout: 20000 });
   await act(() => showAmounts());
   expect(await screen.findByRole('button', { name: 'Hide amounts' })).toBeOnTheScreen();
+  // History's Sen takes over two frames after it paints, then plays the reveal it missed.
+  await waitFor(() => expect(played).toHaveBeenCalledWith(expect.anything(), 'reveal'));
 
   await act(() => lockNow());
   await screen.findByRole('header', { name: 'Welcome back.' });
   expect(screen.getByText('Amounts stay hidden until you choose to show them.')).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
 
-  expect(await screen.findByRole('button', { name: 'Show amounts' }, { timeout: 20000 })).toBeOnTheScreen();
+  expect(
+    await screen.findByRole('button', { name: 'Show amounts' }, { timeout: 20000 }),
+  ).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Hide amounts' })).not.toBeOnTheScreen();
   const moments = played.mock.calls.map(([, moment]) => moment);
   expect(moments).toContain('reveal');
@@ -284,5 +306,4 @@ test('amounts shown before a lock are masked after the next unlock, on History a
   await act(() => router.push('/settings'));
   const hide = await screen.findByRole('switch', { name: 'Hide amounts' });
   expect(hide.props.accessibilityState.checked).toBe(true);
-
 });
