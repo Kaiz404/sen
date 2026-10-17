@@ -896,7 +896,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 - **iOS Simulator.** Features › Face ID › Enrolled.
 
 **CI (D21).**
-- **Every push.** GitHub Actions runs `tsc --noEmit`, `expo lint` and `jest --ci` on Node 22.13 or later.
+- **Every push.** GitHub Actions runs `tsc --noEmit`, `expo lint` and `jest --ci` on the Node version in `.nvmrc` (24), the one local work uses. The job times out after 20 minutes.
 - **Pre-commit.** A hook in `.githooks/` runs typecheck and related tests.
 - **Tags.** An EAS Android build.
 

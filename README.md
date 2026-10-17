@@ -25,7 +25,7 @@ Sen the coin is the app's mascot. It keeps its eyes shut while amounts are hidde
 
 **Option 1. The release APK.** Download `sen-1.0.0.apk` from the [latest GitHub release](https://github.com/Kaiz404/sen/releases/latest) and install it. No other tool is needed. <!-- pending: lane release (the owner creates the GitHub release and attaches the APK) -->
 
-**Option 2. A dev build with Metro.** You need Node 22.13 or later, JDK 17 and the Android SDK.
+**Option 2. A dev build with Metro.** You need Node 24.3 or later (`nvm use` reads `.nvmrc`), JDK 17 and the Android SDK.
 
 ```bash
 npm install
