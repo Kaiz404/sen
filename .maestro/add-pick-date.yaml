@@ -10,12 +10,12 @@ appId: com.kaiz404.sen
     timeout: 20000
 - tapOn: Add a transaction
 - extendedWaitUntil:
-    visible: STEP 1 OF 3 · AMOUNT
+    visible: Amount, step 1 of 3
     timeout: 10000
 - tapOn: "4"
 - tapOn: Next
 - extendedWaitUntil:
-    visible: STEP 2 OF 3 · DETAILS
+    visible: Details, step 2 of 3
     timeout: 10000
 - tapOn: Pick a date
 - extendedWaitUntil:

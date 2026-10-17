@@ -1,5 +1,5 @@
 # From History, opens Settings, taps the reviewer control matching ${CONTROL} (a regex), shoots it as
-# ${SHOT}, then goes back to History.
+# ${SHOT}, then goes back to History. The Back key scrolls away with Settings' header, so it uses the system back.
 appId: com.kaiz404.sen
 ---
 - tapOn: Settings
@@ -13,7 +13,7 @@ appId: com.kaiz404.sen
     centerElement: true
 - tapOn: ${CONTROL}
 - takeScreenshot: reviewer-control-${SHOT}
-- tapOn: Back to history
+- back
 - extendedWaitUntil:
     visible:
       id: tx-row

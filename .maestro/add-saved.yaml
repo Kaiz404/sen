@@ -1,7 +1,8 @@
-# Not run yet: needs a device. Run right after add-save-prompt.yaml, which leaves the app on History. History
-# shows the new row and the Undo toast. Undo removes it with no prompt.
+# Not run yet: needs a device. Runs add-save-prompt.yaml first, so it does not depend on the flow before it. History
+# then shows the new row and the Undo toast. Undo removes it with no prompt.
 appId: com.kaiz404.sen
 ---
+- runFlow: add-save-prompt.yaml
 - extendedWaitUntil:
     visible: Lunch with Hafiz, cash · stored encrypted
     timeout: 10000

@@ -12,7 +12,7 @@ appId: com.kaiz404.sen
     centerElement: true
 - tapOn: Offline
 - tapOn: "20"
-- tapOn: Back to history
+- back
 - extendedWaitUntil:
     visible: Can't load your history
     timeout: 15000

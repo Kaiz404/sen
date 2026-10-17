@@ -8,4 +8,4 @@ appId: com.kaiz404.sen
       checked: true
     direction: DOWN
     centerElement: true
-- tapOn: Back to history
+- back

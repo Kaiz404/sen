@@ -2,11 +2,16 @@
 appId: com.kaiz404.sen
 ---
 - stopApp
-- openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
-- extendedWaitUntil:
-    visible:
-      id: unlock|continue
-    timeout: 120000
+# A cold start can drop back to the launcher when the link lands before the dev client is ready, so
+# open it again instead of waiting two minutes on the home screen.
+- retry:
+    maxRetries: 2
+    commands:
+      - openLink: sen://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+      - extendedWaitUntil:
+          visible:
+            id: unlock|continue
+          timeout: 60000
 # The cold-start launch covers the first screen for about 3.3 s.
 - extendedWaitUntil:
     notVisible:
