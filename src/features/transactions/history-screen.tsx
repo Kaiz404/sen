@@ -67,6 +67,9 @@ export function HistoryScreen(): ReactNode {
     return () => clearTimeout(timer);
   }, [sliding]);
 
+  // A lock unmounts History, and a row marked before it must not slide in at the next unlock.
+  useEffect(() => clearAddedArrival, []);
+
   const epoch = useStore(bankEpoch, (s) => s.epoch);
 
   const hasRows = data.rows !== undefined;

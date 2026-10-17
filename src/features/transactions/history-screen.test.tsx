@@ -268,3 +268,14 @@ test('while the undo toast shows, the list ends above the lifted Add key', async
   await act(async () => toast.hide());
   expect(footer()).toHaveStyle({ paddingBottom: 104 });
 });
+
+test('a slide-in marked before a lock does not wait to play after the unlock', async () => {
+  mockFocused = false;
+  const { unmount } = await renderHistory();
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  await act(() => markArrival(TxIdSchema.parse('bk-3')));
+
+  await unmount();
+
+  expect(arrivals.getState().added).toBeNull();
+});
