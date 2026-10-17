@@ -2,6 +2,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { readPref } from '@/services/prefs';
 
+import { promptAppState } from './prompt';
 import { dispatch, refreshBiometric } from './session';
 
 export const TICK_MS = 15_000;
@@ -30,6 +31,7 @@ export function lockIfAwayTooLong(): void {
 
 /** Only `background` starts the re-lock window, because iOS sends `inactive` while the Face ID sheet is up. */
 function onAppState(state: AppStateStatus): void {
+  promptAppState(state);
   if (state === 'active') void refreshBiometric();
   if (state === 'background') {
     backgroundedAt = Date.now();

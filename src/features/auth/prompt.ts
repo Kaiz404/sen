@@ -1,13 +1,14 @@
 import {
   AuthenticationType,
   authenticateAsync,
+  cancelAuthenticate,
   getEnrolledLevelAsync,
   type LocalAuthenticationError,
   type LocalAuthenticationResult,
   SecurityLevel,
   supportedAuthenticationTypesAsync,
 } from 'expo-local-authentication';
-import { Platform } from 'react-native';
+import { type AppStateStatus, Platform } from 'react-native';
 
 export type AuthFailure =
   'cancelled' | 'mismatch' | 'lockout' | 'not_set_up' | 'unavailable' | 'unknown';
@@ -82,17 +83,50 @@ export function onAuthenticationEnd(listener: () => void): () => void {
   return () => void endListeners.delete(listener);
 }
 
+/** Also what a prompt that timed out returns, since both mean no check happened. */
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
+
+/**
+ * A prompt the OS never answers, such as one the app was backgrounded under, would leave Lock on "Checking it's
+ * you" with every key disabled. After this long in the foreground the prompt is cancelled and counts as a cancel.
+ * Time spent in the background does not count, since a passcode screen can take a while.
+ */
+export const PROMPT_TIMEOUT_MS = 60_000;
+
+const TIMED_OUT = Symbol('timed out');
+
+let guard: { pause(): void; resume(): void } | null = null;
+
+/** The app moved to `background` or came back to `active`. The pending prompt's clock follows. */
+export function promptAppState(state: AppStateStatus): void {
+  if (state === 'background') guard?.pause();
+  else if (state === 'active') guard?.resume();
+}
 
 export async function authenticate(promptMessage: string): Promise<AuthOutcome> {
   if (isAuthenticatingRef.current) return BUSY;
   isAuthenticatingRef.current = true;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const result = await nativePrompt(promptMessage);
+    const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
+      const resume = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => resolve(TIMED_OUT), PROMPT_TIMEOUT_MS);
+      };
+      guard = { pause: () => clearTimeout(timer), resume };
+      resume();
+    });
+    const result = await Promise.race([nativePrompt(promptMessage), timeout]);
+    if (result === TIMED_OUT) {
+      cancelAuthenticate().catch(() => undefined);
+      return BUSY;
+    }
     return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
   } catch {
     return { ok: false, reason: 'unknown' };
   } finally {
+    clearTimeout(timer);
+    guard = null;
     isAuthenticatingRef.current = false;
     endListeners.forEach((listener) => listener());
   }

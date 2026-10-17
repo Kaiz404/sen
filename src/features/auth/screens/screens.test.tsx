@@ -13,6 +13,7 @@ import { WelcomeScreen } from './welcome-screen';
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
+  cancelAuthenticate: jest.fn(async () => undefined),
 }));
 jest.mock('@/services/vault', () => ({ openVault: jest.fn(), destroyVault: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ back: jest.fn() }) }));
@@ -220,6 +221,19 @@ describe('a phone with no screen lock', () => {
     expect(screen.queryByRole('button', { name: 'Continue as demo user' })).not.toBeOnTheScreen();
   });
 });
+
+test('a prompt that never answers frees Lock after 60 s instead of leaving it on "Checking it\'s you"', async () => {
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockReturnValueOnce(new Promise(() => undefined));
+  await render(<LockScreen />);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  expect(screen.getByRole('button', { name: "Checking it's you" })).toBeDisabled();
+  await act(async () => jest.advanceTimersByTime(60_000));
+
+  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
+  expect(session()).toEqual({ status: 'locked', reason: 'launch' });
+}, 30_000);
 
 test('a cancelled prompt returns to Lock without a message', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
