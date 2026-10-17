@@ -1,11 +1,10 @@
 import {
   afterRecheck,
   afterUnlock,
-  BLOCKED_FOR_MS,
+  initialView,
   canReset,
   IDLE,
   KEY_RESET_SPAN_MS,
-  LOCKOUT_MS,
   type PromptView,
 } from './prompt-view';
 
@@ -35,76 +34,52 @@ describe('when Lock offers to reset the store', () => {
   });
 });
 
-describe('repeated lockouts', () => {
-  const lockedOut = (view: PromptView, at: number) =>
-    afterUnlock(view, { ok: false, reason: 'lockout' }, at);
+describe('the view after a prompt', () => {
+  const after = (view: PromptView, reason: 'cancelled' | 'timedOut' | 'noLock' | 'unavailable' | 'unknown') =>
+    afterUnlock(view, { ok: false, reason }, 0);
 
-  test('a second lockout steers to the passcode and promises no countdown', () => {
-    const second = lockedOut(lockedOut(IDLE, 1_000), 40_000);
-
-    expect(second).toEqual({ kind: 'blocked', since: 40_000 });
-    expect(lockedOut(second, 50_000)).toEqual(second);
+  test('a cancel changes nothing', () => {
+    expect(after(IDLE, 'cancelled')).toBe(IDLE);
   });
 
-  test('the steer lifts after a cool-down, so the fingerprint is trusted with a first lockout again', () => {
-    const blocked: PromptView = { kind: 'blocked', since: 40_000 };
-
-    expect(lockedOut(blocked, 40_000 + BLOCKED_FOR_MS)).toEqual({
-      kind: 'lockout',
-      until: 40_000 + BLOCKED_FOR_MS + LOCKOUT_MS,
-    });
+  test('a timeout says so and leaves the key ready, and a store failure outranks it', () => {
+    expect(after(IDLE, 'timedOut')).toEqual({ kind: 'timedOut' });
+    const store = failOpens('store', 1_000);
+    expect(after(store, 'timedOut')).toBe(store);
   });
 
-  test('an unlock that goes through clears it', () => {
-    expect(afterUnlock({ kind: 'blocked', since: 1 }, { ok: true }, 2)).toEqual(IDLE);
+  test('an error or an unavailable check shows the retry view', () => {
+    expect(after(IDLE, 'unknown')).toEqual({ kind: 'error' });
+    expect(after(IDLE, 'unavailable')).toEqual({ kind: 'error' });
+  });
+
+  test('a phone with no screen lock shows the D28 view', () => {
+    expect(after(IDLE, 'noLock')).toEqual({ kind: 'noLock' });
+  });
+
+  test('an unlock that goes through clears any view', () => {
+    expect(afterUnlock({ kind: 'error' }, { ok: true }, 0)).toEqual(IDLE);
   });
 });
 
-test('a phone that loses its screen lock shows the no-lock view over any earlier attempt', () => {
-  const error: PromptView = { kind: 'error' };
-  const mismatch: PromptView = { kind: 'mismatch' };
-
-  expect(afterRecheck(error, 'none')).toEqual({ kind: 'noLock' });
-  expect(afterRecheck(mismatch, 'none')).toEqual({ kind: 'noLock' });
-  expect(afterRecheck(mismatch, 'strong')).toEqual(mismatch);
-});
-
-describe('a timed-out prompt', () => {
-  const timedOut = (view: PromptView, at = 1_000) =>
-    afterUnlock(view, { ok: false, reason: 'timedOut' }, at);
-  const mismatch = (view: PromptView, at = 0) =>
-    afterUnlock(view, { ok: false, reason: 'mismatch' }, at);
-  const lockout = (view: PromptView, at: number) =>
-    afterUnlock(view, { ok: false, reason: 'lockout' }, at);
-
-  test('says so from idle or after a mismatch', () => {
-    expect(timedOut(IDLE).kind).toBe('timedOut');
-    expect(timedOut(mismatch(IDLE)).kind).toBe('timedOut');
+describe('what the phone has set up', () => {
+  test('every level but none opens on the one key', () => {
+    expect(initialView('strong')).toEqual(IDLE);
+    expect(initialView('weak')).toEqual(IDLE);
+    expect(initialView('passcode')).toEqual(IDLE);
+    expect(initialView('none')).toEqual({ kind: 'noLock' });
   });
 
-  test('a miss after a timeout is still a miss, and no count of tries is kept', () => {
-    expect(mismatch(timedOut(mismatch(IDLE)))).toEqual({ kind: 'mismatch' });
-    expect(mismatch(timedOut(IDLE))).toEqual({ kind: 'mismatch' });
+  test('a phone that loses its screen lock shows the no-lock view over any earlier attempt', () => {
+    const error: PromptView = { kind: 'error' };
+
+    expect(afterRecheck(error, 'none')).toEqual({ kind: 'noLock' });
+    expect(afterRecheck(failOpens('store', 1), 'none')).toEqual({ kind: 'noLock' });
+    expect(afterRecheck(error, 'strong')).toEqual(error);
   });
 
-  test('keeps the off and weak setup views, which still have their own keys', () => {
-    const off: PromptView = { kind: 'off', canOpenSettings: true };
-    const weak: PromptView = { kind: 'weak' };
-    expect(timedOut(off)).toEqual({ kind: 'timedOut', over: off });
-    expect(timedOut(weak)).toEqual({ kind: 'timedOut', over: weak });
-  });
-
-  test('leaves a running lockout, a block or a store failure as it was', () => {
-    const view: PromptView = { kind: 'lockout', until: 5_000 };
-    const blocked: PromptView = { kind: 'blocked', since: 0 };
-    expect(timedOut(view)).toBe(view);
-    expect(timedOut(blocked)).toBe(blocked);
-  });
-
-  test('after a lockout has ended says so, and a lockout then still escalates to the block', () => {
-    const ended: PromptView = { kind: 'lockout', until: 1_000 };
-    const view = timedOut(ended, 40_000);
-    expect(view.kind).toBe('timedOut');
-    expect(lockout(view, 41_000)).toEqual({ kind: 'blocked', since: 41_000 });
+  test('coming back to the front clears a timeout and a no-lock view that no longer holds', () => {
+    expect(afterRecheck({ kind: 'timedOut' }, 'strong')).toEqual(IDLE);
+    expect(afterRecheck({ kind: 'noLock' }, 'passcode')).toEqual(IDLE);
   });
 });

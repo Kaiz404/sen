@@ -1,7 +1,6 @@
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { toast, ToastHost } from '@/components/toast';
-import { armLockout, disarmLockout, useLockoutArmed } from '@/features/auth';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
@@ -27,7 +26,6 @@ jest.mock('@/features/auth', () => ({
 beforeEach(async () => {
   jest.useFakeTimers();
   clearPrefs();
-  disarmLockout();
   queryClient.clear();
   mockRouter.back.mockClear();
   mockRouter.dismissTo.mockClear();
@@ -50,8 +48,6 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
   writePref('demo.slow', true);
   writePref('demo.newOnRefresh', false);
   writePref('relockAfter', 0);
-  armLockout();
-  const armed = await renderHook(() => useLockoutArmed());
   await render(<ResetDemoSheet />);
 
   await fireEvent.press(screen.getByRole('button', { name: 'Reset demo data' }));
@@ -64,7 +60,6 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
     readPref('demo.newOnRefresh'),
     readPref('relockAfter'),
   ]).toEqual(['normal', 1000, false, true, 0]);
-  expect(armed.result.current).toBe(false);
   expect(await bankRows()).toBe(0);
   expect((await readSyncState(mockDb)).cursor).toBe(0);
   expect(mockRouter.dismissTo).toHaveBeenCalledWith('/');
@@ -74,8 +69,6 @@ test('a reset that fails changes nothing, says so, stays open, and can be tried 
   writePref('demo.next', 'server');
   writePref('demo.datasetSize', 10000);
   writePref('demo.slow', true);
-  armLockout();
-  const armed = await renderHook(() => useLockoutArmed());
   await render(<ResetDemoSheet />);
   await mockDb.close();
 
@@ -89,7 +82,6 @@ test('a reset that fails changes nothing, says so, stays open, and can be tried 
     10000,
     true,
   ]);
-  expect(armed.result.current).toBe(true);
   expect(mockRouter.dismissTo).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Reset demo data' })).toBeEnabled();
 });

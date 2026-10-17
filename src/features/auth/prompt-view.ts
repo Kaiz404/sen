@@ -3,21 +3,16 @@ import type { StoreCause } from '@/services/store-fault';
 import type { AuthFailure, EnrolledLevel } from './prompt';
 import type { UnlockOutcome } from './session';
 
-type BaseView =
+/**
+ * What Lock and the primer show. There is one key, so the views differ only in the line above it. The OS owns wrong
+ * tries (D40), so no view counts misses or runs a lockout cool-down.
+ */
+export type PromptView =
   | { readonly kind: 'idle' }
-  /** A miss the system reported. Android never does, and iOS does only when it gives up, so no tries count is kept. */
-  | { readonly kind: 'mismatch' }
-  | { readonly kind: 'lockout'; readonly until: number }
-  /**
-   * A conservative steer to the screen lock after repeated lockouts. Android's real lockout length is not visible to the
-   * app, so Sen promises no countdown. It lifts after `BLOCKED_FOR_MS`, or when an unlock goes through.
-   */
-  | { readonly kind: 'blocked'; readonly since: number }
-  | { readonly kind: 'off'; readonly canOpenSettings: boolean }
-  /** The phone has no screen lock, so there is no screen lock to fall back on and nothing for Sen to ask. */
+  /** The prompt went unanswered past its clock (D36). Not a failed try, and the key is ready again. */
+  | { readonly kind: 'timedOut' }
+  /** The phone has no screen lock, so there is nothing for Sen to ask (D28). */
   | { readonly kind: 'noLock' }
-  /** Only a weak biometric is enrolled. The screen lock works. */
-  | { readonly kind: 'weak' }
   | { readonly kind: 'error' }
   /**
    * The vault would not open. `failures` counts opens in a row, from `firstAt` to `lastAt` (epoch ms), and a reset is
@@ -31,82 +26,30 @@ type BaseView =
       readonly lastAt: number;
     };
 
-/**
- * The prompt went unanswered for 60 s. Lock says so and keeps the key ready. It is not a failed try, so `over` is the
- * view it replaced: its tries still count, its setup keys (off, weak) still show, and an ended lockout still escalates.
- */
-export type PromptView = BaseView | { readonly kind: 'timedOut'; readonly over: BaseView };
-
-const under = (view: PromptView): BaseView => (view.kind === 'timedOut' ? view.over : view);
-
-/** The views whose own keys a timeout must not hide. */
-export const isSetupView = (view: BaseView): view is Extract<BaseView, { kind: 'off' | 'weak' }> =>
-  view.kind === 'off' || view.kind === 'weak';
-
-/** Android's biometric lockout lasts 30 s. */
-export const LOCKOUT_MS = 30_000;
-/** How long Lock steers to the screen lock before it trusts the biometrics to try again. */
-export const BLOCKED_FOR_MS = 5 * 60_000;
-
 export const IDLE: PromptView = { kind: 'idle' };
 
 export function initialView(level: EnrolledLevel): PromptView {
-  switch (level) {
-    case 'strong':
-      return IDLE;
-    case 'passcode':
-      return { kind: 'off', canOpenSettings: true };
-    case 'weak':
-      return { kind: 'weak' };
-    case 'none':
-      return { kind: 'noLock' };
-  }
+  return level === 'none' ? { kind: 'noLock' } : IDLE;
 }
 
 /**
- * The app came back to the front. A view about what the phone has set up follows what the phone says now. A
- * mismatch, lockout or store view stays, since those describe an attempt, unless the phone now has no screen lock,
- * which nothing can unlock.
+ * The app came back to the front. A view about what the phone has set up follows what the phone says now. A store
+ * view stays, since it describes an attempt, unless the phone now has no screen lock, which nothing can unlock.
  */
 export function afterRecheck(prev: PromptView, level: EnrolledLevel): PromptView {
   if (level === 'none') return initialView(level);
-  return prev.kind === 'idle' ||
-    prev.kind === 'timedOut' ||
-    prev.kind === 'off' ||
-    prev.kind === 'noLock' ||
-    prev.kind === 'weak'
-    ? initialView(level)
-    : prev;
+  return prev.kind === 'idle' || prev.kind === 'timedOut' || prev.kind === 'noLock' ? IDLE : prev;
 }
 
-export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number): PromptView {
+export function afterPrompt(prev: PromptView, failure: AuthFailure): PromptView {
   switch (failure) {
     case 'cancelled':
       return prev;
-    case 'timedOut': {
-      const over = under(prev);
-      const running = over.kind === 'lockout' && over.until > now;
-      return running || over.kind === 'blocked' || over.kind === 'store' || over.kind === 'noLock'
-        ? prev
-        : { kind: 'timedOut', over };
-    }
-    case 'mismatch':
-      return { kind: 'mismatch' };
-    case 'lockout': {
-      const before = under(prev);
-      if (before.kind === 'blocked' && now - before.since >= BLOCKED_FOR_MS)
-        return { kind: 'lockout', until: now + LOCKOUT_MS };
-      if (before.kind === 'blocked') return before;
-      return before.kind === 'lockout'
-        ? { kind: 'blocked', since: now }
-        : { kind: 'lockout', until: now + LOCKOUT_MS };
-    }
+    case 'timedOut':
+      return prev.kind === 'store' || prev.kind === 'noLock' ? prev : { kind: 'timedOut' };
     case 'noLock':
       return initialView('none');
-    case 'not_set_up':
-      return { kind: 'off', canOpenSettings: true };
     case 'unavailable':
-      return { kind: 'off', canOpenSettings: false };
     case 'unknown':
       return { kind: 'error' };
   }
@@ -127,7 +70,7 @@ export function canReset(view: Extract<PromptView, { kind: 'store' }>): boolean 
 
 export function afterUnlock(prev: PromptView, outcome: UnlockOutcome, now: number): PromptView {
   if (outcome.ok) return IDLE;
-  if (outcome.reason !== 'store') return afterPrompt(prev, outcome.reason, now);
+  if (outcome.reason !== 'store') return afterPrompt(prev, outcome.reason);
   const run = prev.kind === 'store' && prev.cause === outcome.cause ? prev : null;
   return {
     kind: 'store',

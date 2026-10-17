@@ -14,11 +14,8 @@ import { cancelDeviceCredential, confirmDeviceCredential } from '@/services/devi
 
 export type AuthFailure =
   | 'cancelled'
-  /** The prompt sat unanswered for `PROMPT_TIMEOUT_MS` of foreground time. Not a failed try. */
+  /** The prompt sat unanswered for its clock of foreground time. Not a failed try. */
   | 'timedOut'
-  | 'mismatch'
-  | 'lockout'
-  | 'not_set_up'
   /** The phone has no screen lock at all, so there is nothing to check against (D28). */
   | 'noLock'
   | 'unavailable'
@@ -26,17 +23,18 @@ export type AuthFailure =
 export type AuthOutcome =
   { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
 
-/** What one native ask answers. `fallback` is the user tapping the sheet's own screen-lock button (iOS "Use passcode"). */
-type Answer = { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure | 'fallback' };
+/** What one native ask answers. `lockout` is the sensor refusing for a while, which `authenticate` hands over from. */
+export type Answer = { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure | 'lockout' };
 
-const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure | 'fallback'>> = {
+const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure | 'lockout'>> = {
   user_cancel: 'cancelled',
   system_cancel: 'cancelled',
   app_cancel: 'cancelled',
-  user_fallback: 'fallback',
-  authentication_failed: 'mismatch',
+  user_fallback: 'cancelled',
+  // The system sheet owns misses: Android never reports one, and iOS's passcode policy retries inside its sheet.
+  authentication_failed: 'unknown',
   lockout: 'lockout',
-  not_enrolled: 'not_set_up',
+  not_enrolled: 'unavailable',
   passcode_not_set: 'noLock',
   not_available: 'unavailable',
   no_space: 'unknown',
@@ -50,16 +48,14 @@ const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure | 'fallback
  * The native module can return codes outside its typed union (iOS sends `unknown: <code>, <message>` and
  * `missing_usage_description`), so the code is untrusted input and anything not in the table is `unknown`.
  */
-function failureOf(error: string): AuthFailure | 'fallback' {
+function failureOf(error: string): AuthFailure | 'lockout' {
   return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
 }
 
 /** What the native prompt answers while a device flow drives the app, since no agent can press a real finger. */
 const AUTH_OVERRIDES = {
   pass: { success: true },
-  fail: { success: false, error: 'authentication_failed' },
   cancel: { success: false, error: 'user_cancel' },
-  lockout: { success: false, error: 'lockout' },
 } as const satisfies Readonly<Record<string, LocalAuthenticationResult>>;
 
 export type AuthOverride = keyof typeof AUTH_OVERRIDES | 'real';
@@ -76,41 +72,55 @@ export function setAuthOverride(next: AuthOverride): void {
 }
 
 /**
- * Which check a prompt asks for (D40). `biometric` is the sensor alone, with a Cancel button and no screen lock behind
- * it. `credential` is the phone's screen lock alone: PIN, pattern or password on Android, and the passcode on iOS.
+ * What one native ask is (D40).
+ * - `combined`: the sensor, with the screen lock inside the same system sheet. `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`
+ *   on Android, `deviceOwnerAuthentication` on iOS. The OS owns the misses and moves to the screen lock after five.
+ * - `sensor`: the strong sensor alone, with a Cancel button.
+ * - `credential`: the screen lock alone, PIN, pattern or password on Android.
  */
-export type AuthVia = 'biometric' | 'credential';
+type Ask = 'combined' | 'sensor' | 'credential';
 
-/** The strong, biometrics-only options. `strong` must never sit beside a device fallback: Android 9 and 10 refuse that pair. */
-export const BIOMETRIC_OPTIONS = {
+/**
+ * Which asks Sen makes on this phone.
+ * - `combined`: one ask.
+ * - `sensorThenCredential`: the sensor, then the screen lock when the sensor is locked out or unavailable.
+ * - `credential`: one ask, because no strong biometric is enrolled.
+ */
+export type Route = 'combined' | 'sensorThenCredential' | 'credential';
+
+/**
+ * `BIOMETRIC_STRONG | DEVICE_CREDENTIAL` is unsupported on Android 9 and 10 (API 28 and 29), and
+ * `PromptInfo.Builder.build()` throws there. Read from androidx.biometric 1.2.0-alpha04, which expo-local-authentication
+ * 57.0.3 builds against: `AuthenticatorUtils.isSupportedCombination(BIOMETRIC_STRONG | DEVICE_CREDENTIAL)` is
+ * `SDK_INT < 28 || SDK_INT > 29`. So API 24 to 27 take the combined sheet as API 30 and later do.
+ */
+const supportsCombined = (api: number): boolean => api < 28 || api > 29;
+
+export function routeOf(os: typeof Platform.OS, api: number, level: EnrolledLevel): Route {
+  if (os === 'ios') return 'combined';
+  if (level !== 'strong') return 'credential';
+  return supportsCombined(api) ? 'combined' : 'sensorThenCredential';
+}
+
+/** The pair that must never reach Android 9 or 10. `routeOf` is the only way to it. */
+const COMBINED_OPTIONS = { biometricsSecurityLevel: 'strong', disableDeviceFallback: false } as const;
+
+/** The strong sensor alone. */
+export const SENSOR_OPTIONS = {
   biometricsSecurityLevel: 'strong',
   disableDeviceFallback: true,
   cancelLabel: 'Cancel',
-  // iOS shows this button after a miss. Android has no such button, and expo maps its Cancel to `user_cancel`.
-  fallbackLabel: 'Use passcode',
 } as const;
 
-/** A screen lock is never locked out by biometric misses and has no mismatch, so those overrides map to the nearest honest answer. */
-const CREDENTIAL_OVERRIDE: Readonly<Record<keyof typeof AUTH_OVERRIDES, LocalAuthenticationResult>> = {
-  pass: AUTH_OVERRIDES.pass,
-  fail: AUTH_OVERRIDES.cancel,
-  cancel: AUTH_OVERRIDES.cancel,
-  lockout: AUTH_OVERRIDES.pass,
-};
-
-function nativePrompt(promptMessage: string, via: AuthVia): Promise<LocalAuthenticationResult> {
-  if (__DEV__ && authOverride !== 'real')
-    return Promise.resolve(
-      (via === 'credential' ? CREDENTIAL_OVERRIDE : AUTH_OVERRIDES)[authOverride],
-    );
-  if (via === 'biometric') return authenticateAsync({ promptMessage, ...BIOMETRIC_OPTIONS });
-  // iOS has no passcode-only policy: this is the system sheet with Face ID or Touch ID first, then the passcode.
-  if (Platform.OS === 'ios') return authenticateAsync({ promptMessage, disableDeviceFallback: false });
-  return confirmDeviceCredential(promptMessage);
+function nativePrompt(promptMessage: string, ask: Ask): Promise<LocalAuthenticationResult> {
+  if (__DEV__ && authOverride !== 'real') return Promise.resolve(AUTH_OVERRIDES[authOverride]);
+  if (ask === 'sensor') return authenticateAsync({ promptMessage, ...SENSOR_OPTIONS });
+  if (ask === 'credential' && Platform.OS === 'android') return confirmDeviceCredential(promptMessage);
+  return authenticateAsync({ promptMessage, ...COMBINED_OPTIONS });
 }
 
-function cancelNative(via: AuthVia): void {
-  if (via === 'credential' && Platform.OS === 'android') void cancelDeviceCredential();
+function cancelNative(ask: Ask): void {
+  if (ask === 'credential' && Platform.OS === 'android') void cancelDeviceCredential();
   else cancelAuthenticate().catch(() => undefined);
 }
 
@@ -119,10 +129,13 @@ const isAuthenticatingRef = { current: false };
 /** True while the system biometric sheet is up, which iOS reports to the app as `inactive`. */
 export const isAuthenticating = (): boolean => isAuthenticatingRef.current;
 
-const endListeners = new Set<() => void>();
+const endListeners = new Set<(answer: Answer) => void>();
 
-/** Calls `listener` each time a prompt ends, once `isAuthenticating` is false again. Returns the unsubscribe. */
-export function onAuthenticationEnd(listener: () => void): () => void {
+/**
+ * Calls `listener` each time a prompt ends, once `isAuthenticating` is false again, with how it ended. A hand-over
+ * from the sensor to the screen lock is two prompts, so it calls twice. Returns the unsubscribe.
+ */
+export function onAuthenticationEnd(listener: (answer: Answer) => void): () => void {
   endListeners.add(listener);
   return () => void endListeners.delete(listener);
 }
@@ -135,19 +148,22 @@ const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
  * you" with every key disabled. After this long in the foreground the prompt is cancelled and ends as `timedOut`,
  * which screens explain, where a user cancel is silent. Time away from `active` does not count. iOS cannot cancel
  * its sheet, and the Face ID and passcode sheets make the app `inactive`, so an answer entered late must still land.
+ * This is the sensor-alone clock.
  */
 export const PROMPT_TIMEOUT_MS = 60_000;
 
 /**
- * The screen-lock prompt waits longer. Android 11 and later draw it over Sen, so the app stays `active` while a
- * pattern is drawn, and after five wrong tries the phone itself makes the user wait 30 s. Android 9 and 10 open the
- * system's own screen, which takes the app out of `active`, so the clock stops there as it does for any other
- * absence (inferred, not seen on a device).
+ * Any sheet that can end in the screen lock waits longer, because the user may switch to a slow pattern or password
+ * inside it, and after five wrong tries the phone itself makes them wait 30 s. Android 11 and later draw these over
+ * Sen, so the app stays `active` and the clock would run. Android 9 and 10 open the system's own screen for the
+ * screen lock, which takes the app out of `active`, so the clock pauses there as for any absence (inferred, not
+ * seen on a device).
  */
 export const CREDENTIAL_TIMEOUT_MS = 5 * 60_000;
 
-const TIMEOUT_MS: Readonly<Record<AuthVia, number>> = {
-  biometric: PROMPT_TIMEOUT_MS,
+const TIMEOUT_MS: Readonly<Record<Ask, number>> = {
+  sensor: PROMPT_TIMEOUT_MS,
+  combined: CREDENTIAL_TIMEOUT_MS,
   credential: CREDENTIAL_TIMEOUT_MS,
 };
 
@@ -162,45 +178,59 @@ export function promptAppState(state: AppStateStatus): void {
 }
 
 /**
- * Asks the phone once, by the sensor or by the screen lock. When the user taps the sheet's own screen-lock button
- * (iOS), the screen lock follows in the same call, so no screen has to route it.
+ * The one way Sen checks it is you, for unlock and for every step-up (D40). It picks the route from the phone and
+ * what is enrolled, so no screen chooses between the sensor and the screen lock. Where the sensor was locked out, or
+ * the sensor alone was asked and is unavailable, the screen lock follows in the same call. `beforeHandOver` hears why
+ * first, and a false answer ends the check as a cancel with no second prompt (a lock arrived meanwhile).
  */
 export async function authenticate(
   promptMessage: string,
-  via: AuthVia = 'biometric',
+  level: EnrolledLevel,
+  beforeHandOver?: (why: 'lockout' | 'unavailable') => boolean,
 ): Promise<AuthOutcome> {
-  const answer = await askOnce(promptMessage, via);
+  const route = routeOf(Platform.OS, Number(Platform.Version), level);
+  const first: Ask =
+    route === 'credential' ? 'credential' : route === 'combined' ? 'combined' : 'sensor';
+  const answer = await askOnce(promptMessage, first);
   if (answer.ok) return answer;
-  if (answer.reason !== 'fallback') return { ok: false, reason: answer.reason };
-  return via === 'biometric' ? authenticate(promptMessage, 'credential') : BUSY;
+  const handOver =
+    first !== 'credential' &&
+    (answer.reason === 'lockout' || (first === 'sensor' && answer.reason === 'unavailable'));
+  if (!handOver) return { ok: false, reason: answer.reason === 'lockout' ? 'unknown' : answer.reason };
+  if (beforeHandOver?.(answer.reason === 'lockout' ? 'lockout' : 'unavailable') === false) return BUSY;
+  const second = await askOnce(promptMessage, 'credential');
+  return second.ok ? second : { ok: false, reason: second.reason === 'lockout' ? 'unknown' : second.reason };
 }
 
-async function askOnce(promptMessage: string, via: AuthVia): Promise<Answer> {
+async function askOnce(promptMessage: string, ask: Ask): Promise<Answer> {
   if (isAuthenticatingRef.current) return BUSY;
   isAuthenticatingRef.current = true;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let answer: Answer = { ok: false, reason: 'unknown' };
   try {
     const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
       const resume = () => {
         clearTimeout(timer);
-        timer = setTimeout(() => resolve(TIMED_OUT), TIMEOUT_MS[via]);
+        timer = setTimeout(() => resolve(TIMED_OUT), TIMEOUT_MS[ask]);
       };
       guard = { pause: () => clearTimeout(timer), resume };
       resume();
     });
-    const result = await Promise.race([nativePrompt(promptMessage, via), timeout]);
+    const result = await Promise.race([nativePrompt(promptMessage, ask), timeout]);
     if (result === TIMED_OUT) {
-      cancelNative(via);
-      return { ok: false, reason: 'timedOut' };
+      cancelNative(ask);
+      answer = { ok: false, reason: 'timedOut' };
+    } else {
+      answer = result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
     }
-    return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
+    return answer;
   } catch {
-    return { ok: false, reason: 'unknown' };
+    return answer;
   } finally {
     clearTimeout(timer);
     guard = null;
     isAuthenticatingRef.current = false;
-    endListeners.forEach((listener) => listener());
+    endListeners.forEach((listener) => listener(answer));
   }
 }
 

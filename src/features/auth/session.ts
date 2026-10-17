@@ -26,7 +26,6 @@ import {
 import {
   authenticate,
   type AuthOutcome,
-  type AuthVia,
   biometricOf,
   type BiometricSupport,
   detectBiometric,
@@ -38,8 +37,6 @@ type SessionStore = {
   readonly session: Session;
   readonly biometric: BiometricSupport;
   readonly dbReset: DbResetReason | null;
-  /** The reviewer control "Simulate lockout": the next biometric unlock reports lockout without prompting. */
-  readonly lockoutArmed: boolean;
   /** Session-scoped (D27). Starts true at launch, so every cold start is masked, and goes true again whenever the database closes. */
   readonly amountsHidden: boolean;
   /** A lock unmounted a half-filled add draft. History says so once after the next unlock. */
@@ -50,7 +47,6 @@ export const sessionStore = createStore<SessionStore>(() => ({
   session: INITIAL,
   biometric: { kind: biometricOf(Platform.OS, []), level: 'strong' },
   dbReset: null,
-  lockoutArmed: false,
   amountsHidden: true,
   draftDropped: false,
 }));
@@ -64,10 +60,18 @@ export type UnlockOutcome =
 
 const CANCELLED: AuthOutcome = { ok: false, reason: 'cancelled' };
 
-/** A wrong finger or a lockout is a security event. A cancel, a missing sensor or an error is not. */
-export function noteFailedCheck(outcome: AuthOutcome): void {
-  if (!outcome.ok && (outcome.reason === 'mismatch' || outcome.reason === 'lockout'))
-    recordActivity({ code: 'auth.failed', reason: outcome.reason });
+/**
+ * The one check, for unlock and for every step-up (D40): Sen picks the route from the phone and what is enrolled
+ * (`routeOf`). A sensor lockout that hands over to the screen lock is a security event, so it is logged.
+ */
+export function check(promptMessage: string): Promise<AuthOutcome> {
+  return authenticate(promptMessage, sessionStore.getState().biometric.level, (why) => {
+    // A lock that arrived during the first prompt applies when it ends, so the screen lock is never asked for.
+    const { session } = sessionStore.getState();
+    if (session.status === 'stepUp' && session.lockPending !== undefined) return false;
+    if (why === 'lockout') recordActivity({ code: 'auth.failed', reason: 'lockout' });
+    return true;
+  });
 }
 
 /** Returns whether the event applied. */
@@ -110,27 +114,17 @@ export async function refreshBiometric(): Promise<void> {
 }
 
 /**
- * Prompts, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
- * Unlock moment, before History opens. `via` is the sensor (Unlock) or the screen lock (Use screen lock, D40).
+ * Checks, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
+ * Unlock moment, before History opens.
  */
-export async function unlock(
-  arriveAfterMs = 0,
-  via: AuthVia = 'biometric',
-): Promise<UnlockOutcome> {
+export async function unlock(arriveAfterMs = 0): Promise<UnlockOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
-  // A lockout belongs to the sensor, so the screen lock still opens Sen while it is armed.
-  if (via === 'biometric' && sessionStore.getState().lockoutArmed) {
-    sessionStore.setState({ lockoutArmed: false });
-    recordActivity({ code: 'auth.failed', reason: 'lockout' });
-    return { ok: false, reason: 'lockout' };
-  }
 
   dispatch({ type: 'AUTH_START' });
-  const outcome = await authenticate('Unlock Sen', via);
+  const outcome = await check('Unlock Sen');
   if (!outcome.ok) {
     dispatch({ type: 'AUTH_FAIL' });
-    noteFailedCheck(outcome);
     return outcome;
   }
   mark('unlock.ok');
@@ -170,22 +164,9 @@ export function lockNow(): void {
   dispatch({ type: 'LOCK', reason: 'manual' });
 }
 
-/** It can only make an unlock fail. Nothing here passes a check. */
-export function armLockout(): void {
-  sessionStore.setState({ lockoutArmed: true });
-}
-
-export function disarmLockout(): void {
-  sessionStore.setState({ lockoutArmed: false });
-}
-
-export function useLockoutArmed(): boolean {
-  return useStore(sessionStore, (s) => s.lockoutArmed);
-}
-
 /**
  * Sign out of the demo, or "Not you? Start again" on Lock. Closes the database, destroys the vault (prefs
- * included), drops the previous user's notice and armed lockout, then shows Welcome. A failure returns to Lock and
+ * included), drops the previous user's notice, then shows Welcome. A failure returns to Lock and
  * rethrows.
  */
 export async function signOut(): Promise<void> {
@@ -197,7 +178,7 @@ export async function signOut(): Promise<void> {
     dispatch({ type: 'SIGN_OUT_FAIL' });
     throw error;
   }
-  sessionStore.setState({ dbReset: null, lockoutArmed: false, draftDropped: false });
+  sessionStore.setState({ dbReset: null, draftDropped: false });
   activity.discard();
   dispatch({ type: 'SIGN_OUT_DONE' });
 }

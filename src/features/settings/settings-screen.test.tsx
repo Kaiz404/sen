@@ -3,7 +3,6 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import { Platform, ScrollView } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
-import { disarmLockout, useLockoutArmed } from '@/features/auth';
 import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
@@ -45,7 +44,6 @@ beforeEach(async () => {
   mockShow.mockReset();
   mockPush.mockClear();
   mockLock.mockClear();
-  disarmLockout();
   mockParams = {};
   mockDb = await openTestDb();
   queryClient.clear();
@@ -140,8 +138,8 @@ test('turning off Hide amounts asks for biometrics, and a cancel leaves them hid
 });
 
 test.each([
-  ['lockout', 'Too many tries. Use your screen lock.'],
-  ['not_set_up', 'Fingerprint is off. Your screen lock still works.'],
+  ['noLock', 'Amounts are still hidden. Set a screen lock to use Sen.'],
+  ['unavailable', "The check isn't available right now. Try again soon."],
   ['unknown', 'Something went wrong with the check. Try again.'],
   ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
 ] as const)(
@@ -192,25 +190,6 @@ test('Sen’s animations writes the motion level that the root layout reads', as
 
   expect(result.current).toBe('calm');
   expect(screen.getByText('Blinks and face slides only.')).toBeOnTheScreen();
-});
-
-test('simulate lockout arms the next unlock, offers Undo, and a second tap disarms it', async () => {
-  const armed = await renderHook(() => useLockoutArmed());
-  await renderSettings();
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Simulate fingerprint lockout' }));
-
-  expect(armed.result.current).toBe(true);
-  expect(screen.getByRole('button', { name: 'Lockout armed' })).toBeOnTheScreen();
-  expect(screen.getByText('The next unlock reports fingerprint locked.')).toBeOnTheScreen();
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Undo lockout' }));
-  expect(armed.result.current).toBe(false);
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Simulate fingerprint lockout' }));
-  await fireEvent.press(screen.getByRole('button', { name: 'Lockout armed' }));
-  expect(armed.result.current).toBe(false);
-  expect(screen.getByRole('button', { name: 'Simulate fingerprint lockout' })).toBeOnTheScreen();
 });
 
 test('Lock now locks through the session, which session.test covers', async () => {

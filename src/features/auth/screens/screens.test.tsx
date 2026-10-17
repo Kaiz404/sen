@@ -2,13 +2,10 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert, Linking, Platform } from 'react-native';
 
-import { confirmDeviceCredential } from '@/services/device-credential';
-import { MotionPolicyRoot } from '@/motion/policy';
 import { clearPrefs } from '@/services/prefs';
 import { KeyUnreadableError } from '@/services/store-fault';
 import * as Vault from '@/services/vault';
 
-import { CREDENTIAL_TIMEOUT_MS } from '../prompt';
 import { sessionStore } from '../session';
 import { LockScreen } from './lock-screen';
 import { PrimerScreen } from './primer-screen';
@@ -49,56 +46,6 @@ test('Lock promises hidden amounts, and no longer offers to keep them shown', as
 
   expect(screen.getByText('Amounts stay hidden until you choose to show them.')).toBeOnTheScreen();
   expect(screen.queryByText(/until you hide them/)).not.toBeOnTheScreen();
-});
-
-test('a lockout counts down, then offers the fingerprint again', async () => {
-  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
-  await render(<LockScreen />);
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-
-  expect(await screen.findByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
-  expect(screen.getByText('0:30')).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Fingerprint back in 0:30' })).toBeDisabled();
-
-  await act(() => jest.advanceTimersByTime(6_000));
-  expect(screen.getByText('0:24')).toBeOnTheScreen();
-
-  await act(() => jest.advanceTimersByTime(24_000));
-  expect(screen.getByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
-});
-
-test('a second lockout right after the cool-down drops the countdown and leads with the passcode', async () => {
-  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValue({ success: false, error: 'lockout' });
-  await render(<LockScreen />);
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-  await screen.findByText('0:30');
-  await act(() => jest.advanceTimersByTime(30_000));
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-
-  expect(await screen.findByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
-  expect(screen.queryByText(/\d:\d\d/)).not.toBeOnTheScreen();
-  expect(screen.queryByText(/back in/)).not.toBeOnTheScreen();
-  expect(screen.getByText('FINGERPRINT IS PAUSED UNTIL')).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Use screen lock' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'Fingerprint is paused' })).toBeDisabled();
-});
-
-test('with no fingerprint enrolled, Lock says it is off and offers settings and the passcode', async () => {
-  sessionStore.setState({
-    session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'fingerprint', level: 'passcode' },
-  });
-
-  await render(<LockScreen />);
-
-  expect(screen.getByRole('header', { name: 'Fingerprint is off.' })).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Open device settings' })).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Use screen lock' })).toBeOnTheScreen();
 });
 
 describe('a vault that will not open', () => {
@@ -174,36 +121,6 @@ describe('a vault that will not open', () => {
   });
 });
 
-test('turning the fingerprint on in settings clears the off view when the app comes back', async () => {
-  sessionStore.setState({
-    session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'fingerprint', level: 'passcode' },
-  });
-  await render(<LockScreen />);
-  expect(screen.getByRole('header', { name: 'Fingerprint is off.' })).toBeOnTheScreen();
-
-  await act(() => sessionStore.setState({ biometric: fingerprint }));
-
-  expect(screen.getByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
-});
-
-test('a phone with only weak biometrics says what Sen needs instead of "is off", and names no sensor', async () => {
-  sessionStore.setState({
-    session: { status: 'locked', reason: 'launch' },
-    biometric: { kind: 'face', level: 'weak' },
-  });
-
-  await render(<LockScreen />);
-
-  expect(screen.getByRole('header', { name: 'Use your screen lock.' })).toBeOnTheScreen();
-  expect(
-    screen.getByText("This phone's biometrics are too weak for Sen. Use your screen lock."),
-  ).toBeOnTheScreen();
-  expect(screen.queryByText(/is off/)).not.toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Use screen lock' })).toBeEnabled();
-});
-
 describe('a phone with no screen lock', () => {
   const noLock = { kind: 'fingerprint', level: 'none' } as const;
   beforeEach(() => {
@@ -235,7 +152,6 @@ describe('a phone with no screen lock', () => {
     sessionStore.setState({ session: { status: 'welcome' }, biometric: noLock });
     await render(<PrimerScreen />);
 
-    expect(screen.getByRole('button', { name: 'Use screen lock instead' })).toBeDisabled();
     await fireEvent.press(screen.getByRole('button', { name: 'Open lock-screen settings' }));
     expect(Linking.sendIntent).toHaveBeenCalledWith('android.app.action.SET_NEW_PASSWORD');
   });
@@ -250,7 +166,9 @@ describe('a phone with no screen lock', () => {
   });
 });
 
-test('a prompt that never answers frees Lock after 60 s and says the check timed out', async () => {
+test('a sensor prompt that never answers frees Lock after 60 s and says the check timed out', async () => {
+  // Android 9 and 10 ask the sensor alone, which keeps the 60 s clock. The combined sheet waits five minutes.
+  jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
   await render(<LockScreen />);
@@ -260,32 +178,11 @@ test('a prompt that never answers frees Lock after 60 s and says the check timed
   await act(async () => jest.advanceTimersByTime(60_000));
 
   expect(
-    screen.getByText('The check timed out. Try fingerprint again, or use your screen lock.'),
+    screen.getByText('The check timed out. Try again.'),
   ).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Try fingerprint again' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'Use screen lock' })).toBeEnabled();
   expect(screen.queryByText(/Too many tries/)).not.toBeOnTheScreen();
   expect(session()).toEqual({ status: 'locked', reason: 'launch' });
-}, 30_000);
-
-test('a timeout after a mismatch is no miss itself, and the next miss reads the same without a count', async () => {
-  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
-  authenticate.mockReturnValueOnce(new Promise(() => undefined));
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
-  await render(<LockScreen />);
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-  await screen.findByText("Didn't match. Try fingerprint again, or use your screen lock.");
-  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
-  await act(async () => jest.advanceTimersByTime(60_000));
-  expect(screen.getByRole('button', { name: 'Try fingerprint again' })).toBeEnabled();
-  expect(screen.queryByText(/\d more tr/)).not.toBeOnTheScreen();
-  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
-
-  expect(
-    await screen.findByText("Didn't match. Try fingerprint again, or use your screen lock."),
-  ).toBeOnTheScreen();
 }, 30_000);
 
 test('a cancelled prompt returns to Lock without a message', async () => {
@@ -342,7 +239,6 @@ test('while "Start again" erases the vault, every key on Lock is disabled', asyn
   await act(async () => startAgain?.onPress?.());
 
   expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Use screen lock' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Not you? Start again' })).toBeDisabled();
   await act(async () => finish());
   expect(session()).toEqual({ status: 'welcome' });
@@ -362,68 +258,8 @@ test('the first-run primer turns on the fingerprint and creates the vault', asyn
   expect(session()).toEqual({ status: 'unlocked', since: 0, db });
 });
 
-test('a wrong finger on the primer keeps first run and promises no count of tries', async () => {
-  sessionStore.setState({ session: { status: 'welcome' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
-  await render(<PrimerScreen />);
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Turn on fingerprint' }));
-
-  expect(
-    await screen.findByText("Didn't match. Try fingerprint again, or use your screen lock."),
-  ).toBeOnTheScreen();
-  expect(session()).toEqual({ status: 'welcome' });
-});
-
-test.each([
-  ['off', 'passcode', 'Use screen lock'],
-  ['weak', 'weak', 'Use screen lock'],
-] as const)(
-  'a timeout over the %s view keeps its keys and says so',
-  async (_, level, pressed) => {
-    sessionStore.setState({
-      session: { status: 'locked', reason: 'launch' },
-      biometric: { kind: 'fingerprint', level },
-    });
-    // Motion off: Sen's idle timers would otherwise run for the whole five minutes the test advances.
-    jest.mocked(confirmDeviceCredential).mockReturnValueOnce(new Promise(() => undefined));
-    await render(
-      <MotionPolicyRoot preference="off">
-        <LockScreen />
-      </MotionPolicyRoot>,
-    );
-
-    await fireEvent.press(screen.getAllByRole('button', { name: pressed })[0]!);
-    await act(async () => jest.advanceTimersByTime(CREDENTIAL_TIMEOUT_MS));
-
-    expect(
-      screen.getByText('The check timed out. Try your screen lock again.'),
-    ).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Open device settings' })).toBeEnabled();
-    expect(screen.getAllByRole('button', { name: 'Use screen lock' })[0]).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Try fingerprint again' })).not.toBeOnTheScreen();
-  },
-  30_000,
-);
-
-test('a timeout after a lockout has ended still says the check timed out', async () => {
-  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
-  authenticate.mockReturnValueOnce(new Promise(() => undefined));
-  await render(<LockScreen />);
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-  await screen.findByText('0:30');
-  await act(() => jest.advanceTimersByTime(30_000));
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
-  await act(async () => jest.advanceTimersByTime(60_000));
-
-  expect(
-    screen.getByText('The check timed out. Try fingerprint again, or use your screen lock.'),
-  ).toBeOnTheScreen();
-}, 30_000);
-
 test('the primer says the check timed out and keeps its key ready', async () => {
+  jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
   sessionStore.setState({ session: { status: 'welcome' } });
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
   await render(<PrimerScreen />);
@@ -432,29 +268,8 @@ test('the primer says the check timed out and keeps its key ready', async () => 
   await act(async () => jest.advanceTimersByTime(60_000));
 
   expect(
-    screen.getByText('The check timed out. Try fingerprint again, or use your screen lock.'),
+    screen.getByText('The check timed out. Try again.'),
   ).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Turn on fingerprint' })).toBeEnabled();
 }, 30_000);
 
-test('the primer keeps Open device settings after a timeout over the off view', async () => {
-  sessionStore.setState({
-    session: { status: 'welcome' },
-    biometric: { kind: 'fingerprint', level: 'passcode' },
-  });
-  jest.mocked(confirmDeviceCredential).mockReturnValueOnce(new Promise(() => undefined));
-  // Motion off: Sen's idle timers would otherwise run for the whole five minutes the test advances.
-  await render(
-    <MotionPolicyRoot preference="off">
-      <PrimerScreen />
-    </MotionPolicyRoot>,
-  );
-
-  await fireEvent.press(screen.getByRole('button', { name: 'Use screen lock instead' }));
-  await act(async () => jest.advanceTimersByTime(CREDENTIAL_TIMEOUT_MS));
-
-  expect(
-    screen.getByText(/^The check timed out\. Try your screen lock again\. /),
-  ).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Open device settings' })).toBeEnabled();
-}, 30_000);

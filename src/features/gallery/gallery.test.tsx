@@ -28,10 +28,9 @@ test('a component state draws under its caption', async () => {
 });
 
 test('a screen state draws the real screen edge to edge, with no caption', async () => {
-  await render(<GalleryBody query={{ kind: 'state', screen: 'auth', state: 'lock-lockout' }} />);
-  expect(screen.getByRole('header', { name: 'Too many tries.' })).toBeOnTheScreen();
-  expect(screen.getByText('0:24')).toBeOnTheScreen();
-  expect(screen.queryByText('auth · lock-lockout')).not.toBeOnTheScreen();
+  await render(<GalleryBody query={{ kind: 'state', screen: 'auth', state: 'lock-timed-out' }} />);
+  expect(screen.getByRole('header', { name: 'Took too long.' })).toBeOnTheScreen();
+  expect(screen.queryByText('auth · lock-timed-out')).not.toBeOnTheScreen();
 });
 
 test('the masked slip state hides every amount', async () => {
@@ -90,11 +89,3 @@ test('the launch lab opens from its deep link and settles on Lock’s hero', asy
   expect(screen.getByLabelText('Sen, eyes closed while Sen is locked')).toBeOnTheScreen();
 });
 
-test('a gallery state holds the lockout count still, so a shot settles at once', async () => {
-  await render(<GalleryBody query={{ kind: 'state', screen: 'auth', state: 'lock-lockout' }} />);
-  expect(screen.getByText('0:24')).toBeOnTheScreen();
-
-  await act(() => jest.advanceTimersByTime(5000));
-
-  expect(screen.getByText('0:24')).toBeOnTheScreen();
-});

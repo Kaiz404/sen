@@ -8,7 +8,7 @@ Amounts are hidden until you prove it's you. Sen, a coin with a face, keeps its 
 
 ## What it does
 
-- **Biometric login.** Fingerprint, face unlock or Face ID, and a separate "Use screen lock" key (the phone's own PIN, pattern or password; "Use passcode" on iOS), clear errors for every failure, and a lockout card after too many misses.
+- **Biometric login.** One key. Sen asks for your fingerprint, face unlock or Face ID, and the phone's own sheet falls back to your PIN, pattern, password or passcode. A phone with no biometric goes straight to its screen lock. Clear errors for every failure.
 - **Masked by default.** Every amount shows as `RM` and four coins. One biometric check shows every amount, and they stay shown until you hide them again or Sen locks. Every unlock and every launch starts masked. Settings' switch can turn hiding off, which also asks for biometrics.
 - **History.** Date-grouped receipt slips, a month summary, All / In / Out filters, live search and pull-to-refresh.
 - **Detail.** All fields, a status timeline for pending items, copy reference and share receipt.
@@ -19,7 +19,7 @@ Amounts are hidden until you prove it's you. Sen, a coin with a face, keeps its 
   - A privacy cover in the app switcher.
   - Screenshots blocked on sensitive screens.
   - An encrypted local activity log of the last 50 events. A deleted transaction's description stays in it until it ages out or the log is cleared.
-- **Errors you can trigger.** A "For reviewers" section in Settings forces offline, timeout, server error, bad data, slow network and a biometric lockout.
+- **Errors you can trigger.** A "For reviewers" section in Settings forces offline, timeout, server error, bad data and slow network.
 - **Craft.** Light, dark and system themes, haptics, reduced-motion support, and screen reader labels such as "Amount hidden".
 
 The 20+ simulated transactions come from an in-app mock API with realistic latency. There is no backend.

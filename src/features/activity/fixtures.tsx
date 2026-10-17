@@ -62,6 +62,6 @@ export const ACTIVITY_STATES = {
   loading: () => <ActivityView {...BASE} body={{ kind: 'loading' }} />,
   failed: () => <ActivityView {...BASE} body={{ kind: 'failed' }} />,
   clearing: () => <ActivityView {...BASE} clear={{ kind: 'clearing' }} />,
-  'clear-refused': () => <ActivityView {...BASE} clear={{ kind: 'refused', reason: 'mismatch' }} />,
+  'clear-refused': () => <ActivityView {...BASE} clear={{ kind: 'refused', reason: 'timedOut' }} />,
   'clear-failed': () => <ActivityView {...BASE} clear={{ kind: 'failed' }} />,
 } satisfies Readonly<Record<string, () => ReactNode>>;

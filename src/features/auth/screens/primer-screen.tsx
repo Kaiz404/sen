@@ -8,33 +8,14 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type IconName, Key } from '@/components/key';
 import { Sen, UNLOCK_HOLD } from '@/features/sen';
-import { useSecondsLeft } from '@/motion/countdown';
 import { useMotionPolicy } from '@/motion/policy';
 import { type } from '@/theme/type';
 
-import {
-  AMOUNTS_NOTE,
-  BIOMETRIC,
-  type BiometricCopy,
-  clock,
-  credentialKeyLabel,
-  credentialName,
-  missText,
-  STORE_COPY,
-  WEAK_BIOMETRIC,
-  timedOutSetupText,
-  timedOutText,
-} from '../copy';
-import type { AuthVia, Biometric } from '../prompt';
-import {
-  afterRecheck,
-  afterUnlock,
-  initialView,
-  isSetupView,
-  type PromptView,
-} from '../prompt-view';
+import { AMOUNTS_NOTE, BIOMETRIC, credentialName, STORE_COPY, TIMED_OUT_TEXT } from '../copy';
+import type { Biometric } from '../prompt';
+import { afterRecheck, afterUnlock, initialView, type PromptView } from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
-import { openDeviceSettings, openLockScreenSettings } from './device-settings';
+import { openLockScreenSettings } from './device-settings';
 import { Notice } from './parts';
 import { NOT_ASKED, type Prompt, type PromptAnswers, usePromptMoments } from './prompt-moments';
 
@@ -43,15 +24,13 @@ export type PrimerState =
 
 const PRIMER_SEN = 'primer';
 
-/** The primer's Sen keeps peeking through a lockout, and the notice explains it. */
-const ANSWERS: PromptAnswers = { ok: 'unlock', mismatch: 'authFailed' };
+const ANSWERS: PromptAnswers = { ok: 'unlock' };
 
 export type PrimerViewProps = {
   readonly state: PrimerState;
-  readonly biometric: Biometric;
+  /** The sensor to name. Null when no strong biometric is enrolled. */
+  readonly biometric: Biometric | null;
   readonly onTurnOn: () => void;
-  readonly onUseScreenLock: () => void;
-  readonly onOpenSettings: () => void;
   readonly onOpenLockSettings: () => void;
   readonly onBack: () => void;
 };
@@ -71,10 +50,10 @@ export function PrimerScreen(): ReactNode {
   const asking = prompt.kind === 'asking';
   usePromptMoments(PRIMER_SEN, prompt, ANSWERS);
 
-  const ask = (via: AuthVia) => () => {
+  const onTurnOn = () => {
     if (asking) return;
     setPrompt({ kind: 'asking' });
-    void unlock(UNLOCK_HOLD[level], via).then((outcome) => {
+    void unlock(UNLOCK_HOLD[level]).then((outcome) => {
       setPrompt({ kind: 'answered', outcome });
       if (!outcome.ok) setView((prev) => afterUnlock(prev, outcome, Date.now()));
     });
@@ -90,10 +69,8 @@ export function PrimerScreen(): ReactNode {
   return (
     <PrimerView
       state={state}
-      biometric={support.kind}
-      onTurnOn={ask('biometric')}
-      onUseScreenLock={ask('credential')}
-      onOpenSettings={openDeviceSettings}
+      biometric={support.level === 'strong' ? support.kind : null}
+      onTurnOn={onTurnOn}
       onOpenLockSettings={openLockScreenSettings}
       onBack={() => router.back()}
     />
@@ -104,21 +81,15 @@ export function PrimerView({
   state,
   biometric,
   onTurnOn,
-  onUseScreenLock,
-  onOpenSettings,
   onOpenLockSettings,
   onBack,
 }: PrimerViewProps): ReactNode {
   const { theme, rt } = useUnistyles();
-  const copy = BIOMETRIC[biometric];
-  const { name, icon } = copy;
-  const secondsLeft = useSecondsLeft(state.kind === 'lockout' ? state.until : null);
-  const shown: PrimerState =
-    state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
-  const notice = noticeOf(shown, copy, secondsLeft);
-  const view = shown.kind === 'timedOut' && isSetupView(shown.over) ? shown.over : shown;
-  const settings = view.kind === 'noLock' || (view.kind === 'off' && view.canOpenSettings);
-  const unlocked = shown.kind === 'unlocked';
+  const copy = biometric === null ? null : BIOMETRIC[biometric];
+  const icon = copy?.icon ?? 'lock-outline';
+  const notice = noticeOf(state);
+  const noLock = state.kind === 'noLock';
+  const unlocked = state.kind === 'unlocked';
 
   return (
     <View style={styles.screen}>
@@ -147,8 +118,8 @@ export function PrimerView({
             size={210}
             label={
               unlocked
-                ? `Sen, happy ${name} ${copy.is} on`
-                : `Sen, peeking one eye open at the ${name} frame`
+                ? 'Sen, happy it can check it is you'
+                : 'Sen, peeking one eye open at the frame'
             }
           />
         </View>
@@ -162,26 +133,26 @@ export function PrimerView({
           {"Let Sen check\nit's you."}
         </Text>
         <Text style={styles.body}>
-          Your phone checks your face or fingerprint. Sen only hears yes or no. {AMOUNTS_NOTE}
+          Your phone checks it&apos;s you. Sen only hears yes or no. {AMOUNTS_NOTE}
         </Text>
       </View>
       <View style={styles.points}>
         <Point
           icon="lock-outline"
-          text={`If ${name} doesn't work, your ${credentialName()} always does.`}
+          text={`Your phone's ${credentialName()} always works too.`}
         />
         <Point icon="cellphone" text="Nothing leaves this device. No account, no server." />
       </View>
       <View style={styles.keys}>
         {notice !== null && <Notice text={notice} />}
-        {settings ? (
+        {noLock ? (
           <Key
             testID="turn-on"
             tone="lemon"
             size="xlarge"
             icon="cog"
-            label={view.kind === 'noLock' ? 'Open lock-screen settings' : 'Open device settings'}
-            onPress={view.kind === 'noLock' ? onOpenLockSettings : onOpenSettings}
+            label="Open lock-screen settings"
+            onPress={onOpenLockSettings}
           />
         ) : (
           <Key
@@ -190,60 +161,33 @@ export function PrimerView({
             size="xlarge"
             icon={icon}
             label={
-              shown.kind === 'checking'
+              state.kind === 'checking'
                 ? "Checking it's you"
                 : unlocked
-                  ? `${copy.title} ${copy.is} on`
-                  : view.kind === 'weak'
-                    ? credentialKeyLabel()
-                    : `Turn on ${name}`
+                  ? 'Unlocked'
+                  : copy === null
+                    ? 'Continue'
+                    : `Turn on ${copy.name}`
             }
-            disabled={
-              shown.kind === 'checking' ||
-              shown.kind === 'lockout' ||
-              shown.kind === 'blocked' ||
-              unlocked
-            }
-            onPress={view.kind === 'weak' ? onUseScreenLock : onTurnOn}
+            disabled={state.kind === 'checking' || unlocked}
+            onPress={onTurnOn}
           />
         )}
-        <Key
-          tone="outline"
-          size="medium"
-          label={`${credentialKeyLabel()} instead`}
-          disabled={unlocked || shown.kind === 'noLock'}
-          onPress={onUseScreenLock}
-        />
       </View>
     </View>
   );
 }
 
-function noticeOf(state: PrimerState, copy: BiometricCopy, secondsLeft: number): string | null {
-  const { name, title, is } = copy;
+function noticeOf(state: PrimerState): string | null {
   switch (state.kind) {
     case 'idle':
     case 'checking':
     case 'unlocked':
       return null;
-    case 'mismatch':
-      return missText(name);
     case 'timedOut':
-      return isSetupView(state.over)
-        ? `${timedOutSetupText()} ${noticeOf(state.over, copy, secondsLeft)}`
-        : timedOutText(name);
-    case 'blocked':
-      return `Too many tries. Your phone paused ${name}. Use your ${credentialName()} now.`;
-    case 'lockout':
-      return `Too many tries. ${name} ${is} back in ${clock(secondsLeft)}, or use your ${credentialName()} now.`;
-    case 'weak':
-      return WEAK_BIOMETRIC;
+      return TIMED_OUT_TEXT;
     case 'noLock':
-      return 'Set a screen lock to use Sen.';
-    case 'off':
-      return state.canOpenSettings
-        ? `${title} ${is} off. Turn it on in your phone's settings, or use your ${credentialName()}.`
-        : `This phone can't use ${name}. Your ${credentialName()} works instead.`;
+      return `Set a ${credentialName()} to use Sen.`;
     case 'error':
       return "Sen couldn't check it's you. Try again.";
     case 'store':

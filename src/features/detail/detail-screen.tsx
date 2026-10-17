@@ -6,7 +6,6 @@ import { AccessibilityInfo, Share } from 'react-native';
 import { toast } from '@/components/toast';
 
 import {
-  BIOMETRIC,
   hideAmounts,
   lockNow,
   revealRefusalText,
@@ -103,7 +102,7 @@ export function DetailScreen(): ReactNode {
         onShow: () => {
           void showAmounts().then((outcome) => {
             if (!outcome.ok) {
-              const why = revealRefusalText(outcome.reason, BIOMETRIC[biometric].name);
+              const why = revealRefusalText(outcome.reason);
               if (why !== null) toast.show({ title: why });
               return;
             }

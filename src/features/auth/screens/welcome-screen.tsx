@@ -11,6 +11,7 @@ import { ReceiptSlip } from '@/components/receipt-slip';
 import type { LaunchTarget } from '@/features/sen';
 import { type } from '@/theme/type';
 
+import { credentialName } from '../copy';
 import { reportLaunchTarget, useLaunchDone } from '../launch';
 import { useBiometric } from '../session';
 import { openLockScreenSettings } from './device-settings';
@@ -39,7 +40,7 @@ type Pledge = {
 
 const PROMISES: readonly Pledge[] = [
   { tile: 'lemon', icon: null, text: 'Amounts stay hidden until you say so.' },
-  { tile: 'lilac', icon: 'face-recognition', text: 'Face ID or fingerprint to reveal them.' },
+  { tile: 'lilac', icon: 'face-recognition', text: "Your phone checks it's you to reveal them." },
   { tile: 'mint', icon: 'cellphone', text: 'Everything stays on this phone.' },
 ];
 
@@ -102,7 +103,7 @@ export function WelcomeView({
         <View style={styles.cta}>
           {noLock ? (
             <>
-              <Notice text="Set a screen lock to use Sen." />
+              <Notice text={`Set a ${credentialName()} to use Sen.`} />
               <Key
                 testID="continue"
                 tone="lemon"

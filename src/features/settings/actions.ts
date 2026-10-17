@@ -1,4 +1,3 @@
-import { disarmLockout } from '@/features/auth';
 import { resetBank } from '@/features/transactions';
 import type { ActivityEvent } from '@/models/activity';
 import { PREFS, type PrefKey, type PrefValue } from '@/models/prefs';
@@ -21,7 +20,6 @@ export async function resetDemo(db: Db): Promise<void> {
     writePref('demo.datasetSize', PREFS['demo.datasetSize'].default);
     writePref('demo.slow', PREFS['demo.slow'].default);
     writePref('demo.newOnRefresh', PREFS['demo.newOnRefresh'].default);
-    disarmLockout();
   });
   activity.record(db, { code: 'demo.reset' });
 }

@@ -487,8 +487,8 @@ test.each([
 });
 
 test.each([
-  ['lockout', 'Too many tries. Use your screen lock.'],
-  ['not_set_up', 'Fingerprint is off. Your screen lock still works.'],
+  ['noLock', 'Amounts are still hidden. Set a screen lock to use Sen.'],
+  ['unavailable', "The check isn't available right now. Try again soon."],
   ['unknown', 'Something went wrong with the check. Try again.'],
   ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
 ] as const)('Show amounts refused for %s says why', async (reason, title) => {

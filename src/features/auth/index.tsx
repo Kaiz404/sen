@@ -60,7 +60,6 @@ export {
   type AuthFailure,
   type AuthOverride,
   type Biometric,
-  BIOMETRIC_OPTIONS,
   isAuthenticating,
   isAuthOverride,
   onAuthenticationEnd,
@@ -68,9 +67,7 @@ export {
 } from './prompt';
 export type { PromptView } from './prompt-view';
 export {
-  armLockout,
   type DbResetReason,
-  disarmLockout,
   dismissDbResetNotice,
   lockNow,
   noteDraftDroppedByLock,
@@ -81,7 +78,6 @@ export {
   useBiometric,
   useDb,
   useDbResetNotice,
-  useLockoutArmed,
   useRouteGate,
 } from './session';
 export { type StepUpResult, useStepUp } from './use-step-up';

@@ -180,7 +180,8 @@ test('Show amounts rolls the amount in, and Hide amounts takes it out of the tre
 });
 
 test.each([
-  ['mismatch', "Fingerprint didn't match."],
+  ['noLock', 'Amounts are still hidden. Set a screen lock to use Sen.'],
+  ['unavailable', "The check isn't available right now. Try again soon."],
   ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
 ] as const)('Show amounts refused for %s says why and keeps them hidden', async (reason, title) => {
   const shown = jest.spyOn(toast, 'show');

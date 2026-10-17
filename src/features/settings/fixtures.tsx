@@ -16,7 +16,6 @@ const NO_ACTIONS: SettingsActions = {
   onPref: noop,
   onHideAmounts: noop,
   onDataset: noop,
-  onLockout: noop,
   onResetDemo: noop,
   onActivity: noop,
   onErase: noop,
@@ -27,7 +26,6 @@ const NO_ACTIONS: SettingsActions = {
 
 const DEFAULTS: SettingsValues = {
   biometric: 'fingerprint',
-  lockoutArmed: false,
   added: 3,
   progress: null,
   hideAmounts: true,
@@ -47,11 +45,11 @@ const BASE: SettingsViewProps = { values: DEFAULTS, actions: NO_ACTIONS, focus: 
 export const SETTINGS_STATES = {
   top: () => <SettingsView {...BASE} />,
   reviewers: () => <SettingsView {...BASE} focus="reviewers" />,
-  'reviewers-armed': () => (
+  'reviewers-set': () => (
     <SettingsView
       {...BASE}
       focus="reviewers"
-      values={{ ...DEFAULTS, 'demo.next': 'offline', 'demo.slow': true, lockoutArmed: true }}
+      values={{ ...DEFAULTS, 'demo.next': 'offline', 'demo.slow': true }}
     />
   ),
   'reviewers-loading': () => (

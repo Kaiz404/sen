@@ -8,13 +8,11 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { Linking } from 'react-native';
 
-import { BIOMETRIC_OPTIONS } from '../features/auth/prompt';
 import { sessionStore } from '../features/auth/session';
 import { DayKeySchema, toInstant } from '@/models/day';
 import { draftSchema } from '@/models/draft';
 import { activity, readActivity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
-import { confirmDeviceCredential } from '@/services/device-credential';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { queryClient, QK } from '@/services/query-client';
 import { insertManual } from '@/services/tx-repo';
@@ -81,7 +79,6 @@ const routes = Object.fromEntries(
     .map((name) => [name, jest.requireActual<{ default: ComponentType }>(`@/app/${name}`).default]),
 );
 
-const MISMATCH = { success: false, error: 'authentication_failed' } as const;
 const TODAY = DayKeySchema.parse('2026-10-15');
 const lunch = (n: number) =>
   draftSchema(TODAY).parse({
@@ -149,7 +146,8 @@ test('erase deletes only the rows the user added, and leaves bank rows, the vaul
   await waitFor(() => expect(screen.queryByText('Lunch number 1')).not.toBeOnTheScreen());
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Erase transactions I added',
-    ...BIOMETRIC_OPTIONS,
+    biometricsSecurityLevel: 'strong',
+    disableDeviceFallback: false,
   });
   expect(await countBySource()).toEqual({ bank });
   expect(phone).toMatchObject({ key: KEY, file: true });
@@ -157,25 +155,6 @@ test('erase deletes only the rows the user added, and leaves bank rows, the vaul
   expect(sessionStore.getState().amountsHidden).toBe(false);
   await activity.settled();
   expect((await readActivity(db())).entries[0]?.event).toEqual({ code: 'tx.erased', count: 2 });
-});
-
-test('a finger that does not match erases nothing, says so, and the next try can erase', async () => {
-  await unlock();
-  await addRows(1);
-  await openEraseSheet();
-
-  authenticate.mockResolvedValueOnce(MISMATCH);
-  await press('Erase with fingerprint');
-
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Fingerprint didn’t match. Nothing was erased.',
-  );
-  expect((await countBySource()).manual).toBe(1);
-
-  authenticate.mockResolvedValueOnce({ success: true });
-  await press('Try again with fingerprint');
-  expect(await screen.findByText('Erased 1 transaction')).toBeOnTheScreen();
-  expect((await countBySource()).manual).toBeUndefined();
 });
 
 test('a cancelled check leaves everything and the sheet as it was', async () => {
@@ -228,7 +207,7 @@ test('with nothing added, the sheet says there is nothing to erase and the Setti
   ).toBeDisabled();
 });
 
-test('a phone whose sensor is off and whose screen lock cannot be asked gets a way to its security settings', async () => {
+test('a check the phone cannot answer gets a way to its security settings', async () => {
   const opened = [
     jest.spyOn(Linking, 'openSettings').mockResolvedValue(),
     jest.spyOn(Linking, 'sendIntent').mockResolvedValue(),
@@ -237,13 +216,11 @@ test('a phone whose sensor is off and whose screen lock cannot be asked gets a w
   await addRows(1);
   await openEraseSheet();
 
-  // The sensor is off, so the step-up asks for the screen lock, and that cannot be asked either.
   authenticate.mockResolvedValueOnce({ success: false, error: 'not_enrolled' });
-  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: false, error: 'not_available' });
   await press('Erase with fingerprint');
 
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Fingerprint isn’t available right now. Nothing was erased. Check your phone’s security settings, then try again.',
+    'The check isn’t available right now. Nothing was erased. Check your phone’s security settings, then try again.',
   );
   await press('Open device settings');
   expect(opened.map((spy) => spy.mock.calls.length)).toContain(1);

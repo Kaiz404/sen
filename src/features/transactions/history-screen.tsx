@@ -5,7 +5,6 @@ import { useStore } from 'zustand';
 
 import { toast } from '@/components/toast';
 import {
-  BIOMETRIC,
   dismissDbResetNotice,
   hideAmounts,
   lockNow,
@@ -220,7 +219,7 @@ export function HistoryScreen(): ReactNode {
           // Fired here, not by Sen's Reveal, which a scroll or the background can hold back.
           void showAmounts().then((outcome) => {
             if (!outcome.ok) {
-              const why = revealRefusalText(outcome.reason, BIOMETRIC[biometric].name);
+              const why = revealRefusalText(outcome.reason);
               if (why !== null) toast.show({ title: why });
               return;
             }

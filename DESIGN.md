@@ -37,7 +37,7 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 | `shimmer` | `#F7F2E8` | `#34373B` | Skeleton highlight band. Dark has no board, so it uses `rule` (inferred) |
 | `leader` | `#C9BFAA` | `#4A4D52` | Dotted leaders before totals |
 | `lemon-edge`, `lemon-plate` | `#17181A`, `#17181A` | `#F2DC72`, `#8A7A2C` | A lemon key's border and shadow plate |
-| `hero-raised` | `#26282C` | `#26282C` | A card on the hero, such as the lockout cool-down |
+| `hero-raised` | `#26282C` | `#26282C` | A card on the hero |
 | `hero-accent` | `#F5BE98` | `#F5BE98` | The accent word on the lockout hero |
 | `plate`, `plate-ink`, `plate-faint`, `plate-credit` | `#FFFDF8`, `#3F3B34`, `#5F5A50`, `#236B47` | the same | A paper plate sitting on a pastel card, such as the month card's Money in line. The pastel is the same in both modes, so the plate does not follow `paper` into dark |
 
@@ -101,6 +101,7 @@ Sen is a one-sen coin with a face and two paws. It is drawn as layered SVG (`rea
 | 2026-10-17 | `SF-History`, `SF-Settings` | "How Sen keeps amounts private" is a question-mark key in History's header, left of Settings, in the same icon-key style. Settings has no About row. The month card and the Detail receipt have no "Asks for … first" helper line under Show amounts. The card's hero and Money in rows have fixed heights (96 and 58), and a long amount scales to one line inside them, so the card is the same height hidden or shown |
 | 2026-10-17 | `SF-AddAmount`, `SF-AddReview` | Black-box feedback: cut the clutter. The Add header shows the step's name in the title style (AMOUNT, DETAILS, REVIEW) in place of "Add a transaction", and the "Step x of 3" line is gone. The progress bar is the visual cue, and the title's accessibility label reads "Amount, step 1 of 3". The Amount page drops the "AMOUNT · MONEY OUT/IN" eyebrow (the Money out / Money in control stays), the keypad explainer and the "Digits fill from the right" hint. Review drops "Screenshots blocked on this screen", since screenshots are blocked app-wide (D30). The hero amount steps down by length (up to 6 digits and separators: 96, up to 8: 63, 9: 52, shrinking at once, growing eased over 160 ms; RM scales to 1.3x), keeps clear of Sen's 32 pt gutter, and ignores the system font scale. The largest figure the keypad takes is RM 99,999.99 |
 | 2026-10-17 | MAX-Moments `.M-lockout` | Sen never spins edge-on into the pill. It naps in the `asleep` pose and breathes for the whole lockout. The owner found the edge-on hold odd |
+| 2026-10-17 | `SF-Lock`, `SF-LockStates`, `SF-Biometric` | Owner: auth as simple as possible. Lock has one key and Sen picks the route; there is no second "Use passcode" key. The didn't-match, lockout and biometric-off states are dropped, because the OS owns misses and lockouts and moves to the screen lock itself. The `.M-lockout` and Auth failed moments stay in Sen's library, and no auth path plays them (D40) |
 | 2026-10-17 | MAX `.tl` | The coin back is Bunga (option B on `SF-CoinBack-Options`): a five-petal flower with a lemon eye, in a thin ring, no numeral. It replaces the plus-and-bar tails. It is symmetric, so the mirror leaves it unchanged. Currency Act 2020 s.19 rules out anything that resembles a Malaysian coin, so no numeral, no crest, no denomination |
 
 Poses come from kit.py, MAX-Moments' static tiles (`.M-err`, `.M-last`, `.M-lockout`, `.M-lock`) and the held frames of MAX-Library's primitives (`.L-peek`, `.L-slide`, `.L-shrug`, `.L-squint`). MAX-Library holds no pose sheet.
@@ -307,9 +308,9 @@ One haptic per moment, fired from the named step, not at gesture start.
 | --- | --- | --- |
 | `SF-Launch` | Launch | Ink full bleed with the "Sen" wordmark. The motion follows MAL2 (`design/MAL2-Loading.dc.html`), where Sen becomes the period |
 | `SF-Welcome` | Welcome (first run) | "Meet Sen." Three promises on a receipt slip. "Continue as demo user" |
-| `SF-Biometric` | Face ID primer (first run) | Explains biometrics before the OS prompt. "Turn on Face ID", "Use screen lock instead" ("Use passcode instead" on iOS) |
-| `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, Use screen lock ("Use passcode" on iOS), "Not you? Start again" |
-| `SF-LockStates` | Lock states | Checking, didn't match (no count of tries, D40), timed out (owner addition, D36: "Took too long." with the key ready), lockout with cool-down, Face ID off, unlocked |
+| `SF-Biometric` | Biometric primer (first run) | Explains the check before the OS prompt. "Turn on fingerprint" (or the sensor the phone has, "Continue" when none is enrolled). One key, no second route key (D40) |
+| `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. One "Unlock with fingerprint" key ("Unlock" when no strong biometric is enrolled), "Not you? Start again" (owner override, D40) |
+| `SF-LockStates` | Lock states | Checking, timed out (owner addition, D36: "Took too long." with the key ready), unlocked. The board's didn't-match, lockout and biometric-off states are dropped (owner override, D40): the OS owns misses and lockouts and moves to the screen lock itself |
 | `SF-PrivacyCover` | App switcher cover | Lemon full bleed, wordmark, Sen asleep. No amounts or names |
 | `SF-History` | History, masked | Header with face-only Sen mark, then privacy (question mark), settings and lock keys. "+ Add" is the floating Add key (owner override below). "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
 | `SF-Reveal` | History, revealed | Ink card with Sen on top. Split numerals. "Hide amounts". The board's 60 s ring and countdown are dropped (D27) |
@@ -324,7 +325,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-AddStates` | Add states | Validation errors, Face ID checking, cancelled, couldn't save securely, discard draft, saved with Undo |
 | `SF-DeleteStates` | Delete states | Confirm sheet, Face ID step-up, deleted with Undo, Face ID failed |
 | `SF-Settings` | Settings | See below |
-| `SF-SettingsSheets` | Settings sheets | Privacy explainer, sign-out confirm, reset demo confirm, lockout armed, switched to dark |
+| `SF-SettingsSheets` | Settings sheets | Privacy explainer, sign-out confirm, reset demo confirm, switched to dark |
 | `SF-SecurityActivity` | Security activity | Day-grouped mono log of the last 50 events. Never amounts. "Clear log" needs Face ID |
 | `SF-Dark-*` | Dark mode | Lock, History, Reveal, Detail, Add review, Settings |
 | `SF-Flow`, `SF-FlowAdd` | Flow maps | Every screen, transition and branch |
@@ -337,16 +338,14 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **First run.**
 - Launch › Welcome › "Continue as demo user" › Face ID primer › OS prompt › History (masked).
-- The screen-lock path also lands on History. Unlock asks for the sensor alone, and Use screen lock asks for the phone's PIN, pattern or password alone (D40). Copy says "screen lock" on Android and "passcode" on iOS, and never "PIN".
-- If biometrics aren't set up, the primer offers "Open device settings" and "Use screen lock".
+- Lock has one auth key, and Sen picks the route (D40). With a strong biometric enrolled it opens the system sheet for it, and that sheet carries its own "Use PIN, pattern or password" button on Android 11 and later and the passcode on iOS. With none, the key just says "Unlock" and the phone asks for its screen lock. Copy says "screen lock" on Android and "passcode" on iOS, and never "PIN".
+- If the phone has no screen lock, the primer offers "Open lock-screen settings" (D28).
 
 **Returning.**
 - Launch › Lock › tap Unlock. Never auto-prompt.
 - **Success.** Unlock moment, then History (masked). History's data starts loading as the check passes, so it is ready when the moment ends.
 - **Cancel.** Back to Lock silently.
-- **Timed out.** A prompt unanswered for 60 s ends with "The check timed out. Try fingerprint again, or use your screen lock.", the retry key enabled and Sen shrugging. It is not a try. A step-up that times out leaves amounts hidden and says so in a toast. Copy names the real sensor, or "biometrics" when the phone has more than one or Android cannot say which is enrolled.
-- **No match.** An inline "Didn't match. Try fingerprint again, or use your screen lock." with no count: Android reports no single miss. After Auth failed, Sen rests `worried`, as the Lock board's "Not quite." state draws it, not masked as the tile ends.
-- **Lockout.** The cool-down card and the Use screen lock key, which works. Android reports it after five misses.
+- **Timed out.** A prompt unanswered for its clock ends with "The check timed out. Try again.", the retry key enabled and Sen shrugging. The clock is 60 s for the sensor alone and 5 minutes for any sheet that can end in the screen lock (D36). It is not a try. A step-up that times out leaves amounts hidden and says so in a toast. Copy names the real sensor, or "biometrics" when the phone has more than one or Android cannot say which is enrolled.
 
 **Show and hide amounts.**
 - History › "Show amounts" › OS prompt › revealed.
@@ -421,7 +420,6 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 | For reviewers | Dataset size | 20 · 1k · 10k. Reloads bank rows only. The second line reads "Loading 1,500 of 10,000 rows…" while they load | 1k | `demo.datasetSize` |
 | For reviewers | Slow network, add 3 s | Switch | Off | `demo.slow` |
 | For reviewers | New transaction on refresh | Switch | On | `demo.newOnRefresh` |
-| For reviewers | Simulate lockout | Button. Arms the next unlock to report lockout. Armed, it reads "Lockout armed · Tap again to disarm", and a toast offers Undo | | |
 | For reviewers | Reset demo data | Sheet with confirm | | |
 | Account | Lock now | Key | | |
 | Account | Sign out of demo | Destructive, with a confirm sheet. Destroys the database key and clears prefs | | |

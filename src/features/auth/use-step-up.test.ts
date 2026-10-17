@@ -5,7 +5,6 @@ import type { OpenDb } from '@/services/db';
 import { confirmDeviceCredential } from '@/services/device-credential';
 
 import type { Session } from './machine';
-import { BIOMETRIC_OPTIONS } from './prompt';
 import { sessionStore } from './session';
 import { useStepUp } from './use-step-up';
 
@@ -38,7 +37,10 @@ test('every call prompts again with the sensor alone and no device fallback', as
   expect(await confirmDelete()).toEqual({ ok: true });
   expect(await confirmDelete()).toEqual({ ok: true });
 
-  const options = { promptMessage: 'Delete this transaction', ...BIOMETRIC_OPTIONS };
+  const options = { promptMessage: 'Delete this transaction',
+    biometricsSecurityLevel: 'strong',
+    disableDeviceFallback: false,
+  };
   expect(authenticate.mock.calls).toEqual([[options], [options]]);
   expect(sessionStore.getState().session).toBe(unlocked);
 });
@@ -62,17 +64,30 @@ test.each([
   ['user_cancel', 'cancelled'],
   ['system_cancel', 'cancelled'],
   ['app_cancel', 'cancelled'],
-  ['authentication_failed', 'mismatch'],
-  ['lockout', 'lockout'],
-  ['not_enrolled', 'not_set_up'],
+  ['user_fallback', 'cancelled'],
+  ['authentication_failed', 'unknown'],
+  ['not_enrolled', 'unavailable'],
   ['passcode_not_set', 'noLock'],
   ['not_available', 'unavailable'],
   ['timeout', 'unknown'],
   ['unknown', 'unknown'],
 ] as const)('%s fails the step-up as %s', async (error, reason) => {
-  // The screen-lock try that follows a lockout, an off sensor or the sheet's own button gets the same answer.
+  // The combined sheet is the one ask, so the screen lock is never reached by these codes.
   authenticate.mockResolvedValue({ success: false, error });
-  jest.mocked(confirmDeviceCredential).mockResolvedValue({ success: false, error });
 
   expect(await (await stepUpFor('erase'))()).toEqual({ ok: false, reason });
+  expect(confirmDeviceCredential).not.toHaveBeenCalled();
+});
+
+test.each([
+  [{ success: true }, { ok: true }],
+  [{ success: false, error: 'user_cancel' }, { ok: false, reason: 'cancelled' }],
+  [{ success: false, error: 'passcode_not_set' }, { ok: false, reason: 'noLock' }],
+  [{ success: false, error: 'not_available' }, { ok: false, reason: 'unavailable' }],
+] as const)('a locked-out sensor hands over, and the screen lock answers %j as %j', async (answer, expected) => {
+  authenticate.mockResolvedValue({ success: false, error: 'lockout' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValue(answer);
+
+  expect(await (await stepUpFor('erase'))()).toEqual(expected);
+  expect(confirmDeviceCredential).toHaveBeenCalledWith('Erase transactions I added');
 });

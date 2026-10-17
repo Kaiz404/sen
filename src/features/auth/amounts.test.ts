@@ -7,7 +7,7 @@ import { queryClient } from '@/services/query-client';
 import * as Vault from '@/services/vault';
 
 import { dropRevealedOnHide, hideAmounts, showAmounts, useAmountsHidden } from './amounts';
-import { BIOMETRIC_OPTIONS } from './prompt';
+import { CREDENTIAL_TIMEOUT_MS } from './prompt';
 import { dispatch, lockNow, sessionStore, signOut, unlock } from './session';
 
 jest.mock('expo-local-authentication', () => ({
@@ -23,7 +23,8 @@ const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 const SHOW_PROMPT = {
   promptMessage: 'Show amounts',
-  ...BIOMETRIC_OPTIONS,
+  biometricsSecurityLevel: 'strong',
+  disableDeviceFallback: false,
 };
 
 let stopDropping: () => void;
@@ -169,13 +170,13 @@ test('the hook follows show, hide and lock', async () => {
   expect(result.current).toBe(true);
 });
 
-test('a check left unanswered for 60 s times out and amounts stay hidden', async () => {
+test('a check left unanswered for five minutes times out and amounts stay hidden', async () => {
   jest.useFakeTimers();
   const record = jest.spyOn(activity, 'record');
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
 
   const pending = showAmounts();
-  await jest.advanceTimersByTimeAsync(60_000);
+  await jest.advanceTimersByTimeAsync(CREDENTIAL_TIMEOUT_MS);
 
   expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
   expect(shown()).toBe(false);

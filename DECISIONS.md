@@ -479,11 +479,11 @@ The phases are in [PLAN.md](PLAN.md).
 - **Detection.** `getEnrolledLevelAsync` returns `NONE`. `detectBiometric` maps it to the enrolled level `none`.
 - **Lock and Welcome.** Both show "Set a screen lock to use Sen" with one key, "Open lock-screen settings". Android sends the `android.app.action.SET_NEW_PASSWORD` intent. iOS opens Sen's page in Settings.
 - **Return.** The app re-reads the level each time it becomes active, so the message clears once a lock exists. A failed read keeps the last level, or counts as a passcode on launch, so a flaky read never says "no lock".
-- **Repeated lockouts.** A second lockout shows a conservative steer to the screen lock, with no countdown, since the app cannot see Android's real lockout. The steer lifts after 5 minutes, or when an unlock goes through.
+- **Lockouts.** The OS owns them (D40), so Lock has no lockout or blocked view.
 
 **Cost.** A reviewer's emulator needs a PIN, as the API 36 AVD already has.
 
-**Consequence (D40).** "No Sen PIN" means the screen lock is the only non-biometric way in, so Sen must be able to ask for it directly. The first build leaned on the system sheet's built-in fallback, and every "Use device passcode" key opened the fingerprint sheet again. D40 splits the two checks.
+**Consequence (D40).** "No Sen PIN" means the screen lock is the only non-biometric way in. The first build leaned on the system sheet's built-in fallback, which crashes on Android 9 and 10 and left every "Use device passcode" key opening the fingerprint sheet again. D40 picks the route per phone and removes the second key.
 
 ## D29. Copy reference: a local module marks the clip sensitive
 
@@ -600,9 +600,9 @@ The phases are in [PLAN.md](PLAN.md).
 - A longer fixed timeout only delays the stuck state for everyone who is stuck. A minute is long for a fingerprint or a PIN.
 - The owner confirmed 60 s.
 
-**Revision (D40).** The 60 s is the sensor's. The screen-lock prompt waits 5 minutes (`CREDENTIAL_TIMEOUT_MS`), because Android makes a user wait 30 s after five wrong tries and a slow pattern must not be cut off mid-entry. On Android 11 and later the sheet is drawn over Sen, so the app stays `active` and the clock would run. On Android 9 and 10 the system's own screen takes the app out of `active`, so the clock pauses as it does for any absence (inferred, not seen on a device).
+**Revision (D40).** The 60 s is the clock of the sensor alone, which only Android 9 and 10 ask. Any sheet that can end in the screen lock waits 5 minutes (`CREDENTIAL_TIMEOUT_MS`): the combined sheet and the screen lock itself. The user may switch to a slow pattern or password inside the combined sheet, and Android makes them wait 30 s after five wrong tries, so 60 s would cancel a pattern mid-entry. On Android 11 and later the sheet is drawn over Sen, so the app stays `active` and the clock would run. On Android 9 and 10 the system's own screen takes the app out of `active`, so the clock pauses as it does for any absence (inferred, not seen on a device).
 
-**Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. The view it replaces is kept underneath, so a cancel's rules hold: tries left after a wrong finger still count, an ended lockout still escalates to the block, and the off and weak views keep their settings key with the timeout line above. A running lockout, a block and a store failure stay as they were.
+**Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. A store failure stays as it was, and a cancel leaves the view alone.
 
 ## D38. Bottom sheets: keep the native formSheet and polish it
 
@@ -662,35 +662,37 @@ The phases are in [PLAN.md](PLAN.md).
 **Cost.** The bank keeps the rows it minted so it can post them later, and sends every aged pending-origin row on each refresh. The phone ignores the ones already posted. For a demo that is a handful of ids.
 
 
-## D40. Unlock asks for the sensor, Use screen lock asks for the screen lock
+## D40. One Unlock key, and Sen picks the route
 
-**Problem.** Sen called `authenticateAsync` with a strong biometric and the device fallback, which builds `BIOMETRIC_STRONG | DEVICE_CREDENTIAL`. That caused four faults.
+**Problem.** Sen called `authenticateAsync` with a strong biometric and the device fallback for every check, which caused four faults.
 - Every "Use device passcode" key called the same function, so it opened the fingerprint sheet again.
-- Android 9 and 10 do not support that pair, and `BiometricPrompt.PromptInfo.Builder.build()` throws outside the module's try, so unlock probably crashed there (minSdk is 24).
-- With the credential allowed inside the sheet, a lockout switched the sheet to the PIN and never reached JS. Sen's lockout card and its tries count were reachable only through reviewer controls.
-- Android reports no single miss, so "2 more tries before it locks" showed a count nobody gave us.
+- On Android 9 and 10 (API 28 and 29) that pair is unsupported, and `PromptInfo.Builder.build()` throws outside expo's try, so unlock probably crashed there (minSdk is 24).
+- Sen's own lockout card and its "N more tries" count were unreachable in practice: Android never reports a single miss, and with the screen lock allowed inside the sheet a lockout never reaches JS.
+- A phone with only a weak biometric, or none, still opened a fingerprint sheet first.
 
 **Compared.**
-- One key, with the combined sheet kept. It is the least code, and it keeps the crash and the dead keys above.
-- Patch `expo-local-authentication` with patch-package, so a negative button can route to the credential. It forks a dependency that SDK upgrades overwrite.
-- A Sen password inside the app. **Considered and rejected by the owner.** Device-credential checks are hardware-backed and throttled by the OS, where a password checked in JS would make the attempt limit ours to get right. Without a server there is no recovery for a forgotten one. It would be a second secret for the user to hold. It breaks D28, which already chose no app PIN.
-- Split the keys into two checks, each asked for directly. **Chosen.**
+- **One key, keeping the combined sheet everywhere.** Least code, and it keeps the crash on API 28 and 29.
+- **Two keys: Unlock (the sensor alone) and Use screen lock (the credential alone).** Built and tried first (the owner saw it), then **rejected**: it asked the user to choose up front, needed a lockout card, a blocked steer and a tries count that the OS does not give us, and on Android could not offer "Use screen lock" from a plain Cancel (expo maps the Cancel button and a dismissal both to `user_cancel`).
+- **Patch `expo-local-authentication` with patch-package.** It forks a dependency that SDK upgrades overwrite.
+- **A Sen password inside the app.** **Considered and rejected by the owner.** Device-credential checks are hardware-backed and throttled by the OS, where a password checked in JS would make the attempt limit ours to get right. Without a server there is no recovery for a forgotten one. It would be a second secret for the user to hold. It breaks D28, which already chose no app PIN.
+- **Chosen: one key, and the app picks the route** from the phone and what is enrolled. The owner chose simplicity: no choice between biometrics and passcode on screen.
 
-**Chosen.** `authenticate(message, via)` in `prompt.ts`, with `via` as `'biometric'` or `'credential'`.
+**Chosen.** `routeOf(os, api, level)` in `prompt.ts`, used by `authenticate()` for unlock and every step-up (through `check()`).
 
-| Key | Android | iOS |
+| Phone | Strong biometric enrolled | No strong biometric |
 | --- | --- | --- |
-| Unlock with fingerprint (or face unlock, or biometrics) | `BIOMETRIC_STRONG` alone, `disableDeviceFallback: true`, a `Cancel` button | `deviceOwnerAuthenticationWithBiometrics`, with a "Use passcode" button |
-| Use screen lock / Use passcode | `modules/sen-auth`: API 30 and later `BiometricPrompt` with `DEVICE_CREDENTIAL` alone, API 24 to 29 `createConfirmDeviceCredentialIntent` | `deviceOwnerAuthentication`, which tries Face ID or Touch ID first and then the passcode, since iOS has no passcode-only policy |
+| Android 11 and later | The combined sheet, `BIOMETRIC_STRONG \| DEVICE_CREDENTIAL`. Its own "Use PIN, pattern or password" button is there, and after five misses the OS moves to the screen lock | The screen lock alone, through `modules/sen-auth` |
+| Android 9 and 10 | The sensor alone. A lockout, or an unavailable sensor, hands over to the screen lock in the same call | The screen lock alone, through `sen-auth` |
+| Android 7 and 8 | The combined sheet | The screen lock alone, through `sen-auth` |
+| iOS | `deviceOwnerAuthentication`: Face ID or Touch ID, then the passcode in one sheet | The same call, which goes straight to the passcode |
 
-- **One options object.** `BIOMETRIC_OPTIONS` is the only way Sen asks for the sensor, and a test fails if any source file builds `strong` beside `disableDeviceFallback: false`, the pair Android 9 and 10 reject.
-- **Lockout is real.** After five misses Android reports `lockout`, and Sen's "Too many tries." card shows. Its Use screen lock key works because a screen lock is not locked out by biometric misses. A successful credential also clears the OS biometric lockout (inferred).
-- **Sheet button.** Expo maps Android's negative button and a dismissal both to `user_cancel`, so Sen cannot tell "Use screen lock" from "Cancel" and the button says Cancel. On iOS the sheet's passcode button is `user_fallback`, and `authenticate` follows it with the passcode in the same call.
-- **Step-up** (Show amounts, Add, Delete, Clear activity, Erase) is the same model in `use-step-up.ts`: the sensor first, then the screen lock when the sensor is locked out, off or absent (`SENSOR_CANNOT_ANSWER`). A cancel, a miss or a timeout is the user's answer and opens nothing. The lockout is still logged as `auth.failed`.
-- **Step-up limit.** A user who cancels the Android sensor sheet on purpose cannot reach the screen lock from that step-up and taps the action again. After five misses the lockout hands over by itself, so nobody is stuck. A visible screen-lock button on the Android sheet needs a prompt of our own in `sen-auth`, and is not built.
-- **No screen lock.** The module answers `passcode_not_set`, which Sen maps to the `noLock` failure and D28's "Set a screen lock" view.
-- **Naming.** Android names a sensor only when the phone has exactly one (fingerprint or face unlock) and says "biometrics" when it has both or neither, since the API reports hardware and not what is enrolled. The weak-biometric copy no longer names a sensor. The Android credential is "screen lock" because it may be a PIN, pattern or password, and iOS says "passcode".
-- **Tries.** The `mismatch` view keeps no count. It says "Didn't match. Try fingerprint again, or use your screen lock." iOS reports `authentication_failed` when the system gives up on the sensor, which is when the view shows (inferred).
-- **Clock.** See the D36 revision: 60 s for the sensor, 5 minutes for the screen lock.
+- **Why 28 and 29 only.** androidx.biometric 1.2.0-alpha04 (the version expo-local-authentication 57.0.3 builds against) decides it in `AuthenticatorUtils.isSupportedCombination`, read from its bytecode: `BIOMETRIC_STRONG | DEVICE_CREDENTIAL` is supported when `SDK_INT < 28 || SDK_INT > 29`, and `DEVICE_CREDENTIAL` alone from API 30. API 24 to 27 take the combined sheet. Below 30, `sen-auth` uses the keyguard activity because `DEVICE_CREDENTIAL` alone is unsupported there.
+- **One options object, tested by behaviour.** A test drives every route on every API level 24 to 36 and fails if `strong` reaches expo without `disableDeviceFallback: true` on 28 or 29. A second fails if any file but `prompt.ts` calls `authenticateAsync`.
+- **What was deleted.** The mismatch, lockout, blocked, off and weak Lock views, their copy, gallery states and Maestro flows, the "Simulate lockout" reviewer control and the dev override values `fail` and `lockout`. The OS owns misses and lockouts now. What remains reachable: the API 28 and 29 hand-over (logged as `auth.failed` with reason `lockout`), a cancel, `timedOut` (D36), `noLock` (D28) and errors. The Sen moments for a miss and a lockout stay in the library and no auth path plays them.
+- **Hand-over and a lock.** If a lock arrived while the first prompt was up, the hand-over is skipped and the check ends as a cancel, so no second prompt opens on a locked session.
+- **Re-lock window.** Sen's own prompts can take it to the background (the Android 9 and 10 screen-lock activity, possibly the credential UI on 11 and later). While a prompt is up that is not a trip away: a pass keeps the session, and any other end applies the away check for the time spent away.
+- **No screen lock.** `sen-auth` answers `passcode_not_set`, which maps to the `noLock` failure and D28's view.
+- **Clock.** 60 s for the sensor alone, 5 minutes for the combined sheet and the screen lock (see the D36 revision).
+- **Naming.** The key names a sensor only when a strong biometric is enrolled, and says "biometrics" when Android cannot say which. Otherwise it says "Unlock". Android's credential is "screen lock" in copy, because it may be a PIN, pattern or password, and iOS says "passcode".
 
-**Cost.** A small native module, written once in Kotlin and needing a rebuild. The Android 9 and 10 path and the credential activity's `AppState` are not verified without a device.
+**Cost.** A small native module, written once in Kotlin and needing a rebuild. The Android 9 and 10 hand-over, the credential activity's `AppState` and `lockout` from the combined sheet are not verified without a device.

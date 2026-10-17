@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import 'react-native-unistyles/mocks';
 import { setUpTests } from 'react-native-reanimated';
 
@@ -6,6 +7,9 @@ import { configureThemes } from '@/theme/unistyles';
 // The app entry configures from the saved pref. Tests start on System and leave MMKV untouched, so a test file can
 // still mock it. theme.test.tsx loads the real boot module.
 configureThemes('system');
+
+// jest-expo leaves the Android API level undefined. Tests run on a current phone, and the ones that care pick their own.
+Object.defineProperty(Platform, 'Version', { get: () => 36, configurable: true });
 setUpTests();
 
 jest.mock('react-native-svg', () => {

@@ -1,13 +1,16 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import { Platform } from 'react-native';
 
 import { activity, readActivity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { confirmDeviceCredential } from '@/services/device-credential';
 import { clearPrefs } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import * as Vault from '@/services/vault';
 
 import { hideAmounts, showAmounts } from './amounts';
+import { CREDENTIAL_TIMEOUT_MS } from './prompt';
 import { dispatch, lockNow, sessionStore, signOut, unlock } from './session';
 import { stepUp } from './use-step-up';
 
@@ -17,6 +20,10 @@ jest.mock('expo-local-authentication', () => ({
   supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
 }));
 jest.mock('@/services/logger');
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
+}));
 jest.mock('@/services/vault', () => ({
   hasVault: jest.fn(),
   openVault: jest.fn(),
@@ -27,6 +34,9 @@ const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const openVault = jest.mocked(Vault.openVault);
 
 let db: OpenDb;
+
+/** Android 9 and 10 ask the sensor alone and hand a lockout over to the screen lock. */
+const onApi29 = () => jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
 
 const codes = async () => {
   await activity.settled();
@@ -52,14 +62,22 @@ beforeEach(async () => {
   sessionStore.setState(sessionStore.getInitialState());
   db = await openTestDb();
 });
-afterEach(() => db.close());
+afterEach(() => {
+  jest.restoreAllMocks();
+  return db.close();
+});
 
-test('a wrong finger is held until the vault opens, then written before the unlock', async () => {
-  expect(await unlockWith(false)).toEqual({ ok: false, reason: 'mismatch' });
-  expect(await unlockWith(true)).toEqual({ ok: true });
+test('a sensor lockout is held until the vault opens, then written before the unlock', async () => {
+  onApi29();
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: true });
+  openVault.mockResolvedValueOnce({ kind: 'opened', db });
+
+  expect(await unlock()).toEqual({ ok: true });
 
   expect(await codes()).toEqual([
-    { code: 'auth.failed', reason: 'mismatch' },
+    { code: 'auth.failed', reason: 'lockout' },
     { code: 'auth.unlocked' },
   ]);
 });
@@ -115,24 +133,26 @@ test('a prompt that times out is logged as nothing, on Lock and on a step-up', a
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
   const locked = unlock();
-  await jest.advanceTimersByTimeAsync(60_000);
+  await jest.advanceTimersByTimeAsync(CREDENTIAL_TIMEOUT_MS);
   expect(await locked).toEqual({ ok: false, reason: 'timedOut' });
 
   await unlockWith(true);
   dispatch({ type: 'ARRIVED' });
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
   const stepping = stepUp('add');
-  await jest.advanceTimersByTimeAsync(60_000);
+  await jest.advanceTimersByTimeAsync(CREDENTIAL_TIMEOUT_MS);
   expect(await stepping).toEqual({ ok: false, reason: 'timedOut' });
   jest.useRealTimers();
 
   expect((await codes()).map((e) => e.code)).toEqual(['auth.unlocked']);
 });
 
-test('a step-up that does not match is logged, a cancelled one is not', async () => {
+test('a step-up whose sensor locks out is logged, a cancelled one is not', async () => {
+  onApi29();
   await unlockWith(true);
   dispatch({ type: 'ARRIVED' });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: true });
   await stepUp('add');
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
   await stepUp('add');
@@ -140,7 +160,7 @@ test('a step-up that does not match is logged, a cancelled one is not', async ()
   expect((await codes()).map((e) => e.code)).toEqual(['auth.unlocked', 'auth.failed']);
 });
 
-test('a lock during a step-up is logged once when the prompt ends, and the finger it ended on is not', async () => {
+test('a lock during a step-up is logged once when the prompt ends, and the answer it ended on is not', async () => {
   await unlockWith(true);
   dispatch({ type: 'ARRIVED' });
   await activity.settled();
@@ -151,7 +171,7 @@ test('a lock during a step-up is logged once when the prompt ends, and the finge
   const asked = stepUp('add');
   dispatch({ type: 'LOCK', reason: 'background' });
   lockNow();
-  answer({ success: false, error: 'authentication_failed' });
+  answer({ success: false, error: 'user_cancel' });
 
   expect(await asked).toEqual({ ok: false, reason: 'cancelled' });
   expect(sessionStore.getState().session).toEqual({ status: 'locked', reason: 'background' });
@@ -165,7 +185,9 @@ test('a lock during a step-up is logged once when the prompt ends, and the finge
 
 test('signing out drops held events, so the next user starts with an empty log', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: false, error: 'user_cancel' });
+  onApi29();
   await unlock();
   jest.mocked(Vault.destroyVault).mockResolvedValueOnce();
   await signOut();

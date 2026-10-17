@@ -33,14 +33,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-primer-timed-out-light
-- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-primer-off-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-primer-off-light
 - openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=light"
 - extendedWaitUntil:
     visible:
@@ -57,6 +49,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-biometrics-light
+- openLink: "sen://dev/states?screen=auth&state=lock-screen-lock&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-screen-lock-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-screen-lock-light
 - openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=light"
 - extendedWaitUntil:
     visible:
@@ -65,14 +65,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-checking-light
-- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-mismatch-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-mismatch-light
 - openLink: "sen://dev/states?screen=auth&state=lock-timed-out&theme=light"
 - extendedWaitUntil:
     visible:
@@ -81,38 +73,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-timed-out-light
-- openLink: "sen://dev/states?screen=auth&state=lock-off-timed-out&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-off-timed-out-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-off-timed-out-light
-- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-lockout-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-lockout-light
-- openLink: "sen://dev/states?screen=auth&state=lock-blocked&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-blocked-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-blocked-light
-- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-off-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-off-light
 - openLink: "sen://dev/states?screen=auth&state=lock-no-lock&theme=light"
 - extendedWaitUntil:
     visible:
@@ -121,22 +81,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-no-lock-light
-- openLink: "sen://dev/states?screen=auth&state=lock-weak&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-weak-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-weak-light
-- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=light"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-unavailable-light
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-unavailable-light
 - openLink: "sen://dev/states?screen=auth&state=lock-error&theme=light"
 - extendedWaitUntil:
     visible:

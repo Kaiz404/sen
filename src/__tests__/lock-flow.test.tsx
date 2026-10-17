@@ -15,7 +15,7 @@ import {
   type NativeEventSubscription,
 } from 'react-native';
 
-import { BIOMETRIC_OPTIONS, hideAmounts, lockNow, showAmounts } from '@/features/auth';
+import { hideAmounts, lockNow, showAmounts } from '@/features/auth';
 import { sessionStore } from '@/features/auth/session';
 import { playMoment } from '@/features/sen';
 import { InstantSchema, malaysiaDay } from '@/models/day';
@@ -48,7 +48,7 @@ const routes = Object.fromEntries(
     .map((name) => [name, jest.requireActual<{ default: ComponentType }>(`@/app/${name}`).default]),
 );
 
-test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite.", a match opens History, a lock closes it', async () => {
+test('Lock ignores a second tap while prompting, a failed check shows "Something went wrong.", a match opens History, a lock closes it', async () => {
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
   jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: await openTestDb() });
   await renderRouter(routes, { initialUrl: '/' });
@@ -61,14 +61,12 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   expect(authenticate).toHaveBeenCalledTimes(1);
 
   answer({ success: false, error: 'authentication_failed' });
-  expect(await screen.findByRole('header', { name: 'Not quite.' })).toBeOnTheScreen();
-  expect(
-    screen.getByText("Didn't match. Try fingerprint again, or use your screen lock."),
-  ).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: 'Something went wrong.' })).toBeOnTheScreen();
+  expect(screen.getByText("Sen couldn't check it's you. Try again.")).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Add a transaction' })).not.toBeOnTheScreen();
 
   authenticate.mockResolvedValueOnce({ success: true });
-  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
   expect(await screen.findByRole('button', { name: 'Unlocked' })).toBeDisabled();
   expect(
     await screen.findByRole('button', { name: 'Add a transaction' }, { timeout: 3000 }),
@@ -76,9 +74,10 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   expect(authenticate).toHaveBeenCalledTimes(2);
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',
-    ...BIOMETRIC_OPTIONS,
+    biometricsSecurityLevel: 'strong',
+    disableDeviceFallback: false,
   });
-  expect(screen.queryByRole('header', { name: 'Not quite.' })).not.toBeOnTheScreen();
+  expect(screen.queryByRole('header', { name: 'Something went wrong.' })).not.toBeOnTheScreen();
 
   await act(() => lockNow());
   expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();

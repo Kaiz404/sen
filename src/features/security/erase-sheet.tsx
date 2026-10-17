@@ -11,10 +11,10 @@ import {
   BIOMETRIC,
   type BiometricCopy,
   openDeviceSettings,
-  credentialName,
   useBiometric,
   useDb,
   useStepUp,
+  credentialName,
 } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { type } from '@/theme/type';
@@ -29,23 +29,17 @@ export type ErasePhase =
   | { readonly kind: 'failed' }
   | { readonly kind: 'refused'; readonly reason: Exclude<AuthFailure, 'cancelled'> };
 
-const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
   timedOut: () => 'The check timed out. Nothing was erased. Try again when you’re ready.',
-  mismatch: (name) => `${capital(name)} didn’t match. Nothing was erased.`,
-  lockout: () => `Too many tries. Nothing was erased. Use your ${credentialName()} next time.`,
-  noLock: () => 'Nothing was erased. Set a screen lock to use Sen.',
-  not_set_up: (name) =>
-    `${capital(name)} is off. Nothing was erased. Turn it on in your phone’s security settings, then try again.`,
-  unavailable: (name) =>
-    `${capital(name)} isn’t available right now. Nothing was erased. Check your phone’s security settings, then try again.`,
+  noLock: () => `Nothing was erased. Set a ${credentialName()} to use Sen.`,
+  unavailable: () =>
+    'The check isn’t available right now. Nothing was erased. Check your phone’s security settings, then try again.',
   unknown: () =>
     'Something went wrong with the check. Nothing was erased. Check your phone’s security settings, then try again.',
 };
 
 /** A retry can't fix these until the phone's own settings change. */
-const NEEDS_SETTINGS: ReadonlySet<string> = new Set(['not_set_up', 'unavailable', 'unknown']);
+const NEEDS_SETTINGS: ReadonlySet<string> = new Set(['unavailable', 'unknown']);
 
 const rows = (n: number) => `${n} ${n === 1 ? 'transaction' : 'transactions'}`;
 

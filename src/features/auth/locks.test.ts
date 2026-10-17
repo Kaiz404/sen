@@ -1,8 +1,9 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, type AppStateStatus, Platform } from 'react-native';
 
 import type { PrefKey, Prefs } from '@/models/prefs';
 import type { OpenDb } from '@/services/db';
+import { confirmDeviceCredential } from '@/services/device-credential';
 
 import { startLockTriggers, TICK_MS, touch } from './locks';
 import type { Session } from './machine';
@@ -21,8 +22,13 @@ jest.mock('@/services/prefs', () => {
   return { readPref: (key: PrefKey) => mockPrefs[key] ?? PREFS[key].default };
 });
 jest.mock('@/services/vault', () => ({}));
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
+}));
 
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
+const mockCredential = jest.mocked(confirmDeviceCredential);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 const MINUTE = 60_000;
 
@@ -75,9 +81,8 @@ test('inactive alone never starts the re-lock window', () => {
   expect(status()).toEqual({ status: 'unlocked', since: 0, db });
 });
 
-test('a long absence with the prompt still up on return locks as soon as the prompt ends', async () => {
+test('a long absence with the prompt still up on return, then a pass, stays unlocked: the pass is the user being here', async () => {
   start({ status: 'unlocked', since: 0, db });
-  sessionStore.setState({ amountsHidden: false });
   let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
   authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
 
@@ -88,9 +93,44 @@ test('a long absence with the prompt still up on return locks as soon as the pro
   expect(status().status).toBe('stepUp');
   answer({ success: true });
 
-  expect(await confirmed).toEqual({ ok: false, reason: 'cancelled' });
+  expect(await confirmed).toEqual({ ok: true });
+  expect(status()).toEqual({ status: 'unlocked', since: 0, db });
+});
+
+test('re-locking right away never locks a step-up whose own prompt took Sen to the background', async () => {
+  mockPrefs = { relockAfter: 0 };
+  start({ status: 'unlocked', since: 0, db });
+  sessionStore.setState({ biometric: { kind: 'face', level: 'passcode' } });
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  mockCredential.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+
+  const confirmed = stepUp('delete');
+  appGoes('background');
+  jest.advanceTimersByTime(5_000);
+  appGoes('active');
+  answer({ success: true });
+
+  expect(await confirmed).toEqual({ ok: true });
+  expect(status()).toEqual({ status: 'unlocked', since: 0, db });
+});
+
+test('a sensor lockout that hands over to the screen lock keeps the away time for the second prompt', async () => {
+  mockPrefs = { relockAfter: 1 };
+  start({ status: 'unlocked', since: 0, db });
+  const api29 = jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  authenticate.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+  mockCredential.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
+
+  const confirmed = stepUp('delete');
+  appGoes('background');
+  jest.advanceTimersByTime(2 * MINUTE);
+  appGoes('active');
+  answer({ success: false, error: 'lockout' });
+
+  await confirmed;
+  api29.mockRestore();
   expect(status()).toEqual({ status: 'locked', reason: 'background' });
-  expect(sessionStore.getState().amountsHidden).toBe(true);
 });
 
 test('a short absence with the prompt still up on return does not lock', async () => {

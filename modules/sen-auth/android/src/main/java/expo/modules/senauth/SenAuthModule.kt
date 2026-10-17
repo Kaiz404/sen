@@ -3,6 +3,8 @@ package expo.modules.senauth
 import android.app.Activity
 import android.app.KeyguardManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -13,6 +15,14 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 private const val CREDENTIAL_REQUEST = 4120
+
+// The tag androidx.biometric gives the fragment that hosts a prompt.
+private const val BIOMETRIC_FRAGMENT_TAG = "androidx.biometric.BiometricFragment"
+
+// A prompt that has not shown by then is not going to, and the caller must hear that at once, not after its clock.
+private const val SHOW_WATCHDOG_MS = 2_000L
+private const val DETACH_POLL_MS = 50L
+private const val DETACH_POLLS = 20
 
 private fun success() = mapOf("success" to true)
 
@@ -39,6 +49,7 @@ class SenAuthModule : Module() {
   // One check at a time. A result for any promise but this one is late and dropped.
   private var pending: Promise? = null
   private var prompt: BiometricPrompt? = null
+  private val handler = Handler(Looper.getMainLooper())
 
   override fun definition() = ModuleDefinition {
     Name("SenAuth")
@@ -87,24 +98,10 @@ class SenAuthModule : Module() {
 
     try {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        // DEVICE_CREDENTIAL alone is supported from Android 11.
-        val callback = object : BiometricPrompt.AuthenticationCallback() {
-          override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-            settle(promise, success())
-          }
-
-          override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-            settle(promise, failure(errorOf(errorCode)))
-          }
-        }
-        val local = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), callback)
-        prompt = local
-        local.authenticate(
-          BiometricPrompt.PromptInfo.Builder()
-            .setTitle(title)
-            .setAllowedAuthenticators(DEVICE_CREDENTIAL)
-            .build()
-        )
+        // DEVICE_CREDENTIAL alone is supported from Android 11. A sensor prompt that handed over to this call may still
+        // be detaching, and androidx will not show a replacement until it has. Android 9 and 10 take the activity
+        // branch below instead, which has no BiometricFragment to wait for.
+        showWhenClear(activity, title, promise, DETACH_POLLS)
       } else {
         val intent = keyguard.createConfirmDeviceCredentialIntent(title, null)
         if (intent == null) {
@@ -116,5 +113,43 @@ class SenAuthModule : Module() {
     } catch (e: Exception) {
       settle(promise, failure("unknown"))
     }
+  }
+
+  private fun showWhenClear(activity: FragmentActivity, title: String, promise: Promise, polls: Int) {
+    if (pending !== promise) return
+    val previous = activity.supportFragmentManager.findFragmentByTag(BIOMETRIC_FRAGMENT_TAG)
+    if (previous != null && polls > 0) {
+      handler.postDelayed({ showWhenClear(activity, title, promise, polls - 1) }, DETACH_POLL_MS)
+      return
+    }
+    val callback = object : BiometricPrompt.AuthenticationCallback() {
+      override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+        settle(promise, success())
+      }
+
+      override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+        settle(promise, failure(errorOf(errorCode)))
+      }
+    }
+    try {
+      val local = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), callback)
+      prompt = local
+      local.authenticate(
+        BiometricPrompt.PromptInfo.Builder()
+          .setTitle(title)
+          .setAllowedAuthenticators(DEVICE_CREDENTIAL)
+          .build()
+      )
+    } catch (e: Exception) {
+      settle(promise, failure("unknown"))
+      return
+    }
+    handler.postDelayed({
+      if (pending === promise &&
+        activity.supportFragmentManager.findFragmentByTag(BIOMETRIC_FRAGMENT_TAG) == null
+      ) {
+        settle(promise, failure("unknown"))
+      }
+    }, SHOW_WATCHDOG_MS)
   }
 }

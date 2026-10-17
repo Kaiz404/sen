@@ -33,14 +33,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-primer-timed-out-dark
-- openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-primer-off-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-primer-off-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-idle&theme=dark"
 - extendedWaitUntil:
     visible:
@@ -57,6 +49,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-biometrics-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-screen-lock&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-screen-lock-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-screen-lock-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=dark"
 - extendedWaitUntil:
     visible:
@@ -65,14 +65,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-checking-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-mismatch&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-mismatch-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-mismatch-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-timed-out&theme=dark"
 - extendedWaitUntil:
     visible:
@@ -81,38 +73,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-timed-out-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-off-timed-out&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-off-timed-out-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-off-timed-out-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-lockout-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-lockout-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-blocked&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-blocked-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-blocked-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-off&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-off-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-off-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-no-lock&theme=dark"
 - extendedWaitUntil:
     visible:
@@ -121,22 +81,6 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-no-lock-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-weak&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-weak-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-weak-dark
-- openLink: "sen://dev/states?screen=auth&state=lock-unavailable&theme=dark"
-- extendedWaitUntil:
-    visible:
-      id: shot-auth-lock-unavailable-dark
-    timeout: 15000
-- waitForAnimationToEnd:
-    timeout: 3000
-- takeScreenshot: auth-lock-unavailable-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-error&theme=dark"
 - extendedWaitUntil:
     visible:

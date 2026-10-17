@@ -12,10 +12,10 @@ import {
   type AuthFailure,
   BIOMETRIC,
   type BiometricCopy,
-  credentialName,
   useBiometric,
   useDb,
   useStepUp,
+  credentialName,
 } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { ACTIVITY_CAP } from '@/models/activity';
@@ -48,11 +48,8 @@ export type ActivityViewProps = {
 
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
   timedOut: () => 'The check timed out. The log is as it was.',
-  mismatch: (name) => `${capital(name)} didn’t match. The log is as it was.`,
-  lockout: () => `Too many tries. The log is as it was. Use your ${credentialName()} next time.`,
-  noLock: () => 'The log is as it was. Set a screen lock to use Sen.',
-  not_set_up: (name) => `${capital(name)} is off. The log is as it was.`,
-  unavailable: (name) => `${capital(name)} isn’t available right now. The log is as it was.`,
+  noLock: () => `The log is as it was. Set a ${credentialName()} to use Sen.`,
+  unavailable: () => 'The check isn’t available right now. The log is as it was.',
   unknown: () => 'Something went wrong with the check. The log is as it was.',
 };
 

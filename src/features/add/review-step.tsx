@@ -12,10 +12,10 @@ import { toast } from '@/components/toast';
 import {
   type AuthFailure,
   type Biometric,
-  credentialName,
   useBiometric,
   useDb,
   useStepUp,
+  credentialName,
 } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { CATEGORY_LABEL } from '@/models/category';
@@ -47,11 +47,8 @@ export type SaveState =
 const REFUSED: Readonly<Record<AuthFailure, (name: string) => string>> = {
   cancelled: (name) => `${capital(name)} was cancelled. Save again when you're ready.`,
   timedOut: () => "The check timed out. Save again when you're ready.",
-  mismatch: (name) => `${capital(name)} didn't match. Save again when you're ready.`,
-  lockout: () => `Too many tries. Use your ${credentialName()} when you save again.`,
-  noLock: () => 'Set a screen lock to use Sen, then save again.',
-  not_set_up: (name) => `${capital(name)} is off. Your ${credentialName()} still works.`,
-  unavailable: (name) => `${capital(name)} isn't available right now. Try again soon.`,
+  noLock: () => `Set a ${credentialName()} to use Sen, then save again.`,
+  unavailable: () => "The check isn't available right now. Try again soon.",
   unknown: () => 'Something went wrong with the check. Save again when you are ready.',
 };
 

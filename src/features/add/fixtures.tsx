@@ -135,7 +135,7 @@ export const ADD_STATES = {
   'review-failed': () => <Review state={{ kind: 'failed' }} />,
   'delete-confirm': () => <Delete phase={{ kind: 'ready' }} />,
   'delete-checking': () => <Delete phase={{ kind: 'checking' }} />,
-  'delete-mismatch': () => <Delete phase={{ kind: 'refused', reason: 'mismatch' }} />,
+  'delete-refused': () => <Delete phase={{ kind: 'refused', reason: 'unavailable' }} />,
   'delete-bank': () => <Delete row={BANK} phase={{ kind: 'ready' }} />,
   'delete-gone': () => <Delete row={null} phase={{ kind: 'ready' }} />,
 } satisfies Record<string, () => ReactNode>;

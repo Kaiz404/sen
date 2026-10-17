@@ -114,12 +114,12 @@ test('a cancelled prompt keeps the row and the sheet, silently', async () => {
   expect(mockRouter.dismissTo).not.toHaveBeenCalled();
 });
 
-test('a finger that does not match says nothing was deleted and offers another try', async () => {
-  mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'mismatch' });
+test('a check that is not available says nothing was deleted and offers another try', async () => {
+  mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'unavailable' });
   await renderSheet(ADDED);
   await fireEvent.press(await screen.findByRole('button', { name: 'Delete with fingerprint' }));
 
-  expect(screen.getByText("Fingerprint didn't match. Nothing was deleted.")).toBeOnTheScreen();
+  expect(screen.getByText("The check isn't available right now. Nothing was deleted.")).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Try again with fingerprint' })).toBeEnabled();
   expect(await added()).not.toBeNull();
 });

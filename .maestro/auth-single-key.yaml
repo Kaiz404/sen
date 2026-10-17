@@ -1,0 +1,21 @@
+# Lock has one auth key. The phone picks the route (D40), so no screen-lock or passcode key sits beside it.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: cancel
+- assertVisible:
+    id: unlock
+- assertNotVisible: Use screen lock
+- assertNotVisible: Use passcode
+- assertNotVisible: Use device passcode
+- tapOn:
+    id: unlock
+- extendedWaitUntil:
+    visible:
+      id: unlock
+      enabled: true
+    timeout: 15000
+- assertNotVisible: Use screen lock
+- takeScreenshot: auth-single-key

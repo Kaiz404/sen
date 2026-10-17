@@ -99,15 +99,15 @@ test('Clear log asks for the check, empties the log and leaves the one entry tha
   expect(screen.queryByText('Added a transaction')).toBeNull();
 });
 
-test('a check that does not match keeps the log and says so', async () => {
+test('a check that is not available keeps the log and says so', async () => {
   await seed();
-  mockStepUp = async () => ({ ok: false, reason: 'mismatch' });
+  mockStepUp = async () => ({ ok: false, reason: 'unavailable' });
   await open();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Clear log' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Fingerprint didn’t match. The log is as it was.',
+    'The check isn’t available right now. The log is as it was.',
   );
   expect((await readActivity(mockDb)).entries).toHaveLength(3);
 });

@@ -8,9 +8,7 @@ import { Key } from '@/components/key';
 import { ReceiptSlip } from '@/components/receipt-slip';
 import { toast } from '@/components/toast';
 import {
-  armLockout,
   type Biometric,
-  disarmLockout,
   hideAmounts,
   lockNow,
   recordActivity,
@@ -19,7 +17,6 @@ import {
   useAmountsHidden,
   useBiometric,
   useDb,
-  useLockoutArmed,
 } from '@/features/auth';
 import { useAddedCount } from '@/features/security';
 import { Sen } from '@/features/sen';
@@ -62,7 +59,6 @@ export type PlainPref = Exclude<PrefKey, 'demo.datasetSize'>;
 export type SettingsValues = Pick<Prefs, PlainPref | 'demo.datasetSize'> & {
   readonly hideAmounts: boolean;
   readonly biometric: Biometric;
-  readonly lockoutArmed: boolean;
   /** How many rows the user added, or null while that loads. */
   readonly added: number | null;
   readonly progress: SyncProgress;
@@ -72,7 +68,6 @@ export type SettingsActions = {
   readonly onPref: <K extends PlainPref>(key: K, value: PrefValue<K>) => void;
   readonly onHideAmounts: (hidden: boolean) => void;
   readonly onDataset: (size: PrefValue<'demo.datasetSize'>) => void;
-  readonly onLockout: () => void;
   readonly onResetDemo: () => void;
   readonly onActivity: () => void;
   readonly onErase: () => void;
@@ -341,24 +336,6 @@ function Reviewers({
         />
         <Dash inset={false} />
         <View style={styles.reviewerKeys}>
-          {values.lockoutArmed ? (
-            <NavRow
-              framed
-              title="Lockout armed"
-              sub="Tap again to disarm"
-              chip={{ icon: BIOMETRIC_ICON[values.biometric], pastel: PASTEL.lilac }}
-              trailing={<Badge label="ARMED" tone="stamp" />}
-              onPress={actions.onLockout}
-            />
-          ) : (
-            <NavRow
-              framed
-              title={`Simulate ${name} lockout`}
-              sub="The next unlock reports lockout"
-              chip={{ icon: BIOMETRIC_ICON[values.biometric], pastel: PASTEL.lilac }}
-              onPress={actions.onLockout}
-            />
-          )}
           <NavRow
             framed
             title="Reset demo data"
@@ -378,11 +355,9 @@ export function SettingsScreen(): ReactNode {
   const params = useLocalSearchParams<{ focus?: string }>();
   const biometric = useBiometric().kind;
   const progress = useSyncProgress();
-  const lockoutArmed = useLockoutArmed();
   const added = useAddedCount();
   const values: SettingsValues = {
     biometric,
-    lockoutArmed,
     added,
     progress,
     hideAmounts: useAmountsHidden(),
@@ -396,7 +371,6 @@ export function SettingsScreen(): ReactNode {
     'demo.slow': usePref('demo.slow'),
     'demo.newOnRefresh': usePref('demo.newOnRefresh'),
   };
-  const name = BIOMETRIC_NAME[biometric];
 
   const actions: SettingsActions = {
     onPref: (key, value) => {
@@ -416,7 +390,7 @@ export function SettingsScreen(): ReactNode {
           playHaptic('reveal');
           return;
         }
-        const why = revealRefusalText(outcome.reason, name);
+        const why = revealRefusalText(outcome.reason);
         if (why !== null) toast.show({ title: why });
       });
     },
@@ -426,24 +400,6 @@ export function SettingsScreen(): ReactNode {
       switchDataset(db, size).catch(() =>
         toast.show({ title: 'Couldn’t switch the dataset', detail: 'Your rows are as they were.' }),
       );
-    },
-    onLockout: () => {
-      if (lockoutArmed) {
-        disarmLockout();
-        return;
-      }
-      armLockout();
-      toast.show({
-        title: 'Lockout armed',
-        detail: `The next unlock reports ${name} locked.`,
-        mark: <Sen pose="asleep" prop="nightcap" size={32} />,
-        action: {
-          label: 'Undo',
-          icon: 'undo',
-          accessibilityLabel: 'Undo lockout',
-          onPress: disarmLockout,
-        },
-      });
     },
     onResetDemo: () => router.push('/settings/reset-demo'),
     onActivity: () => router.push('/settings/activity'),

@@ -18,7 +18,7 @@ jest.mock('@/features/sen', () => ({
 const authenticate = (message: string) =>
   jest
     .requireActual<typeof import('@/features/auth/prompt')>('@/features/auth/prompt')
-    .authenticate(message);
+    .authenticate(message, 'strong');
 const goes = (state: AppStateStatus) =>
   act(async () => {
     AppState.currentState = state;

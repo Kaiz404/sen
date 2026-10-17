@@ -1,8 +1,11 @@
 import { act, render, renderHook, screen } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { Platform } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
+import { activity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
+import { confirmDeviceCredential } from '@/services/device-credential';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { mark } from '@/services/perf';
 import { queryClient } from '@/services/query-client';
@@ -10,8 +13,6 @@ import { KeyUnreadableError } from '@/services/store-fault';
 import * as Vault from '@/services/vault';
 
 import {
-  armLockout,
-  disarmLockout,
   dismissDbResetNotice,
   launch,
   lockNow,
@@ -29,6 +30,10 @@ jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
   supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
+}));
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
 }));
 jest.mock('@/services/vault', () => ({
   hasVault: jest.fn(),
@@ -269,36 +274,21 @@ test('a draft dropped by a lock is noted once, and a draft closed while unlocked
   expect(takeDraftDropped()).toBe(false);
 });
 
-test('an armed lockout reports lockout once without prompting', async () => {
-  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
-  authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
-  armLockout();
-
-  expect(await unlock()).toEqual({ ok: false, reason: 'lockout' });
-  expect(authenticate).not.toHaveBeenCalled();
-  expect(await unlock()).toEqual({ ok: false, reason: 'cancelled' });
-});
-
-test('a disarmed lockout lets the next unlock prompt for real', async () => {
+test('a sensor lockout that hands over to the screen lock is logged as a failed check', async () => {
   const db = await openTestDb();
-  armLockout();
-  disarmLockout();
-
-  expect(await unlockInto(db)).toEqual({ ok: true });
-  expect(authenticate).toHaveBeenCalledTimes(1);
-  expect(session().status).toBe('unlocked');
-});
-
-test('a lockout armed before sign out never reaches the next demo user', async () => {
-  await unlockInto(await openTestDb());
-  armLockout();
-  await signOut();
-  authenticate.mockClear();
-  authenticate.mockResolvedValueOnce({ success: true });
-  openVault.mockResolvedValueOnce({ kind: 'created', db: await openTestDb() });
+  sessionStore.setState({
+    session: { status: 'locked', reason: 'launch' },
+    biometric: { kind: 'fingerprint', level: 'strong' },
+  });
+  jest.replaceProperty(Platform, 'OS', 'android');
+  jest.spyOn(Platform, 'Version', 'get').mockReturnValue(29);
+  authenticate.mockResolvedValueOnce({ success: false, error: 'lockout' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: true });
+  openVault.mockResolvedValueOnce({ kind: 'opened', db });
+  const record = jest.spyOn(activity, 'record');
 
   expect(await unlock()).toEqual({ ok: true });
-  expect(authenticate).toHaveBeenCalledTimes(1);
+  expect(record).toHaveBeenCalledWith(null, { code: 'auth.failed', reason: 'lockout' });
 });
 
 test('locking ends the unlock timing, so a later gallery History logs no timing', async () => {

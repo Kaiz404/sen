@@ -17,14 +17,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: settings-reviewers-light
-- openLink: "sen://dev/states?screen=settings&state=reviewers-armed&theme=light"
+- openLink: "sen://dev/states?screen=settings&state=reviewers-set&theme=light"
 - extendedWaitUntil:
     visible:
-      id: shot-settings-reviewers-armed-light
+      id: shot-settings-reviewers-set-light
     timeout: 15000
 - waitForAnimationToEnd:
     timeout: 3000
-- takeScreenshot: settings-reviewers-armed-light
+- takeScreenshot: settings-reviewers-set-light
 - openLink: "sen://dev/states?screen=settings&state=reviewers-loading&theme=light"
 - extendedWaitUntil:
     visible:

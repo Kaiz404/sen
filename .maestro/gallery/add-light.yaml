@@ -121,14 +121,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: add-delete-checking-light
-- openLink: "sen://dev/states?screen=add&state=delete-mismatch&theme=light"
+- openLink: "sen://dev/states?screen=add&state=delete-refused&theme=light"
 - extendedWaitUntil:
     visible:
-      id: shot-add-delete-mismatch-light
+      id: shot-add-delete-refused-light
     timeout: 15000
 - waitForAnimationToEnd:
     timeout: 3000
-- takeScreenshot: add-delete-mismatch-light
+- takeScreenshot: add-delete-refused-light
 - openLink: "sen://dev/states?screen=add&state=delete-bank&theme=light"
 - extendedWaitUntil:
     visible:

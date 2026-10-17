@@ -13,10 +13,10 @@ import {
   type AuthFailure,
   type Biometric,
   useAmountsHidden,
-  credentialName,
   useBiometric,
   useDb,
   useStepUp,
+  credentialName,
 } from '@/features/auth';
 import { PrivacyCover } from '@/features/security';
 import { ADD_CATEGORIES, type CategoryId } from '@/models/category';
@@ -56,11 +56,8 @@ const MONTHS = [
 
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
   timedOut: () => 'The check timed out. Nothing was deleted.',
-  mismatch: (name) => `${name} didn't match. Nothing was deleted.`,
-  lockout: () => `Too many tries. Nothing was deleted. Use your ${credentialName()} next time.`,
-  noLock: () => 'Nothing was deleted. Set a screen lock to use Sen.',
-  not_set_up: (name) => `${name} is off. Nothing was deleted.`,
-  unavailable: (name) => `${name} isn't available right now. Nothing was deleted.`,
+  noLock: () => `Nothing was deleted. Set a ${credentialName()} to use Sen.`,
+  unavailable: () => "The check isn't available right now. Nothing was deleted.",
   unknown: () => 'Something went wrong with the check. Nothing was deleted.',
 };
 
