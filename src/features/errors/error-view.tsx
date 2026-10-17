@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
@@ -14,11 +15,12 @@ type ErrorViewProps = {
 
 /**
  * A screen threw while rendering. Sen is the static one, because this view can stand where the layout's providers
- * and Sen's director are gone.
+ * and Sen's director are gone. The root boundary replaces the root layout, so the gesture root the keys need is
+ * rendered here.
  */
 export function ErrorView({ onRetry, onHome }: ErrorViewProps): ReactNode {
   return (
-    <View style={styles.screen}>
+    <GestureHandlerRootView style={styles.screen}>
       <StatusBar style="light" />
       <View style={styles.sen}>
         <Sen pose="worried" size={190} label="Sen, worried something went wrong on this screen" />
@@ -48,7 +50,7 @@ export function ErrorView({ onRetry, onHome }: ErrorViewProps): ReactNode {
           onPress={onHome}
         />
       </View>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
