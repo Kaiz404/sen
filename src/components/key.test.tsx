@@ -27,3 +27,12 @@ test('a disabled key tells screen readers it is disabled', async () => {
   await render(<Key label="Checking it's you" tone="lemon" disabled onPress={() => {}} />);
   expect(screen.getByRole('button', { name: "Checking it's you" })).toBeDisabled();
 });
+
+test('a label stays on one line and shrinks to fit, so large system text never clips it in the fixed-height face', async () => {
+  await render(
+    <Key label="Unlock with fingerprint" tone="lemon" size="xlarge" onPress={() => {}} />,
+  );
+  const label = screen.getByText('Unlock with fingerprint');
+  expect(label.props.numberOfLines).toBe(1);
+  expect(label.props.adjustsFontSizeToFit).toBe(true);
+});

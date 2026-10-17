@@ -121,7 +121,14 @@ export function Key({
         )}
         {iconPosition === 'start' && glyph}
         {label !== undefined && (
-          <Text style={[styles.label, { fontSize: s.font, color: c.ink }]}>{label}</Text>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+            style={[styles.label, { fontSize: s.font, color: c.ink }]}
+          >
+            {label}
+          </Text>
         )}
         {iconPosition === 'end' && glyph}
       </Animated.View>
@@ -166,6 +173,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   iconOnly: { paddingHorizontal: 0 },
   labelled: { paddingHorizontal: 18 },
-  label: { fontFamily: FONT.numerals },
+  // The face has a fixed height, so large system text shrinks the label to one line instead of clipping a second.
+  label: { flexShrink: 1, fontFamily: FONT.numerals },
   wash: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0.5 },
 }));
