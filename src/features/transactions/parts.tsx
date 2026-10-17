@@ -10,6 +10,7 @@ import { Segmented, type SegmentOption } from '@/components/segmented';
 import { Tag } from '@/components/tag';
 import type { Biometric } from '@/features/auth';
 import { type PoseId, playMoment, Sen, transitionFor } from '@/features/sen';
+import { useAfterFirstPaint } from '@/motion/first-paint';
 import type { DayKey } from '@/models/day';
 import { type Direction, signed, type SignedMinor, signedMinor } from '@/models/money';
 import type { TxId } from '@/models/transaction';
@@ -71,22 +72,6 @@ export function Header({
 
 /** The month card's Sen. Showing amounts plays Reveal on it, hiding plays Re-mask. */
 const MONTH_SEN = 'month';
-
-/** True from the second frame on, so work behind it starts after the first frame has drawn. */
-export function useAfterFirstPaint(): boolean {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let second = 0;
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => setReady(true));
-    });
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-    };
-  }, []);
-  return ready;
-}
 
 /**
  * The rig makes a shared value per channel and an animated mapper per part. The first frame draws the same

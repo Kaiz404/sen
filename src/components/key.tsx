@@ -23,6 +23,8 @@ type KeyProps = {
   readonly size?: KeySize;
   readonly surface?: KeySurface;
   readonly disabled?: boolean;
+  /** Work started by this key is running. Disables it and tells a screen reader. */
+  readonly busy?: boolean;
   readonly testID?: string;
 } & (
   | {
@@ -55,7 +57,8 @@ export function Key({
   tone = 'paper',
   size = 'regular',
   surface = 'plain',
-  disabled = false,
+  busy = false,
+  disabled = busy,
   testID,
   label,
   icon,
@@ -78,7 +81,7 @@ export function Key({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, busy }}
       disabled={disabled}
       testID={testID}
       hitSlop={iconOnly ? { left: slop, right: slop } : undefined}

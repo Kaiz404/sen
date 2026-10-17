@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -8,7 +8,6 @@ import { playMoment, Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
 import type { ReadFailure, SyncFailure } from './body';
-import { useAfterFirstPaint } from './parts';
 
 const BONE_ROWS = [0, 1, 2, 3] as const;
 
@@ -56,6 +55,7 @@ export function EmptyHistory(): ReactNode {
 }
 
 const NO_RESULTS_SEN = 'no-results';
+const TYPING_PAUSE_MS = 300;
 
 export function NoResults({
   search,
@@ -65,15 +65,22 @@ export function NoResults({
   readonly onClear: () => void;
 }): ReactNode {
   const term = search.trim();
-  // The rig registers in its own effect, which runs before this one.
+  // MAX-Moments plays it 300 ms after typing stops. The timer restarts on each keystroke until the
+  // moment has played, and a later search keeps the Sen where it stands. The rig registers in its own
+  // effect, which runs before this one.
+  const [begun, setBegun] = useState(false);
   useEffect(() => {
-    playMoment(NO_RESULTS_SEN, 'emptySearch');
-  }, []);
-  // The moment opens hidden below the slip. Showing Sen after first paint skips the frame before the rig has begun.
-  const begun = useAfterFirstPaint();
+    if (begun) return;
+    const timer = setTimeout(() => {
+      playMoment(NO_RESULTS_SEN, 'emptySearch');
+      setBegun(true);
+    }, TYPING_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [term, begun]);
   return (
     <View testID="history-no-results" style={styles.state}>
-      <View testID="history-no-results-sen" style={{ opacity: begun ? 1 : 0 }}>
+      {/* Its bottom edge is the slip the Sen rises from. The padding leaves room above for the paws. */}
+      <View testID="history-no-results-sen" style={[styles.risen, { opacity: begun ? 1 : 0 }]}>
         <Sen
           id={NO_RESULTS_SEN}
           pose="shrug"
@@ -135,23 +142,30 @@ const SIMULATED: ReadonlySet<string> = new Set<SyncFailure['kind']>([
   'server',
 ]);
 
-/** The failed state's Sen, which the screen also asks to play Network error when a retry fails. */
-export const FAILED_SEN = 'history-failed';
+const FAILED_SEN = 'history-failed';
 
 export function FullError({
   error,
+  busy,
+  failures,
   onRetry,
   onSettings,
 }: {
   readonly error: SyncFailure | ReadFailure;
+  /** A retry from this state is running. The state stays up until it succeeds or fails again. */
+  readonly busy: boolean;
+  /** Retries from this state that have failed so far. */
+  readonly failures: number;
   readonly onRetry: () => void;
   readonly onSettings: () => void;
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
   const simulated = SIMULATED.has(error.kind);
+  // Owns the buzz: the moment's mark fires it once on arrival and once per failed Retry. The bank's
+  // errors are shared constants, so a repeat failure is told apart by `failures`, not by the error.
   useEffect(() => {
     playMoment(FAILED_SEN, 'networkError');
-  }, []);
+  }, [error, failures]);
   const retry = () => {
     playMoment(FAILED_SEN, 'networkRetry');
     onRetry();
@@ -175,7 +189,7 @@ export function FullError({
         <Text style={styles.failedBody}>{body}</Text>
       </View>
       <View style={styles.failedActions}>
-        <Key tone="lemon" size="large" icon="refresh" label="Retry" onPress={retry} />
+        <Key tone="lemon" size="large" icon="refresh" label="Retry" busy={busy} onPress={retry} />
         {simulated && (
           <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
             <Text style={styles.linkText}>Reviewer settings</Text>
@@ -186,12 +200,16 @@ export function FullError({
   );
 }
 
+/** Room around the Sen's box for the raised paws and the magnifier. */
+const RISEN_PAD = 40;
+
 const styles = StyleSheet.create((theme, rt) => ({
   skeleton: { paddingHorizontal: 20, paddingTop: 18, gap: 18 },
   boneSlip: { gap: 10 },
   bonePaper: { backgroundColor: theme.colors.paper, paddingVertical: 4 },
   boneRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
   boneText: { flex: 1, gap: 6 },
+  risen: { overflow: 'hidden', margin: -RISEN_PAD, padding: RISEN_PAD },
   state: {
     alignItems: 'center',
     gap: 12,

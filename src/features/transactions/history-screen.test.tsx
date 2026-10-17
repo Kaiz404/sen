@@ -1,13 +1,15 @@
 import '@shopify/flash-list/jestSetup';
 
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { toast } from '@/components/toast';
+import { playMoment } from '@/features/sen';
 import { sessionStore } from '@/features/auth/session';
 import { TxIdSchema } from '@/models/transaction';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { playHaptic } from '@/services/haptics';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import { readSyncState, sync } from '@/services/sync';
@@ -51,6 +53,7 @@ beforeEach(async () => {
   arrivals.setState({ after: null, added: null });
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   mockPush.mockClear();
+  jest.mocked(playHaptic).mockClear();
   mockNotice = null;
   mockDropped.length = 0;
   clearPrefs();
@@ -223,6 +226,82 @@ test('the header question mark opens the privacy explainer, beside Settings', as
 
   expect(mockPush).toHaveBeenCalledWith('/settings/privacy');
   expect(screen.getByRole('button', { name: 'Settings' })).toBeOnTheScreen();
+});
+
+const buzzes = () => jest.mocked(playHaptic).mock.calls.filter(([h]) => h === 'networkError');
+const senFace = () =>
+  (
+    within(
+      screen.getByTestId('sen-rig-history-failed', { includeHiddenElements: true }),
+    ).getByTestId('sen-lk', { includeHiddenElements: true }).props.jestAnimatedProps.value
+      .matrix as number[]
+  ).slice(4);
+
+test('a failed Retry keeps the full error up with Retry busy, buzzes once per failure, and a good Retry shows the list', async () => {
+  writePref('demo.next', 'offline');
+  await renderHistory();
+  expect(await screen.findByText("Can't load your history", undefined, LONG)).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(300));
+  expect(buzzes()).toHaveLength(1);
+  await act(() => jest.advanceTimersByTime(2000));
+
+  writePref('demo.next', 'offline');
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+
+  // The sync runs: no skeleton, the same error, and a Retry that says it is busy.
+  expect(screen.getByText("Can't load your history")).toBeOnTheScreen();
+  expect(screen.queryByTestId('history-skeleton')).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeBusy();
+  const rested = senFace();
+  await act(() => jest.advanceTimersByTime(400));
+  expect(screen.getByText("Can't load your history")).toBeOnTheScreen();
+  expect(senFace()).not.toEqual(rested);
+
+  await act(() => jest.advanceTimersByTime(6000));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled(), LONG);
+  await act(() => jest.advanceTimersByTime(300));
+  expect(screen.getByText("Can't load your history")).toBeOnTheScreen();
+  expect(buzzes()).toHaveLength(2);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  expect(buzzes()).toHaveLength(2);
+});
+
+test('a failed pull over a list buzzes once, from the banner path', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  writePref('demo.next', 'offline');
+
+  await act(() => pullDown());
+  expect(await screen.findByText("You're offline", undefined, LONG)).toBeOnTheScreen();
+
+  expect(buzzes()).toHaveLength(1);
+});
+
+test('Sen holds still while another screen covers History, and moves again when it is back', async () => {
+  const { rerender } = await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(100));
+  expect(playMoment('month', 'blink')).toBe(true);
+  await act(() => jest.advanceTimersByTime(300));
+
+  mockFocused = false;
+  await rerender(
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+    </QueryClientProvider>,
+  );
+  expect(playMoment('month', 'blink')).toBe(false);
+
+  mockFocused = true;
+  await rerender(
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+    </QueryClientProvider>,
+  );
+  expect(playMoment('month', 'blink')).toBe(true);
 });
 
 test('the fault banner says the fault is simulated and links to the reviewer controls', async () => {

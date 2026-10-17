@@ -34,7 +34,7 @@ test('a search with no matches plays Sen rising from behind the slip, then settl
   await render(<NoResults search="zzz" onClear={jest.fn()} />);
 
   expect(screen.getByTestId('sen-rig-no-results', hidden)).toBeOnTheScreen();
-  await at(100);
+  await at(400);
   expect(rise()).toBeCloseTo(70 * UNIT, 1);
   await at(3600);
   expect(rise()).toBeCloseTo(-14 * UNIT, 1);
@@ -47,16 +47,27 @@ test('Off shows the shrug still, with no rise', async () => {
     </MotionPolicyRoot>,
   );
 
-  await at(100);
+  await at(400);
   expect(rise()).toBeCloseTo(-14 * UNIT, 1);
 });
 
-test('Sen is hidden until the first paint, so the settled pose never shows before the rise', async () => {
-  await render(<NoResults search="zzz" onClear={jest.fn()} />);
-  expect(screen.getByTestId('history-no-results-sen', hidden)).toHaveStyle({ opacity: 0 });
+test('Sen stays hidden until the typing pause ends, and typing on restarts the pause without replaying', async () => {
+  const view = await render(<NoResults search="z" onClear={jest.fn()} />);
+  const sen = () => screen.getByTestId('history-no-results-sen', hidden);
+  expect(sen()).toHaveStyle({ opacity: 0 });
 
+  await at(250);
+  await view.rerender(<NoResults search="zz" onClear={jest.fn()} />);
+  await at(250);
+  expect(sen()).toHaveStyle({ opacity: 0 });
   await at(100);
-  expect(screen.getByTestId('history-no-results-sen')).toHaveStyle({ opacity: 1 });
+  expect(sen()).toHaveStyle({ opacity: 1 });
+  expect(rise()).toBeGreaterThan(60 * UNIT);
+
+  await at(3600);
+  await view.rerender(<NoResults search="zzz" onClear={jest.fn()} />);
+  await at(400);
+  expect(rise()).toBeCloseTo(-14 * UNIT, 1);
 });
 
 const face = () =>
@@ -68,7 +79,15 @@ const lean = () =>
   )?.rotate;
 
 test('the failed state plays Network error on arrival and buzzes once, at the moment’s mark', async () => {
-  await render(<FullError error={OFFLINE} onRetry={jest.fn()} onSettings={jest.fn()} />);
+  await render(
+    <FullError
+      error={OFFLINE}
+      busy={false}
+      failures={0}
+      onRetry={jest.fn()}
+      onSettings={jest.fn()}
+    />,
+  );
 
   await at(200);
   expect(playHaptic.mock.calls).toEqual([['networkError']]);
@@ -77,7 +96,15 @@ test('the failed state plays Network error on arrival and buzzes once, at the mo
 
 test('Retry plays Sen’s glance up at the button and still retries', async () => {
   const onRetry = jest.fn();
-  await render(<FullError error={OFFLINE} onRetry={onRetry} onSettings={jest.fn()} />);
+  await render(
+    <FullError
+      error={OFFLINE}
+      busy={false}
+      failures={0}
+      onRetry={onRetry}
+      onSettings={jest.fn()}
+    />,
+  );
   await at(2000);
   const rested = face();
 

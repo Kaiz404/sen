@@ -63,6 +63,10 @@ export type HistoryViewProps = {
   readonly monthCounts: MaskedTotals | undefined;
   readonly resultCounts: MaskedTotals | undefined;
   readonly banner: Banner | null;
+  /** A Retry from the full error is running, so that state stays up with a busy Retry. */
+  readonly retrying?: boolean;
+  /** Retries from the full error that have failed. */
+  readonly retryFailures?: number;
   readonly skipped: number;
   readonly notice: DbResetReason | null;
   /** The pull gesture's state: the bank being asked, or its data back. */
@@ -191,6 +195,8 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
         {body.kind === 'failed' ? (
           <FullError
             error={body.error}
+            busy={props.retrying === true}
+            failures={props.retryFailures ?? 0}
             onRetry={actions.onRetry}
             onSettings={actions.onReviewerSettings}
           />
