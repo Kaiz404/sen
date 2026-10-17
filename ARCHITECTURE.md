@@ -376,7 +376,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | `user_cancel`, `system_cancel`, `app_cancel` | `cancelled` | Return silently. Not an error |
 | `user_fallback` | `cancelled` | Sen always allows the passcode, so the OS handles it. Treated as a cancel |
 | `authentication_failed` | `mismatch` | "Not quite." with "2 more tries before fingerprint locks". Three tries are shown (inferred). At zero it points to the passcode |
-| `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode |
+| `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode. A second lockout after that cool-down shows the `blocked` view, a conservative steer to the passcode with no countdown (the app cannot see Android's real lockout). It lifts after 5 minutes or when an unlock goes through |
 | `not_enrolled`, `passcode_not_set` | `not_set_up` | "Fingerprint is off." Open device settings, or the passcode |
 | `not_available` | `unavailable` | Explain, passcode |
 | `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown`, and any code not in the table | `unknown` | "Something went wrong." Generic retry |

@@ -475,7 +475,8 @@ The phases are in [PLAN.md](PLAN.md).
 **What it does.**
 - **Detection.** `getEnrolledLevelAsync` returns `NONE`. `detectBiometric` maps it to the enrolled level `none`.
 - **Lock and Welcome.** Both show "Set a screen lock to use Sen" with one key, "Open lock-screen settings". Android sends the `android.app.action.SET_NEW_PASSWORD` intent. iOS opens Sen's page in Settings.
-- **Return.** The app re-reads the level each time it becomes active, so the message clears once a lock exists.
+- **Return.** The app re-reads the level each time it becomes active, so the message clears once a lock exists. A failed read keeps the last level, or counts as a passcode on launch, so a flaky read never says "no lock".
+- **Repeated lockouts.** A second lockout shows a conservative steer to the passcode, with no countdown, since the app cannot see Android's real lockout. The steer lifts after 5 minutes, or when an unlock goes through.
 
 **Cost.** A reviewer's emulator needs a PIN, as the API 36 AVD already has.
 

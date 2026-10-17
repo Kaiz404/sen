@@ -8,10 +8,10 @@ export type PromptView =
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
   | { readonly kind: 'lockout'; readonly until: number }
   /**
-   * A second lockout straight after the first cool-down is Android's permanent one, which only the device passcode
-   * lifts. There is no countdown to promise.
+   * A conservative steer to the passcode after repeated lockouts. Android's real lockout length is not visible to the
+   * app, so Sen promises no countdown. It lifts after `BLOCKED_FOR_MS`, or when an unlock goes through.
    */
-  | { readonly kind: 'blocked' }
+  | { readonly kind: 'blocked'; readonly since: number }
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
   /** The phone has no screen lock, so there is no passcode to fall back on and nothing for Sen to ask. */
   | { readonly kind: 'noLock' }
@@ -33,6 +33,8 @@ export type PromptView =
 export const TRIES = 3;
 /** Android's biometric lockout lasts 30 s. */
 export const LOCKOUT_MS = 30_000;
+/** How long Lock steers to the passcode before it trusts the fingerprint to try again. */
+export const BLOCKED_FOR_MS = 5 * 60_000;
 
 export const IDLE: PromptView = { kind: 'idle' };
 
@@ -71,8 +73,11 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
       return { kind: 'mismatch', triesLeft: Math.max(0, before - 1) };
     }
     case 'lockout':
-      return prev.kind === 'lockout' || prev.kind === 'blocked'
-        ? { kind: 'blocked' }
+      if (prev.kind === 'blocked' && now - prev.since >= BLOCKED_FOR_MS)
+        return { kind: 'lockout', until: now + LOCKOUT_MS };
+      if (prev.kind === 'blocked') return prev;
+      return prev.kind === 'lockout'
+        ? { kind: 'blocked', since: now }
         : { kind: 'lockout', until: now + LOCKOUT_MS };
     case 'not_set_up':
       return { kind: 'off', canOpenSettings: true };
@@ -97,7 +102,7 @@ export function canReset(view: Extract<PromptView, { kind: 'store' }>): boolean 
 }
 
 export function afterUnlock(prev: PromptView, outcome: UnlockOutcome, now: number): PromptView {
-  if (outcome.ok) return prev;
+  if (outcome.ok) return IDLE;
   if (outcome.reason !== 'store') return afterPrompt(prev, outcome.reason, now);
   const run = prev.kind === 'store' && prev.cause === outcome.cause ? prev : null;
   return {
