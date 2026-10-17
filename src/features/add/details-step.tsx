@@ -154,7 +154,12 @@ function CategoryChip({
       style={styles.chip(selected)}
     >
       <MaterialCommunityIcons name={CATEGORY_ICON[id]} size={20} color={theme.colors.ink} />
-      <Text numberOfLines={1} style={styles.chipLabel}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        style={[styles.chipLabel, { color: theme.colors.ink }]}
+      >
         {CATEGORY_LABEL[id]}
       </Text>
       {selected && (
@@ -313,7 +318,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderColor: selected ? theme.colors.ink : theme.colors.rule,
     backgroundColor: theme.colors.paper,
   }),
-  chipLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.ink },
+  // Shrinks a little rather than cut a name to "Food & dri…" beside the tick on a 393 dp phone.
+  chipLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
   dates: { flexDirection: 'row', gap: 8 },
   dayChip: (selected: boolean) => ({
     flexGrow: 1,
