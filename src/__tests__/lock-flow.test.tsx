@@ -20,7 +20,6 @@ import { sessionStore } from '@/features/auth/session';
 import { playMoment } from '@/features/sen';
 import { InstantSchema, malaysiaDay } from '@/models/day';
 import { draftSchema } from '@/models/draft';
-import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
@@ -39,7 +38,6 @@ jest.mock('@/features/sen/director/store', () => {
 });
 jest.mock('@/services/vault', () => ({ hasVault: jest.fn(), openVault: jest.fn() }));
 const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
-const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 
 const APP = join(__dirname, '..', 'app');
 
@@ -52,7 +50,7 @@ const routes = Object.fromEntries(
 
 test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite.", a match opens History, a lock closes it', async () => {
   jest.mocked(Vault.hasVault).mockResolvedValue(true);
-  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db });
+  jest.mocked(Vault.openVault).mockResolvedValue({ kind: 'opened', db: await openTestDb() });
   await renderRouter(routes, { initialUrl: '/' });
   expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
 
