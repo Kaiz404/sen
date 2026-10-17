@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import { NavScrim } from '@/components/nav-scrim';
 import { ToastHost } from '@/components/toast';
 import { SessionRoot, useRouteGate } from '@/features/auth';
 import { PrivacyCover, useScreenGuard } from '@/features/security';
@@ -69,6 +70,7 @@ export default function RootLayout() {
               <Stack.Screen name="dev/states" />
             </Stack.Protected>
           </Stack>
+          <NavScrim hidden={gate === 'locked'} />
           <ToastHost />
           <PrivacyCover />
         </SessionRoot>

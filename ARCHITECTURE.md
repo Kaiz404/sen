@@ -151,6 +151,7 @@ Android draws every screen edge to edge from SDK 54 on, and apps that target And
 | History's list end | `rt.insets.bottom + ADD_KEY_CLEARANCE` on the footer, so the last row clears the Add key and the bar |
 | The Add key, the toast | `bottom: rt.insets.bottom + 16` and `rt.insets.bottom + 24` |
 | The discard dialog, the iOS calendar sheet | `paddingBottom: rt.insets.bottom + 16` on the scrim |
+| The 3-button navigation bar | `<NavScrim>` (`components/nav-scrim.tsx`, mounted in the root layout after the Stack): a canvas-coloured band `rt.insets.bottom` tall when that inset is 40 dp or more, which marks the button bar (inferred: gesture bars are 32 dp or less). Edge to edge the bar is transparent and the system's contrast scrim is too faint to hide scrolled rows. Not shown on Lock, whose ground is the hero colour. JS only, so no rebuild |
 | Form sheets | `SheetSurface` pads `rt.insets.bottom + 20`. Android form sheets don't add the nav bar inset themselves ([react-native-screens #3580](https://github.com/software-mansion/react-native-screens/issues/3580)). Sheets take no top inset |
 | A form with a text field (Add details) | Adds `rt.insets.ime`. Edge to edge, the keyboard no longer shrinks the window (inferred from [Margelo › keyboard handling](https://margelo.com/blog/deep-dive-in-keyboard-handling)). On Android `ime` is the keyboard height less the nav bar ([Unistyles › Avoiding keyboard](https://www.unistyl.es/v3/guides/avoiding-keyboard)) |
 
