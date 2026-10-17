@@ -275,7 +275,8 @@ function Receipt({
 function Timeline({ steps }: { readonly steps: readonly PaymentStep[] | null }) {
   const { theme } = useUnistyles();
   if (steps === null) return null;
-  const current = steps.findIndex((s) => s.state === 'now') + 1;
+  const now = steps.findIndex((s) => s.state === 'now');
+  const current = now === -1 ? steps.length : now + 1;
   return (
     <View
       accessible

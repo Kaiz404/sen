@@ -136,6 +136,27 @@ test('while hidden the receipt shows every field but the amount, and no amount i
   ]);
 });
 
+test('after a later refresh posts it, the receipt reads Posted with all three steps done, and hiding still shows no amount', async () => {
+  const later = InstantSchema.parse('2026-10-15T07:00:00.000Z');
+  const scenario = { next: 'normal', size: 20, slow: false, newOnRefresh: false } as const;
+  await sync(mockDb, createMockBank({ now: () => later }).under(scenario), { now: () => later });
+  await renderDetail(tnb);
+
+  expect(await screen.findByText('TNB electricity')).toBeOnTheScreen();
+  expect(within(fact('STATUS')!).getByText('Posted')).toBeOnTheScreen();
+  expect(screen.queryByText('Pending')).not.toBeOnTheScreen();
+  expect(tree()).not.toMatch(/\d\.\d\d|ringgit|142/);
+  expect(cache()).not.toMatch(/amountMinor|14260/);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Show amounts' }));
+
+  expect(await screen.findByLabelText('Minus 142 ringgit 60 sen')).toBeOnTheScreen();
+  expect(screen.getByLabelText('Payment progress, step 3 of 3')).toBeOnTheScreen();
+  expect(screen.getByText('WED 6:22 PM')).toBeOnTheScreen();
+  expect(screen.getByText('CLEARED')).toBeOnTheScreen();
+  expect(screen.queryByText('NEXT')).not.toBeOnTheScreen();
+});
+
 test('the masked receipt has the Show amounts key and no helper line', async () => {
   await renderDetail(tnb);
 

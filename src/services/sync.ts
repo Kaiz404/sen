@@ -2,7 +2,13 @@ import { z } from 'zod';
 
 import { type Instant, InstantSchema, toInstant } from '@/models/day';
 import { err, ok, type Result } from '@/models/errors';
-import { type Transaction, TransactionPageSchema, TransactionSchema } from '@/models/transaction';
+import {
+  type Settled,
+  SettledSchema,
+  type Transaction,
+  TransactionPageSchema,
+  TransactionSchema,
+} from '@/models/transaction';
 
 import type { BankApi } from './bank-api';
 import type { Db, SqlValue } from './db';
@@ -70,13 +76,27 @@ async function upsertBankRows(db: Db, rows: readonly Transaction[]): Promise<voi
   }
 }
 
+/**
+ * Posts pending bank rows. An update, not an insert: a row this phone doesn't hold (after a reset, say) stays absent,
+ * and a row already posted, or added on the phone, is left as it is.
+ */
+async function settleBankRows(db: Db, settled: readonly Settled[]): Promise<void> {
+  for (const { id, settledAt } of settled) {
+    await db.run(
+      `UPDATE tx SET status = 'posted', settled_at = ? WHERE id = ? AND source = 'bank' AND status = 'pending'`,
+      [settledAt, id],
+    );
+  }
+}
+
 type ReadPage = {
   readonly rows: readonly Transaction[];
+  readonly settled: readonly Settled[];
   readonly skipped: number;
   readonly lastSeq: number | null;
 };
 
-function readItems(items: readonly unknown[]): ReadPage {
+function readItems(items: readonly unknown[], modified: readonly unknown[]): ReadPage {
   const rows: Transaction[] = [];
   let lastSeq: number | null = null;
   for (const item of items) {
@@ -85,7 +105,17 @@ function readItems(items: readonly unknown[]): ReadPage {
     const row = BankRowSchema.safeParse(item);
     if (row.success) rows.push(row.data);
   }
-  return { rows, skipped: items.length - rows.length, lastSeq };
+  const settled: Settled[] = [];
+  for (const change of modified) {
+    const parsed = SettledSchema.safeParse(change);
+    if (parsed.success) settled.push(parsed.data);
+  }
+  return {
+    rows,
+    settled,
+    skipped: items.length - rows.length + modified.length - settled.length,
+    lastSeq,
+  };
 }
 
 /** Set in the transaction that commits the feed's last page, and cleared by `resetBankRows`. */
@@ -148,6 +178,8 @@ export type SyncOptions = {
 /**
  * Pulls the feed after the saved cursor. Each page commits in one transaction with its cursor, so a sync that stops
  * anywhere resumes where the last commit left it, and running it again converges on the same table.
+ * A page may also name pending rows that have posted. They commit in the same transaction as the page, so a sync
+ * that fails posts nothing.
  * Rows that parsed are kept even when others were bad, and the bad ones come back as `invalid_data`.
  * A sync that finds the bank rows were reset under it stops without writing and reports nothing received, so a
  * page from the old feed never lands in the new table. The reset's own first sync fills it.
@@ -170,13 +202,14 @@ export async function sync(
     const page = TransactionPageSchema.safeParse(response.data);
     if (!page.success) return failed();
 
-    const read = readItems(page.data.items);
+    const read = readItems(page.data.items, page.data.modified);
     const next = Math.max(cursor, read.lastSeq ?? cursor);
     if (page.data.nextSeq !== null && next === cursor) return failed();
 
     const committed = await db.transaction(async (tx) => {
       if ((await readGeneration(tx)) !== generation) return false;
       await upsertBankRows(tx, read.rows);
+      await settleBankRows(tx, read.settled);
       await tx.run('UPDATE sync_state SET cursor = ?, synced_at = ? WHERE id = 1', [next, now()]);
       if (page.data.nextSeq === null)
         await tx.run(`INSERT OR IGNORE INTO meta (key, value) VALUES ('${FEED_END_KEY}', '1')`);

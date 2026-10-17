@@ -58,7 +58,7 @@ test('the key is the first statement, then one read proves it, then the schema m
     'SELECT count(*) FROM sqlite_master',
     'PRAGMA user_version',
   ]);
-  expect(await db.all('PRAGMA user_version')).toEqual([{ user_version: 1 }]);
+  expect(await db.all('PRAGMA user_version')).toEqual([{ user_version: 2 }]);
   await db.close();
   expect(native?.closed).toBe(true);
 });

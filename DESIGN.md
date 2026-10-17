@@ -359,7 +359,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - Tap a row › Detail, masked or revealed to match the session.
 - The receipt's source box says where a row came from. A bank row reads "From your bank · read only" and has no delete key. An added row reads "Added on this phone" and shows "Delete transaction".
 - The boards' receipt number ("NO. 1014-07"), settle date ("settles by Fri 16 Oct") and "Report a problem" link are left out. The model holds no such data and no backend takes reports.
-- The Authorised › Pending › Posted timeline shows on a shown receipt of a pending bank payment. Its Posted step reads "NEXT", because the bank sends no settle date.
+- The Authorised › Pending › Posted timeline shows on a shown receipt of a bank payment that arrived pending. While it is pending, its Posted step reads "NEXT", because the bank sends no settle date. Once a later refresh posts it (D39), all three steps are done: Pending reads "CLEARED" and Posted reads the time it posted, such as "WED 6:22 PM". The Pending chip, the stamp and the History PENDING tag go with the status.
 - Copy reference shows a toast.
 - "Share receipt" opens the system share sheet with plain text. It only shows when revealed.
 - Back keeps the scroll position.

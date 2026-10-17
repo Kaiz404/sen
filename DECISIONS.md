@@ -632,3 +632,24 @@ The phases are in [PLAN.md](PLAN.md).
 - **Theme.** The package's config plugin sets the dialog's accent, text and window colours from the light and dark tokens. The dialog follows the phone's light or dark mode, not Sen's Theme setting, so a phone in dark mode with Sen set to Light shows a dark dialog. The plugin sets the text on the accent (header and selected day) too: ink on lemon in dark, cream on ink in light, all above 4.5:1 (a jest test computes it). This mismatch with Sen's Theme setting is known and stays; forcing the app's scheme is a separate decision.
 
 **Cost.** A native rebuild, since the package adds a native module and a config plugin changes `colors.xml` and `styles.xml`. The look of the open dialog is the system's, so no gallery state shows it. The gallery shows the field with a picked date instead.
+
+## D39. Pending rows post on a later refresh
+
+**Problem.** Every row the bank sent as pending stayed pending, so Detail's Authorised › Pending › Posted timeline sat on "Posted: NEXT" for ever and the History PENDING tag never came off.
+
+**Compared.**
+- A timer on the phone that flips old pending rows to posted. It needs no bank change, but the phone invents bank state, and the row changes with no sync, so nothing in the data says it posted.
+- Post every pending row on the next refresh. Simple, but the row that arrived on that same refresh posts at once, so a reviewer never sees a pending row on a pull.
+- Leave it. The timeline's last step never completes.
+- The bank reports it (chosen).
+
+**Chosen.** The simulated bank is the source of truth, as in Plaid's transactions sync, where a response carries `added` and `modified` rows. A page now has `items` (new rows) and `modified`, a list of `{ id, settledAt }`.
+- **Rule.** A pending row posts on the first refresh at least 2 minutes after it was authorised (`SETTLE_AFTER_MS` in `bank-api.ts`), and `settledAt` is `postedAt` plus 2 minutes, not the time of the request. It is a pure function of the row and the injected `now`, so tests need no sleep, a retry reports the same change, and a rerun is harmless. Two minutes is short enough for a demo, and long enough that a row a refresh just brought is still pending on that refresh and posts on a pull a little later.
+- **Only a refresh reports postings.** A request past the end of the feed carries `modified`. Pages of the feed do not, so the first open still shows the board's Tealive, Grab and TNB as pending. They post on the first pull, because they are hours old.
+- **Applied as an update.** `sync` runs `UPDATE tx SET status = 'posted', settled_at = ? WHERE id = ? AND source = 'bank' AND status = 'pending'` in the same transaction as the page and its cursor. A failed or interrupted sync posts nothing. An update never inserts, so a posting for a row the phone no longer holds (after a reset) adds nothing. Added rows, and rows already posted, are never touched, so a posted row keeps its first time.
+- **Storage.** Migration v2 adds a nullable `settled_at` column with the same instant check as `posted_at`. Existing rows keep every value and read as never settled. A bank row that arrived posted has no `settled_at` and no timeline, as before.
+- **Reads.** `settled_at` is selected by the masked and revealed reads. It is a time, so masking is unchanged: posting never touches `amount_minor`, and the masked cache still holds no amount.
+- **Look.** Detail's timeline shows all three steps done for a posted row, Pending as "CLEARED" and Posted at its time. The History PENDING tag follows `status`, so it drops off on its own. Reset demo data restores the pending board.
+
+**Cost.** The bank keeps the rows it minted so it can post them later, and sends every aged pending-origin row on each refresh. The phone ignores the ones already posted. For a demo that is a handful of ids.
+

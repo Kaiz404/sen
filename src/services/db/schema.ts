@@ -52,7 +52,15 @@ const V1: Migration = {
   ],
 };
 
-export const MIGRATIONS: readonly Migration[] = [V1];
+/** When the bank reported a pending row as posted. Existing rows keep every value and read as never settled. */
+const V2: Migration = {
+  version: 2,
+  statements: [
+    `ALTER TABLE tx ADD COLUMN settled_at TEXT CHECK (settled_at IS NULL OR settled_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z')`,
+  ],
+};
+
+export const MIGRATIONS: readonly Migration[] = [V1, V2];
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
 export class SchemaTooNewError extends Error {

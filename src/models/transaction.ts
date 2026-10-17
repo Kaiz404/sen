@@ -23,6 +23,8 @@ const fields = {
   reference: z.string().min(1).max(40),
   account: z.object({ name: z.string().min(1), last4: z.string().regex(/^\d{4}$/) }),
   source: SourceSchema,
+  /** When the bank reported a pending row as posted. Null for every other row. */
+  settledAt: InstantSchema.nullable().default(null),
 };
 
 export const TransactionSchema = z.object({
@@ -34,8 +36,17 @@ export type Transaction = z.infer<typeof TransactionSchema>;
 export const MaskedRowSchema = z.strictObject({ ...fields, day: DayKeySchema });
 export type MaskedRow = z.infer<typeof MaskedRowSchema>;
 
+/** A status change the bank reports for a row it sent earlier. */
+export const SettledSchema = z.object({ id: TxIdSchema, settledAt: InstantSchema });
+export type Settled = z.infer<typeof SettledSchema>;
+
+/**
+ * `items` are new rows. `modified` are pending rows that have posted since, each parsed on its own as `SettledSchema`.
+ * A page from a bank that reports no changes may omit it.
+ */
 export const TransactionPageSchema = z.object({
   items: z.array(z.unknown()),
+  modified: z.array(z.unknown()).default([]),
   nextSeq: z.number().int().nonnegative().nullable(),
 });
 export type TransactionPage = z.infer<typeof TransactionPageSchema>;

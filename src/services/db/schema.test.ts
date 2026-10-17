@@ -25,7 +25,7 @@ const ROW = {
   search_text: 'lunch with hafiz, cash',
 } satisfies Record<string, SqlValue>;
 
-function insertTx(on: Db, patch: Partial<Record<keyof typeof ROW, SqlValue>> = {}) {
+function insertTx(on: Db, patch: Partial<Record<keyof typeof ROW | 'settled_at', SqlValue>> = {}) {
   const row = { ...ROW, ...patch };
   const columns = Object.keys(row);
   return on.run(
@@ -40,11 +40,11 @@ const tableNames = async (on: Db) =>
   );
 
 describe('migrations', () => {
-  test('a fresh database migrates to version 1 with every table', async () => {
+  test('a fresh database migrates to the latest version with every table', async () => {
     db = createNodeDb();
 
-    expect(await migrate(db)).toEqual({ from: 0, to: 1 });
-    expect(await userVersion(db)).toBe(1);
+    expect(await migrate(db)).toEqual({ from: 0, to: 2 });
+    expect(await userVersion(db)).toBe(2);
     expect(await tableNames(db)).toEqual(['activity_log', 'meta', 'sync_state', 'tx']);
     expect(await db.all('SELECT id, cursor, synced_at FROM sync_state')).toEqual([
       { id: 1, cursor: 0, synced_at: null },
@@ -54,7 +54,7 @@ describe('migrations', () => {
   test('running it again is a no-op', async () => {
     db = await openTestDb();
 
-    expect(await migrate(db)).toEqual({ from: 1, to: 1 });
+    expect(await migrate(db)).toEqual({ from: 2, to: 2 });
     expect(await db.all('SELECT count(*) AS n FROM sync_state')).toEqual([{ n: 1 }]);
   });
 
@@ -65,6 +65,32 @@ describe('migrations', () => {
     await expect(migrate(db, broken)).rejects.toThrow();
     expect(await userVersion(db)).toBe(0);
     expect(await tableNames(db)).toEqual([]);
+  });
+
+  test('v2 adds settled_at to a version 1 vault without losing a row, and a second run changes nothing', async () => {
+    db = createNodeDb();
+    await migrate(db, MIGRATIONS.slice(0, 1));
+    await insertTx(db, { id: 'bank-1', source: 'bank', idem_key: null, status: 'pending' });
+    await insertTx(db, { id: 'tx-2', idem_key: 'k-2' });
+    const before = await db.all('SELECT * FROM tx ORDER BY id');
+
+    expect(await migrate(db)).toEqual({ from: 1, to: 2 });
+    const after = await db.all('SELECT * FROM tx ORDER BY id');
+    expect(after).toEqual(before.map((row) => ({ ...row, settled_at: null })));
+    expect(await migrate(db)).toEqual({ from: 2, to: 2 });
+    expect(await db.all('SELECT * FROM tx ORDER BY id')).toEqual(after);
+  });
+
+  test('settled_at takes an instant or nothing', async () => {
+    db = await openTestDb();
+    await insertTx(db, { settled_at: '2026-10-15T08:02:00.000Z' });
+
+    await expect(
+      insertTx(db, { id: 'tx-2', idem_key: 'k-2', settled_at: 'yesterday' }),
+    ).rejects.toThrow('CHECK constraint failed');
+    expect(await db.all('SELECT settled_at FROM tx')).toEqual([
+      { settled_at: '2026-10-15T08:02:00.000Z' },
+    ]);
   });
 
   test('a database newer than the app is refused', async () => {

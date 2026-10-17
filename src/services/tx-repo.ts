@@ -37,9 +37,9 @@ export type PageCursor = { readonly postedAt: Instant; readonly id: TxId };
 export type DayRange = { readonly from: DayKey; readonly to: DayKey };
 
 const MASKED = `id, currency, type, description, merchant, category, status, posted_at, day,
-  reference, account_name, account_last4, source`;
+  reference, account_name, account_last4, source, settled_at`;
 const REVEALED = `id, amount_minor, currency, type, description, merchant, category, status, posted_at,
-  reference, account_name, account_last4, source`;
+  reference, account_name, account_last4, source, settled_at`;
 
 type Clause = { readonly sql: string; readonly params: readonly SqlValue[] };
 

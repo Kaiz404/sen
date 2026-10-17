@@ -25,6 +25,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: detail-copied-dark
+- openLink: "sen://dev/states?screen=detail&state=settled&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-detail-settled-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: detail-settled-dark
 - openLink: "sen://dev/states?screen=detail&state=posted-in&theme=dark"
 - extendedWaitUntil:
     visible:

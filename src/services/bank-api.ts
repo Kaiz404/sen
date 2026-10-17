@@ -26,9 +26,29 @@ export type BankScenario = {
 
 const SLOW_MS = 3000;
 
+/**
+ * A pending payment posts this long after it was authorised. Two minutes is short enough that a reviewer who adds a
+ * row with "New transaction on refresh" sees it post on a pull a little later, and long enough that the new row is
+ * still pending on the refresh that brought it.
+ */
+export const SETTLE_AFTER_MS = 2 * 60 * 1000;
+
+/** Rows that were pending when the bank sent them and have aged past `SETTLE_AFTER_MS`, with the time they posted. */
+function settledBy(pending: Iterable<BankRow>, now: Instant) {
+  const settled: { id: string; settledAt: Instant }[] = [];
+  for (const row of pending) {
+    const settledAt = toInstant(new Date(Date.parse(row.postedAt) + SETTLE_AFTER_MS));
+    if (settledAt <= now) settled.push({ id: row.id, settledAt });
+  }
+  return settled;
+}
+
 /** A failure answers after `afterMs`. A timeout waits out its deadline first, as a real one would. */
 const FAILURE: {
-  readonly [K in BankScenario['next']]: { readonly error: BankFailure; readonly afterMs: number } | null;
+  readonly [K in BankScenario['next']]: {
+    readonly error: BankFailure;
+    readonly afterMs: number;
+  } | null;
 } = {
   normal: null,
   bad_data: null,
@@ -73,6 +93,7 @@ export function createMockBank(
 ): MockBank {
   const { now = () => toInstant(new Date()), wait = sleep, seed = SEED } = options;
   const feeds = new Map<DatasetSize, readonly BankRow[]>();
+  const minted = new Map<DatasetSize, Map<string, BankRow>>();
   const feed = (size: DatasetSize) => {
     const known = feeds.get(size);
     if (known !== undefined) return known;
@@ -92,14 +113,26 @@ export function createMockBank(
         }
 
         const rows = feed(size);
-        const served =
-          since < rows.length
-            ? rows.slice(since, since + limit)
-            : newOnRefresh
-              ? [mintRow(since + 1, now(), seed)]
-              : [];
+        const refresh = since >= rows.length;
+        const fresh = refresh && newOnRefresh ? mintRow(since + 1, now(), seed) : null;
+        if (fresh !== null) {
+          const sent = minted.get(size) ?? new Map<string, BankRow>();
+          sent.set(fresh.id, fresh);
+          minted.set(size, sent);
+        }
+        const served = refresh ? (fresh === null ? [] : [fresh]) : rows.slice(since, since + limit);
         const items = next === 'bad_data' ? [...served, ...BAD_ROWS] : served;
-        return ok({ items, nextSeq: since + limit < rows.length ? since + limit : null });
+        // Only a refresh reports postings, so a first sync shows the board's pending rows as sent.
+        const modified = refresh
+          ? settledBy(
+              [
+                ...rows.filter((row) => row.status === 'pending'),
+                ...(minted.get(size)?.values() ?? []),
+              ],
+              now(),
+            )
+          : [];
+        return ok({ items, modified, nextSeq: since + limit < rows.length ? since + limit : null });
       },
     }),
   };

@@ -95,10 +95,13 @@ test('a sync that stops short leaves the feed incomplete, the next one finishes 
 
 test('sync twice and sync interrupted end with the same table hash', async () => {
   const once = await freshDb();
-  await sync(once, mockBank(), options);
+  const clean = mockBank();
+  await sync(once, clean, options);
+  await sync(once, clean, options);
 
   const twice = await freshDb();
   const bank = mockBank();
+  await sync(twice, bank, options);
   await sync(twice, bank, options);
   const again = await sync(twice, bank, options);
 
@@ -106,6 +109,7 @@ test('sync twice and sync interrupted end with the same table hash', async () =>
   const dropped = await sync(interrupted, dropsAfter(mockBank(), 1), options);
   const halfway = [(await readSyncState(interrupted)).cursor, await count(interrupted)];
   const resumed = await sync(interrupted, mockBank(), options);
+  await sync(interrupted, mockBank(), options);
 
   expect(again).toEqual(ok({ received: 0, cursor: 1000 }));
   expect(dropped).toEqual({ ok: false, error: { kind: 'offline' } });
@@ -294,4 +298,170 @@ test('search text is the cleaned, lower-cased description', async () => {
   expect(await db.all("SELECT search_text FROM tx WHERE description LIKE 'Grab ride%'")).toEqual([
     { search_text: 'grab ride to kl sentral' },
   ]);
+});
+
+describe('pending rows post on a later refresh', () => {
+  const clock = { now: NOW };
+  const board = (db: Db) =>
+    db.all(
+      "SELECT description, status, settled_at FROM tx WHERE id IN ('bk-17', 'bk-18', 'bk-20') ORDER BY id",
+    );
+  const settledBank = () =>
+    createMockBank({ now: () => clock.now, wait: async () => {} }).under({
+      ...NORMAL,
+      size: 20,
+    });
+
+  beforeEach(() => {
+    clock.now = NOW;
+  });
+
+  test('the first sync keeps the board rows pending, and the next refresh posts them with the time', async () => {
+    const db = await freshDb();
+    const bank = settledBank();
+
+    await sync(db, bank, options);
+    const first = await board(db);
+    clock.now = LATER;
+    const refreshed = await sync(db, bank, options);
+    const posted = await board(db);
+
+    expect(first.map((r) => r.status)).toEqual(['pending', 'pending', 'pending']);
+    expect(refreshed).toEqual(ok({ received: 0, cursor: 20 }));
+    expect(posted.map((r) => r.status)).toEqual(['posted', 'posted', 'posted']);
+    expect(posted.map((r) => r.settled_at)).toEqual([
+      '2026-10-14T10:22:00.000Z',
+      '2026-10-15T00:44:00.000Z',
+      '2026-10-15T05:17:00.000Z',
+    ]);
+  });
+
+  test('a row minted by a refresh stays pending until two minutes later, then posts with its amount and time unchanged', async () => {
+    const db = await freshDb();
+    const bank = createMockBank({ now: () => clock.now, wait: async () => {} }).under({
+      ...NORMAL,
+      size: 20,
+      newOnRefresh: true,
+    });
+    await sync(db, bank, options);
+    await sync(db, bank, options);
+    const amount = () => db.all("SELECT amount_minor FROM tx WHERE id = 'bk-21'");
+    const before = await amount();
+
+    clock.now = InstantSchema.parse('2026-10-15T08:01:00.000Z');
+    await sync(db, bank, options);
+    const early = await db.all("SELECT status FROM tx WHERE id = 'bk-21'");
+    clock.now = InstantSchema.parse('2026-10-15T08:03:00.000Z');
+    await sync(db, bank, options);
+
+    expect(early).toEqual([{ status: 'pending' }]);
+    expect(await db.all("SELECT status, settled_at, posted_at FROM tx WHERE id = 'bk-21'")).toEqual(
+      [{ status: 'posted', settled_at: '2026-10-15T08:02:00.000Z', posted_at: NOW }],
+    );
+    expect(await amount()).toEqual(before);
+  });
+
+  test('a refresh that fails posts nothing, and the retry posts everything due', async () => {
+    const db = await freshDb();
+    await sync(db, settledBank(), options);
+    clock.now = LATER;
+    const real = settledBank();
+    const flaky: Db = {
+      all: (sql, params) => db.all(sql, params),
+      run: (sql, params) => db.run(sql, params),
+      transaction: (work) =>
+        db.transaction((tx) =>
+          work({
+            ...tx,
+            run: async (sql, params) => {
+              if (sql.startsWith('UPDATE tx SET status')) throw new Error('disk I/O error');
+              return tx.run(sql, params);
+            },
+          }),
+        ),
+    };
+
+    const offline = await sync(
+      db,
+      createMockBank({ now: () => clock.now, wait: async () => {} }).under({
+        ...NORMAL,
+        size: 20,
+        next: 'offline',
+      }),
+      options,
+    );
+    await expect(sync(flaky, real, options)).rejects.toThrow('disk I/O error');
+    const stuck = await board(db);
+    await sync(db, real, options);
+
+    expect(offline.ok).toBe(false);
+    expect(stuck.map((r) => r.status)).toEqual(['pending', 'pending', 'pending']);
+    expect((await board(db)).map((r) => r.status)).toEqual(['posted', 'posted', 'posted']);
+  });
+
+  test('a row added on the phone is never touched, even under a bank id', async () => {
+    const db = await freshDb();
+    await db.run(MANUAL);
+    await db.run("UPDATE tx SET status = 'pending' WHERE id = 'm-1'");
+    const hostile: BankApi = {
+      fetchPage: async () =>
+        ok({ items: [], modified: [{ id: 'm-1', settledAt: LATER }], nextSeq: null }),
+    };
+
+    await sync(db, hostile, options);
+
+    expect(await db.all("SELECT status, settled_at FROM tx WHERE id = 'm-1'")).toEqual([
+      { status: 'pending', settled_at: null },
+    ]);
+  });
+
+  test('a posting for a row this phone does not hold adds nothing, and a malformed one is counted', async () => {
+    const db = await freshDb();
+    const odd: BankApi = {
+      fetchPage: async () =>
+        ok({
+          items: [],
+          modified: [
+            { id: 'bk-gone', settledAt: LATER },
+            { id: 'bk-x', settledAt: 'soon' },
+          ],
+          nextSeq: null,
+        }),
+    };
+
+    const result = await sync(db, odd, options);
+
+    expect(result).toEqual({ ok: false, error: { kind: 'invalid_data', skipped: 1 } });
+    expect(await count(db)).toBe(0);
+  });
+
+  test('a posted row is not posted again, so its time stays the first one', async () => {
+    const db = await freshDb();
+    const bank = settledBank();
+    await sync(db, bank, options);
+    clock.now = LATER;
+    await sync(db, bank, options);
+    const first = await board(db);
+    clock.now = InstantSchema.parse('2026-10-20T08:00:00.000Z');
+    await sync(db, bank, options);
+
+    expect(await board(db)).toEqual(first);
+  });
+
+  test('a reset brings the board back pending, and an old posting cannot post it before the next refresh', async () => {
+    const db = await freshDb();
+    const bank = settledBank();
+    await sync(db, bank, options);
+    clock.now = LATER;
+    await sync(db, bank, options);
+
+    await resetBankRows(db);
+    await sync(db, bank, options);
+
+    expect((await board(db)).map((r) => [r.status, r.settled_at])).toEqual([
+      ['pending', null],
+      ['pending', null],
+      ['pending', null],
+    ]);
+  });
 });

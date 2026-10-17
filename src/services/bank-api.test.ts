@@ -18,6 +18,7 @@ function bank(patch: Partial<BankScenario> = {}, clock: { now: Instant } = { now
 
 type Body = {
   items: { seq?: number; id: string; status?: string; postedAt?: string }[];
+  modified: { id: string; settledAt: string }[];
   nextSeq: number | null;
 };
 
@@ -47,13 +48,37 @@ test('past the end, a refresh mints one pending row at now, only when asked', as
   const minted = await page(bank({ newOnRefresh: true }).api, 1000);
   const quiet = await page(bank({ newOnRefresh: false }).api, 1000);
 
-  expect(minted).toEqual({
-    items: [
-      expect.objectContaining({ seq: 1001, id: 'bk-1001', status: 'pending', postedAt: NOW }),
-    ],
-    nextSeq: null,
-  });
-  expect(quiet).toEqual({ items: [], nextSeq: null });
+  expect(minted.items).toEqual([
+    expect.objectContaining({ seq: 1001, id: 'bk-1001', status: 'pending', postedAt: NOW }),
+  ]);
+  expect(minted.nextSeq).toBeNull();
+  expect(quiet.items).toEqual([]);
+});
+
+test('a refresh reports pending rows that are two minutes old as posted, at their authorised time plus two minutes', async () => {
+  const clock = { now: NOW };
+  const { api } = bank({ newOnRefresh: true }, clock);
+  await page(api, 1000);
+
+  clock.now = InstantSchema.parse('2026-10-15T08:01:59.999Z');
+  const early = await page(api, 1001);
+  clock.now = InstantSchema.parse('2026-10-15T08:02:00.000Z');
+  const due = await page(api, 1001);
+
+  expect(early.modified.filter((m) => m.id === 'bk-1001')).toEqual([]);
+  expect(due.modified.filter((m) => m.id === 'bk-1001')).toEqual([
+    { id: 'bk-1001', settledAt: '2026-10-15T08:02:00.000Z' },
+  ]);
+});
+
+test('the board pending rows are reported on a refresh and never on a page of the feed', async () => {
+  const { api } = bank({ size: 20 });
+
+  const feedPage = await page(api, 0);
+  const refresh = await page(api, 20);
+
+  expect(feedPage.modified).toEqual([]);
+  expect(refresh.modified.map((m) => m.id).sort()).toEqual(['bk-17', 'bk-18', 'bk-20'].sort());
 });
 
 test.each(['offline', 'timeout', 'server'] as const)(

@@ -1,6 +1,6 @@
 import { clockText } from '@/features/transactions';
 import { CATEGORY_LABEL } from '@/models/category';
-import type { DayKey } from '@/models/day';
+import { type DayKey, malaysiaDay } from '@/models/day';
 import { moneyText, type SignedMinor } from '@/models/money';
 import type { MaskedRow } from '@/models/transaction';
 
@@ -76,21 +76,36 @@ export type PaymentStep = {
   readonly caption: string;
 };
 
+/** "WED 6:20 PM": the weekday and clock of an instant, in Malaysia time. */
+function stepTime(at: MaskedRow['postedAt']): string {
+  const weekday = WEEKDAYS[new Date(`${malaysiaDay(at)}T00:00:00.000Z`).getUTCDay()];
+  return `${weekday} ${clockText(at)}`.toUpperCase();
+}
+
 /**
- * Authorised, Pending, Posted for a pending bank payment. Null for anything else: a posted or added row has nothing
- * left to track. The bank gives no settle date, so Posted says only that it comes next.
+ * Authorised, Pending, Posted for a bank payment that was pending when it arrived. A row still pending says Posted
+ * comes next. A row the bank has since posted shows all three done, with the time it posted. Null for anything else:
+ * a bank row that arrived posted, and an added row, have nothing to track.
  */
 export function paymentSteps(row: MaskedRow): readonly PaymentStep[] | null {
-  if (row.source !== 'bank' || row.status !== 'pending') return null;
-  const weekday = WEEKDAYS[new Date(`${row.day}T00:00:00.000Z`).getUTCDay()];
+  if (row.source !== 'bank') return null;
+  const authorised: PaymentStep = {
+    label: 'Authorised',
+    state: 'done',
+    caption: stepTime(row.postedAt),
+  };
+  if (row.status === 'pending') {
+    return [
+      authorised,
+      { label: 'Pending', state: 'now', caption: 'NOW' },
+      { label: 'Posted', state: 'next', caption: 'NEXT' },
+    ];
+  }
+  if (row.settledAt === null) return null;
   return [
-    {
-      label: 'Authorised',
-      state: 'done',
-      caption: `${weekday} ${clockText(row.postedAt)}`.toUpperCase(),
-    },
-    { label: 'Pending', state: 'now', caption: 'NOW' },
-    { label: 'Posted', state: 'next', caption: 'NEXT' },
+    authorised,
+    { label: 'Pending', state: 'done', caption: 'CLEARED' },
+    { label: 'Posted', state: 'done', caption: stepTime(row.settledAt) },
   ];
 }
 

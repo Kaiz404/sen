@@ -92,3 +92,11 @@ test('times and month copy read in Malaysia time', () => {
   expect(monthName(BOARD_TODAY)).toBe('October');
   expect(monthSoFar(BOARD_TODAY)).toBe('so far, 1 to 15 Oct');
 });
+
+test('a row carries the PENDING tag until the bank posts it', () => {
+  const pending = BOARD_ROWS.find((r) => r.status === 'pending' && r.source === 'bank')!;
+  const posted = { ...pending, status: 'posted' as const, settledAt: pending.postedAt };
+
+  expect(toRowView(pending).tag).toBe('pending');
+  expect(toRowView(posted).tag).toBeNull();
+});

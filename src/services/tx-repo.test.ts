@@ -229,6 +229,7 @@ describe('writes', () => {
         reference: manualReference(LUNCH.idemKey),
         account: { name: 'Everyday Savings', last4: '4821' },
         source: 'manual',
+        settledAt: null,
       },
     });
     expect(repeat).toEqual({ ...first, created: false });

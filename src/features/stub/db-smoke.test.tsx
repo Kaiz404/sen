@@ -18,7 +18,7 @@ test('the smoke migrates, reads the Malaysia day of 16:30Z back, then deletes it
   await render(<DbSmoke />);
 
   expect(await screen.findByText('day 2026-10-16')).toBeOnTheScreen();
-  expect(screen.getByTestId('smoke-version')).toHaveTextContent('user_version 1');
+  expect(screen.getByTestId('smoke-version')).toHaveTextContent('user_version 2');
   expect(screen.getByTestId('smoke-cipher')).toHaveTextContent('cipher_version none');
   expect(jest.mocked(deleteDb).mock.calls).toEqual([['sen-smoke.db'], ['sen-smoke.db']]);
 });

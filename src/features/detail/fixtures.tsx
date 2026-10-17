@@ -37,6 +37,13 @@ const TNB: MaskedRow = MaskedRowSchema.parse({
   source: 'bank',
 });
 
+/** The same payment after a later refresh: the bank has posted it two minutes on. */
+const TNB_POSTED: MaskedRow = MaskedRowSchema.parse({
+  ...TNB,
+  status: 'posted',
+  settledAt: '2026-10-14T10:22:00.000Z',
+});
+
 const SALARY: MaskedRow = MaskedRowSchema.parse({
   ...TNB,
   id: 'bk-board-salary',
@@ -82,6 +89,9 @@ export const DETAIL_STATES = {
   masked: () => <DetailView {...BASE} />,
   shown: () => <DetailView {...BASE} hidden={false} revealed={shown(TNB, 14260)} />,
   copied: () => <DetailView {...BASE} hidden={false} revealed={shown(TNB, 14260)} copied />,
+  settled: () => (
+    <DetailView {...BASE} body={found(TNB_POSTED)} hidden={false} revealed={shown(TNB, 14260)} />
+  ),
   'posted-in': () => (
     <DetailView {...BASE} body={found(SALARY)} hidden={false} revealed={shown(SALARY, 650000)} />
   ),

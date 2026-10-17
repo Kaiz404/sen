@@ -182,7 +182,7 @@ describe('the reset rules', () => {
     expect({ kind: opened.kind, ...('reason' in opened && { reason: opened.reason }) }).toEqual(
       outcome,
     );
-    expect(await opened.db.all('PRAGMA user_version')).toEqual([{ user_version: 1 }]);
+    expect(await opened.db.all('PRAGMA user_version')).toEqual([{ user_version: 2 }]);
     expect([state.key, state.file]).toEqual([keyAfter, fileAfter]);
     expect(jest.mocked(logEvent).mock.calls).toEqual([
       [outcome.kind === 'reset' ? `vault.reset.${outcome.reason}` : `vault.${outcome.kind}`],

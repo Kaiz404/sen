@@ -8,6 +8,7 @@ import {
   receiptFacts,
   shareText,
   stampDate,
+  statusText,
 } from './receipt';
 
 const TNB: MaskedRow = MaskedRowSchema.parse({
@@ -91,6 +92,31 @@ test('a pending bank payment tracks Authorised, Pending and Posted; posted and a
   ]);
   expect(paymentSteps(SALARY)).toBeNull();
   expect(paymentSteps(MaskedRowSchema.parse({ ...LUNCH, status: 'pending' }))).toBeNull();
+});
+
+test('a bank payment that has posted shows all three steps done, with the time it posted', () => {
+  const posted = MaskedRowSchema.parse({
+    ...TNB,
+    status: 'posted',
+    settledAt: '2026-10-14T10:22:00.000Z',
+  });
+
+  expect(paymentSteps(posted)).toEqual([
+    { label: 'Authorised', state: 'done', caption: 'WED 6:20 PM' },
+    { label: 'Pending', state: 'done', caption: 'CLEARED' },
+    { label: 'Posted', state: 'done', caption: 'WED 6:22 PM' },
+  ]);
+  expect(statusText(posted)).toBe('Posted');
+});
+
+test('the posted time is read in Malaysia time, so a posting after midnight names the next weekday', () => {
+  const posted = MaskedRowSchema.parse({
+    ...TNB,
+    status: 'posted',
+    settledAt: '2026-10-14T16:01:00.000Z',
+  });
+
+  expect(paymentSteps(posted)?.[2]?.caption).toBe('THU 12:01 AM');
 });
 
 test('the share text is the board’s plain receipt, and an added row names itself once', () => {
