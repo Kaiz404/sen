@@ -9,12 +9,13 @@ import { WelcomeView } from './screens/welcome-screen';
 const noop = () => {};
 const BIOMETRIC: Biometric = 'faceId';
 
-function Lock({ state }: { state: LockState }) {
+function Lock({ state, biometric = BIOMETRIC }: { state: LockState; biometric?: Biometric }) {
   return (
     <LockView
       state={state}
-      biometric={BIOMETRIC}
+      biometric={biometric}
       onUnlock={noop}
+      onUseScreenLock={noop}
       onOpenSettings={noop}
       onOpenLockSettings={noop}
       onStartAgain={noop}
@@ -29,6 +30,7 @@ function Primer({ state }: { state: PrimerState }) {
       state={state}
       biometric={BIOMETRIC}
       onTurnOn={noop}
+      onUseScreenLock={noop}
       onOpenSettings={noop}
       onOpenLockSettings={noop}
       onBack={noop}
@@ -48,8 +50,10 @@ export const AUTH_STATES = {
   'primer-timed-out': () => <Primer state={{ kind: 'timedOut', over: { kind: 'idle' } }} />,
   'primer-off': () => <Primer state={{ kind: 'off', canOpenSettings: true }} />,
   'lock-idle': () => <Lock state={{ kind: 'idle' }} />,
+  // A phone with a fingerprint and a face sensor: Android cannot say which is enrolled, so Sen says "biometrics".
+  'lock-biometrics': () => <Lock state={{ kind: 'idle' }} biometric="biometrics" />,
   'lock-checking': () => <Lock state={{ kind: 'checking' }} />,
-  'lock-mismatch': () => <Lock state={{ kind: 'mismatch', triesLeft: 2 }} />,
+  'lock-mismatch': () => <Lock state={{ kind: 'mismatch' }} />,
   'lock-timed-out': () => <Lock state={{ kind: 'timedOut', over: { kind: 'idle' } }} />,
   'lock-off-timed-out': () => (
     <Lock state={{ kind: 'timedOut', over: { kind: 'off', canOpenSettings: true } }} />

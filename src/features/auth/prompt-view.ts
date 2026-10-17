@@ -5,17 +5,18 @@ import type { UnlockOutcome } from './session';
 
 type BaseView =
   | { readonly kind: 'idle' }
-  | { readonly kind: 'mismatch'; readonly triesLeft: number }
+  /** A miss the system reported. Android never does, and iOS does only when it gives up, so no tries count is kept. */
+  | { readonly kind: 'mismatch' }
   | { readonly kind: 'lockout'; readonly until: number }
   /**
-   * A conservative steer to the passcode after repeated lockouts. Android's real lockout length is not visible to the
+   * A conservative steer to the screen lock after repeated lockouts. Android's real lockout length is not visible to the
    * app, so Sen promises no countdown. It lifts after `BLOCKED_FOR_MS`, or when an unlock goes through.
    */
   | { readonly kind: 'blocked'; readonly since: number }
   | { readonly kind: 'off'; readonly canOpenSettings: boolean }
-  /** The phone has no screen lock, so there is no passcode to fall back on and nothing for Sen to ask. */
+  /** The phone has no screen lock, so there is no screen lock to fall back on and nothing for Sen to ask. */
   | { readonly kind: 'noLock' }
-  /** Only a weak biometric is enrolled. The passcode works. */
+  /** Only a weak biometric is enrolled. The screen lock works. */
   | { readonly kind: 'weak' }
   | { readonly kind: 'error' }
   /**
@@ -42,10 +43,9 @@ const under = (view: PromptView): BaseView => (view.kind === 'timedOut' ? view.o
 export const isSetupView = (view: BaseView): view is Extract<BaseView, { kind: 'off' | 'weak' }> =>
   view.kind === 'off' || view.kind === 'weak';
 
-export const TRIES = 3;
 /** Android's biometric lockout lasts 30 s. */
 export const LOCKOUT_MS = 30_000;
-/** How long Lock steers to the passcode before it trusts the fingerprint to try again. */
+/** How long Lock steers to the screen lock before it trusts the biometrics to try again. */
 export const BLOCKED_FOR_MS = 5 * 60_000;
 
 export const IDLE: PromptView = { kind: 'idle' };
@@ -90,11 +90,8 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
         ? prev
         : { kind: 'timedOut', over };
     }
-    case 'mismatch': {
-      const tried = under(prev);
-      const before = tried.kind === 'mismatch' ? tried.triesLeft : TRIES;
-      return { kind: 'mismatch', triesLeft: Math.max(0, before - 1) };
-    }
+    case 'mismatch':
+      return { kind: 'mismatch' };
     case 'lockout': {
       const before = under(prev);
       if (before.kind === 'blocked' && now - before.since >= BLOCKED_FOR_MS)
@@ -104,6 +101,8 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
         ? { kind: 'blocked', since: now }
         : { kind: 'lockout', until: now + LOCKOUT_MS };
     }
+    case 'noLock':
+      return initialView('none');
     case 'not_set_up':
       return { kind: 'off', canOpenSettings: true };
     case 'unavailable':

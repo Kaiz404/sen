@@ -2,14 +2,20 @@ import { renderHook } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 import type { OpenDb } from '@/services/db';
+import { confirmDeviceCredential } from '@/services/device-credential';
 
 import type { Session } from './machine';
+import { BIOMETRIC_OPTIONS } from './prompt';
 import { sessionStore } from './session';
 import { useStepUp } from './use-step-up';
 
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
+}));
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
 }));
 jest.mock('@/services/vault', () => ({}));
 
@@ -25,18 +31,14 @@ beforeEach(() => {
   sessionStore.setState({ session: unlocked });
 });
 
-test('every call prompts again with strong biometrics and the passcode fallback', async () => {
+test('every call prompts again with the sensor alone and no device fallback', async () => {
   authenticate.mockResolvedValue({ success: true });
   const confirmDelete = await stepUpFor('delete');
 
   expect(await confirmDelete()).toEqual({ ok: true });
   expect(await confirmDelete()).toEqual({ ok: true });
 
-  const options = {
-    promptMessage: 'Delete this transaction',
-    biometricsSecurityLevel: 'strong',
-    disableDeviceFallback: false,
-  };
+  const options = { promptMessage: 'Delete this transaction', ...BIOMETRIC_OPTIONS };
   expect(authenticate.mock.calls).toEqual([[options], [options]]);
   expect(sessionStore.getState().session).toBe(unlocked);
 });
@@ -60,16 +62,17 @@ test.each([
   ['user_cancel', 'cancelled'],
   ['system_cancel', 'cancelled'],
   ['app_cancel', 'cancelled'],
-  ['user_fallback', 'cancelled'],
   ['authentication_failed', 'mismatch'],
   ['lockout', 'lockout'],
   ['not_enrolled', 'not_set_up'],
-  ['passcode_not_set', 'not_set_up'],
+  ['passcode_not_set', 'noLock'],
   ['not_available', 'unavailable'],
   ['timeout', 'unknown'],
   ['unknown', 'unknown'],
 ] as const)('%s fails the step-up as %s', async (error, reason) => {
-  authenticate.mockResolvedValueOnce({ success: false, error });
+  // The screen-lock try that follows a lockout, an off sensor or the sheet's own button gets the same answer.
+  authenticate.mockResolvedValue({ success: false, error });
+  jest.mocked(confirmDeviceCredential).mockResolvedValue({ success: false, error });
 
   expect(await (await stepUpFor('erase'))()).toEqual({ ok: false, reason });
 });

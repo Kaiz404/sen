@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import type { ReactNode } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { useSenAppGate } from '@/features/sen';
 import { MotionPolicyRoot } from '@/motion/policy';
 import type { OpenDb } from '@/services/db';
 import { playHaptic } from '@/services/haptics';
 import { clearPrefs } from '@/services/prefs';
+import { confirmDeviceCredential } from '@/services/device-credential';
 import * as Vault from '@/services/vault';
 
 import { sessionStore } from '../session';
@@ -17,6 +18,10 @@ import { PrimerScreen } from './primer-screen';
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
   authenticateAsync: jest.fn(),
+}));
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
 }));
 jest.mock('@/services/vault', () => ({ openVault: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
@@ -51,12 +56,20 @@ function holdPrompt() {
   return (result: LocalAuthentication.LocalAuthenticationResult) => act(async () => answer(result));
 }
 
+/** The screen-lock prompt, answered by hand. */
+function holdCredential() {
+  let answer: (result: LocalAuthentication.LocalAuthenticationResult) => void = () => {};
+  jest.mocked(confirmDeviceCredential).mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+  return (result: LocalAuthentication.LocalAuthenticationResult) => act(async () => answer(result));
+}
+
 function Calm({ children }: { children: ReactNode }) {
   return <MotionPolicyRoot preference="calm">{children}</MotionPolicyRoot>;
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.replaceProperty(Platform, 'OS', 'android');
   jest.useFakeTimers({ now: 0 });
   clearPrefs();
   sessionStore.setState({
@@ -127,8 +140,8 @@ test('cancelling the passcode during a lockout sends the napping Sen back to bre
   await at(2000);
   jest.mocked(playHaptic).mockClear();
 
-  const cancel = holdPrompt();
-  await fireEvent.press(screen.getByRole('button', { name: 'Use device passcode' }));
+  const cancel = holdCredential();
+  await fireEvent.press(screen.getByRole('button', { name: 'Use screen lock' }));
   await cancel({ success: false, error: 'user_cancel' });
   const frames = [];
   for (const ms of [1000, 1000, 3000]) {
@@ -293,5 +306,5 @@ test('cancelling the primer’s next prompt after a miss plays no second miss an
   await at(1500);
 
   expect(jest.mocked(playHaptic).mock.calls).toEqual([]);
-  expect(screen.getByText("Didn't match. 2 more tries before fingerprint locks.")).toBeOnTheScreen();
+  expect(screen.getByText("Didn't match. Try fingerprint again, or use your screen lock.")).toBeOnTheScreen();
 });

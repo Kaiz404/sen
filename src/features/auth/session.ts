@@ -26,6 +26,7 @@ import {
 import {
   authenticate,
   type AuthOutcome,
+  type AuthVia,
   biometricOf,
   type BiometricSupport,
   detectBiometric,
@@ -37,7 +38,7 @@ type SessionStore = {
   readonly session: Session;
   readonly biometric: BiometricSupport;
   readonly dbReset: DbResetReason | null;
-  /** The reviewer control "Simulate lockout": the next unlock reports lockout without prompting. */
+  /** The reviewer control "Simulate lockout": the next biometric unlock reports lockout without prompting. */
   readonly lockoutArmed: boolean;
   /** Session-scoped (D27). Starts true at launch, so every cold start is masked, and goes true again whenever the database closes. */
   readonly amountsHidden: boolean;
@@ -110,19 +111,23 @@ export async function refreshBiometric(): Promise<void> {
 
 /**
  * Prompts, opens the vault, then holds the asking screen for `arriveAfterMs` while Sen plays its
- * Unlock moment, before History opens.
+ * Unlock moment, before History opens. `via` is the sensor (Unlock) or the screen lock (Use screen lock, D40).
  */
-export async function unlock(arriveAfterMs = 0): Promise<UnlockOutcome> {
+export async function unlock(
+  arriveAfterMs = 0,
+  via: AuthVia = 'biometric',
+): Promise<UnlockOutcome> {
   const { status } = sessionStore.getState().session;
   if (status !== 'locked' && status !== 'welcome') return CANCELLED;
-  if (sessionStore.getState().lockoutArmed) {
+  // A lockout belongs to the sensor, so the screen lock still opens Sen while it is armed.
+  if (via === 'biometric' && sessionStore.getState().lockoutArmed) {
     sessionStore.setState({ lockoutArmed: false });
     recordActivity({ code: 'auth.failed', reason: 'lockout' });
     return { ok: false, reason: 'lockout' };
   }
 
   dispatch({ type: 'AUTH_START' });
-  const outcome = await authenticate('Unlock Sen');
+  const outcome = await authenticate('Unlock Sen', via);
   if (!outcome.ok) {
     dispatch({ type: 'AUTH_FAIL' });
     noteFailedCheck(outcome);

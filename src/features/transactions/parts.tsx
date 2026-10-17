@@ -28,6 +28,7 @@ const BIOMETRIC_ICON = {
   touchId: 'fingerprint',
   face: 'face-recognition',
   fingerprint: 'fingerprint',
+  biometrics: 'fingerprint',
 } as const satisfies Record<Biometric, string>;
 
 /** The hero and Money in rows have fixed heights, so the card is the same height hidden or shown. */

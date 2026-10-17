@@ -1,4 +1,4 @@
-# The phone's biometric lockout shows the cool-down and the passcode.
+# The phone's biometric lockout shows the cool-down and the screen-lock key.
 appId: com.kaiz404.sen
 ---
 - runFlow:
@@ -11,5 +11,5 @@ appId: com.kaiz404.sen
     visible: Too many tries.
     timeout: 15000
 - assertVisible: TRY .* AGAIN IN
-- assertVisible: Use device passcode
+- assertVisible: Use screen lock
 - takeScreenshot: auth-lockout

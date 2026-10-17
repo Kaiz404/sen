@@ -8,18 +8,18 @@ Amounts are hidden until you prove it's you. Sen, a coin with a face, keeps its 
 
 ## What it does
 
-- **Biometric login.** Face ID or fingerprint, with a device passcode fallback, clear errors for every failure, and a lockout cool-down.
+- **Biometric login.** Fingerprint, face unlock or Face ID, and a separate "Use screen lock" key (the phone's own PIN, pattern or password; "Use passcode" on iOS), clear errors for every failure, and a lockout card after too many misses.
 - **Masked by default.** Every amount shows as `RM` and four coins. One biometric check shows every amount, and they stay shown until you hide them again or Sen locks. Every unlock and every launch starts masked. Settings' switch can turn hiding off, which also asks for biometrics.
 - **History.** Date-grouped receipt slips, a month summary, All / In / Out filters, live search and pull-to-refresh.
 - **Detail.** All fields, a status timeline for pending items, copy reference and share receipt.
-- **Add your own transactions.** A custom keypad keeps amounts away from the system keyboard. Saving asks for Face ID. Added rows are stored encrypted. Only added rows can be deleted. Bank rows are read-only.
+- **Add your own transactions.** A custom keypad keeps amounts away from the system keyboard. Saving asks for your biometrics. Added rows are stored encrypted. Only added rows can be deleted. Bank rows are read-only.
 - **Security layer.**
-  - Face ID again for every change.
+  - Biometrics again for every change.
   - Idle lock and re-lock after leaving.
   - A privacy cover in the app switcher.
   - Screenshots blocked on sensitive screens.
   - An encrypted local activity log of the last 50 events. A deleted transaction's description stays in it until it ages out or the log is cleared.
-- **Errors you can trigger.** A "For reviewers" section in Settings forces offline, timeout, server error, bad data, slow network and a Face ID lockout.
+- **Errors you can trigger.** A "For reviewers" section in Settings forces offline, timeout, server error, bad data, slow network and a biometric lockout.
 - **Craft.** Light, dark and system themes, haptics, reduced-motion support, and screen reader labels such as "Amount hidden".
 
 The 20+ simulated transactions come from an in-app mock API with realistic latency. There is no backend.

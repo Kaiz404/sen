@@ -17,13 +17,15 @@ import {
   BIOMETRIC,
   type BiometricCopy,
   clock,
+  credentialKeyLabel,
+  credentialName,
+  missText,
   STORE_COPY,
   WEAK_BIOMETRIC,
-  TIMED_OUT_SETUP,
+  timedOutSetupText,
   timedOutText,
-  triesLeftText,
 } from '../copy';
-import type { Biometric } from '../prompt';
+import type { AuthVia, Biometric } from '../prompt';
 import {
   afterRecheck,
   afterUnlock,
@@ -48,6 +50,7 @@ export type PrimerViewProps = {
   readonly state: PrimerState;
   readonly biometric: Biometric;
   readonly onTurnOn: () => void;
+  readonly onUseScreenLock: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenLockSettings: () => void;
   readonly onBack: () => void;
@@ -68,10 +71,10 @@ export function PrimerScreen(): ReactNode {
   const asking = prompt.kind === 'asking';
   usePromptMoments(PRIMER_SEN, prompt, ANSWERS);
 
-  const onTurnOn = () => {
+  const ask = (via: AuthVia) => () => {
     if (asking) return;
     setPrompt({ kind: 'asking' });
-    void unlock(UNLOCK_HOLD[level]).then((outcome) => {
+    void unlock(UNLOCK_HOLD[level], via).then((outcome) => {
       setPrompt({ kind: 'answered', outcome });
       if (!outcome.ok) setView((prev) => afterUnlock(prev, outcome, Date.now()));
     });
@@ -88,7 +91,8 @@ export function PrimerScreen(): ReactNode {
     <PrimerView
       state={state}
       biometric={support.kind}
-      onTurnOn={onTurnOn}
+      onTurnOn={ask('biometric')}
+      onUseScreenLock={ask('credential')}
       onOpenSettings={openDeviceSettings}
       onOpenLockSettings={openLockScreenSettings}
       onBack={() => router.back()}
@@ -100,6 +104,7 @@ export function PrimerView({
   state,
   biometric,
   onTurnOn,
+  onUseScreenLock,
   onOpenSettings,
   onOpenLockSettings,
   onBack,
@@ -142,7 +147,7 @@ export function PrimerView({
             size={210}
             label={
               unlocked
-                ? `Sen, happy ${name} is on`
+                ? `Sen, happy ${name} ${copy.is} on`
                 : `Sen, peeking one eye open at the ${name} frame`
             }
           />
@@ -163,7 +168,7 @@ export function PrimerView({
       <View style={styles.points}>
         <Point
           icon="lock-outline"
-          text={`If ${name} doesn't work, your device passcode always does.`}
+          text={`If ${name} doesn't work, your ${credentialName()} always does.`}
         />
         <Point icon="cellphone" text="Nothing leaves this device. No account, no server." />
       </View>
@@ -188,9 +193,9 @@ export function PrimerView({
               shown.kind === 'checking'
                 ? "Checking it's you"
                 : unlocked
-                  ? `${copy.title} is on`
+                  ? `${copy.title} ${copy.is} on`
                   : view.kind === 'weak'
-                    ? 'Use device passcode'
+                    ? credentialKeyLabel()
                     : `Turn on ${name}`
             }
             disabled={
@@ -199,15 +204,15 @@ export function PrimerView({
               shown.kind === 'blocked' ||
               unlocked
             }
-            onPress={onTurnOn}
+            onPress={view.kind === 'weak' ? onUseScreenLock : onTurnOn}
           />
         )}
         <Key
           tone="outline"
           size="medium"
-          label="Use device passcode instead"
+          label={`${credentialKeyLabel()} instead`}
           disabled={unlocked || shown.kind === 'noLock'}
-          onPress={onTurnOn}
+          onPress={onUseScreenLock}
         />
       </View>
     </View>
@@ -215,30 +220,30 @@ export function PrimerView({
 }
 
 function noticeOf(state: PrimerState, copy: BiometricCopy, secondsLeft: number): string | null {
-  const { name, title } = copy;
+  const { name, title, is } = copy;
   switch (state.kind) {
     case 'idle':
     case 'checking':
     case 'unlocked':
       return null;
     case 'mismatch':
-      return triesLeftText(state.triesLeft, name);
+      return missText(name);
     case 'timedOut':
       return isSetupView(state.over)
-        ? `${TIMED_OUT_SETUP} ${noticeOf(state.over, copy, secondsLeft)}`
+        ? `${timedOutSetupText()} ${noticeOf(state.over, copy, secondsLeft)}`
         : timedOutText(name);
     case 'blocked':
-      return `Too many tries. Your phone paused ${name}. Use your device passcode now.`;
+      return `Too many tries. Your phone paused ${name}. Use your ${credentialName()} now.`;
     case 'lockout':
-      return `Too many tries. ${name} is back in ${clock(secondsLeft)}, or use your device passcode now.`;
+      return `Too many tries. ${name} ${is} back in ${clock(secondsLeft)}, or use your ${credentialName()} now.`;
     case 'weak':
       return WEAK_BIOMETRIC;
     case 'noLock':
       return 'Set a screen lock to use Sen.';
     case 'off':
       return state.canOpenSettings
-        ? `${title} is off. Turn it on in your phone's settings, or use your passcode.`
-        : `This phone can't use ${name}. Your passcode works instead.`;
+        ? `${title} ${is} off. Turn it on in your phone's settings, or use your ${credentialName()}.`
+        : `This phone can't use ${name}. Your ${credentialName()} works instead.`;
     case 'error':
       return "Sen couldn't check it's you. Try again.";
     case 'store':

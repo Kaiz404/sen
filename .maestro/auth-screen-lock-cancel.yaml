@@ -1,0 +1,16 @@
+# Cancelling the screen lock returns to Lock with both keys ready.
+appId: com.kaiz404.sen
+---
+- runFlow:
+    file: subflows/at-lock.yaml
+    env:
+      AUTH: cancel
+- tapOn: Use screen lock
+- extendedWaitUntil:
+    visible:
+      id: unlock
+      enabled: true
+    timeout: 15000
+- assertVisible: Use screen lock
+- assertNotVisible: Not quite.
+- takeScreenshot: auth-screen-lock-cancel

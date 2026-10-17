@@ -7,6 +7,7 @@ import { queryClient } from '@/services/query-client';
 import * as Vault from '@/services/vault';
 
 import { dropRevealedOnHide, hideAmounts, showAmounts, useAmountsHidden } from './amounts';
+import { BIOMETRIC_OPTIONS } from './prompt';
 import { dispatch, lockNow, sessionStore, signOut, unlock } from './session';
 
 jest.mock('expo-local-authentication', () => ({
@@ -22,8 +23,7 @@ const authenticate = jest.mocked(LocalAuthentication.authenticateAsync);
 const db = { close: jest.fn(async () => undefined) } as unknown as OpenDb;
 const SHOW_PROMPT = {
   promptMessage: 'Show amounts',
-  biometricsSecurityLevel: 'strong',
-  disableDeviceFallback: false,
+  ...BIOMETRIC_OPTIONS,
 };
 
 let stopDropping: () => void;

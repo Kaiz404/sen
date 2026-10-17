@@ -25,7 +25,7 @@ appId: com.kaiz404.sen
       - back
       - tapOn:
           id: continue
-      - tapOn: Use device passcode instead
+      - tapOn: Use screen lock instead
       - extendedWaitUntil:
           notVisible:
             id: turn-on

@@ -4,6 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
+import { capital } from '@/models/text';
 import { type LaunchTarget, Sen, type SenProps, UNLOCK_HOLD } from '@/features/sen';
 import type { StoreCause } from '@/services/store-fault';
 import { useSecondsLeft } from '@/motion/countdown';
@@ -15,15 +16,17 @@ import {
   BIOMETRIC,
   type BiometricCopy,
   clock,
+  credentialKeyLabel,
+  credentialName,
+  missText,
   RESET_COST,
   WEAK_BIOMETRIC,
   STORE_COPY,
-  TIMED_OUT_SETUP,
+  timedOutSetupText,
   timedOutText,
-  triesLeftText,
 } from '../copy';
 import type { Session } from '../machine';
-import type { Biometric } from '../prompt';
+import type { AuthVia, Biometric } from '../prompt';
 import {
   afterRecheck,
   afterUnlock,
@@ -61,6 +64,8 @@ export type LockViewProps = {
   readonly state: LockState;
   readonly biometric: Biometric;
   readonly onUnlock: () => void;
+  /** The screen lock alone, with no sensor in front of it (D40). */
+  readonly onUseScreenLock: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenLockSettings: () => void;
   readonly onStartAgain: () => void;
@@ -84,10 +89,10 @@ export function LockScreen(): ReactNode {
   const asking = prompt.kind === 'asking';
   usePromptMoments(LOCK_SEN, prompt, ANSWERS);
 
-  const onUnlock = () => {
+  const ask = (via: AuthVia) => () => {
     if (asking) return;
     setPrompt({ kind: 'asking' });
-    void unlock(UNLOCK_HOLD[level]).then((outcome) => {
+    void unlock(UNLOCK_HOLD[level], via).then((outcome) => {
       const now = Date.now();
       const next = outcome.ok ? view : afterUnlock(view, outcome, now);
       const napping = next.kind === 'blocked' || (next.kind === 'lockout' && next.until > now);
@@ -95,6 +100,8 @@ export function LockScreen(): ReactNode {
       setView(next);
     });
   };
+  const onUnlock = ask('biometric');
+  const onUseScreenLock = ask('credential');
 
   const eraseWithConfirm = (title: string, message: string, action: string) => () =>
     Alert.alert(title, message, [
@@ -121,6 +128,7 @@ export function LockScreen(): ReactNode {
       state={FROM_SESSION[status] ?? (asking ? CHECKING : view)}
       biometric={support.kind}
       onUnlock={onUnlock}
+      onUseScreenLock={onUseScreenLock}
       onOpenSettings={openDeviceSettings}
       onOpenLockSettings={openLockScreenSettings}
       onStartAgain={onStartAgain}
@@ -134,6 +142,7 @@ export function LockView({
   state,
   biometric,
   onUnlock,
+  onUseScreenLock,
   onOpenSettings,
   onOpenLockSettings,
   onStartAgain,
@@ -149,7 +158,7 @@ export function LockView({
       <Lockout
         copy={copy}
         secondsLeft={shown.kind === 'lockout' ? secondsLeft : null}
-        onUnlock={onUnlock}
+        onUseScreenLock={onUseScreenLock}
         onStartAgain={onStartAgain}
       />
     );
@@ -172,15 +181,15 @@ export function LockView({
       tone="outline"
       size="medium"
       icon="lock-outline"
-      label="Use device passcode"
+      label={credentialKeyLabel()}
       disabled={signingOut || unlocked}
-      onPress={onUnlock}
+      onPress={onUseScreenLock}
     />
   );
 
   const setup = shown.kind === 'timedOut' && isSetupView(shown.over) ? shown.over : null;
   const view = setup ?? shown;
-  const timedOutNote = setup && <Notice text={TIMED_OUT_SETUP} />;
+  const timedOutNote = setup && <Notice text={timedOutSetupText()} />;
   const body = (() => {
     switch (view.kind) {
       case 'idle':
@@ -199,7 +208,7 @@ export function LockView({
         return (
           <>
             <ProfileRow />
-            <Notice text={triesLeftText(view.triesLeft, name)} />
+            <Notice text={missText(name)} />
             {unlockKey(`Try ${name} again`)}
             {passcode}
           </>
@@ -224,11 +233,11 @@ export function LockView({
                 {passcode}
               </>
             ) : (
-              unlockKey('Use device passcode', 'lock-outline')
+              unlockKey(credentialKeyLabel(), 'lock-outline', onUseScreenLock)
             )}
             <NoteCard
               icon="cellphone"
-              text="Either way, nothing leaves this phone. Sen never sees your face or passcode."
+              text={`Either way, nothing leaves this phone. Sen never sees your face or ${credentialName()}.`}
             />
           </>
         );
@@ -239,7 +248,7 @@ export function LockView({
             {unlockKey('Open lock-screen settings', 'cog', onOpenLockSettings)}
             <NoteCard
               icon="cellphone"
-              text="Sen never sees your face, fingerprint or passcode. Your phone checks, and Sen only hears yes or no."
+              text={`Sen never sees your face, fingerprint or ${credentialName()}. Your phone checks, and Sen only hears yes or no.`}
             />
           </>
         );
@@ -248,7 +257,7 @@ export function LockView({
           <>
             <ProfileRow />
             {timedOutNote}
-            {unlockKey('Use device passcode', 'lock-outline')}
+            {unlockKey(credentialKeyLabel(), 'lock-outline', onUseScreenLock)}
             <Key
               tone="outline"
               size="medium"
@@ -313,12 +322,12 @@ type LockoutProps = {
   readonly copy: BiometricCopy;
   /** Null while the lockout has no end the app can promise. */
   readonly secondsLeft: number | null;
-  readonly onUnlock: () => void;
+  readonly onUseScreenLock: () => void;
   readonly onStartAgain: () => void;
 };
 
-function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): ReactNode {
-  const { name, title, icon } = copy;
+function Lockout({ copy, secondsLeft, onUseScreenLock, onStartAgain }: LockoutProps): ReactNode {
+  const { name, title, icon, is } = copy;
   return (
     <View style={styles.lockout}>
       <StatusBar style="light" />
@@ -333,25 +342,25 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
       </Text>
       <Text style={styles.lockoutBody}>
         {secondsLeft === null
-          ? `Your phone paused ${name}. Use your device passcode to open Sen. ${title} works again after that.`
-          : `Your phone paused ${name}. Sen is napping until it's back. Wait, or use your device passcode now.`}
+          ? `Your phone paused ${name}. Use your ${credentialName()} to open Sen. ${title} ${is} back after that.`
+          : `Your phone paused ${name}. Sen is napping until it's back. Wait, or use your ${credentialName()} now.`}
       </Text>
       <View
         accessible
         accessibilityLabel={
           secondsLeft === null
-            ? `${title} is paused until you use your device passcode`
+            ? `${title} ${is} paused until you use your ${credentialName()}`
             : `${title} available again in ${secondsLeft} seconds`
         }
         style={styles.cooldown}
       >
         <Text style={styles.cooldownCaption}>
           {secondsLeft === null
-            ? `${name.toUpperCase()} IS PAUSED UNTIL`
+            ? `${name.toUpperCase()} ${is.toUpperCase()} PAUSED UNTIL`
             : `TRY ${name.toUpperCase()} AGAIN IN`}
         </Text>
         <Text style={secondsLeft === null ? styles.passcodeWord : styles.clock}>
-          {secondsLeft === null ? 'Passcode' : clock(secondsLeft)}
+          {secondsLeft === null ? capital(credentialName()) : clock(secondsLeft)}
         </Text>
         <View style={styles.napping}>
           <Sen id={LOCK_SEN} pose="asleep" size={150} />
@@ -364,8 +373,8 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
           size="xlarge"
           surface="hero"
           icon="lock-outline"
-          label="Use device passcode"
-          onPress={onUnlock}
+          label={credentialKeyLabel()}
+          onPress={onUseScreenLock}
         />
         <Key
           tone="outline"
@@ -373,10 +382,10 @@ function Lockout({ copy, secondsLeft, onUnlock, onStartAgain }: LockoutProps): R
           surface="hero"
           icon={icon}
           label={
-            secondsLeft === null ? `${title} is paused` : `${title} back in ${clock(secondsLeft)}`
+            secondsLeft === null ? `${title} ${is} paused` : `${title} back in ${clock(secondsLeft)}`
           }
           disabled
-          onPress={onUnlock}
+          onPress={onUseScreenLock}
         />
         <TextLink onHero label="Not you? Start again" onPress={onStartAgain} />
       </View>
@@ -432,13 +441,13 @@ const HERO: Readonly<
     sen: { pose: 'shrug', label: 'Sen, shrugging because the phone has no screen lock' },
   }),
   weak: () => ({
-    title: ['Use your', 'passcode.'],
+    title: ['Use your', `${credentialName()}.`],
     body: WEAK_BIOMETRIC,
-    sen: { pose: 'shrug', label: 'Sen, shrugging because this phone only has weak face unlock' },
+    sen: { pose: 'shrug', label: 'Sen, shrugging because this phone only has weak biometrics' },
   }),
-  off: ({ title }) => ({
-    title: [title, 'is off.'],
-    body: "Turn it on in your phone's settings, or use your passcode.",
+  off: ({ title, is }) => ({
+    title: [title, `${is} off.`],
+    body: `Turn it on in your phone's settings, or use your ${credentialName()}.`,
     sen: { pose: 'shrug', label: 'Sen, shrugging because it is not set up' },
   }),
   error: () => ({

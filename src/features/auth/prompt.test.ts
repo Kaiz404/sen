@@ -1,12 +1,22 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 
+import { cancelDeviceCredential, confirmDeviceCredential } from '@/services/device-credential';
+
 import {
   authenticate,
+  BIOMETRIC_OPTIONS,
+  biometricOf,
+  CREDENTIAL_TIMEOUT_MS,
   detectBiometric,
   promptAppState,
   isAuthOverride,
   setAuthOverride,
 } from './prompt';
+
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
+}));
 
 jest.mock('expo-local-authentication', () => ({
   ...jest.requireActual('expo-local-authentication'),
@@ -26,6 +36,7 @@ test.each([
     { ok: false, reason: 'unknown' },
   ],
   ['a missing usage description', 'missing_usage_description', { ok: false, reason: 'unknown' }],
+  ['no screen lock', 'passcode_not_set', { ok: false, reason: 'noLock' }],
   ['a name on Object.prototype', 'toString', { ok: false, reason: 'unknown' }],
 ])('%s maps to its failure', async (_, error, expected) => {
   authenticateAsync.mockResolvedValueOnce({
@@ -67,11 +78,7 @@ describe('the dev auth override', () => {
     expect(await authenticate('Unlock Sen')).toEqual({ ok: false, reason: 'cancelled' });
     expect(authenticateAsync.mock.calls).toEqual([
       [
-        {
-          promptMessage: 'Unlock Sen',
-          biometricsSecurityLevel: 'strong',
-          disableDeviceFallback: false,
-        },
+        { promptMessage: 'Unlock Sen', ...BIOMETRIC_OPTIONS },
       ],
     ]);
   });
@@ -187,5 +194,65 @@ describe('a level read that throws', () => {
     jest.mocked(LocalAuthentication.getEnrolledLevelAsync).mockRejectedValueOnce(new Error('boom'));
 
     expect((await detectBiometric({ kind: 'fingerprint', level: 'strong' })).level).toBe('strong');
+  });
+});
+
+describe('the screen-lock prompt on Android', () => {
+  const { Platform } = jest.requireActual('react-native');
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.replaceProperty(Platform, 'OS', 'android');
+    jest.mocked(confirmDeviceCredential).mockReset();
+    jest.mocked(cancelDeviceCredential).mockClear();
+    jest.mocked(LocalAuthentication.cancelAuthenticate).mockClear();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  test('waits five minutes where the sensor waits one, since the phone itself makes a user wait 30 s after five wrong tries', async () => {
+    jest.mocked(confirmDeviceCredential).mockReturnValueOnce(new Promise(() => undefined));
+    const pending = authenticate('Unlock Sen', 'credential');
+
+    await jest.advanceTimersByTimeAsync(60_000);
+    expect(cancelDeviceCredential).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(CREDENTIAL_TIMEOUT_MS - 60_001);
+    expect(cancelDeviceCredential).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+
+    expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
+    expect(cancelDeviceCredential).toHaveBeenCalledTimes(1);
+    expect(LocalAuthentication.cancelAuthenticate).not.toHaveBeenCalled();
+  });
+
+  test('a sensor that stays silent for 60 s still times out as before', async () => {
+    authenticateAsync.mockReset();
+    authenticateAsync.mockReturnValueOnce(new Promise(() => undefined));
+    const pending = authenticate('Unlock Sen');
+
+    await jest.advanceTimersByTimeAsync(60_000);
+
+    expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
+    expect(LocalAuthentication.cancelAuthenticate).toHaveBeenCalledTimes(1);
+  });
+
+  test('the dev override reaches the screen lock too: a lockout does not lock it', async () => {
+    setAuthOverride('lockout');
+    expect(await authenticate('Unlock Sen', 'credential')).toEqual({ ok: true });
+    setAuthOverride('real');
+  });
+});
+
+describe('the sensor name', () => {
+  test.each([
+    ['android', [LocalAuthentication.AuthenticationType.FINGERPRINT], 'fingerprint'],
+    ['android', [LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION], 'face'],
+    ['android', [LocalAuthentication.AuthenticationType.FINGERPRINT, LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION], 'biometrics'],
+    ['android', [], 'biometrics'],
+    ['ios', [LocalAuthentication.AuthenticationType.FINGERPRINT], 'touchId'],
+    ['ios', [], 'faceId'],
+  ] as const)('%s with %j is %s', (os, types, expected) => {
+    expect(biometricOf(os, types)).toBe(expected);
   });
 });

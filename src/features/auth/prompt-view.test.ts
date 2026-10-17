@@ -62,7 +62,7 @@ describe('repeated lockouts', () => {
 
 test('a phone that loses its screen lock shows the no-lock view over any earlier attempt', () => {
   const error: PromptView = { kind: 'error' };
-  const mismatch: PromptView = { kind: 'mismatch', triesLeft: 1 };
+  const mismatch: PromptView = { kind: 'mismatch' };
 
   expect(afterRecheck(error, 'none')).toEqual({ kind: 'noLock' });
   expect(afterRecheck(mismatch, 'none')).toEqual({ kind: 'noLock' });
@@ -82,11 +82,9 @@ describe('a timed-out prompt', () => {
     expect(timedOut(mismatch(IDLE)).kind).toBe('timedOut');
   });
 
-  test('keeps the tries a mismatch left, as a cancel does', () => {
-    const once = mismatch(IDLE);
-    expect(mismatch(timedOut(once))).toEqual({ kind: 'mismatch', triesLeft: 1 });
-    expect(mismatch(timedOut(timedOut(once)))).toEqual({ kind: 'mismatch', triesLeft: 1 });
-    expect(mismatch(timedOut(IDLE))).toEqual({ kind: 'mismatch', triesLeft: 2 });
+  test('a miss after a timeout is still a miss, and no count of tries is kept', () => {
+    expect(mismatch(timedOut(mismatch(IDLE)))).toEqual({ kind: 'mismatch' });
+    expect(mismatch(timedOut(IDLE))).toEqual({ kind: 'mismatch' });
   });
 
   test('keeps the off and weak setup views, which still have their own keys', () => {

@@ -49,6 +49,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-idle-light
+- openLink: "sen://dev/states?screen=auth&state=lock-biometrics&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-biometrics-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-biometrics-light
 - openLink: "sen://dev/states?screen=auth&state=lock-checking&theme=light"
 - extendedWaitUntil:
     visible:

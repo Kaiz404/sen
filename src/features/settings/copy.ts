@@ -50,6 +50,7 @@ export const BIOMETRIC_NAME: Readonly<Record<Biometric, string>> = {
   touchId: 'Touch ID',
   face: 'face unlock',
   fingerprint: 'fingerprint',
+  biometrics: 'biometrics',
 };
 
 export const BIOMETRIC_ICON: Readonly<Record<Biometric, IconName>> = {
@@ -57,6 +58,7 @@ export const BIOMETRIC_ICON: Readonly<Record<Biometric, IconName>> = {
   touchId: 'fingerprint',
   face: 'face-recognition',
   fingerprint: 'fingerprint',
+  biometrics: 'fingerprint',
 };
 
 const count = new Intl.NumberFormat('en-MY');

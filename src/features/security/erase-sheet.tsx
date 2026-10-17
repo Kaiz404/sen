@@ -11,6 +11,7 @@ import {
   BIOMETRIC,
   type BiometricCopy,
   openDeviceSettings,
+  credentialName,
   useBiometric,
   useDb,
   useStepUp,
@@ -33,7 +34,8 @@ const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
   timedOut: () => 'The check timed out. Nothing was erased. Try again when you’re ready.',
   mismatch: (name) => `${capital(name)} didn’t match. Nothing was erased.`,
-  lockout: () => 'Too many tries. Nothing was erased. Use your device passcode next time.',
+  lockout: () => `Too many tries. Nothing was erased. Use your ${credentialName()} next time.`,
+  noLock: () => 'Nothing was erased. Set a screen lock to use Sen.',
   not_set_up: (name) =>
     `${capital(name)} is off. Nothing was erased. Turn it on in your phone’s security settings, then try again.`,
   unavailable: (name) =>

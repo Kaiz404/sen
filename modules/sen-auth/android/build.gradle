@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.senauth'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.senauth"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // The version expo-local-authentication already builds against, so the app resolves one copy.
+  implementation "androidx.biometric:biometric:1.2.0-alpha04"
+}

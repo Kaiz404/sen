@@ -10,6 +10,8 @@ import {
 } from 'expo-local-authentication';
 import { type AppStateStatus, Platform } from 'react-native';
 
+import { cancelDeviceCredential, confirmDeviceCredential } from '@/services/device-credential';
+
 export type AuthFailure =
   | 'cancelled'
   /** The prompt sat unanswered for `PROMPT_TIMEOUT_MS` of foreground time. Not a failed try. */
@@ -17,20 +19,25 @@ export type AuthFailure =
   | 'mismatch'
   | 'lockout'
   | 'not_set_up'
+  /** The phone has no screen lock at all, so there is nothing to check against (D28). */
+  | 'noLock'
   | 'unavailable'
   | 'unknown';
 export type AuthOutcome =
   { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
 
-const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure>> = {
+/** What one native ask answers. `fallback` is the user tapping the sheet's own screen-lock button (iOS "Use passcode"). */
+type Answer = { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure | 'fallback' };
+
+const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure | 'fallback'>> = {
   user_cancel: 'cancelled',
   system_cancel: 'cancelled',
   app_cancel: 'cancelled',
-  user_fallback: 'cancelled',
+  user_fallback: 'fallback',
   authentication_failed: 'mismatch',
   lockout: 'lockout',
   not_enrolled: 'not_set_up',
-  passcode_not_set: 'not_set_up',
+  passcode_not_set: 'noLock',
   not_available: 'unavailable',
   no_space: 'unknown',
   timeout: 'unknown',
@@ -43,7 +50,7 @@ const FAILURE: Readonly<Record<LocalAuthenticationError, AuthFailure>> = {
  * The native module can return codes outside its typed union (iOS sends `unknown: <code>, <message>` and
  * `missing_usage_description`), so the code is untrusted input and anything not in the table is `unknown`.
  */
-function failureOf(error: string): AuthFailure {
+function failureOf(error: string): AuthFailure | 'fallback' {
   return Object.hasOwn(FAILURE, error) ? FAILURE[error as LocalAuthenticationError] : 'unknown';
 }
 
@@ -68,13 +75,43 @@ export function setAuthOverride(next: AuthOverride): void {
   if (__DEV__) authOverride = next;
 }
 
-function nativePrompt(promptMessage: string): Promise<LocalAuthenticationResult> {
-  if (__DEV__ && authOverride !== 'real') return Promise.resolve(AUTH_OVERRIDES[authOverride]);
-  return authenticateAsync({
-    promptMessage,
-    biometricsSecurityLevel: 'strong',
-    disableDeviceFallback: false,
-  });
+/**
+ * Which check a prompt asks for (D40). `biometric` is the sensor alone, with a Cancel button and no screen lock behind
+ * it. `credential` is the phone's screen lock alone: PIN, pattern or password on Android, and the passcode on iOS.
+ */
+export type AuthVia = 'biometric' | 'credential';
+
+/** The strong, biometrics-only options. `strong` must never sit beside a device fallback: Android 9 and 10 refuse that pair. */
+export const BIOMETRIC_OPTIONS = {
+  biometricsSecurityLevel: 'strong',
+  disableDeviceFallback: true,
+  cancelLabel: 'Cancel',
+  // iOS shows this button after a miss. Android has no such button, and expo maps its Cancel to `user_cancel`.
+  fallbackLabel: 'Use passcode',
+} as const;
+
+/** A screen lock is never locked out by biometric misses and has no mismatch, so those overrides map to the nearest honest answer. */
+const CREDENTIAL_OVERRIDE: Readonly<Record<keyof typeof AUTH_OVERRIDES, LocalAuthenticationResult>> = {
+  pass: AUTH_OVERRIDES.pass,
+  fail: AUTH_OVERRIDES.cancel,
+  cancel: AUTH_OVERRIDES.cancel,
+  lockout: AUTH_OVERRIDES.pass,
+};
+
+function nativePrompt(promptMessage: string, via: AuthVia): Promise<LocalAuthenticationResult> {
+  if (__DEV__ && authOverride !== 'real')
+    return Promise.resolve(
+      (via === 'credential' ? CREDENTIAL_OVERRIDE : AUTH_OVERRIDES)[authOverride],
+    );
+  if (via === 'biometric') return authenticateAsync({ promptMessage, ...BIOMETRIC_OPTIONS });
+  // iOS has no passcode-only policy: this is the system sheet with Face ID or Touch ID first, then the passcode.
+  if (Platform.OS === 'ios') return authenticateAsync({ promptMessage, disableDeviceFallback: false });
+  return confirmDeviceCredential(promptMessage);
+}
+
+function cancelNative(via: AuthVia): void {
+  if (via === 'credential' && Platform.OS === 'android') void cancelDeviceCredential();
+  else cancelAuthenticate().catch(() => undefined);
 }
 
 const isAuthenticatingRef = { current: false };
@@ -101,6 +138,19 @@ const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
  */
 export const PROMPT_TIMEOUT_MS = 60_000;
 
+/**
+ * The screen-lock prompt waits longer. Android 11 and later draw it over Sen, so the app stays `active` while a
+ * pattern is drawn, and after five wrong tries the phone itself makes the user wait 30 s. Android 9 and 10 open the
+ * system's own screen, which takes the app out of `active`, so the clock stops there as it does for any other
+ * absence (inferred, not seen on a device).
+ */
+export const CREDENTIAL_TIMEOUT_MS = 5 * 60_000;
+
+const TIMEOUT_MS: Readonly<Record<AuthVia, number>> = {
+  biometric: PROMPT_TIMEOUT_MS,
+  credential: CREDENTIAL_TIMEOUT_MS,
+};
+
 const TIMED_OUT = Symbol('timed out');
 
 let guard: { pause(): void; resume(): void } | null = null;
@@ -111,7 +161,21 @@ export function promptAppState(state: AppStateStatus): void {
   else guard?.pause();
 }
 
-export async function authenticate(promptMessage: string): Promise<AuthOutcome> {
+/**
+ * Asks the phone once, by the sensor or by the screen lock. When the user taps the sheet's own screen-lock button
+ * (iOS), the screen lock follows in the same call, so no screen has to route it.
+ */
+export async function authenticate(
+  promptMessage: string,
+  via: AuthVia = 'biometric',
+): Promise<AuthOutcome> {
+  const answer = await askOnce(promptMessage, via);
+  if (answer.ok) return answer;
+  if (answer.reason !== 'fallback') return { ok: false, reason: answer.reason };
+  return via === 'biometric' ? authenticate(promptMessage, 'credential') : BUSY;
+}
+
+async function askOnce(promptMessage: string, via: AuthVia): Promise<Answer> {
   if (isAuthenticatingRef.current) return BUSY;
   isAuthenticatingRef.current = true;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -119,14 +183,14 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
     const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
       const resume = () => {
         clearTimeout(timer);
-        timer = setTimeout(() => resolve(TIMED_OUT), PROMPT_TIMEOUT_MS);
+        timer = setTimeout(() => resolve(TIMED_OUT), TIMEOUT_MS[via]);
       };
       guard = { pause: () => clearTimeout(timer), resume };
       resume();
     });
-    const result = await Promise.race([nativePrompt(promptMessage), timeout]);
+    const result = await Promise.race([nativePrompt(promptMessage, via), timeout]);
     if (result === TIMED_OUT) {
-      cancelAuthenticate().catch(() => undefined);
+      cancelNative(via);
       return { ok: false, reason: 'timedOut' };
     }
     return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
@@ -140,8 +204,13 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
   }
 }
 
-export type Biometric = 'faceId' | 'touchId' | 'face' | 'fingerprint';
+/** `biometrics` is the name when the phone has no single sensor to name, which is also the fallback. */
+export type Biometric = 'faceId' | 'touchId' | 'face' | 'fingerprint' | 'biometrics';
 
+/**
+ * Android reports which sensors the phone has, not which one is enrolled, so a phone with both or neither is
+ * "biometrics" and only a phone with one sensor names it.
+ */
 export function biometricOf(
   os: typeof Platform.OS,
   types: readonly AuthenticationType[],
@@ -149,7 +218,8 @@ export function biometricOf(
   const face = types.includes(AuthenticationType.FACIAL_RECOGNITION);
   const finger = types.includes(AuthenticationType.FINGERPRINT);
   if (os === 'ios') return finger && !face ? 'touchId' : 'faceId';
-  return face && !finger ? 'face' : 'fingerprint';
+  if (face === finger) return 'biometrics';
+  return face ? 'face' : 'fingerprint';
 }
 
 /** What the phone has enrolled. `weak` is a Class 2 biometric, such as many phones' face unlock, which Sen cannot accept. */

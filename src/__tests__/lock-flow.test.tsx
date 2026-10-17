@@ -15,7 +15,7 @@ import {
   type NativeEventSubscription,
 } from 'react-native';
 
-import { hideAmounts, lockNow, showAmounts } from '@/features/auth';
+import { BIOMETRIC_OPTIONS, hideAmounts, lockNow, showAmounts } from '@/features/auth';
 import { sessionStore } from '@/features/auth/session';
 import { playMoment } from '@/features/sen';
 import { InstantSchema, malaysiaDay } from '@/models/day';
@@ -63,7 +63,7 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   answer({ success: false, error: 'authentication_failed' });
   expect(await screen.findByRole('header', { name: 'Not quite.' })).toBeOnTheScreen();
   expect(
-    screen.getByText("Didn't match. 2 more tries before fingerprint locks."),
+    screen.getByText("Didn't match. Try fingerprint again, or use your screen lock."),
   ).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Add a transaction' })).not.toBeOnTheScreen();
 
@@ -76,8 +76,7 @@ test('Lock ignores a second tap while prompting, a wrong finger shows "Not quite
   expect(authenticate).toHaveBeenCalledTimes(2);
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Unlock Sen',
-    biometricsSecurityLevel: 'strong',
-    disableDeviceFallback: false,
+    ...BIOMETRIC_OPTIONS,
   });
   expect(screen.queryByRole('header', { name: 'Not quite.' })).not.toBeOnTheScreen();
 

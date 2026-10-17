@@ -307,9 +307,9 @@ One haptic per moment, fired from the named step, not at gesture start.
 | --- | --- | --- |
 | `SF-Launch` | Launch | Ink full bleed with the "Sen" wordmark. The motion follows MAL2 (`design/MAL2-Loading.dc.html`), where Sen becomes the period |
 | `SF-Welcome` | Welcome (first run) | "Meet Sen." Three promises on a receipt slip. "Continue as demo user" |
-| `SF-Biometric` | Face ID primer (first run) | Explains biometrics before the OS prompt. "Turn on Face ID", "Use device passcode instead" |
-| `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, passcode, "Not you? Start again" |
-| `SF-LockStates` | Lock states | Checking, didn't match ("2 more tries"), timed out (owner addition, D36: "Took too long." with the key ready), lockout with cool-down, Face ID off, unlocked |
+| `SF-Biometric` | Face ID primer (first run) | Explains biometrics before the OS prompt. "Turn on Face ID", "Use screen lock instead" ("Use passcode instead" on iOS) |
+| `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, Use screen lock ("Use passcode" on iOS), "Not you? Start again" |
+| `SF-LockStates` | Lock states | Checking, didn't match (no count of tries, D40), timed out (owner addition, D36: "Took too long." with the key ready), lockout with cool-down, Face ID off, unlocked |
 | `SF-PrivacyCover` | App switcher cover | Lemon full bleed, wordmark, Sen asleep. No amounts or names |
 | `SF-History` | History, masked | Header with face-only Sen mark, then privacy (question mark), settings and lock keys. "+ Add" is the floating Add key (owner override below). "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
 | `SF-Reveal` | History, revealed | Ink card with Sen on top. Split numerals. "Hide amounts". The board's 60 s ring and countdown are dropped (D27) |
@@ -337,16 +337,16 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 
 **First run.**
 - Launch › Welcome › "Continue as demo user" › Face ID primer › OS prompt › History (masked).
-- The passcode path also lands on History.
-- If biometrics aren't set up, the primer offers "Open device settings" and "Use device passcode".
+- The screen-lock path also lands on History. Unlock asks for the sensor alone, and Use screen lock asks for the phone's PIN, pattern or password alone (D40). Copy says "screen lock" on Android and "passcode" on iOS, and never "PIN".
+- If biometrics aren't set up, the primer offers "Open device settings" and "Use screen lock".
 
 **Returning.**
 - Launch › Lock › tap Unlock. Never auto-prompt.
 - **Success.** Unlock moment, then History (masked). History's data starts loading as the check passes, so it is ready when the moment ends.
 - **Cancel.** Back to Lock silently.
-- **Timed out.** A prompt unanswered for 60 s ends with "The check timed out. Try fingerprint again, or use your device passcode.", the retry key enabled and Sen shrugging. It is not a try. A step-up that times out leaves amounts hidden and says so in a toast. Copy names the real sensor.
-- **No match.** An inline message with the tries left. After Auth failed, Sen rests `worried`, as the Lock board's "Not quite." state draws it, not masked as the tile ends.
-- **Lockout.** The cool-down card and the passcode.
+- **Timed out.** A prompt unanswered for 60 s ends with "The check timed out. Try fingerprint again, or use your screen lock.", the retry key enabled and Sen shrugging. It is not a try. A step-up that times out leaves amounts hidden and says so in a toast. Copy names the real sensor, or "biometrics" when the phone has more than one or Android cannot say which is enrolled.
+- **No match.** An inline "Didn't match. Try fingerprint again, or use your screen lock." with no count: Android reports no single miss. After Auth failed, Sen rests `worried`, as the Lock board's "Not quite." state draws it, not masked as the tile ends.
+- **Lockout.** The cool-down card and the Use screen lock key, which works. Android reports it after five misses.
 
 **Show and hide amounts.**
 - History › "Show amounts" › OS prompt › revealed.

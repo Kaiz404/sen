@@ -51,3 +51,4 @@ shots/
 # tooling output
 __pycache__/
 modules/sen-clipboard/android/build/
+modules/sen-auth/android/build/

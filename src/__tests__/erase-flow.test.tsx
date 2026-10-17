@@ -8,11 +8,13 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
 import { Linking } from 'react-native';
 
+import { BIOMETRIC_OPTIONS } from '../features/auth/prompt';
 import { sessionStore } from '../features/auth/session';
 import { DayKeySchema, toInstant } from '@/models/day';
 import { draftSchema } from '@/models/draft';
 import { activity, readActivity } from '@/services/activity-log';
 import type { OpenDb } from '@/services/db';
+import { confirmDeviceCredential } from '@/services/device-credential';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { queryClient, QK } from '@/services/query-client';
 import { insertManual } from '@/services/tx-repo';
@@ -26,6 +28,10 @@ jest.mock('expo-local-authentication', () => ({
   getEnrolledLevelAsync: jest.fn(async () => 3),
 }));
 jest.mock('@/services/logger');
+jest.mock('@/services/device-credential', () => ({
+  confirmDeviceCredential: jest.fn(),
+  cancelDeviceCredential: jest.fn(async () => undefined),
+}));
 
 jest.setTimeout(30_000);
 
@@ -143,8 +149,7 @@ test('erase deletes only the rows the user added, and leaves bank rows, the vaul
   await waitFor(() => expect(screen.queryByText('Lunch number 1')).not.toBeOnTheScreen());
   expect(authenticate).toHaveBeenLastCalledWith({
     promptMessage: 'Erase transactions I added',
-    biometricsSecurityLevel: 'strong',
-    disableDeviceFallback: false,
+    ...BIOMETRIC_OPTIONS,
   });
   expect(await countBySource()).toEqual({ bank });
   expect(phone).toMatchObject({ key: KEY, file: true });
@@ -223,7 +228,7 @@ test('with nothing added, the sheet says there is nothing to erase and the Setti
   ).toBeDisabled();
 });
 
-test('a phone with the check turned off gets a way to its security settings', async () => {
+test('a phone whose sensor is off and whose screen lock cannot be asked gets a way to its security settings', async () => {
   const opened = [
     jest.spyOn(Linking, 'openSettings').mockResolvedValue(),
     jest.spyOn(Linking, 'sendIntent').mockResolvedValue(),
@@ -232,11 +237,13 @@ test('a phone with the check turned off gets a way to its security settings', as
   await addRows(1);
   await openEraseSheet();
 
+  // The sensor is off, so the step-up asks for the screen lock, and that cannot be asked either.
   authenticate.mockResolvedValueOnce({ success: false, error: 'not_enrolled' });
+  jest.mocked(confirmDeviceCredential).mockResolvedValueOnce({ success: false, error: 'not_available' });
   await press('Erase with fingerprint');
 
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Fingerprint is off. Nothing was erased. Turn it on in your phone’s security settings, then try again.',
+    'Fingerprint isn’t available right now. Nothing was erased. Check your phone’s security settings, then try again.',
   );
   await press('Open device settings');
   expect(opened.map((spy) => spy.mock.calls.length)).toContain(1);

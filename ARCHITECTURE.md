@@ -349,7 +349,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - The container shows `checking` until the answer lands (`asking`), because the session leaves `authenticating` a render before the answer reaches the screen. Without it the view would flash `idle`.
 - Lock's Sen idles masked, so it peeks toward Unlock every 6 to 9 s (`lockPeek`).
 
-**Step-up.** `useStepUp(action)` returns a function. Each call prompts and resolves to `{ ok: true } | { ok: false; reason }`, with `reason` one of `cancelled`, `timedOut`, `mismatch`, `lockout`, `not_set_up`, `unavailable` or `unknown`. Nothing is cached, so every write prompts. A call while another prompt is up resolves `cancelled` without a second prompt.
+**Step-up.** `useStepUp(action)` returns a function. Each call prompts and resolves to `{ ok: true } | { ok: false; reason }`, with `reason` one of `cancelled`, `timedOut`, `mismatch`, `lockout`, `not_set_up`, `noLock`, `unavailable` or `unknown`. It asks the sensor first. When the sensor is locked out, off or absent (`SENSOR_CANNOT_ANSWER`) it asks for the screen lock in the same step-up, and logs the lockout. A cancel, a miss or a timeout opens nothing more. Nothing is cached, so every write prompts. A call while another prompt is up resolves `cancelled` without a second prompt.
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
@@ -361,9 +361,10 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 
 The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it logs `tx.undone`. A step-up that reads `mismatch` or `lockout` logs `auth.failed`. A cancel or a timeout logs nothing. A step-up that ends in a lock that arrived during the prompt returns `cancelled` and logs no failed check, whatever the prompt answered. The lock is the event, and it logs `lock.locked` when it applies.
 
-**`authenticateAsync` options.** One path, `authenticate()` in `features/auth/prompt.ts`, serves unlock and step-up.
-- `biometricsSecurityLevel: 'strong'`.
-- `disableDeviceFallback: false`.
+**Two checks, one function (D40).** `authenticate(message, via)` in `features/auth/prompt.ts` serves unlock and step-up. `via` is `'biometric'` or `'credential'`, and each asks the phone for exactly one thing.
+- `biometric` calls `authenticateAsync` with `BIOMETRIC_OPTIONS`: `biometricsSecurityLevel: 'strong'`, `disableDeviceFallback: true`, `cancelLabel: 'Cancel'` and, for iOS, `fallbackLabel: 'Use passcode'`. Android builds `BIOMETRIC_STRONG` alone. A test fails if any source file pairs `strong` with `disableDeviceFallback: false`, the pair Android 9 and 10 reject.
+- `credential` on Android calls `confirmDeviceCredential` (`services/device-credential.ts`), the local module `modules/sen-auth`: API 30 and later `BiometricPrompt` with `DEVICE_CREDENTIAL` alone, API 24 to 29 `KeyguardManager.createConfirmDeviceCredentialIntent` through an activity result. It answers with expo-local-authentication's codes. On iOS it calls `authenticateAsync` with `disableDeviceFallback: false`, the one policy that reaches the passcode (it tries Face ID or Touch ID first).
+- iOS `user_fallback` (the sheet's own "Use passcode") is not a cancel: `authenticate` follows it with the `credential` check in the same call.
 - `isAuthenticatingRef` is set before the prompt and cleared in `finally`. A prompt requested while it is set resolves `cancelled`.
 
 | Module state | Values | Set by | Read by |
@@ -377,15 +378,18 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | Codes | Reason | Lock and primer UI |
 | --- | --- | --- |
 | `user_cancel`, `system_cancel`, `app_cancel` | `cancelled` | Return silently. Not an error |
-| `user_fallback` | `cancelled` | Sen always allows the passcode, so the OS handles it. Treated as a cancel |
-| No answer in 60 s of foreground time (Sen's own clock, not a native code) | `timedOut` | Lock shows "The check timed out. Try fingerprint again, or use your device passcode." with the key ready. Step-up screens say so in their own copy. Not a try, and no `auth.failed` (D36) |
-| `authentication_failed` | `mismatch` | "Not quite." with "2 more tries before fingerprint locks". Three tries are shown (inferred). At zero it points to the passcode |
-| `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode. A second lockout after that cool-down shows the `blocked` view, a conservative steer to the passcode with no countdown (the app cannot see Android's real lockout). It lifts after 5 minutes or when an unlock goes through |
-| `not_enrolled`, `passcode_not_set` | `not_set_up` | "Fingerprint is off." Open device settings, or the passcode |
-| `not_available` | `unavailable` | Explain, passcode |
+| `user_fallback` (iOS) | none | The sheet's "Use passcode" button. `authenticate` asks for the passcode next. Android never sends it, because the Cancel button and a dismissal both arrive as `user_cancel` |
+| No answer in 60 s of foreground time (Sen's own clock, not a native code) | `timedOut` | Lock shows "The check timed out. Try fingerprint again, or use your screen lock." with the key ready. Step-up screens say so in their own copy. Not a try, and no `auth.failed` (D36) |
+| `authentication_failed` | `mismatch` | "Not quite." with "Didn't match. Try fingerprint again, or use your screen lock." No count of tries is shown, because Android reports no single miss and iOS reports one only when the system gives up (inferred) |
+| `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the Use screen lock key, which works because a screen lock is not locked out by biometric misses. With the sensor alone asked for, Android reports `lockout` after five misses and `lockout_permanent` after more, so the card is reachable for real. A second lockout after that cool-down shows the `blocked` view, a conservative steer to the screen lock with no countdown (the app cannot see Android's real lockout). It lifts after 5 minutes or when an unlock goes through |
+| `not_enrolled` | `not_set_up` | "Fingerprint is off." Open device settings, or the screen lock |
+| `passcode_not_set` | `noLock` | D28's "Set a screen lock." view |
+| `not_available` | `unavailable` | Explain, screen lock |
 | `no_space`, `timeout`, `unable_to_process`, `invalid_context`, `unknown`, and any code not in the table | `unknown` | "Something went wrong." Generic retry |
 
-**Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself. "Not quite." appears on iOS, where LocalAuthentication reports the failure. On Android it shows only through the dev override `auth=fail`, which `.maestro/auth-mismatch.yaml` uses.
+**Android and a wrong finger.** expo-local-authentication 57.0.3 on Android keeps BiometricPrompt open on a failed match and never resolves `authentication_failed` (V, `LocalAuthenticationModule.kt` maps only `onAuthenticationError`). The system sheet shows the miss itself, and after five Android reports `lockout`. "Not quite." appears on iOS, where LocalAuthentication reports the failure. On Android it shows only through the dev override `auth=fail`, which `.maestro/auth-mismatch.yaml` uses. The `mismatch` view therefore carries no count.
+
+**Sensor names.** Android reports which sensors the phone has, not which is enrolled. `biometricOf` names one only when the phone has exactly one (fingerprint or face unlock) and says "biometrics" when it has both or neither. The weak-biometric view names no sensor. The non-biometric key says "Use screen lock" on Android, because the credential may be a PIN, pattern or password, and "Use passcode" on iOS (`credentialName()` in `copy.ts`).
 
 **Lock triggers** (`features/auth/locks.ts`, wired by `SessionRoot`).
 
@@ -481,7 +485,7 @@ The newest link wins, and any other link drops the held one, so a link can never
 **Prefs.** `services/prefs.ts` keeps values as JSON strings in the MMKV instance `prefs`. Every read goes through `parsePref`, so a missing or corrupt value reads as its default. `subscribePrefs` hears every `writePref`, and every key after `clearPrefs`.
 
 **Why not `requireAuthentication`.** It would bind the key to biometrics. It is skipped for three reasons (V, expo-secure-store 57.0.4 source):
-- On Android, it prompts with `BIOMETRIC_STRONG` only and offers no passcode fallback.
+- On Android, it prompts with `BIOMETRIC_STRONG` only and offers no screen-lock fallback.
 - Keys die when biometrics change, so enrolling a fingerprint would destroy the user's data.
 - It doubles the prompt.
 
@@ -496,7 +500,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then `eraseManual` deletes the added rows. The vault, key and prefs stay (D31) |
-| A biometric prompt the OS never answers | `authenticate()` cancels it (`cancelAuthenticate`) after 60 s in the foreground and returns `timedOut`, so Lock says the check timed out and keeps the key ready (the `timedOut` view in `prompt-view.ts`, which keeps the view it replaced in `over`, so tries, setup keys and lockout escalation carry on; a running lockout, block or store view outranks it). Time in the background does not count, because a passcode screen can take a while. `locks.ts` passes `background` and `active` to the prompt's clock |
+| A biometric prompt the OS never answers | `authenticate()` cancels it (`cancelAuthenticate`) after 60 s in the foreground (5 minutes for the screen-lock prompt, D36) and returns `timedOut`, so Lock says the check timed out and keeps the key ready (the `timedOut` view in `prompt-view.ts`, which keeps the view it replaced in `over`, so tries, setup keys and lockout escalation carry on; a running lockout, block or store view outranks it). Time in the background does not count, because a screen-lock screen can take a while. On Android 9 and 10 the credential is a separate system activity, so the app leaves `active` and the clock pauses (inferred, not seen on a device). On Android 11 and later the sheet is drawn over Sen and the app stays `active`, which is why the screen lock has the longer clock. `locks.ts` passes `background` and `active` to the prompt's clock |
 | App returns to the front | `refreshBiometric()` re-reads the enrolled level, so a fingerprint turned on in the phone's settings clears Lock's "off" view without a restart |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |

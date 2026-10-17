@@ -1,5 +1,5 @@
 # Reviewer control "Simulate lockout": the next unlock shows the lockout cool-down without a prompt. The
-# passcode key then unlocks for real, and the control reads disarmed. Arming and tapping again disarms it.
+# screen-lock key then unlocks for real, and the control reads disarmed. Arming and tapping again disarms it.
 appId: com.kaiz404.sen
 ---
 - runFlow: subflows/at-history.yaml
@@ -29,9 +29,9 @@ appId: com.kaiz404.sen
 - extendedWaitUntil:
     visible: Too many tries.
     timeout: 10000
-- assertVisible: Use device passcode
+- assertVisible: Use screen lock
 - takeScreenshot: reviewer-lockout
-- tapOn: Use device passcode
+- tapOn: Use screen lock
 - extendedWaitUntil:
     visible:
       id: tx-row
