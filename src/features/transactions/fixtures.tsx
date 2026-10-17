@@ -111,6 +111,10 @@ export const HISTORY_STATES = {
   'failed-storage': () => (
     <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'storage' } }} />
   ),
+  'failed-unknown': () => (
+    <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'unknown' } }} />
+  ),
+  'unknown-banner': () => <HistoryView {...BASE} banner={{ kind: 'unknown', since: '8:40 am' }} />,
   'storage-banner': () => <HistoryView {...BASE} banner={{ kind: 'storage', since: '8:40 am' }} />,
   'failed-server': () => (
     <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'server' } }} />

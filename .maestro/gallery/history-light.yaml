@@ -105,6 +105,22 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: history-failed-storage-light
+- openLink: "sen://dev/states?screen=history&state=failed-unknown&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-failed-unknown-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-failed-unknown-light
+- openLink: "sen://dev/states?screen=history&state=unknown-banner&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-history-unknown-banner-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: history-unknown-banner-light
 - openLink: "sen://dev/states?screen=history&state=storage-banner&theme=light"
 - extendedWaitUntil:
     visible:

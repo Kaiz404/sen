@@ -157,7 +157,7 @@ type MaskedRow = Omit<Transaction, 'amountMinor'> & { day: DayKey }   // what ma
 type AppError =
   | { kind: 'offline' } | { kind: 'timeout' } | { kind: 'server' }
   | { kind: 'invalid_data'; skipped: number }
-  | { kind: 'storage' }
+  | { kind: 'storage' } | { kind: 'unknown' }
   | { kind: 'db_reset'; reason: 'missing_key' | 'corrupt' }
 ```
 
@@ -170,7 +170,7 @@ Each model is a zod schema with its type inferred from it. There is no barrel. C
 | `category.ts` | Ten categories for bank rows. `ADD_CATEGORIES` holds the eight add chips |
 | `transaction.ts` | `TransactionSchema`, the strict `MaskedRowSchema` (a selected amount fails the parse, and `day` is required for the day headers), and `TransactionPageSchema` for the mock bank's `{ items, nextSeq }` envelope |
 | `draft.ts` | `DRAFT_LIMITS`, `draftSchema(today)` and the 90-day add window |
-| `errors.ts` | `AppError`, `isAppError`, `isRetryable`, and `Result` as `{ ok: true; data } \| { ok: false; error }`. It uses `data` because lint bans `.value` |
+| `errors.ts` | `AppError`, `isAppError`, `toAppError` (a full or failing disk is `storage`, anything else `unknown`), `isRetryable`, and `Result` as `{ ok: true; data } \| { ok: false; error }`. It uses `data` because lint bans `.value` |
 | `prefs.ts` | `PREFS`, every MMKV key from DESIGN.md › Settings with its schema and default. `parsePref` never throws and falls back to the default |
 
 Money output:
@@ -432,7 +432,8 @@ The newest link wins, and any other link drops the held one, so a link can never
 | Sync, local rows exist | `timeout`, `server` | Banner, list kept, Retry |
 | Any of the three | | The banner's "Simulated · Change in Settings" line and the full error's link open Settings at the reviewer controls (`/settings?focus=reviewers`) |
 | Sync | `invalid_data` | List shown, "2 items couldn't be read" |
-| Sync, a throw that is not an `AppError` (a local write failing, such as a full disk) | `storage` | `toAppError()` maps it at the mutation. Full error "Can't save to this phone" with Retry, or a banner "Sen couldn't save to this phone. Free some space, then try again." over a list. Neither mentions the reviewer controls, because the fault is real |
+| Sync, a throw that is not an `AppError`, from a full or failing disk (SQLITE_FULL, SQLITE_IOERR, ENOSPC) | `storage` | `toAppError()` maps it at the mutation, and `bank.under()` throwing is caught there too. Full error "Can't save to this phone" with Retry, or a banner "Sen couldn't save to this phone. Free some space, then try again." over a list. Neither mentions the reviewer controls, because the fault is real |
+| Sync, any other throw | `unknown` | Full error "Something went wrong" with Retry, or a banner "Sen couldn't refresh. Something went wrong. Try again." over a list. No storage advice and no reviewer link. The log gets `sync.failed.unknown` and nothing from the error |
 | Database read | `unreadable` (a body state, not an `AppError`) | Full error "Sen couldn't read your history" with a Retry that reads again |
 | Database | `db_reset` | One-time notice |
 

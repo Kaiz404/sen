@@ -386,8 +386,57 @@ test('History says once that a lock dropped the add draft', async () => {
   shown.mockRestore();
 });
 
+test('a first sync that throws a bug shows a neutral error, not the storage advice, and Retry recovers', async () => {
+  const run = jest
+    .spyOn(syncService, 'sync')
+    .mockRejectedValueOnce(new TypeError('x is undefined'));
+
+  await renderHistory();
+
+  expect(
+    await screen.findByRole('header', { name: 'Something went wrong' }, LONG),
+  ).toBeOnTheScreen();
+  expect(screen.getByText("Sen hit a problem it didn't expect. Try again.")).toBeOnTheScreen();
+  expect(screen.queryByText(/Free some space/)).not.toBeOnTheScreen();
+  expect(screen.queryByText('Reviewer settings')).not.toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  run.mockRestore();
+});
+
+test('a bank that throws while a sync starts shows the neutral error instead of the skeleton', async () => {
+  const under = jest.spyOn(bank, 'under').mockImplementationOnce(() => {
+    throw new Error('scenario');
+  });
+
+  await renderHistory();
+
+  expect(
+    await screen.findByRole('header', { name: 'Something went wrong' }, LONG),
+  ).toBeOnTheScreen();
+  expect(screen.queryByTestId('history-skeleton')).not.toBeOnTheScreen();
+  under.mockRestore();
+});
+
+test('a refresh that throws a bug over a list is a neutral banner', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  const run = jest
+    .spyOn(syncService, 'sync')
+    .mockRejectedValueOnce(new TypeError('x is undefined'));
+
+  await fireEvent(screen.getByTestId('history-list'), 'refresh');
+
+  expect(await screen.findByText("Sen couldn't refresh", undefined, LONG)).toBeOnTheScreen();
+  expect(screen.getByText('Something went wrong. Try again.')).toBeOnTheScreen();
+  expect(screen.queryByText('Simulated · Change in Settings')).not.toBeOnTheScreen();
+  run.mockRestore();
+});
+
 test('a first sync that throws instead of returning shows the storage error, and Retry recovers', async () => {
-  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(new Error('disk full'));
+  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(DISK_FULL);
 
   await renderHistory();
 
@@ -409,7 +458,7 @@ test('a first sync that throws instead of returning shows the storage error, and
 test('a refresh that throws over a list is a banner with its own copy and no reviewer link', async () => {
   await renderHistory();
   expect(await screen.findByText('Tealive')).toBeOnTheScreen();
-  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(new Error('disk full'));
+  const run = jest.spyOn(syncService, 'sync').mockRejectedValueOnce(DISK_FULL);
 
   await fireEvent(screen.getByTestId('history-list'), 'refresh');
 
@@ -421,6 +470,8 @@ test('a refresh that throws over a list is a banner with its own copy and no rev
   expect(screen.getByText('Tealive')).toBeOnTheScreen();
   run.mockRestore();
 });
+
+const DISK_FULL = new Error('Error code 13: database or disk is full');
 
 const loadedRows = () =>
   queryClient

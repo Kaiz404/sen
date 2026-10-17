@@ -2,7 +2,10 @@ import type { AppError } from '@/models/errors';
 
 import type { HistoryRows } from './rows';
 
-export type SyncFailure = Extract<AppError, { kind: 'offline' | 'timeout' | 'server' | 'storage' }>;
+export type SyncFailure = Extract<
+  AppError,
+  { kind: 'offline' | 'timeout' | 'server' | 'storage' | 'unknown' }
+>;
 
 /** Where the last sync stands. A running sync forgets the last failure, as a retry should. */
 export type SyncView =
@@ -43,6 +46,7 @@ function syncFailure(sync: SyncView): SyncFailure | null {
     case 'timeout':
     case 'server':
     case 'storage':
+    case 'unknown':
       return sync.error;
     default:
       return null;

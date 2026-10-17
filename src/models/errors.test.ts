@@ -13,8 +13,27 @@ test('only transport errors retry', () => {
   expect(isRetryable({ kind: 'invalid_data', skipped: 1 })).toBe(false);
 });
 
-test('toAppError keeps a tagged error and turns anything else into storage', () => {
+test('toAppError keeps a tagged error', () => {
   expect(toAppError({ kind: 'offline' })).toEqual({ kind: 'offline' });
-  expect(toAppError(new Error('disk full'))).toEqual({ kind: 'storage' });
   expect(isRetryable({ kind: 'storage' })).toBe(false);
+  expect(isRetryable({ kind: 'unknown' })).toBe(false);
+});
+
+test.each([
+  ['expo-sqlite full', new Error('Error code 13: database or disk is full')],
+  ['expo-sqlite io', new Error('Error code 10: disk I/O error')],
+  ['an extended io code', Object.assign(new Error('x'), { errcode: 10 | (6 << 8) })],
+  ['a node code', Object.assign(new Error('x'), { code: 'ENOSPC' })],
+  ['a code name', Object.assign(new Error('x'), { code: 'SQLITE_IOERR_WRITE' })],
+])('toAppError calls %s a storage failure', (_name, thrown) => {
+  expect(toAppError(thrown)).toEqual({ kind: 'storage' });
+});
+
+test.each([
+  ['a type error', new TypeError("Cannot read properties of undefined (reading 'x')")],
+  ['a locked database', new Error('Error code 5: database is locked')],
+  ['a bare string', 'boom'],
+  ['nothing', undefined],
+])('toAppError calls %s unknown, not storage', (_name, thrown) => {
+  expect(toAppError(thrown)).toEqual({ kind: 'unknown' });
 });

@@ -12,7 +12,7 @@ import { create } from 'zustand';
 
 import { onArrive } from '@/features/auth';
 import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
-import { type AppError, isRetryable, toAppError } from '@/models/errors';
+import { type AppError, isAppError, isRetryable, toAppError } from '@/models/errors';
 import type { PrefValue } from '@/models/prefs';
 import type { MaskedRow, TxId } from '@/models/transaction';
 import { type BankScenario, createMockBank } from '@/services/bank-api';
@@ -174,15 +174,20 @@ export function useSync(db: Db, newest: MaskedRow | undefined) {
       return readPref('demo.next');
     },
     mutationFn: async () => {
-      const result = await sync(db, bank.under(readScenario()), {
-        onProgress: (received) =>
-          syncProgress.setState((s) => ({
-            progress: { received, total: s.progress?.total ?? null },
-          })),
-      }).catch((thrown: unknown) => {
-        logEvent('sync.failed.storage');
-        throw toAppError(thrown);
-      });
+      let result: Awaited<ReturnType<typeof sync>>;
+      try {
+        result = await sync(db, bank.under(readScenario()), {
+          onProgress: (received) =>
+            syncProgress.setState((s) => ({
+              progress: { received, total: s.progress?.total ?? null },
+            })),
+        });
+      } catch (thrown) {
+        const error = toAppError(thrown);
+        if (!isAppError(thrown))
+          logEvent(error.kind === 'storage' ? 'sync.failed.storage' : 'sync.failed.unknown');
+        throw error;
+      }
       if (!result.ok) throw result.error;
       return result.data;
     },

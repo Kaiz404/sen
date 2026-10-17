@@ -462,6 +462,7 @@ const BANNER_COPY: Readonly<Record<Banner['kind'], string>> = {
   timeout: 'Taking too long',
   server: 'Something broke on our side',
   storage: "Sen couldn't save to this phone",
+  unknown: "Sen couldn't refresh",
 };
 
 /**
@@ -485,11 +486,13 @@ export function SyncBanner({
         <Text style={styles.bannerDetail}>
           {banner.kind === 'storage'
             ? 'Free some space, then try again.'
-            : banner.since === null
-              ? 'Showing what Sen saved.'
-              : `Showing history from ${banner.since}.`}
+            : banner.kind === 'unknown'
+              ? 'Something went wrong. Try again.'
+              : banner.since === null
+                ? 'Showing what Sen saved.'
+                : `Showing history from ${banner.since}.`}
         </Text>
-        {banner.kind !== 'storage' && (
+        {banner.kind !== 'storage' && banner.kind !== 'unknown' && (
           <Pressable
             accessibilityRole="link"
             accessibilityLabel="Simulated fault. Change it in Settings"

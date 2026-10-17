@@ -101,12 +101,20 @@ const FAILED: Readonly<
     "Can't save to this phone",
     "Sen couldn't save to this phone. Free some space, then try again.",
   ],
+  unknown: ['UNEXPECTED', 'Something went wrong', "Sen hit a problem it didn't expect. Try again."],
   server: [
     'SERVER ERROR',
     'Something broke on our side',
     "The server sent back an error. It isn't your connection. Try again shortly.",
   ],
 };
+
+/** The in-app bank fails these on a reviewer's request. The others are the phone's own. */
+const SIMULATED: ReadonlySet<string> = new Set<SyncFailure['kind']>([
+  'offline',
+  'timeout',
+  'server',
+]);
 
 export function FullError({
   error,
@@ -118,7 +126,7 @@ export function FullError({
   readonly onSettings: () => void;
 }): ReactNode {
   const [caption, title, body] = FAILED[error.kind];
-  const simulated = error.kind !== 'unreadable' && error.kind !== 'storage';
+  const simulated = SIMULATED.has(error.kind);
   return (
     <View testID="history-failed" style={styles.failed}>
       <View style={styles.failedSen}>
