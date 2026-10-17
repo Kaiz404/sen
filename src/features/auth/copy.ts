@@ -23,6 +23,9 @@ export function clock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+export const timedOutText = (name: string) =>
+  `The check timed out. Try ${name} again, or use your device passcode.`;
+
 export function triesLeftText(triesLeft: number, name: string): string {
   if (triesLeft === 0) return "Didn't match. Use your device passcode.";
   return `Didn't match. ${triesLeft} more ${triesLeft === 1 ? 'try' : 'tries'} before ${name} locks.`;
@@ -33,6 +36,8 @@ export function refusalText(reason: AuthFailure, name: string): string | null {
   switch (reason) {
     case 'cancelled':
       return null;
+    case 'timedOut':
+      return 'The check timed out. Amounts are still hidden. Try again.';
     case 'mismatch':
       return `${capital(name)} didn't match.`;
     case 'lockout':

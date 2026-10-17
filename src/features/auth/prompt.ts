@@ -11,7 +11,14 @@ import {
 import { type AppStateStatus, Platform } from 'react-native';
 
 export type AuthFailure =
-  'cancelled' | 'mismatch' | 'lockout' | 'not_set_up' | 'unavailable' | 'unknown';
+  | 'cancelled'
+  /** The prompt sat unanswered for `PROMPT_TIMEOUT_MS` of foreground time. Not a failed try. */
+  | 'timedOut'
+  | 'mismatch'
+  | 'lockout'
+  | 'not_set_up'
+  | 'unavailable'
+  | 'unknown';
 export type AuthOutcome =
   { readonly ok: true } | { readonly ok: false; readonly reason: AuthFailure };
 
@@ -83,13 +90,13 @@ export function onAuthenticationEnd(listener: () => void): () => void {
   return () => void endListeners.delete(listener);
 }
 
-/** Also what a prompt that timed out returns, since both mean no check happened. */
+/** A prompt asked for while another is up. No check happened, so it reads as a cancel. */
 const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 
 /**
  * A prompt the OS never answers, such as one the app was backgrounded under, would leave Lock on "Checking it's
- * you" with every key disabled. After this long in the foreground the prompt is cancelled and counts as a cancel.
- * Time away from `active` does not count. iOS cannot cancel its sheet, and the Face ID and passcode sheets make the
+ * you" with every key disabled. After this long in the foreground the prompt is cancelled and ends as `timedOut`, which
+ * screens explain, where a user cancel is silent. Time away from `active` does not count. iOS cannot cancel its sheet, and the Face ID and passcode sheets make the
  * app `inactive`, so an answer entered late must still land.
  */
 export const PROMPT_TIMEOUT_MS = 60_000;
@@ -120,7 +127,7 @@ export async function authenticate(promptMessage: string): Promise<AuthOutcome> 
     const result = await Promise.race([nativePrompt(promptMessage), timeout]);
     if (result === TIMED_OUT) {
       cancelAuthenticate().catch(() => undefined);
-      return BUSY;
+      return { ok: false, reason: 'timedOut' };
     }
     return result.success ? { ok: true } : { ok: false, reason: failureOf(result.error) };
   } catch {

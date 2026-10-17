@@ -25,6 +25,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-primer-ready-dark
+- openLink: "sen://dev/states?screen=auth&state=primer-timed-out&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-primer-timed-out-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-primer-timed-out-dark
 - openLink: "sen://dev/states?screen=auth&state=primer-off&theme=dark"
 - extendedWaitUntil:
     visible:
@@ -57,6 +65,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: auth-lock-mismatch-dark
+- openLink: "sen://dev/states?screen=auth&state=lock-timed-out&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-auth-lock-timed-out-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: auth-lock-timed-out-dark
 - openLink: "sen://dev/states?screen=auth&state=lock-lockout&theme=dark"
 - extendedWaitUntil:
     visible:

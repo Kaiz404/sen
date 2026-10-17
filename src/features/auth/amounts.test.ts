@@ -164,3 +164,16 @@ test('the hook follows show, hide and lock', async () => {
   await act(() => lockNow());
   expect(result.current).toBe(true);
 });
+
+test('a check left unanswered for 60 s times out and amounts stay hidden', async () => {
+  jest.useFakeTimers();
+  authenticate.mockReturnValueOnce(new Promise(() => undefined));
+
+  const pending = showAmounts();
+  await jest.advanceTimersByTimeAsync(60_000);
+
+  expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
+  expect(shown()).toBe(false);
+  expect(sessionStore.getState().session).toMatchObject({ status: 'unlocked' });
+  jest.useRealTimers();
+});

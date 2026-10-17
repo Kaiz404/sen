@@ -6,8 +6,10 @@ import { AccessibilityInfo, Share } from 'react-native';
 import { toast } from '@/components/toast';
 
 import {
+  BIOMETRIC,
   hideAmounts,
   lockNow,
+  refusalText,
   showAmounts,
   useAmountsHidden,
   useBiometric,
@@ -100,7 +102,11 @@ export function DetailScreen(): ReactNode {
         onLock: lockNow,
         onShow: () => {
           void showAmounts().then((outcome) => {
-            if (!outcome.ok) return;
+            if (!outcome.ok) {
+              const why = refusalText(outcome.reason, BIOMETRIC[biometric].name);
+              if (why !== null) toast.show({ title: why });
+              return;
+            }
             playHaptic('reveal');
             AccessibilityInfo.announceForAccessibility('Amounts shown');
           });

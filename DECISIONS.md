@@ -577,3 +577,22 @@ The phases are in [PLAN.md](PLAN.md).
 **Why the pan.** The board's pull, spin and landing are the screen's signature moment, and the pan gives direct manipulation, which DESIGN allows. The list's scroller is Gesture Handler's `ScrollView` with `simultaneousHandlers`, because a plain React Native scroller cancels a parent pan once it takes the touch. The pan pulls only while the list is at offset 0.
 
 **Risk.** Spike R1 (the pan beside FlashList on the phone, five normal scrolls still scroll) has not run. The unit tests prove the maths, the thresholds and the state changes through Gesture Handler's test driver, not the touch arbitration. If the spike fails, revert the lane's pull commit and keep `RefreshControl`.
+
+## D36. The unlock prompt times out at 60 s, and says so
+
+**Compared.**
+- No timeout. A prompt the OS never answers, such as one the app was backgrounded under, leaves Lock on "Checking it's you" with every key disabled.
+- A longer timeout, such as 2 or 5 minutes.
+- A timeout on time in the background only.
+- 60 s of foreground time, the clock paused while the app is not `active`.
+
+**Chosen.** The last, kept from before, with one change: a timeout now ends as its own reason, `timedOut`, where it used to read as a user cancel. A cancel is silent. A screen that went quiet after 60 s left the user wondering what happened. Now Lock says the check timed out and keeps the unlock key ready. Add, Delete, Erase and Clear activity each say so in their own copy, and Show amounts stays hidden with a toast.
+
+**Why 60 s, and not longer or resettable.**
+- The system dialog reports nothing to the app, not keystrokes and not progress. Sen cannot tell a user typing a PIN from a dialog nobody touches, so it cannot restart the clock on activity.
+- A longer fixed timeout only delays the stuck state for everyone who is stuck. A minute is long for a fingerprint or a PIN.
+- The owner confirmed 60 s.
+
+**Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. Lock shows it over a mismatch view, so the tries line gives way to the timeout line, and a lockout, block or store view stays as it was.
+
+**Cost.** A timeout after one wrong finger forgets that mismatch on screen, so the next miss shows two tries left again. The phone's own lockout still counts the real misses.

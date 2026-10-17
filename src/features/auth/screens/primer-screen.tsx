@@ -19,6 +19,7 @@ import {
   clock,
   STORE_COPY,
   WEAK_BIOMETRIC,
+  timedOutText,
   triesLeftText,
 } from '../copy';
 import type { Biometric } from '../prompt';
@@ -218,6 +219,8 @@ function noticeOf(
       return null;
     case 'mismatch':
       return triesLeftText(state.triesLeft, name);
+    case 'timedOut':
+      return timedOutText(name);
     case 'blocked':
       return `Too many tries. Your phone paused ${name}. Use your device passcode now.`;
     case 'lockout':

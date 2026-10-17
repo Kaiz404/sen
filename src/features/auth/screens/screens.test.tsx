@@ -239,7 +239,7 @@ describe('a phone with no screen lock', () => {
   });
 });
 
-test('a prompt that never answers frees Lock after 60 s instead of leaving it on "Checking it\'s you"', async () => {
+test('a prompt that never answers frees Lock after 60 s and says the check timed out', async () => {
   sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
   authenticate.mockReturnValueOnce(new Promise(() => undefined));
   await render(<LockScreen />);
@@ -248,8 +248,29 @@ test('a prompt that never answers frees Lock after 60 s instead of leaving it on
   expect(screen.getByRole('button', { name: "Checking it's you" })).toBeDisabled();
   await act(async () => jest.advanceTimersByTime(60_000));
 
-  expect(screen.getByRole('button', { name: 'Unlock with fingerprint' })).toBeEnabled();
+  expect(screen.getByText('The check timed out. Try fingerprint again, or use your device passcode.')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Try fingerprint again' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Use device passcode' })).toBeEnabled();
+  expect(screen.queryByText(/Too many tries/)).not.toBeOnTheScreen();
   expect(session()).toEqual({ status: 'locked', reason: 'launch' });
+}, 30_000);
+
+test('a timeout after a mismatch does not use up another try, and a timeout is no failed attempt', async () => {
+  sessionStore.setState({ session: { status: 'locked', reason: 'launch' } });
+  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+  authenticate.mockReturnValueOnce(new Promise(() => undefined));
+  authenticate.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+  await render(<LockScreen />);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Unlock with fingerprint' }));
+  await screen.findByText("Didn't match. 2 more tries before fingerprint locks.");
+  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
+  await act(async () => jest.advanceTimersByTime(60_000));
+  expect(screen.getByRole('button', { name: 'Try fingerprint again' })).toBeEnabled();
+  expect(screen.queryByText(/more tr/)).not.toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Try fingerprint again' }));
+
+  expect(await screen.findByText("Didn't match. 2 more tries before fingerprint locks.")).toBeOnTheScreen();
 }, 30_000);
 
 test('a cancelled prompt returns to Lock without a message', async () => {

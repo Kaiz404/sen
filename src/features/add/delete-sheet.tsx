@@ -53,6 +53,7 @@ const MONTHS = [
 ];
 
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
+  timedOut: () => 'The check timed out. Nothing was deleted.',
   mismatch: (name) => `${name} didn't match. Nothing was deleted.`,
   lockout: () => 'Too many tries. Nothing was deleted. Use your device passcode next time.',
   not_set_up: (name) => `${name} is off. Nothing was deleted.`,

@@ -359,6 +359,7 @@ test.each([
   ['lockout', 'Too many tries. Use your device passcode.'],
   ['not_set_up', 'Fingerprint is off. Your device passcode still works.'],
   ['unknown', 'Something went wrong with the check. Try again.'],
+  ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
 ] as const)('Show amounts refused for %s says why', async (reason, title) => {
   const shown = jest.spyOn(toast, 'show');
   mockShowAmounts.mockResolvedValueOnce({ ok: false, reason } as never);

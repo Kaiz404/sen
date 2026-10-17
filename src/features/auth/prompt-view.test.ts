@@ -68,3 +68,26 @@ test('a phone that loses its screen lock shows the no-lock view over any earlier
   expect(afterRecheck(mismatch, 'none')).toEqual({ kind: 'noLock' });
   expect(afterRecheck(mismatch, 'strong')).toEqual(mismatch);
 });
+
+describe('a timed-out prompt', () => {
+  const timedOut = (view: PromptView) => afterUnlock(view, { ok: false, reason: 'timedOut' }, 1_000);
+
+  test('says so and offers the key, from idle or after a mismatch', () => {
+    expect(timedOut(IDLE)).toEqual({ kind: 'timedOut' });
+    expect(timedOut({ kind: 'mismatch', triesLeft: 1 })).toEqual({ kind: 'timedOut' });
+  });
+
+  test('is not a try, a lockout, a block or a store failure', () => {
+    const once = afterUnlock(IDLE, { ok: false, reason: 'mismatch' }, 0);
+    expect(timedOut(timedOut(once))).toEqual({ kind: 'timedOut' });
+    expect(afterUnlock(timedOut(IDLE), { ok: false, reason: 'mismatch' }, 2_000)).toEqual({
+      kind: 'mismatch',
+      triesLeft: 2,
+    });
+  });
+
+  test('leaves a lockout or a block as it was', () => {
+    const blocked: PromptView = { kind: 'blocked', since: 0 };
+    expect(timedOut(blocked)).toBe(blocked);
+  });
+});

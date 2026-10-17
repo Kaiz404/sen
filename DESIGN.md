@@ -305,7 +305,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-Welcome` | Welcome (first run) | "Meet Sen." Three promises on a receipt slip. "Continue as demo user" |
 | `SF-Biometric` | Face ID primer (first run) | Explains biometrics before the OS prompt. "Turn on Face ID", "Use device passcode instead" |
 | `SF-Lock` | Lock | "Welcome back." Large masked Sen on the ink hero. Demo profile row. Unlock, passcode, "Not you? Start again" |
-| `SF-LockStates` | Lock states | Checking, didn't match ("2 more tries"), lockout with cool-down, Face ID off, unlocked |
+| `SF-LockStates` | Lock states | Checking, didn't match ("2 more tries"), timed out (owner addition, D36: "Took too long." with the key ready), lockout with cool-down, Face ID off, unlocked |
 | `SF-PrivacyCover` | App switcher cover | Lemon full bleed, wordmark, Sen asleep. No amounts or names |
 | `SF-History` | History, masked | Header with face-only Sen mark, settings and lock keys. "+ Add" is the floating Add key (owner override below). "OCTOBER" title. Lilac month card with Sen perched, masked money out and in, "Show amounts". Search, All/In/Out, day slips with masked rows and day nets |
 | `SF-Reveal` | History, revealed | Ink card with Sen on top. Split numerals. "Hide amounts". The board's 60 s ring and countdown are dropped (D27) |
@@ -340,6 +340,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - Launch › Lock › tap Unlock. Never auto-prompt.
 - **Success.** Unlock moment, then History (masked). History's data starts loading as the check passes, so it is ready when the moment ends.
 - **Cancel.** Back to Lock silently.
+- **Timed out.** A prompt unanswered for 60 s ends with "The check timed out. Try fingerprint again, or use your device passcode.", the retry key enabled and Sen shrugging. It is not a try. A step-up that times out leaves amounts hidden and says so in a toast. Copy names the real sensor.
 - **No match.** An inline message with the tries left. After Auth failed, Sen rests `worried`, as the Lock board's "Not quite." state draws it, not masked as the tile ends.
 - **Lockout.** The cool-down card and the passcode.
 

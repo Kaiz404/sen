@@ -18,6 +18,7 @@ import {
   RESET_COST,
   WEAK_BIOMETRIC,
   STORE_COPY,
+  timedOutText,
   triesLeftText,
 } from '../copy';
 import type { Session } from '../machine';
@@ -188,6 +189,15 @@ export function LockView({
           <>
             <ProfileRow />
             <Notice text={triesLeftText(shown.triesLeft, name)} />
+            {unlockKey(`Try ${name} again`)}
+            {passcode}
+          </>
+        );
+      case 'timedOut':
+        return (
+          <>
+            <ProfileRow />
+            <Notice text={timedOutText(name)} />
             {unlockKey(`Try ${name} again`)}
             {passcode}
           </>
@@ -397,6 +407,11 @@ const HERO: Readonly<
     title: ['Not', 'quite.'],
     body: "That didn't look like you. Sen is still keeping amounts hidden.",
     sen: { pose: 'worried', label: "Sen, worried after it didn't match" },
+  }),
+  timedOut: () => ({
+    title: ['Took', 'too long.'],
+    body: 'Nothing was opened. Amounts are still hidden.',
+    sen: { pose: 'shrug', label: 'Sen, shrugging because the check timed out' },
   }),
   noLock: () => ({
     title: ['Set a', 'screen lock.'],

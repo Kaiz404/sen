@@ -6,6 +6,8 @@ import type { UnlockOutcome } from './session';
 export type PromptView =
   | { readonly kind: 'idle' }
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
+  /** The prompt went unanswered for 60 s. Lock says so and keeps the key ready. It is not a failed try. */
+  | { readonly kind: 'timedOut' }
   | { readonly kind: 'lockout'; readonly until: number }
   /**
    * A conservative steer to the passcode after repeated lockouts. Android's real lockout length is not visible to the
@@ -59,6 +61,7 @@ export function initialView(level: EnrolledLevel): PromptView {
 export function afterRecheck(prev: PromptView, level: EnrolledLevel): PromptView {
   if (level === 'none') return initialView(level);
   return prev.kind === 'idle' ||
+    prev.kind === 'timedOut' ||
     prev.kind === 'off' ||
     prev.kind === 'noLock' ||
     prev.kind === 'weak'
@@ -70,6 +73,10 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
   switch (failure) {
     case 'cancelled':
       return prev;
+    case 'timedOut':
+      return prev.kind === 'lockout' || prev.kind === 'blocked' || prev.kind === 'store'
+        ? prev
+        : { kind: 'timedOut' };
     case 'mismatch': {
       const before = prev.kind === 'mismatch' ? prev.triesLeft : TRIES;
       return { kind: 'mismatch', triesLeft: Math.max(0, before - 1) };

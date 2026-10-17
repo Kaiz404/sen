@@ -121,7 +121,7 @@ describe('a prompt the OS never answers', () => {
   });
   afterEach(() => jest.useRealTimers());
 
-  test('is cancelled after 60 s, and the next prompt is not refused as busy', async () => {
+  test('times out after 60 s, and the next prompt is not refused as busy', async () => {
     const first = authenticate('Unlock Sen');
 
     await jest.advanceTimersByTimeAsync(59_999);
@@ -129,7 +129,7 @@ describe('a prompt the OS never answers', () => {
     expect(authenticateAsync).toHaveBeenCalledTimes(1);
 
     await jest.advanceTimersByTimeAsync(1);
-    expect(await first).toEqual({ ok: false, reason: 'cancelled' });
+    expect(await first).toEqual({ ok: false, reason: 'timedOut' });
     expect(LocalAuthentication.cancelAuthenticate).toHaveBeenCalledTimes(1);
     authenticateAsync.mockResolvedValueOnce({ success: true });
     expect(await authenticate('Unlock Sen')).toEqual({ ok: true });
@@ -147,7 +147,7 @@ describe('a prompt the OS never answers', () => {
     expect(LocalAuthentication.cancelAuthenticate).not.toHaveBeenCalled();
     await jest.advanceTimersByTimeAsync(1);
 
-    expect(await pending).toEqual({ ok: false, reason: 'cancelled' });
+    expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
   });
 
   test('does not count the time the app is in the background, but starts again when it returns', async () => {
@@ -161,7 +161,7 @@ describe('a prompt the OS never answers', () => {
     expect(LocalAuthentication.cancelAuthenticate).not.toHaveBeenCalled();
     await jest.advanceTimersByTimeAsync(1);
 
-    expect(await pending).toEqual({ ok: false, reason: 'cancelled' });
+    expect(await pending).toEqual({ ok: false, reason: 'timedOut' });
   });
 });
 

@@ -46,6 +46,7 @@ export type ActivityViewProps = {
 };
 
 const REFUSED: Readonly<Record<Exclude<AuthFailure, 'cancelled'>, (name: string) => string>> = {
+  timedOut: () => 'The check timed out. The log is as it was.',
   mismatch: (name) => `${capital(name)} didn’t match. The log is as it was.`,
   lockout: () => 'Too many tries. The log is as it was. Use your device passcode next time.',
   not_set_up: (name) => `${capital(name)} is off. The log is as it was.`,

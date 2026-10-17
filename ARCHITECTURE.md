@@ -324,7 +324,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 **Showing and hiding amounts (D27).** `features/auth/amounts.ts` owns the behaviour. The value is `amountsHidden` in `sessionStore`, not a pref.
 - **Session state, not a pref.** A pref would persist the reveal across lock and process death, and the cold start would need a write to undo it. An in-memory flag starts true at launch, so a cold start is masked by construction, and the close path in `dispatch` resets it. This is the conventional session-scoped reveal (inferred, not surveyed). No code reads or writes an amounts key in MMKV. An upgraded device keeps the `hideAmounts` value an earlier build wrote until sign-out clears prefs, and nothing ever reads it.
 - `useAmountsHidden()` selects the flag from the store, so Settings' switch, History, Detail and the delete sheet all follow it.
-- `showAmounts()` runs step-up `reveal` and sets `amountsHidden: false` only when the check passes. A cancel changes nothing and says nothing. Any other refusal shows a toast with `refusalText()` (`features/auth/copy.ts`).
+- `showAmounts()` runs step-up `reveal` and sets `amountsHidden: false` only when the check passes. A cancel changes nothing and says nothing. Any other refusal, a timeout included, shows a toast with `refusalText()` (`features/auth/copy.ts`).
 - `hideAmounts()` sets it back to true and never prompts.
 - **Re-hide on lock.** `dispatch` sets `amountsHidden: true` in the same `setState` that leaves the unlocked states, next to `queryClient.clear()`. Idle, background, manual and sign-out all pass through it. A cold start needs nothing, because the store's initial value is true.
 - Lint bans any `amountsHidden` property whose value is not the literal `true` (`false`, a variable, shorthand, a quoted key) outside `amounts.ts` and tests, so no other code can show amounts without step-up. A computed key such as `[name]: false` is not caught.
@@ -346,7 +346,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 - The container shows `checking` until the answer lands (`asking`), because the session leaves `authenticating` a render before the answer reaches the screen. Without it the view would flash `idle`.
 - Lock's Sen idles masked, so it peeks toward Unlock every 6 to 9 s (`lockPeek`).
 
-**Step-up.** `useStepUp(action)` returns a function. Each call prompts and resolves to `{ ok: true } | { ok: false; reason }`, with `reason` one of `cancelled`, `mismatch`, `lockout`, `not_set_up`, `unavailable` or `unknown`. Nothing is cached, so every write prompts. A call while another prompt is up resolves `cancelled` without a second prompt.
+**Step-up.** `useStepUp(action)` returns a function. Each call prompts and resolves to `{ ok: true } | { ok: false; reason }`, with `reason` one of `cancelled`, `timedOut`, `mismatch`, `lockout`, `not_set_up`, `unavailable` or `unknown`. Nothing is cached, so every write prompts. A call while another prompt is up resolves `cancelled` without a second prompt.
 
 | Action | Prompt | On success | On cancel |
 | --- | --- | --- | --- |
@@ -356,7 +356,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing. A mismatch says "The log is as it was." |
 | `erase` | "Erase transactions I added" | Every added row and the undo copy deleted in one transaction, a `tx.erased` entry with the count, History refreshed. Bank rows, vault, key and prefs stay | The sheet stays. A mismatch says "Nothing was erased." A check that is off or unavailable offers "Open device settings". A failed delete says "Nothing was changed." |
 
-The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it logs `tx.undone`. A step-up that reads `mismatch` or `lockout` logs `auth.failed`. A cancel logs nothing. A step-up that ends in a lock that arrived during the prompt returns `cancelled` and logs no failed check, whatever the prompt answered. The lock is the event, and it logs `lock.locked` when it applies.
+The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it logs `tx.undone`. A step-up that reads `mismatch` or `lockout` logs `auth.failed`. A cancel or a timeout logs nothing. A step-up that ends in a lock that arrived during the prompt returns `cancelled` and logs no failed check, whatever the prompt answered. The lock is the event, and it logs `lock.locked` when it applies.
 
 **`authenticateAsync` options.** One path, `authenticate()` in `features/auth/prompt.ts`, serves unlock and step-up.
 - `biometricsSecurityLevel: 'strong'`.
@@ -375,6 +375,7 @@ How the first two combine on a phone with only weak biometrics isn't documented,
 | --- | --- | --- |
 | `user_cancel`, `system_cancel`, `app_cancel` | `cancelled` | Return silently. Not an error |
 | `user_fallback` | `cancelled` | Sen always allows the passcode, so the OS handles it. Treated as a cancel |
+| No answer in 60 s of foreground time (Sen's own clock, not a native code) | `timedOut` | Lock shows "The check timed out. Try fingerprint again, or use your device passcode." with the key ready. Step-up screens say so in their own copy. Not a try, and no `auth.failed` (D36) |
 | `authentication_failed` | `mismatch` | "Not quite." with "2 more tries before fingerprint locks". Three tries are shown (inferred). At zero it points to the passcode |
 | `lockout` | `lockout` | "Too many tries." with a 30 s cool-down card (Android's lockout length, inferred), and the passcode. A second lockout after that cool-down shows the `blocked` view, a conservative steer to the passcode with no countdown (the app cannot see Android's real lockout). It lifts after 5 minutes or when an unlock goes through |
 | `not_enrolled`, `passcode_not_set` | `not_set_up` | "Fingerprint is off." Open device settings, or the passcode |
@@ -492,7 +493,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
 | Erase | Step-up, then `eraseManual` deletes the added rows. The vault, key and prefs stay (D31) |
-| A biometric prompt the OS never answers | `authenticate()` cancels it (`cancelAuthenticate`) after 60 s in the foreground and returns `cancelled`, so Lock goes back to idle. Time in the background does not count, because a passcode screen can take a while. `locks.ts` passes `background` and `active` to the prompt's clock |
+| A biometric prompt the OS never answers | `authenticate()` cancels it (`cancelAuthenticate`) after 60 s in the foreground and returns `timedOut`, so Lock says the check timed out and keeps the key ready (the `timedOut` view in `prompt-view.ts`, which a lockout, block or store view outranks). Time in the background does not count, because a passcode screen can take a while. `locks.ts` passes `background` and `active` to the prompt's clock |
 | App returns to the front | `refreshBiometric()` re-reads the enrolled level, so a fingerprint turned on in the phone's settings clears Lock's "off" view without a restart |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
@@ -831,7 +832,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | The logger takes an event code and nothing else | `services/logger.test.ts` |
 | Haptics per platform, silent when the setting is off | `services/haptics.test.ts` |
 | Log schema rejects amounts. An amount forced into an event never reaches the table. The log keeps the newest 50, orders events within one millisecond, holds events while locked and clears to one entry | `models/activity.test.ts`, `services/activity-log.test.ts` |
-| An unlock, a wrong finger, a lock, a reveal and a hide are logged. A failed unlock is held until the vault opens. A cancel logs nothing. Sign-out drops held events | `features/auth/activity.test.tsx` |
+| An unlock, a wrong finger, a lock, a reveal and a hide are logged. A failed unlock is held until the vault opens. A cancel or a timeout logs nothing. Sign-out drops held events | `features/auth/activity.test.tsx` |
 | Add, delete and both undos log the description and no amount. A repeated save logs once. A refused action logs nothing | `features/add/actions.test.ts` |
 | The screen reads the log as day slips, clears it behind the check, and recovers from an unreadable log | `features/activity/activity-screen.test.tsx`, `features/activity/days.test.ts` |
 | Erase deletes only the added rows, logs the count and refreshes History, and leaves bank rows, the key, the file and the prefs. A mismatch or cancel erases nothing. A failing delete changes nothing and Try again finishes. With nothing added the row is off. A check that is off offers the device settings | `__tests__/erase-flow.test.tsx`, `features/settings/settings-screen.test.tsx` |
