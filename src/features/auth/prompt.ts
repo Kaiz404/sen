@@ -156,10 +156,15 @@ function levelOf(level: SecurityLevel): EnrolledLevel {
   return level === SecurityLevel.NONE ? 'none' : 'passcode';
 }
 
-export async function detectBiometric(): Promise<BiometricSupport> {
+/**
+ * A throw from the level read says nothing about the phone, so it keeps the level from the last good read. With
+ * no earlier read it is `passcode`, which still lets the unlock key try, where `none` would strand the user on
+ * "Set a screen lock".
+ */
+export async function detectBiometric(previous?: BiometricSupport): Promise<BiometricSupport> {
   const [types, level] = await Promise.all([
     supportedAuthenticationTypesAsync().catch(() => []),
-    getEnrolledLevelAsync().catch(() => SecurityLevel.NONE),
+    getEnrolledLevelAsync().then(levelOf, () => previous?.level ?? 'passcode'),
   ]);
-  return { kind: biometricOf(Platform.OS, types), level: levelOf(level) };
+  return { kind: biometricOf(Platform.OS, types), level };
 }

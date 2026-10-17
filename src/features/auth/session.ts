@@ -102,8 +102,8 @@ export async function launch(): Promise<void> {
 
 /** Lock reads biometrics once at launch, so a change made in the phone's settings is picked up here. */
 export async function refreshBiometric(): Promise<void> {
-  const next = await detectBiometric();
   const prev = sessionStore.getState().biometric;
+  const next = await detectBiometric(prev);
   if (next.kind !== prev.kind || next.level !== prev.level)
     sessionStore.setState({ biometric: next });
 }

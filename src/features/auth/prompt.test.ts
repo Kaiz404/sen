@@ -175,3 +175,17 @@ test.each([
 
   expect((await detectBiometric()).level).toBe(expected);
 });
+
+describe('a level read that throws', () => {
+  test('on launch maps to the passcode, so Lock still offers its unlock key', async () => {
+    jest.mocked(LocalAuthentication.getEnrolledLevelAsync).mockRejectedValueOnce(new Error('boom'));
+
+    expect((await detectBiometric()).level).toBe('passcode');
+  });
+
+  test('on a re-check keeps the level from the last good read', async () => {
+    jest.mocked(LocalAuthentication.getEnrolledLevelAsync).mockRejectedValueOnce(new Error('boom'));
+
+    expect((await detectBiometric({ kind: 'fingerprint', level: 'strong' })).level).toBe('strong');
+  });
+});
