@@ -34,6 +34,8 @@ npx expo run:android
 
 `npx expo run:android` builds a development build, installs it on the connected phone or emulator and starts Metro. Expo Go does not work, because Sen uses native modules (SQLCipher, MMKV, a clipboard module, a screen-lock module) that Expo Go does not ship. A dev build leaves screenshots and recording open so agents can capture the app. The release APK blocks them.
 
+**After you pull new commits, rebuild the dev client** (`npx expo run:android` again). Native modules such as `sen-auth` (the screen-lock check) change with the code, and an old dev client will not have them.
+
 On an emulator, set a screen PIN and enrol a fingerprint in the emulator's Settings. When Sen shows the fingerprint sheet, run `adb -e emu finger touch 1`.
 
 ### A five-minute guided path
@@ -90,7 +92,7 @@ Sen has no server, so everything it protects is on the phone. [ARCHITECTURE.md](
 
 **What this does not protect against.**
 
-- **A rooted or instrumented device.** The biometric result is a JavaScript boolean, so a hooked runtime can skip it. A production app would bind the key to the biometric or check a signed challenge on a server.
+- **The vault key is not bound to biometrics.** The SQLCipher key sits in `expo-secure-store`, and the biometric check is a JavaScript step-up in front of it, so a rooted or instrumented device can skip the check (D14, [ARCHITECTURE.md](ARCHITECTURE.md#threat-model)). Binding the key with `requireAuthentication` was left out on purpose: on Android it allows the strong sensor only and drops the screen-lock fallback, it destroys the key when a fingerprint is enrolled (the user would lose their data), and it prompts twice. A production app would still bind the key or check a signed challenge on a server.
 - **Amounts while they are shown.** They sit in JavaScript memory, the share sheet and the screen reader tree. Masking protects the hidden state only, and amounts re-mask when Sen locks or restarts.
 - **Root detection and certificate pinning.** Both are easy to patch, and there is no real server to pin.
 - **iOS.** The code targets it and nobody has run it.
