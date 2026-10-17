@@ -47,3 +47,7 @@ shots/
 
 # device loop
 .device.env
+
+# tooling output
+__pycache__/
+modules/sen-clipboard/android/build/
