@@ -89,22 +89,27 @@ export function HistoryScreen(): ReactNode {
     return () => clearTimeout(timer);
   }, [updated]);
 
+  // The promise belongs to this call's own mutation, so a later `mutate` (the first sync after a bank reset)
+  // cannot orphan it the way per-call callbacks are.
   const refresh = (trigger: 'pull' | 'retry') => {
     const pulled = trigger === 'pull';
     if (pulled) setPull('loading');
-    mutate(trigger, {
-      onSuccess: (summary) => {
+    syncing.mutateAsync(trigger).then(
+      (summary) => {
         // A pull's landing moment plays the haptic itself, at the touchdown.
-        if (pulled) setPull('landed');
+        if (pulled) setPull((now) => (now === 'loading' ? 'landed' : now));
         else playHaptic('refreshLanded');
         setUpdated(summary.received);
       },
-      onError: () => {
-        setPull('idle');
+      () => {
+        if (pulled) setPull('idle');
         playHaptic('networkError');
       },
-    });
+    );
   };
+
+  // Backstop: a pull cannot be loading while no sync runs.
+  const shownPull = pull === 'loading' && !syncing.isPending ? 'idle' : pull;
 
   const sync = syncView(syncing);
   const body = historyBody({
@@ -127,7 +132,7 @@ export function HistoryScreen(): ReactNode {
       banner={notes.banner}
       skipped={notes.skipped + data.skipped}
       notice={notice}
-      pull={pull}
+      pull={shownPull}
       arrival={arrival}
       updated={updated}
       biometric={biometric}
