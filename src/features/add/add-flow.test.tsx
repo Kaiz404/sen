@@ -95,7 +95,7 @@ test('the header names the step, announces it, and the Amount page carries no ex
   await renderStep(<AmountStep />);
 
   expect(screen.getByRole('header', { name: 'Amount, step 1 of 3' })).toHaveTextContent('Amount');
-  expect(screen.getByLabelText('Step 1 of 3')).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Step 1 of 3')).toBeNull();
   expect(screen.queryByText(/STEP 1 OF 3/i)).toBeNull();
   expect(screen.queryByText('Add a transaction')).toBeNull();
   expect(screen.queryByText(/AMOUNT · MONEY/)).toBeNull();

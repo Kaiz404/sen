@@ -35,8 +35,8 @@ export function StepHeader({
         <Key icon="close" accessibilityLabel="Close" onPress={onClose} />
       </View>
       <View
-        accessibilityRole="progressbar"
-        accessibilityLabel={`Step ${step} of 3`}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
         style={styles.progress}
       >
         {STEPS.map((name, i) => (
