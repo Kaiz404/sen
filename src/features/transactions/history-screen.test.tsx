@@ -238,3 +238,17 @@ test('a row the Add flow marked keeps its slide-in until History is back in fron
   await act(() => jest.advanceTimersByTime(1));
   expect(arrivals.getState().added).toBeNull();
 });
+
+test('a screen reader can refresh without the pull gesture', async () => {
+  await renderHistory();
+  expect(await screen.findByText('Tealive')).toBeOnTheScreen();
+  writePref('demo.newOnRefresh', true);
+
+  const list = screen.getByTestId('history-list');
+  expect(list.props.accessibilityActions).toEqual([{ name: 'refresh', label: 'Refresh' }]);
+  await act(() => {
+    fireEvent(list, 'accessibilityAction', { nativeEvent: { actionName: 'refresh' } });
+  });
+
+  expect(await screen.findAllByText('1 new', { exact: false }, LONG)).not.toHaveLength(0);
+});

@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import {
+  type AccessibilityActionEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type ScrollView as RNScrollView,
@@ -43,11 +44,15 @@ export const LAND_MS = 1281;
 const SEN = 'pull';
 const GAP_SEN = 56;
 const COLLAPSE_MS = 250;
+const REFRESH_ACTIONS = [{ name: 'refresh', label: 'Refresh' }] as const;
 
 type ListProps = {
   readonly renderScrollComponent: typeof PullScrollView;
   readonly onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   readonly overScrollMode: 'never';
+  /** A screen reader's way to refresh, since it can't drag. */
+  readonly accessibilityActions: readonly { readonly name: string; readonly label: string }[];
+  readonly onAccessibilityAction: (e: AccessibilityActionEvent) => void;
 };
 
 type Props = {
@@ -168,6 +173,10 @@ export function PullToRefresh({
               renderScrollComponent: PullScrollView,
               onScroll: (e) => scrollY.set(e.nativeEvent.contentOffset.y),
               overScrollMode: 'never',
+              accessibilityActions: REFRESH_ACTIONS,
+              onAccessibilityAction: (e) => {
+                if (idle && e.nativeEvent.actionName === 'refresh') onRefresh();
+              },
             })}
           </Animated.View>
         </View>
