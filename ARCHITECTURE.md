@@ -423,7 +423,7 @@ The newest link wins, and any other link drops the held one, so a link can never
 - `queryFn` and `mutationFn` throw the tagged value.
 - `Register.defaultError` types `error` as `AppError` everywhere.
 
-**Unexpected bugs.** They reach a route `ErrorBoundary` that shows Sen and a retry and never renders `error.message`.
+**Unexpected bugs.** They reach a route `ErrorBoundary` that shows Sen and a retry and never renders `error.message`. `features/errors` owns it: Sen (the static one, since the root's providers may be gone), "Try again" (`retry`) and "Back to History" (`router.replace('/')`), and it logs `ui.render_error`. The root `_layout` and every protected route file (`add/_layout` covers the add steps) re-export it, and `src/__tests__/error-boundary.test.tsx` fails when one does not. A render error on History therefore shows this screen after unlock instead of crashing in a loop.
 
 | Source | Kind | UI |
 | --- | --- | --- |

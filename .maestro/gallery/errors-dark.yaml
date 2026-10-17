@@ -1,0 +1,11 @@
+# Generated from src/features/gallery by flow.test.ts. Run UPDATE_FLOW=1 npx jest gallery/flow to refresh.
+appId: com.kaiz404.sen
+---
+- openLink: "sen://dev/states?screen=errors&state=render-error&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-errors-render-error-dark
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: errors-render-error-dark

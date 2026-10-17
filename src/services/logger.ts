@@ -31,6 +31,7 @@ const EVENTS = {
   'log.cleared': 'info',
   'activity.write_failed': 'warn',
   'guard.failed': 'warn',
+  'ui.render_error': 'warn',
 } as const satisfies Record<string, 'info' | 'warn'>;
 
 export type LogCode = keyof typeof EVENTS;

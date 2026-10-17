@@ -66,3 +66,4 @@ export default function RootLayout() {
 const styles = StyleSheet.create((theme) => ({
   root: { flex: 1, backgroundColor: theme.colors.canvas },
 }));
+export { ErrorBoundary } from '@/features/errors';

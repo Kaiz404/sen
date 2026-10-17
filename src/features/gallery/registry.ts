@@ -5,6 +5,7 @@ import { ADD_STATES } from '@/features/add';
 import { AUTH_STATES } from '@/features/auth';
 import { DETAIL_STATES } from '@/features/detail';
 import { SECURITY_STATES } from '@/features/security';
+import { ERROR_STATES } from '@/features/errors';
 import { SEN_STATES } from '@/features/sen';
 import { SETTINGS_STATES } from '@/features/settings';
 import { HISTORY_STATES } from '@/features/transactions';
@@ -19,6 +20,7 @@ export const SCREENS: Readonly<Record<string, ScreenStates>> = {
   add: ADD_STATES,
   auth: AUTH_STATES,
   detail: DETAIL_STATES,
+  errors: ERROR_STATES,
   history: HISTORY_STATES,
   motion: SEN_STATES,
   security: SECURITY_STATES,
