@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
-import { Text, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { Text, type TextProps, type TextStyle, View } from 'react-native';
+import Animated, { type CSSTransitionProperties } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import {
@@ -147,6 +147,20 @@ type AmountProps = {
   readonly direction?: Direction;
 };
 
+type Fade = Pick<
+  CSSTransitionProperties<TextStyle>,
+  'transitionProperty' | 'transitionDuration' | 'transitionTimingFunction'
+>;
+
+// Only the hero animates; list rows stay on plain Text so they carry no animation state.
+function Run({ fade, style, ...props }: TextProps & { fade: Fade | undefined }): ReactNode {
+  return fade === undefined ? (
+    <Text {...props} style={style} />
+  ) : (
+    <Animated.Text {...props} style={[style, fade]} />
+  );
+}
+
 export function Amount({
   value,
   size,
@@ -215,25 +229,24 @@ export function Amount({
         transitionTimingFunction: EASE_CSS.out,
       }
     : undefined;
-  const Digits = hero ? Animated.Text : Text;
   const digits = (
-    <Digits
+    <Run
+      fade={fade}
       numberOfLines={1}
       adjustsFontSizeToFit
       // Display type is already large, so the system font scale doesn't grow it past its tier.
       maxFontSizeMultiplier={hero ? 1 : undefined}
-      style={[FACE[scale.face](wholeSize), ink, styles.shrink, fade]}
+      style={[FACE[scale.face](wholeSize), ink, styles.shrink]}
     >
       {scale.currency === null && `${parts.sign}${parts.currency}${THIN_SPACE}`}
       {parts.whole}
       {split ? (
-        <Digits style={[FACE[scale.face](fractionSize), styles.fraction, fade]}>{parts.fraction}</Digits>
+        <Run fade={fade} style={[FACE[scale.face](fractionSize), styles.fraction]}>{parts.fraction}</Run>
       ) : (
         parts.fraction
       )}
-    </Digits>
+    </Run>
   );
-  const Currency = hero ? Animated.Text : Text;
 
   return (
     <View
@@ -243,17 +256,17 @@ export function Amount({
       style={[styles.row, styles.baseline]}
     >
       {scale.currency !== null && (
-        <Currency
+        <Run
+          fade={fade}
           maxFontSizeMultiplier={1.3}
           style={[
             FACE[scale.currency.face](Math.round(scale.currency.size * f)),
             ink,
             styles.heroCurrency,
-            fade,
           ]}
         >
           {`${parts.sign}${parts.currency}`}
-        </Currency>
+        </Run>
       )}
       {digits}
     </View>

@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
@@ -52,7 +52,8 @@ test('Try again renders the screen again', async () => {
 
 test('Back to History leaves the broken screen and the stack holds only History', async () => {
   await renderRouter(routes, { initialUrl: '/' });
-  await act(() => router.push('/broken'));
+  // '/broken' is a test-only route, so it is not in the generated typed routes.
+  await act(() => router.push('/broken' as Href));
   expect(await screen.findByRole('header', { name: 'Something went wrong.' })).toBeOnTheScreen();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Back to History' }));
