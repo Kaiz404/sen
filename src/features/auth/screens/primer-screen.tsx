@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -50,7 +50,11 @@ export function PrimerScreen(): ReactNode {
   const status = useSessionStatus();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.level));
-  useEffect(() => setView((prev) => afterRecheck(prev, support.level)), [support.level]);
+  const [seenLevel, setSeenLevel] = useState(support.level);
+  if (seenLevel !== support.level) {
+    setSeenLevel(support.level);
+    setView((prev) => afterRecheck(prev, support.level));
+  }
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';
   usePromptMoments(PRIMER_SEN, prompt, ANSWERS);

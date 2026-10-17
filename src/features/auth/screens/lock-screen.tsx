@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -65,7 +65,11 @@ export function LockScreen(): ReactNode {
   const status = useSessionStatus();
   const level = useMotionPolicy();
   const [view, setView] = useState(() => initialView(support.level));
-  useEffect(() => setView((prev) => afterRecheck(prev, support.level)), [support.level]);
+  const [seenLevel, setSeenLevel] = useState(support.level);
+  if (seenLevel !== support.level) {
+    setSeenLevel(support.level);
+    setView((prev) => afterRecheck(prev, support.level));
+  }
   // Holds "checking" until the answer lands, so the view never flashes idle in between.
   const [prompt, setPrompt] = useState<Prompt>(NOT_ASKED);
   const asking = prompt.kind === 'asking';

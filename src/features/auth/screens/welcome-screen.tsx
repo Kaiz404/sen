@@ -112,7 +112,7 @@ export function WelcomeView({
                 onPress={onOpenLockSettings}
               />
               <Text style={styles.small}>
-                Sen keeps amounts behind your phone's own lock. Set one, then come back.
+                {"Sen keeps amounts behind your phone's own lock. Set one, then come back."}
               </Text>
             </>
           ) : (
