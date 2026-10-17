@@ -245,7 +245,7 @@ Each row is a MAX-Moments tile unless it names another board.
 | Auth failed | `.M-face.ph-fail` | Prompt fails | Eyes pop open at 0.9, face shakes ±16 and settles at (0, 10), counter-lean then lean back to −4° with skewX 4°, frown, paws clutch (±40, −24) at 0.9, eyes close at 1.5 s | Error |
 | Unlock | `.M-unlock` | Auth succeeds. Plays when a Sen's pose goes from `masked` to `happy` | eye-pop with paws up › face settles at (0, −6) › accent-pop › one flip › land. Happy squint (1.15, 0.45) from 1250 ms. 1.35 s | Success at 160 ms |
 | Reveal | `.M-reveal` | Amounts shown, after biometrics (D27: shown until you hide it or Sen locks, no timer). Plays when a Sen's pose goes from `masked` to `revealed` | eye-pop and small hop, paws up › digits roll in at 200 ms › face at (0, −6) › accents › face slides toward the digits (18, −10) at 640 ms › happy squint (1.15, 0.45). Accents pop before the slide. The tile then loops back to masked, but amounts stay shown, so from 1500 ms Sen eases into `revealed` in 300 ms on `sine`, the tile's own paw-drop time and curve. 1.8 s | Success when the check passes, fired by History, so it comes once even when a scroll or the background holds Sen still |
-| Re-mask | `.M-remask` | "Hide amounts" on History or in Settings (D27). Plays when a Sen's pose goes from `revealed` to `masked` | From 600 ms on the tile: eye-close › face ducks behind the rim (−28, 190) › settles masked at (0, 34) while Sen leans back behind the card, then the lean eases out from 1000 ms in 350 ms. It starts from `revealed`, so the eyes squeeze from open and the paws are already down. Dots replace digits at 120 ms. 1.35 s | Hide now only: Light, fired by the control |
+| Re-mask | `.M-remask` | "Hide amounts" on History (D27). Plays when a Sen's pose goes from `revealed` to `masked` | From 600 ms on the tile: eye-close › face ducks behind the rim (−28, 190) › settles masked at (0, 34) while Sen leans back behind the card, then the lean eases out from 1000 ms in 350 ms. It starts from `revealed`, so the eyes squeeze from open and the paws are already down. Dots replace digits at 120 ms. 1.35 s | Hide now only: Light, fired by the control |
 | Pull to refresh | `.M-ref` | Pull past 72 pt, release | Gesture-driven stretch out of the gap › edge-spin while loading: `refreshSpin` (240 ms to edge-on) then the `refreshSpinLoop` lap, one turn per 600 ms › `refreshLand`: the spin springs to the next heads-up turn while Sen rises 100 in 120 ms (not on the tile, which starts in the air) › drops › lands › wobble-settle, 6 swings from 8° › "Updated" pill | Selection at threshold, Light on land |
 | Empty search | `.M-empty` | 0 results, 300 ms after typing stops. The no-results state's Sen (`NoResults`) plays it once, 300 ms after the query stops changing (each keystroke restarts the wait, and it never replays). Until then the Sen is invisible, so no still pose shows. The Sen sits in a box that clips at its own bottom edge, which is the slip it rises from; Off shows it at once, and until it shows it is hidden from screen readers. The empty list's Sen idles | Rises from behind the slip, looks left and right with the magnifier, shrugs, then eases into the `shrug` pose in 200 ms instead of sinking, since the screen keeps that pose. It opens 70 units down, hidden by the slip. 3.5 s | None |
 | Network error | `.M-err` | Fetch fails | Worried, leans back to −8° with skewX 7°, holds at −6.5° with 5.5°, then returns to the worried lean. Paws squeeze the plug on the secondary layer (0.9). Slow blink every 4 to 7 s. On Retry, glances at the button. The full error stays up while the retry runs, with Retry busy (disabled, announced as busy), instead of swapping to the skeleton. A failed retry, of the bank or of the local read, plays the moment again and buzzes once. Every failure that shows something buzzes once: the full error's Sen through the moment's mark, anything else (a banner over a list, the skipped-rows note, a reset notice) through the plain haptic. A failure while History is covered or the app is in the background buzzes at most from the plain haptic path, and the Sens stay still. A retry that lands rows replaces the error with the list | Warning, once |
@@ -351,7 +351,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 **Show and hide amounts.**
 - History › "Show amounts" › OS prompt › revealed.
 - One session flag covers every screen, including Detail.
-- Amounts stay shown until "Hide amounts" on History, the Settings switch, or a lock. Every unlock and every cold start lands masked, and showing asks for biometrics again.
+- Amounts stay shown until "Hide amounts" on History or a lock. Every unlock and every cold start lands masked, and showing asks for biometrics again.
 - The month card's Sen starts masked after an unlock and does not play Re-mask.
 - Hiding never prompts. Showing always does.
 
@@ -411,7 +411,6 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 | --- | --- | --- | --- | --- |
 | Profile slip | Demo user · Everyday Savings ·· 4821 · SIMULATED DATA, Sen peeking over it | | | |
 | Appearance | Theme | Light · Dark · System, with a sun and a moon on the first two. System follows the phone | System | `theme` |
-| Security | Hide amounts | Switch. Turning it off asks for biometrics | On, and on again after every lock or restart | Session only |
 | Security | Lock when idle | 2 · 5 · 10 min | 5 min | `idleLock` |
 | Security | Lock again after leaving | Right away · 1 min · 5 min | 1 min | `relockAfter` |
 | Security | Fingerprint (or the phone's own biometric) for adding and deleting | Always on (info row) | | |
@@ -428,7 +427,7 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 Footer: `SEN 1.0.0 · SIMULATED DATA`.
 
 **Changes from the board.**
-- "Reveal amounts for" is the "Hide amounts" switch, because amounts stay shown until hidden or until Sen locks (D27). The switch reads On after every unlock.
+- "Reveal amounts for" is gone. Amounts stay shown until hidden or until Sen locks (D27), and History's Show and Hide amounts key is the one control. Owner override 2026-10-17: Settings has no Hide amounts switch, because it mirrored that key.
 - The About section is gone: the privacy explainer opens from History's header (see the owner override).
 - Dataset size joins the reviewer slip.
 - History's fault states open Settings scrolled to the reviewer slip.

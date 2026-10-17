@@ -9,12 +9,8 @@ import { ReceiptSlip } from '@/components/receipt-slip';
 import { toast } from '@/components/toast';
 import {
   type Biometric,
-  hideAmounts,
   lockNow,
   recordActivity,
-  revealRefusalText,
-  showAmounts,
-  useAmountsHidden,
   useBiometric,
   useDb,
 } from '@/features/auth';
@@ -57,7 +53,6 @@ import { usePref } from './use-pref';
 export type PlainPref = Exclude<PrefKey, 'demo.datasetSize'>;
 
 export type SettingsValues = Pick<Prefs, PlainPref | 'demo.datasetSize'> & {
-  readonly hideAmounts: boolean;
   readonly biometric: Biometric;
   /** How many rows the user added, or null while that loads. */
   readonly added: number | null;
@@ -66,7 +61,6 @@ export type SettingsValues = Pick<Prefs, PlainPref | 'demo.datasetSize'> & {
 
 export type SettingsActions = {
   readonly onPref: <K extends PlainPref>(key: K, value: PrefValue<K>) => void;
-  readonly onHideAmounts: (hidden: boolean) => void;
   readonly onDataset: (size: PrefValue<'demo.datasetSize'>) => void;
   readonly onResetDemo: () => void;
   readonly onActivity: () => void;
@@ -155,14 +149,6 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
 
       <Section title="SECURITY">
         <Card>
-          <SwitchRow
-            title="Hide amounts"
-            sub={`Showing them asks for ${name} every time`}
-            chip={{ icon: 'eye-off-outline', pastel: PASTEL.butter }}
-            value={values.hideAmounts}
-            onChange={actions.onHideAmounts}
-          />
-          <Dash />
           <ChoiceField
             title="Lock when idle"
             sub="App open, no touches"
@@ -360,7 +346,6 @@ export function SettingsScreen(): ReactNode {
     biometric,
     added,
     progress,
-    hideAmounts: useAmountsHidden(),
     theme: usePref('theme'),
     idleLock: usePref('idleLock'),
     relockAfter: usePref('relockAfter'),
@@ -378,21 +363,6 @@ export function SettingsScreen(): ReactNode {
       writePref(key, value);
       if (weakened !== null) recordActivity(weakened);
       playHaptic(key === 'theme' ? 'themeToggle' : 'segment');
-    },
-    onHideAmounts: (hidden) => {
-      if (hidden) {
-        hideAmounts();
-        playHaptic('hideNow');
-        return;
-      }
-      void showAmounts().then((outcome) => {
-        if (outcome.ok) {
-          playHaptic('reveal');
-          return;
-        }
-        const why = revealRefusalText(outcome.reason);
-        if (why !== null) toast.show({ title: why });
-      });
     },
     onDataset: (size) => {
       if (progress !== null) return;

@@ -14,7 +14,6 @@ const noop = () => {};
 
 const NO_ACTIONS: SettingsActions = {
   onPref: noop,
-  onHideAmounts: noop,
   onDataset: noop,
   onResetDemo: noop,
   onActivity: noop,
@@ -28,7 +27,6 @@ const DEFAULTS: SettingsValues = {
   biometric: 'fingerprint',
   added: 3,
   progress: null,
-  hideAmounts: true,
   theme: PREFS.theme.default,
   idleLock: PREFS.idleLock.default,
   relockAfter: PREFS.relockAfter.default,
@@ -64,7 +62,7 @@ export const SETTINGS_STATES = {
     />
   ),
   calm: () => (
-    <SettingsView {...BASE} values={{ ...DEFAULTS, senMotion: 'calm', hideAmounts: false }} />
+    <SettingsView {...BASE} values={{ ...DEFAULTS, senMotion: 'calm' }} />
   ),
   'nothing-added': () => <SettingsView {...BASE} values={{ ...DEFAULTS, added: 0 }} />,
   privacy: () => <PrivacyView biometric="fingerprint" onClose={noop} />,

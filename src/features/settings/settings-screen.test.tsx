@@ -3,7 +3,6 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import { Platform, ScrollView } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
-import { sessionStore } from '@/features/auth/session';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { activity, readActivity } from '@/services/activity-log';
@@ -18,7 +17,6 @@ import { useSenMotionPreference } from './index';
 import { SettingsScreen } from './settings-screen';
 
 let mockDb: OpenDb;
-const mockShow = jest.fn();
 const mockPush = jest.fn();
 const mockLock = jest.fn();
 
@@ -33,15 +31,12 @@ jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
-  showAmounts: () => mockShow(),
   lockNow: () => mockLock(),
 }));
 
 beforeEach(async () => {
   jest.useFakeTimers();
   clearPrefs();
-  sessionStore.setState({ amountsHidden: true });
-  mockShow.mockReset();
   mockPush.mockClear();
   mockLock.mockClear();
   mockParams = {};
@@ -117,6 +112,13 @@ test('a fault that turns itself off elsewhere reads Normal again on the open scr
   expect(checked('radio', 'Normal')).toBe(true);
 });
 
+test('Security has no Hide amounts switch, because History owns show and hide', async () => {
+  await renderSettings();
+
+  expect(screen.queryByRole('switch', { name: 'Hide amounts' })).not.toBeOnTheScreen();
+  expect(screen.getByText('Lock when idle')).toBeOnTheScreen();
+});
+
 test('the security choices write the lock windows', async () => {
   await renderSettings();
 
@@ -124,61 +126,6 @@ test('the security choices write the lock windows', async () => {
   await fireEvent.press(screen.getByRole('radio', { name: 'Right away' }));
 
   expect([readPref('idleLock'), readPref('relockAfter')]).toEqual([10, 0]);
-});
-
-test('turning off Hide amounts asks for biometrics, and a cancel leaves them hidden', async () => {
-  mockShow.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
-  await renderSettings();
-
-  await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
-
-  expect(mockShow).toHaveBeenCalledTimes(1);
-  expect(sessionStore.getState().amountsHidden).toBe(true);
-  expect(checked('switch', 'Hide amounts')).toBe(true);
-});
-
-test.each([
-  ['noLock', 'Amounts are still hidden. Set a screen lock to use Sen.'],
-  ['unavailable', "The check isn't available right now. Try again soon."],
-  ['unknown', 'Something went wrong with the check. Try again.'],
-  ['timedOut', 'The check timed out. Amounts are still hidden. Try again.'],
-] as const)(
-  'turning off Hide amounts refused for %s says why and keeps them hidden',
-  async (reason, title) => {
-    const shown = jest.spyOn(toast, 'show');
-    mockShow.mockResolvedValueOnce({ ok: false, reason });
-    await renderSettings();
-
-    await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
-    await act(() => Promise.resolve());
-
-    expect(shown).toHaveBeenCalledWith({ title });
-    expect(sessionStore.getState().amountsHidden).toBe(true);
-    shown.mockRestore();
-  },
-);
-
-test('turning off Hide amounts cancelled stays silent', async () => {
-  const shown = jest.spyOn(toast, 'show');
-  mockShow.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
-  await renderSettings();
-
-  await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
-  await act(() => Promise.resolve());
-
-  expect(shown).not.toHaveBeenCalled();
-  shown.mockRestore();
-});
-
-test('turning Hide amounts back on hides at once, with no prompt', async () => {
-  sessionStore.setState({ amountsHidden: false });
-  await renderSettings();
-
-  await fireEvent.press(screen.getByRole('switch', { name: 'Hide amounts' }));
-
-  expect(mockShow).not.toHaveBeenCalled();
-  expect(sessionStore.getState().amountsHidden).toBe(true);
-  expect(checked('switch', 'Hide amounts')).toBe(true);
 });
 
 test('Sen’s animations writes the motion level that the root layout reads', async () => {

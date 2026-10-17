@@ -461,11 +461,12 @@ The phases are in [PLAN.md](PLAN.md).
 - **No persisted sensitive-adjacent state.** MMKV keeps no amounts key. A `hideAmounts` left by an earlier build is never read.
 - **Security kept.** Turning it off always asks for biometrics, and turning it on never does. The app still locks on idle and on return after the re-lock window. While hidden, no amount exists in JS. The lint rule moves with the value: outside `amounts.ts` and tests, an `amountsHidden` property may only be the literal `true`.
 
-**What the user sees.** Unlock lands masked, Settings' Hide amounts switch reads On, and the month card's Sen starts masked. A lock unmounts History, so the next mount starts in the masked pose and Re-mask does not play on unlock. Re-mask still plays on "Hide amounts".
+**What the user sees.** Unlock lands masked, and the month card's Sen starts masked. A lock unmounts History, so the next mount starts in the masked pose and Re-mask does not play on unlock. Re-mask still plays on "Hide amounts".
 
 **History.**
 - 2026-10-16. First answer: one saved setting, shown until hidden, surviving lock and restart. Reason: one value instead of a session state plus a preference, and no timer.
 - 2026-10-17. Reopened by the owner. The brief says masked by default, and a reviewer relaunching must see masked. Changed to session state. The saved setting and its "survives lock" tests were removed.
+- 2026-10-17. The owner removed the Hide amounts switch from Settings › Security. It mirrored the same global show and hide as History's key, so it was a confusing duplicate. History's key is the one control. The rule is unchanged.
 - 2026-10-17. The owner removed the helper copy "Stays shown until you hide it or Sen locks." from the month card and the Detail receipt, because the behaviour is implied. The rule is unchanged.
 
 ## D28. A phone with no screen lock: refuse and point to settings

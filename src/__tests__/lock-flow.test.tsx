@@ -304,6 +304,6 @@ test('amounts shown before a lock are masked after the next unlock, on History a
   expect(moments).not.toContain('remask');
 
   await act(() => router.push('/settings'));
-  const hide = await screen.findByRole('switch', { name: 'Hide amounts' });
-  expect(hide.props.accessibilityState.checked).toBe(true);
+  await screen.findByRole('radio', { name: '10 min' });
+  expect(screen.queryByRole('switch', { name: 'Hide amounts' })).not.toBeOnTheScreen();
 });
