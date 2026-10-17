@@ -207,6 +207,14 @@ test('a date that left the 90-day window while reviewing says so instead of a de
   expect(screen.getByRole('button', { name: 'Save with fingerprint' })).toBeDisabled();
 });
 
+test('a date that is in the future after the clock moved back says so, not "90 days ago"', async () => {
+  await renderStep(<ReviewStep />, { ...FILLED, day: DayKeySchema.parse('2026-12-01') });
+
+  expect(screen.getByText('That date is now in the future. Pick another.')).toBeOnTheScreen();
+  expect(screen.queryByText(/90 days ago/)).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Save with fingerprint' })).toBeDisabled();
+});
+
 test('a cancelled prompt writes nothing and keeps the draft on review', async () => {
   mockStepUp.mockResolvedValueOnce({ ok: false, reason: 'cancelled' });
   await renderStep(<ReviewStep />, FILLED);

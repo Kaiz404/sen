@@ -9,7 +9,13 @@ import { Key } from '@/components/key';
 import { Leader, ReceiptSlip, SlipRule } from '@/components/receipt-slip';
 import { Tag } from '@/components/tag';
 import { toast } from '@/components/toast';
-import { type AuthFailure, type Biometric, useBiometric, useDb, useStepUp } from '@/features/auth';
+import {
+  type AuthFailure,
+  type Biometric,
+  useBiometric,
+  useDb,
+  useStepUp,
+} from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { CATEGORY_LABEL } from '@/models/category';
 import { type DayKey, toInstant } from '@/models/day';
@@ -90,7 +96,11 @@ export function ReviewView({
             tone="danger"
             icon="alert-circle-outline"
             title="Can't save this date"
-            body="That date is now more than 90 days ago. Pick another."
+            body={
+              draft.day > today
+                ? 'That date is now in the future. Pick another.'
+                : 'That date is now more than 90 days ago. Pick another.'
+            }
           />
         )}
         {state.kind === 'refused' && (
