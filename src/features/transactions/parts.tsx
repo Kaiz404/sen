@@ -107,22 +107,23 @@ export function MonthTop({
   readonly soFar: string;
   readonly compact: boolean;
 }): ReactNode {
+  const c = useUnistyles().theme.colors;
   if (compact)
     return (
       <View style={styles.monthTopCompact}>
-        <Text accessibilityRole="header" style={styles.month(true)}>
+        <Text accessibilityRole="header" style={[styles.month(true), { color: c.ink }]}>
           {month}
         </Text>
-        <Text style={styles.account}>SAVINGS ·· 4821</Text>
+        <Text style={[styles.account, { color: c.inkMuted }]}>SAVINGS ·· 4821</Text>
       </View>
     );
   return (
     <View style={styles.monthTop}>
-      <Text style={styles.account}>EVERYDAY SAVINGS ·· 4821</Text>
-      <Text accessibilityRole="header" style={styles.month(false)}>
+      <Text style={[styles.account, { color: c.inkMuted }]}>EVERYDAY SAVINGS ·· 4821</Text>
+      <Text accessibilityRole="header" style={[styles.month(false), { color: c.ink }]}>
         {month}
       </Text>
-      <Text style={styles.soFar}>{soFar}</Text>
+      <Text style={[styles.soFar, { color: c.inkMuted }]}>{soFar}</Text>
     </View>
   );
 }
@@ -164,7 +165,7 @@ export function SearchAndFilter({
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="search"
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.colors.ink }]}
         />
         {search !== '' && (
           <Pressable
@@ -241,7 +242,11 @@ export function MonthCard({
       <View style={styles.cardSen}>
         <MonthSen hidden={hidden} />
       </View>
-      <Text style={styles.cardLabel(hidden)}>{label}</Text>
+      <Text
+        style={[styles.cardLabel, { color: hidden ? theme.colors.onPastel : theme.colors.onLoud }]}
+      >
+        {label}
+      </Text>
       <View testID="hero-slot" style={styles.heroSlot(heroHeight)}>
         <RollAmount
           value={hero}
@@ -259,7 +264,7 @@ export function MonthCard({
             size={16}
             color={flow === 'out' ? theme.colors.plateInk : theme.colors.plateCredit}
           />
-          <Text style={styles.moneyInText}>
+          <Text style={[styles.moneyInText, { color: theme.colors.plateInk }]}>
             {filtered
               ? count === undefined
                 ? ' '
@@ -268,7 +273,7 @@ export function MonthCard({
           </Text>
         </View>
         {filtered ? (
-          <Text style={styles.plateCaption}>
+          <Text style={[styles.plateCaption, { color: theme.colors.plateFaint }]}>
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
         ) : (
@@ -300,12 +305,13 @@ export function MonthCard({
 }
 
 export function LoadingCard(): ReactNode {
+  const { theme } = useUnistyles();
   return (
     <View accessibilityLabel="Loading your history" style={styles.card(true)}>
       <View style={styles.cardSen}>
         <Sen pose="lookdown" size={92} />
       </View>
-      <Text style={styles.counting}>Counting your sen…</Text>
+      <Text style={[styles.counting, { color: theme.colors.onPastel }]}>Counting your sen…</Text>
     </View>
   );
 }
@@ -317,11 +323,12 @@ export function ResultLine({
   readonly counts: MaskedTotals | undefined;
   readonly hidden: boolean;
 }): ReactNode {
+  const { theme } = useUnistyles();
   const totals = useRevealed()?.results;
   const n = counts === undefined ? null : counts.in.count + counts.out.count;
   return (
     <View testID="result-line" style={styles.resultLine}>
-      <Text style={styles.caption}>
+      <Text style={[styles.caption, { color: theme.colors.inkMuted }]}>
         {n === null ? ' ' : `${n} ${n === 1 ? 'RESULT' : 'RESULTS'}`}
       </Text>
       <Leader />
@@ -350,12 +357,13 @@ function SlipEdge({ d }: { d: string }): ReactNode {
 }
 
 export function DayTop({ title, caption }: { title: string; caption: string }): ReactNode {
+  const c = useUnistyles().theme.colors;
   return (
     <View style={styles.dayTop}>
-      <Text accessibilityRole="header" style={styles.dayTitle}>
+      <Text accessibilityRole="header" style={[styles.dayTitle, { color: c.ink }]}>
         {title}
       </Text>
-      {caption !== '' && <Text style={styles.dayCaption}>{caption}</Text>}
+      {caption !== '' && <Text style={[styles.dayCaption, { color: c.inkMuted }]}>{caption}</Text>}
     </View>
   );
 }
@@ -408,12 +416,12 @@ export const TxRow = memo(function TxRow({ row, first, onOpen }: TxRowProps): Re
           <MaterialCommunityIcons name={row.icon} size={22} color={theme.colors.onPastel} />
         </View>
         <View style={styles.rowText}>
-          <Text numberOfLines={1} style={styles.rowTitle}>
+          <Text numberOfLines={1} style={[styles.rowTitle, { color: theme.colors.ink }]}>
             {row.title}
           </Text>
           <View style={styles.rowMeta}>
             {row.tag !== null && <Tag kind={row.tag} />}
-            <Text numberOfLines={1} style={styles.rowDetail}>
+            <Text numberOfLines={1} style={[styles.rowDetail, { color: theme.colors.inkMuted }]}>
               {row.detail === null ? row.time : `${row.detail} · ${row.time}`}
             </Text>
           </View>
@@ -430,7 +438,14 @@ export const TxRow = memo(function TxRow({ row, first, onOpen }: TxRowProps): Re
               size={13}
               color={credit ? theme.colors.deep : theme.colors.ink}
             />
-            <Text style={styles.chipText(credit)}>{credit ? 'In' : 'Out'}</Text>
+            <Text
+              style={[
+                styles.chipText,
+                { color: credit ? theme.colors.onPastel : theme.colors.ink },
+              ]}
+            >
+              {credit ? 'In' : 'Out'}
+            </Text>
           </View>
         </View>
       </Pressable>
@@ -439,13 +454,14 @@ export const TxRow = memo(function TxRow({ row, first, onOpen }: TxRowProps): Re
 });
 
 export function DayNet({ day, label }: { day: DayKey; label: string }): ReactNode {
+  const { theme } = useUnistyles();
   const value = useDayNetView(day);
   return (
     <View testID="day-net" style={styles.slipCell}>
       <View style={styles.paper}>
         <SlipRule />
         <View style={styles.net}>
-          <Text style={styles.netLabel}>{label}</Text>
+          <Text style={[styles.netLabel, { color: theme.colors.inkMuted }]}>{label}</Text>
           <Leader />
           <RollAmount value={value} size="net" sign="auto" />
         </View>
@@ -517,7 +533,7 @@ export function NoteLine({
   return (
     <View style={styles.note}>
       <MaterialCommunityIcons name={icon} size={18} color={theme.colors.inkMuted} />
-      <Text style={styles.noteText}>{text}</Text>
+      <Text style={[styles.noteText, { color: theme.colors.inkMuted }]}>{text}</Text>
     </View>
   );
 }
@@ -541,14 +557,13 @@ const styles = StyleSheet.create((theme, rt) => ({
     alignItems: 'baseline',
     justifyContent: 'space-between',
   },
-  account: { ...type.caption(11), color: theme.colors.inkMuted },
+  account: type.caption(11),
   month: (compact: boolean) => ({
     ...type.words(compact ? 44 : 92),
     lineHeight: compact ? 44 : 80,
     paddingTop: compact ? 0 : 6,
-    color: theme.colors.ink,
   }),
-  soFar: { fontFamily: type.numerals(17).fontFamily, fontSize: 17, color: theme.colors.inkMuted },
+  soFar: { fontFamily: type.numerals(17).fontFamily, fontSize: 17 },
   filters: { gap: 10 },
   search: { justifyContent: 'center' },
   searchIcon: { position: 'absolute', left: 16, zIndex: 1 },
@@ -560,7 +575,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderWidth: 2,
     borderColor: theme.colors.rule,
     backgroundColor: theme.colors.paper,
-    color: theme.colors.ink,
     fontSize: 16,
   },
   clear: {
@@ -580,15 +594,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: hidden ? theme.colors.lilac : theme.colors.loud,
   }),
   cardSen: { position: 'absolute', top: -50, right: 14 },
-  cardLabel: (hidden: boolean) => ({
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: hidden ? theme.colors.onPastel : theme.colors.onLoud,
-  }),
+  cardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   heroSlot: (height: number) => ({ height, justifyContent: 'center' }),
-  counting: { ...type.words(34), color: theme.colors.onPastel, paddingVertical: 24 },
+  counting: { ...type.words(34), paddingVertical: 24 },
   moneyIn: (height: number) => ({
     flexDirection: 'row',
     alignItems: 'center',
@@ -599,10 +607,10 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: theme.colors.plate,
   }),
   moneyInLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  moneyInText: { fontSize: 14, fontWeight: '600', color: theme.colors.plateInk },
-  plateCaption: { ...type.caption(10), color: theme.colors.plateFaint },
+  moneyInText: { fontSize: 14, fontWeight: '600' },
+  plateCaption: type.caption(10),
   resultLine: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2 },
-  caption: { ...type.caption(11), color: theme.colors.inkMuted },
+  caption: type.caption(11),
   edge: { height: 8, overflow: 'hidden' },
   dayTop: {
     flexDirection: 'row',
@@ -613,8 +621,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingBottom: 8,
     backgroundColor: theme.colors.canvas,
   },
-  dayTitle: { ...type.words(30), color: theme.colors.ink },
-  dayCaption: { ...type.mono(11, 600), letterSpacing: 1.1, color: theme.colors.inkMuted },
+  dayTitle: type.words(30),
+  dayCaption: { ...type.mono(11, 600), letterSpacing: 1.1 },
   slipCell: { paddingHorizontal: 20 },
   paper: { backgroundColor: theme.colors.paper },
   row: {
@@ -628,9 +636,9 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   glyph: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, minWidth: 0, gap: 4 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: theme.colors.ink },
+  rowTitle: { fontSize: 15, fontWeight: '600' },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  rowDetail: { flexShrink: 1, fontSize: 13, color: theme.colors.inkMuted },
+  rowDetail: { flexShrink: 1, fontSize: 13 },
   rowEnd: { alignItems: 'flex-end', gap: 5 },
   chip: (credit: boolean) => ({
     flexDirection: 'row',
@@ -642,11 +650,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderRadius: 10,
     backgroundColor: credit ? theme.colors.mint : theme.colors.chip,
   }),
-  chipText: (credit: boolean) => ({
-    fontSize: 11,
-    fontWeight: '700',
-    color: credit ? theme.colors.onPastel : theme.colors.ink,
-  }),
+  chipText: { fontSize: 11, fontWeight: '700' },
   net: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -654,7 +658,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     paddingBottom: 12,
     paddingHorizontal: 16,
   },
-  netLabel: { ...type.mono(11, 600), letterSpacing: 1.1, color: theme.colors.inkMuted },
+  netLabel: { ...type.mono(11, 600), letterSpacing: 1.1 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -675,5 +679,5 @@ const styles = StyleSheet.create((theme, rt) => ({
     textDecorationLine: 'underline',
   },
   note: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
-  noteText: { flex: 1, fontSize: 13, color: theme.colors.inkMuted },
+  noteText: { flex: 1, fontSize: 13 },
 }));

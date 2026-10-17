@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import {
   type Direction,
@@ -155,6 +155,7 @@ export function Amount({
   direction,
 }: AmountProps): ReactNode {
   const level = useMotionPolicy();
+  const { theme } = useUnistyles();
   const scale = SCALE[size];
   const hero = size === 'hero';
   const parts = value === null ? null : moneyParts(value, sign);
@@ -175,7 +176,7 @@ export function Amount({
         <Text
           style={[
             FACE[scale.masked.face](scale.masked.size),
-            styles.ink(surface, direction === 'credit'),
+            { color: amountInk(theme.colors, surface, direction === 'credit') },
             !scale.stacked && styles.maskedCurrency,
           ]}
         >
@@ -203,7 +204,7 @@ export function Amount({
   }
 
   if (parts === null) return null;
-  const ink = styles.ink(surface, value > 0);
+  const ink = { color: amountInk(theme.colors, surface, value > 0) };
   const split = scale.fraction !== scale.whole;
   const wholeSize = Math.round(scale.whole * f);
   const fractionSize = Math.round(scale.fraction * f);
@@ -263,9 +264,6 @@ const styles = StyleSheet.create((theme) => ({
   row: { flexDirection: 'row', alignItems: 'center' },
   stack: { alignItems: 'center' },
   baseline: { alignItems: 'baseline' },
-  ink: (surface: AmountSurface, credit: boolean) => ({
-    color: amountInk(theme.colors, surface, credit),
-  }),
   maskedCurrency: { marginRight: 2 },
   heroCurrency: { marginRight: 6 },
   fraction: { letterSpacing: 0 },

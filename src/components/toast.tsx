@@ -68,6 +68,7 @@ export function useToastShowing(): boolean {
 
 export function ToastHost(): ReactNode {
   const current = useToasts((s) => s.current);
+  const { theme } = useUnistyles();
   return (
     <View pointerEvents="box-none" style={styles.host}>
       {current !== null && (
@@ -81,8 +82,12 @@ export function ToastHost(): ReactNode {
           <View style={styles.row}>
             {current.mark}
             <View style={styles.copy}>
-              <Text style={styles.title}>{current.title}</Text>
-              {current.detail !== undefined && <Text style={styles.detail}>{current.detail}</Text>}
+              <Text style={[styles.title, { color: theme.colors.canvas }]}>{current.title}</Text>
+              {current.detail !== undefined && (
+                <Text style={[styles.detail, { color: theme.colors.canvas }]}>
+                  {current.detail}
+                </Text>
+              )}
             </View>
             {current.action !== undefined && <ActionKey id={current.id} action={current.action} />}
           </View>
@@ -111,7 +116,7 @@ function ActionKey({ id, action }: { id: number; action: ToastAction }) {
       {action.icon !== undefined && (
         <MaterialCommunityIcons name={action.icon} size={18} color={theme.colors.onPastel} />
       )}
-      <Text style={[styles.actionLabel, styles.actionInk]}>{action.label}</Text>
+      <Text style={[styles.actionLabel, { color: theme.colors.onPastel }]}>{action.label}</Text>
     </Pressable>
   );
 }
@@ -146,8 +151,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     minHeight: 64,
   },
   copy: { flex: 1, gap: 2 },
-  title: { fontSize: 15, fontWeight: '700', color: theme.colors.canvas },
-  detail: { fontSize: 12, lineHeight: 16, color: theme.colors.canvas, opacity: 0.8 },
+  title: { fontSize: 15, fontWeight: '700' },
+  detail: { fontSize: 12, lineHeight: 16, opacity: 0.8 },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -159,7 +164,6 @@ const styles = StyleSheet.create((theme, rt) => ({
     backgroundColor: theme.colors.lemon,
   },
   actionLabel: { fontSize: 15, fontWeight: '700' },
-  actionInk: { color: theme.colors.onPastel },
   track: { height: 4 },
   trackBed: {
     ...StyleSheet.absoluteFillObject,

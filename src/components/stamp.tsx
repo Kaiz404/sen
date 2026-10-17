@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type } from '@/theme/type';
 
@@ -13,6 +13,7 @@ type StampProps = {
 
 export function Stamp({ caption, word, date, accessibilityLabel }: StampProps): ReactNode {
   const spoken = accessibilityLabel !== undefined;
+  const ink = { color: useUnistyles().theme.colors.stamp };
   return (
     <View
       accessible={spoken}
@@ -22,15 +23,15 @@ export function Stamp({ caption, word, date, accessibilityLabel }: StampProps): 
       style={styles.stamp}
     >
       <View style={styles.innerRing} />
-      <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.small, styles.caption]}>
+      <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.small, styles.caption, ink]}>
         {caption}
       </Text>
       <View style={styles.rules}>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={styles.word}>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.word, ink]}>
           {word}
         </Text>
       </View>
-      <Text style={styles.small}>{date}</Text>
+      <Text style={[styles.small, ink]}>{date}</Text>
     </View>
   );
 }
@@ -59,7 +60,7 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1.5,
     borderColor: theme.colors.stamp,
   },
-  small: { ...type.mono(9, 600), color: theme.colors.stamp },
+  small: type.mono(9, 600),
   caption: { letterSpacing: 0.9, maxWidth: 60 },
   rules: {
     maxWidth: 74,
@@ -70,5 +71,5 @@ const styles = StyleSheet.create((theme) => ({
     borderBottomWidth: 2,
     borderColor: theme.colors.stamp,
   },
-  word: { ...type.words(24), lineHeight: 22, color: theme.colors.stamp },
+  word: { ...type.words(24), lineHeight: 22 },
 }));

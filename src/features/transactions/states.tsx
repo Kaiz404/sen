@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Bone } from '@/components/bone';
 import { Key } from '@/components/key';
@@ -43,13 +43,16 @@ export function SkeletonSlips(): ReactNode {
 }
 
 export function EmptyHistory(): ReactNode {
+  const c = useUnistyles().theme.colors;
   return (
     <View testID="history-empty" style={styles.state}>
       <Sen id={EMPTY_SEN} pose="idle" size={140} />
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text accessibilityRole="header" style={[styles.title, { color: c.ink }]}>
         Nothing here yet
       </Text>
-      <Text style={styles.body}>Pull down to check with your bank, or add one yourself.</Text>
+      <Text style={[styles.body, { color: c.inkMuted }]}>
+        Pull down to check with your bank, or add one yourself.
+      </Text>
     </View>
   );
 }
@@ -63,6 +66,7 @@ export function NoResults({
   readonly search: string;
   readonly onClear: () => void;
 }): ReactNode {
+  const c = useUnistyles().theme.colors;
   const term = search.trim();
   // MAX-Moments plays it 300 ms after typing stops. The timer restarts on each keystroke until the
   // moment has played, and a later search keeps the Sen where it stands. Off has no entrance to wait
@@ -98,10 +102,10 @@ export function NoResults({
           label="Sen, shrugging with a magnifier"
         />
       </View>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text accessibilityRole="header" style={[styles.title, { color: c.ink }]}>
         {term === '' ? 'Nothing in this view' : `No “${term}” here`}
       </Text>
-      <Text style={styles.body}>
+      <Text style={[styles.body, { color: c.inkMuted }]}>
         {term === ''
           ? 'Sen found nothing that matches. Try All.'
           : 'Sen looked through your history and found nothing. Try a merchant, like Grab or TNB.'}
@@ -166,6 +170,7 @@ export function FullError({
   readonly onRetry: () => void;
   readonly onSettings: () => void;
 }): ReactNode {
+  const c = useUnistyles().theme.colors;
   const [caption, title, body] = FAILED[error.kind];
   const simulated = SIMULATED.has(error.kind);
   // Owns the buzz: the moment's mark fires it once on arrival and once per failed Retry. A repeat
@@ -189,17 +194,19 @@ export function FullError({
         />
       </View>
       <View style={styles.failedText}>
-        <Text style={styles.caption}>{simulated ? `${caption} · SIMULATED` : caption}</Text>
-        <Text accessibilityRole="header" style={styles.failedTitle}>
+        <Text style={[styles.caption, { color: c.inkMuted }]}>
+          {simulated ? `${caption} · SIMULATED` : caption}
+        </Text>
+        <Text accessibilityRole="header" style={[styles.failedTitle, { color: c.ink }]}>
           {title}
         </Text>
-        <Text style={styles.failedBody}>{body}</Text>
+        <Text style={[styles.failedBody, { color: c.inkMuted }]}>{body}</Text>
       </View>
       <View style={styles.failedActions}>
         <Key tone="lemon" size="large" icon="refresh" label="Retry" busy={busy} onPress={retry} />
         {simulated && (
           <Pressable accessibilityRole="link" onPress={onSettings} style={styles.link}>
-            <Text style={styles.linkText}>Reviewer settings</Text>
+            <Text style={[styles.linkText, { color: c.inkMuted }]}>Reviewer settings</Text>
           </Pressable>
         )}
       </View>
@@ -238,12 +245,11 @@ const styles = StyleSheet.create((theme, rt) => ({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.inkMuted,
     textDecorationLine: 'underline',
   },
-  caption: { ...type.caption(11), color: theme.colors.inkMuted },
-  title: { ...type.words(34), textAlign: 'center', color: theme.colors.ink },
-  body: { fontSize: 15, lineHeight: 21, textAlign: 'center', color: theme.colors.inkMuted },
-  failedTitle: { ...type.words(60), lineHeight: 52, color: theme.colors.ink },
-  failedBody: { fontSize: 16, lineHeight: 23, color: theme.colors.inkMuted },
+  caption: type.caption(11),
+  title: { ...type.words(34), textAlign: 'center' },
+  body: { fontSize: 15, lineHeight: 21, textAlign: 'center' },
+  failedTitle: { ...type.words(60), lineHeight: 52 },
+  failedBody: { fontSize: 16, lineHeight: 23 },
 }));

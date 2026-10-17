@@ -25,7 +25,7 @@ import {
 } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { cssMs } from '@/components/motion-level';
 import { playMoment, releaseSenScroll, Sen, stopMoment } from '@/features/sen';
@@ -207,6 +207,7 @@ export function PullGap({
   readonly dragging: boolean;
   readonly armed: boolean;
 }): ReactNode {
+  const { theme } = useUnistyles();
   const open = dragging || status !== 'idle';
   const box = useAnimatedStyle(() => ({ height: gap.get() }));
   const sen = useAnimatedStyle(() => {
@@ -229,7 +230,7 @@ export function PullGap({
     <Animated.View testID="pull-gap" style={[styles.gap, box]}>
       {open && (
         <>
-          <Text style={styles.label}>
+          <Text style={[styles.label, { color: theme.colors.inkMuted }]}>
             {status === 'idle' && armed ? 'RELEASE TO REFRESH' : LABEL[status]}
           </Text>
           <Animated.View style={[styles.sen, status === 'idle' && sen]}>
@@ -264,7 +265,6 @@ const styles = StyleSheet.create((theme) => ({
     position: 'absolute',
     left: 20,
     top: 14,
-    color: theme.colors.inkMuted,
   },
   sen: {
     position: 'absolute',

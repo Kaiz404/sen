@@ -8,6 +8,42 @@ import { configureThemes } from '@/theme/unistyles';
 // still mock it. theme.test.tsx loads the real boot module.
 configureThemes('system');
 
+// The stock mock never switches theme. Here `setTheme` and `setAdaptiveThemes` (System follows a light phone) move a
+// live theme that `useUnistyles` re-renders on, as on the device. `StyleSheet.create` still resolves once on the
+// light theme, so a colour that only a stylesheet carries stays light after a switch, the way text inside an
+// animated view did on the phone (ARCHITECTURE › Colours).
+{
+  const React = jest.requireActual<typeof import('react')>('react');
+  const unistyles = jest.requireMock<Record<string, any>>('react-native-unistyles');
+  const runtime = unistyles.UnistylesRuntime;
+  const themes = (
+    globalThis as { __UNISTYLES_MOCK_REGISTRY__?: { themes: Record<string, object> } }
+  ).__UNISTYLES_MOCK_REGISTRY__!.themes;
+  const listeners = new Set<() => void>();
+  let live = 'light';
+  const set = (name: string) => {
+    if (name === live) return;
+    live = name;
+    listeners.forEach((listener) => listener());
+  };
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+  runtime.setTheme = (name: string) => set(name);
+  runtime.setAdaptiveThemes = (on: boolean) => {
+    if (on) set('light');
+  };
+  runtime.getTheme = () => themes[live];
+  Object.defineProperty(runtime, 'themeName', { get: () => live, configurable: true });
+  function useUnistyles() {
+    const name = React.useSyncExternalStore(subscribe, () => live);
+    return { theme: themes[name], rt: runtime };
+  }
+  unistyles.useUnistyles = useUnistyles;
+  beforeEach(() => set('light'));
+}
+
 // jest-expo leaves the Android API level undefined. Tests run on a current phone, and the ones that care pick their own.
 Object.defineProperty(Platform, 'Version', { get: () => 36, configurable: true });
 setUpTests();

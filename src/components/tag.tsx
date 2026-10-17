@@ -33,7 +33,7 @@ export function Tag({ kind }: { kind: TagKind }): ReactNode {
       {spec.icon !== undefined && (
         <MaterialCommunityIcons name={spec.icon} size={11} color={theme.colors[spec.tone]} />
       )}
-      <Text style={[styles.label, styles.ink(spec.tone)]}>{spec.label}</Text>
+      <Text style={[styles.label, { color: theme.colors[spec.tone] }]}>{spec.label}</Text>
     </View>
   );
 }
@@ -53,5 +53,4 @@ const styles = StyleSheet.create((theme) => ({
     transform: [{ rotate: `${spec.tilt}deg` }],
   }),
   label: { ...type.mono(10, 600), letterSpacing: 1 },
-  ink: (tone: ColorToken) => ({ color: theme.colors[tone] }),
 }));

@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
-import { UnistylesRuntime } from 'react-native-unistyles';
 
 import { toast, ToastHost } from '@/components/toast';
+import { applyTheme } from '@/theme/unistyles';
 
 import { GalleryBody, StatesScreen } from './index';
 import { SCREENS } from './registry';
@@ -60,7 +60,7 @@ test('an unknown query says why', async () => {
 });
 
 test('a drawn state carries its shot name once its theme has applied', async () => {
-  Object.assign(UnistylesRuntime, { themeName: 'light' });
+  applyTheme('light');
   await render(
     <GalleryBody query={{ kind: 'state', screen: 'key', state: 'lemon' }} theme="light" />,
   );
@@ -68,7 +68,7 @@ test('a drawn state carries its shot name once its theme has applied', async () 
 });
 
 test('a state still waiting for its theme carries no shot name, so a flow never captures it', async () => {
-  Object.assign(UnistylesRuntime, { themeName: 'light' });
+  applyTheme('light');
   await render(
     <GalleryBody query={{ kind: 'state', screen: 'key', state: 'lemon' }} theme="dark" />,
   );
@@ -77,7 +77,7 @@ test('a state still waiting for its theme carries no shot name, so a flow never 
 });
 
 test('the launch lab opens from its deep link and settles on Lock’s hero', async () => {
-  Object.assign(UnistylesRuntime, { themeName: 'light' });
+  applyTheme('light');
   await renderRouter(
     { 'dev/states': () => <StatesScreen /> },
     { initialUrl: '/dev/states?screen=motion&state=launch&theme=light' },

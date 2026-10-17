@@ -81,7 +81,11 @@ export function Segmented<T extends string>({
                   color={selected ? theme.colors.canvas : theme.colors.ink}
                 />
               )}
-              <Text style={[styles.label, styles.ink(selected)]}>{o.label}</Text>
+              <Text
+                style={[styles.label, { color: selected ? theme.colors.canvas : theme.colors.ink }]}
+              >
+                {o.label}
+              </Text>
             </Pressable>
           );
         })}
@@ -114,5 +118,4 @@ const styles = StyleSheet.create((theme) => ({
     gap: 4,
   },
   label: { fontFamily: FONT.numerals, fontSize: 16 },
-  ink: (selected: boolean) => ({ color: selected ? theme.colors.canvas : theme.colors.ink }),
 }));

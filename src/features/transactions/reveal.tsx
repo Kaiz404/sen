@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Amount, amountInk, type AmountSurface } from '@/components/amount';
 import type { DayKey } from '@/models/day';
@@ -212,12 +212,13 @@ export function RollAmount({
   direction,
   fit,
 }: RollAmountProps): ReactNode {
+  const { theme } = useUnistyles();
   if (value === null) {
     return <Amount value={null} size={size} surface={surface} sign={sign} direction={direction} />;
   }
   const scale = SCALE[size];
   const parts = moneyParts(value, sign);
-  const ink = styles.ink(surface, value > 0);
+  const ink = { color: amountInk(theme.colors, surface, value > 0) };
   const lead = `${parts.sign}${parts.currency}`;
   if (size !== 'hero') {
     const rolling = (
@@ -302,7 +303,7 @@ export function FitWidth({
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'baseline' },
   fitBox: (height: number | undefined, end: boolean) => ({
     flexDirection: 'row',
@@ -316,7 +317,4 @@ const styles = StyleSheet.create((theme) => ({
     transformOrigin: end ? 'right bottom' : 'left bottom',
     transform: [{ scale }],
   }),
-  ink: (surface: AmountSurface, credit: boolean) => ({
-    color: amountInk(theme.colors, surface, credit),
-  }),
-}));
+});

@@ -1,7 +1,7 @@
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { type ReactNode, useEffect } from 'react';
 import { Text, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { EnterOnce } from '@/components/enter-once';
 import { Key } from '@/components/key';
@@ -97,6 +97,7 @@ const NOTICE: Readonly<Record<DbResetReason, string>> = {
 /** History drawn from props, so the gallery can draw every state without a database. */
 export function HistoryView(props: HistoryViewProps): ReactNode {
   const { body, search, flow, actions, arrival, banner } = props;
+  const { theme } = useUnistyles();
   const searching = search.trim() !== '';
   const toastUp = useToastShowing();
   const listShown = body.kind !== 'failed';
@@ -227,7 +228,9 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
                       style={[styles.footer, toastUp && styles.footerLifted]}
                     >
                       {banner !== null && body.kind === 'list' && (
-                        <Text style={styles.footerText}>PULL DOWN TO TRY AGAIN</Text>
+                        <Text style={[styles.footerText, { color: theme.colors.inkMuted }]}>
+                          PULL DOWN TO TRY AGAIN
+                        </Text>
                       )}
                     </View>
                   }
@@ -245,7 +248,7 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
             {props.updated !== null && (
               <View pointerEvents="none" accessibilityLiveRegion="polite" style={styles.pill}>
                 <Sen pose="happy" size={22} />
-                <Text style={styles.pillText}>
+                <Text style={[styles.pillText, { color: theme.colors.onLoud }]}>
                   {props.updated === 0
                     ? 'Updated just now'
                     : `Updated just now · ${props.updated} new`}
@@ -283,7 +286,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     alignItems: 'center',
   },
   footerLifted: { paddingBottom: rt.insets.bottom + ADD_KEY_CLEARANCE + ADD_KEY_LIFT },
-  footerText: { ...type.caption(11), color: theme.colors.inkMuted },
+  footerText: type.caption(11),
   pill: {
     position: 'absolute',
     top: 10,
@@ -297,5 +300,5 @@ const styles = StyleSheet.create((theme, rt) => ({
     borderRadius: 999,
     backgroundColor: theme.colors.loud,
   },
-  pillText: { fontSize: 13, fontWeight: '700', color: theme.colors.onLoud },
+  pillText: { fontSize: 13, fontWeight: '700' },
 }));
