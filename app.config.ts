@@ -30,6 +30,8 @@ const config: ExpoConfig = {
   android: {
     package: 'com.kaiz404.sen',
     allowBackup: false,
+    // Prebuild adds this for the dev overlay. The debug manifest declares it itself, so release drops it.
+    blockedPermissions: ['android.permission.SYSTEM_ALERT_WINDOW'],
     adaptiveIcon: {
       backgroundColor: INK,
       foregroundImage: './assets/images/android-icon-foreground.png',

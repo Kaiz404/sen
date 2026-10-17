@@ -60,3 +60,7 @@ test.each(['light', 'dark'] as const)(
     );
   },
 );
+
+test('the release manifest blocks the draw-over-other-apps permission', () => {
+  expect(config.android?.blockedPermissions).toContain('android.permission.SYSTEM_ALERT_WINDOW');
+});
