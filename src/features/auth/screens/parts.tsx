@@ -136,8 +136,9 @@ export function NoteCard({ icon, text }: { readonly icon: IconName; readonly tex
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
+  // Grows to fill the screen but never shrinks below its copy. The screen scrolls when the actions need the room.
   hero: {
-    flex: 1,
+    flexGrow: 1,
     minHeight: 300,
     paddingTop: rt.insets.top + 26,
     paddingHorizontal: 22,

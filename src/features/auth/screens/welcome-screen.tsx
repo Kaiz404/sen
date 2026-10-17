@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Amount } from '@/components/amount';
@@ -63,7 +63,7 @@ export function WelcomeView({
 }: WelcomeViewProps): ReactNode {
   const { theme } = useUnistyles();
   return (
-    <View style={styles.screen}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.fill} bounces={false}>
       <StatusBar style="light" />
       <Hero
         kind="welcome"
@@ -134,12 +134,13 @@ export function WelcomeView({
           )}
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },
+  fill: { flexGrow: 1 },
   actions: { paddingTop: 20, paddingHorizontal: 20, paddingBottom: rt.insets.bottom + 22, gap: 16 },
   slip: { paddingTop: 8, paddingHorizontal: 18, paddingBottom: 6 },
   caption: {

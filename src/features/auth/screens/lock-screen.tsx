@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
@@ -208,7 +208,7 @@ export function LockView({
         ? noLockHero()
         : HERO[state.kind];
   return (
-    <View style={styles.screen}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.fill} bounces={false}>
       <StatusBar style="light" />
       <Hero
         kind="lock"
@@ -224,7 +224,7 @@ export function LockView({
           onPress={onStartAgain}
         />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -281,6 +281,7 @@ function storeHero(cause: StoreCause): HeroCopy {
 
 const styles = StyleSheet.create((theme, rt) => ({
   screen: { flex: 1, backgroundColor: theme.colors.canvas },
+  fill: { flexGrow: 1 },
   actions: {
     paddingTop: 22,
     paddingHorizontal: 20,
