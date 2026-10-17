@@ -31,6 +31,7 @@ const reg = (sen: string): DirectorEvent => ({ type: 'register', sen });
 const req = (sen: string, moment: MomentId): DirectorEvent => ({ type: 'request', sen, moment });
 const two = [reg('a'), reg('b')];
 const close: DirectorEvent = { type: 'gate', patch: { appActive: false } };
+const cover = (...covered: string[]): DirectorEvent => ({ type: 'gate', patch: { covered } });
 const open: DirectorEvent = { type: 'gate', patch: { appActive: true } };
 
 test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']]>([
@@ -106,6 +107,33 @@ test.each<[string, readonly DirectorEvent[], Command[], DirectorState['playing']
     [...two, { type: 'gate', patch: { focused: false } }, req('a', 'glance')],
     [{ type: 'settle', sen: 'a' }],
     null,
+  ],
+  [
+    'a request from a covered Sen takes the closed-gate path and settles it',
+    [...two, cover('a'), req('a', 'glance')],
+    [{ type: 'settle', sen: 'a' }],
+    null,
+  ],
+  [
+    'a Sen that is not covered plays as usual beside a covered one',
+    [...two, cover('a'), req('b', 'glance')],
+    [{ type: 'play', sen: 'b', moment: 'glance', token: 1 }],
+    { sen: 'b', moment: 'glance', token: 1 },
+  ],
+  [
+    'covering the playing Sen settles it and starts the Sen waiting in the queue',
+    [...two, req('a', 'glance'), req('b', 'glance'), cover('a')],
+    [
+      { type: 'settle', sen: 'a' },
+      { type: 'play', sen: 'b', moment: 'glance', token: 2 },
+    ],
+    { sen: 'b', moment: 'glance', token: 2 },
+  ],
+  [
+    'uncovering a Sen lets it play again',
+    [...two, cover('a'), cover(), req('a', 'glance')],
+    [{ type: 'play', sen: 'a', moment: 'glance', token: 1 }],
+    { sen: 'a', moment: 'glance', token: 1 },
   ],
   [
     'P0 through a closed gate does nothing',
