@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/brand/sen-wordmark.svg" alt="Sen" height="48">
-</p>
-
-<p align="center">
   <img src="assets/brand/readme-hero.png" alt="Sen. Amounts stay hidden until you prove it is you. Three phone screens: Lock, History with hidden amounts, History with shown amounts." width="100%">
 </p>
 
@@ -70,7 +66,7 @@ Expo SDK 57, React Native, TypeScript (strict), Expo Router, SQLCipher, TanStack
 
 ## Run from source
 
-Needs Node 22.13 or later, JDK 17 and the Android SDK.
+Needs Node 24 (`nvm use` reads `.nvmrc`), JDK 17 and the Android SDK.
 
 ```bash
 npm install
