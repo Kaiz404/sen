@@ -7,6 +7,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Amount } from '@/components/amount';
 import { Key } from '@/components/key';
+import { SheetSurface } from '@/components/sheet-surface';
 import { toast } from '@/components/toast';
 import {
   type AuthFailure,
@@ -80,7 +81,7 @@ export function DeleteView({
   onDelete,
   onKeep,
 }: DeleteViewProps): ReactNode {
-  if (row === undefined) return <View style={styles.sheet} />;
+  if (row === undefined) return <SheetSurface />;
   if (row === null)
     return (
       <Ending
@@ -109,7 +110,7 @@ export function DeleteView({
         : `Delete with ${name}`;
   const month = MONTHS[Number(row.day.slice(5, 7)) - 1];
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <Text accessibilityRole="header" style={styles.title}>
         Delete this transaction?
       </Text>
@@ -142,7 +143,7 @@ export function DeleteView({
         testID="delete-confirm"
       />
       <Key tone="outline" size="large" label="Keep it" onPress={onKeep} />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -183,14 +184,14 @@ function Ending({
 }) {
   const { theme } = useUnistyles();
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <MaterialCommunityIcons name={icon} size={28} color={theme.colors.ink} />
       <Text accessibilityRole="header" style={styles.endTitle}>
         {title}
       </Text>
       <Text style={styles.body}>{body}</Text>
       <Key tone="outline" size="large" label="Close" onPress={onClose} />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -286,13 +287,6 @@ export function DeleteSheet(): ReactNode {
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
-  sheet: {
-    gap: 12,
-    paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: rt.insets.bottom + 20,
-    backgroundColor: theme.colors.canvas,
-  },
   title: { ...type.words(30), color: theme.colors.ink },
   endTitle: { fontSize: 20, fontWeight: '700', color: theme.colors.ink },
   body: { fontSize: 15, lineHeight: 21, color: theme.colors.inkMuted },

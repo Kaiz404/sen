@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { type IconName, Key } from '@/components/key';
+import { SheetSurface } from '@/components/sheet-surface';
 import { toast } from '@/components/toast';
 import { type Biometric, signOut, useBiometric, useDb } from '@/features/auth';
 import { Sen } from '@/features/sen';
@@ -51,7 +52,7 @@ export function PrivacyView({
 }): ReactNode {
   const { theme } = useUnistyles();
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <View style={styles.top}>
         <Sen pose="masked" size={56} label="Sen, eyes closed" />
         <Text style={styles.caption}>ABOUT · PRIVACY</Text>
@@ -69,7 +70,7 @@ export function PrivacyView({
         </View>
       ))}
       <Key tone="lemon" size="large" label="Got it" onPress={onClose} />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -86,7 +87,7 @@ export function SignOutView({
   readonly onCancel: () => void;
 }): ReactNode {
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <Sen pose="worried" size={56} label="Sen, worried" />
       <Text accessibilityRole="header" style={styles.title}>
         Sign out of demo?
@@ -97,7 +98,7 @@ export function SignOutView({
       </Text>
       <Key tone="loud" size="xlarge" icon="logout" label="Sign out" onPress={onSignOut} />
       <Key tone="outline" size="large" label="Cancel" onPress={onCancel} />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -131,7 +132,7 @@ export function ResetDemoView({
   readonly onCancel: () => void;
 }): ReactNode {
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <Sen pose="look" size={56} label="Sen, looking at the reset question" />
       <Text accessibilityRole="header" style={styles.title}>
         Reset demo data?
@@ -154,7 +155,7 @@ export function ResetDemoView({
         onPress={onReset}
       />
       <Key tone="outline" size="large" label="Cancel" onPress={onCancel} />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -174,13 +175,6 @@ export function ResetDemoSheet(): ReactNode {
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
-  sheet: {
-    gap: 12,
-    paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: rt.insets.bottom + 20,
-    backgroundColor: theme.colors.canvas,
-  },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   title: { ...type.words(30), color: theme.colors.ink },

@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
+import { SheetSurface } from '@/components/sheet-surface';
 import { toast } from '@/components/toast';
 import {
   type AuthFailure,
@@ -75,7 +76,7 @@ export function EraseView({
 
   if (count === 0 && phase.kind === 'ready')
     return (
-      <View style={styles.sheet}>
+      <SheetSurface>
         <Sen pose="look" size={56} label="Sen, looking" />
         <Text accessibilityRole="header" style={styles.title}>
           Nothing to erase
@@ -84,11 +85,11 @@ export function EraseView({
           You haven’t added any transactions on this phone. Your bank transactions can’t be erased.
         </Text>
         <Key tone="outline" size="large" label="Close" onPress={onCancel} />
-      </View>
+      </SheetSurface>
     );
 
   return (
-    <View style={styles.sheet}>
+    <SheetSurface>
       <Sen pose="worried" size={56} label="Sen, worried" />
       <Text accessibilityRole="header" style={styles.title}>
         Erase transactions I added?
@@ -130,7 +131,7 @@ export function EraseView({
         disabled={phase.kind === 'erasing'}
         onPress={onCancel}
       />
-    </View>
+    </SheetSurface>
   );
 }
 
@@ -187,13 +188,6 @@ export function EraseSheet(): ReactNode {
 }
 
 const styles = StyleSheet.create((theme, rt) => ({
-  sheet: {
-    gap: 12,
-    paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: rt.insets.bottom + 20,
-    backgroundColor: theme.colors.canvas,
-  },
   title: { ...type.words(30), color: theme.colors.ink },
   body: { fontSize: 15, lineHeight: 21, color: theme.colors.inkMuted },
   problem: { fontSize: 14, fontWeight: '600', color: theme.colors.danger },

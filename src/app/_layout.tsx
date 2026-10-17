@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -11,16 +12,29 @@ import { useSenMotionPreference } from '@/features/settings';
 import { useHistoryPrefetch } from '@/features/transactions';
 import { MotionPolicyRoot } from '@/motion/policy';
 
-const sheet = {
-  presentation: 'formSheet',
-  sheetAllowedDetents: 'fitToContents',
-  sheetGrabberVisible: true,
-} as const;
+const SHEET_RADIUS = 30;
+const SHEET_ELEVATION = 8;
+
+/**
+ * The board's sheet: 30 pt top corners on both platforms and the native grabber on iOS. Android never reads
+ * `sheetGrabberVisible`, so `SheetSurface` draws its handle. The surface follows the theme.
+ */
+function sheetOptions(surface: string) {
+  return {
+    presentation: 'formSheet',
+    sheetAllowedDetents: 'fitToContents',
+    sheetGrabberVisible: true,
+    sheetCornerRadius: SHEET_RADIUS,
+    sheetElevation: SHEET_ELEVATION,
+    contentStyle: { backgroundColor: surface },
+  } as const;
+}
 
 export default function RootLayout() {
   const gate = useRouteGate();
   const motion = useSenMotionPreference();
-  const { rt } = useUnistyles();
+  const { rt, theme } = useUnistyles();
+  const sheet = useMemo(() => sheetOptions(theme.colors.canvas), [theme.colors.canvas]);
   useScreenGuard();
   useSenAppGate();
   useHistoryPrefetch();
