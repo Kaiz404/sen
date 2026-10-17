@@ -70,24 +70,43 @@ test('a phone that loses its screen lock shows the no-lock view over any earlier
 });
 
 describe('a timed-out prompt', () => {
-  const timedOut = (view: PromptView) => afterUnlock(view, { ok: false, reason: 'timedOut' }, 1_000);
+  const timedOut = (view: PromptView, at = 1_000) =>
+    afterUnlock(view, { ok: false, reason: 'timedOut' }, at);
+  const mismatch = (view: PromptView, at = 0) =>
+    afterUnlock(view, { ok: false, reason: 'mismatch' }, at);
+  const lockout = (view: PromptView, at: number) =>
+    afterUnlock(view, { ok: false, reason: 'lockout' }, at);
 
-  test('says so and offers the key, from idle or after a mismatch', () => {
-    expect(timedOut(IDLE)).toEqual({ kind: 'timedOut' });
-    expect(timedOut({ kind: 'mismatch', triesLeft: 1 })).toEqual({ kind: 'timedOut' });
+  test('says so from idle or after a mismatch', () => {
+    expect(timedOut(IDLE).kind).toBe('timedOut');
+    expect(timedOut(mismatch(IDLE)).kind).toBe('timedOut');
   });
 
-  test('is not a try, a lockout, a block or a store failure', () => {
-    const once = afterUnlock(IDLE, { ok: false, reason: 'mismatch' }, 0);
-    expect(timedOut(timedOut(once))).toEqual({ kind: 'timedOut' });
-    expect(afterUnlock(timedOut(IDLE), { ok: false, reason: 'mismatch' }, 2_000)).toEqual({
-      kind: 'mismatch',
-      triesLeft: 2,
-    });
+  test('keeps the tries a mismatch left, as a cancel does', () => {
+    const once = mismatch(IDLE);
+    expect(mismatch(timedOut(once))).toEqual({ kind: 'mismatch', triesLeft: 1 });
+    expect(mismatch(timedOut(timedOut(once)))).toEqual({ kind: 'mismatch', triesLeft: 1 });
+    expect(mismatch(timedOut(IDLE))).toEqual({ kind: 'mismatch', triesLeft: 2 });
   });
 
-  test('leaves a lockout or a block as it was', () => {
+  test('keeps the off and weak setup views, which still have their own keys', () => {
+    const off: PromptView = { kind: 'off', canOpenSettings: true };
+    const weak: PromptView = { kind: 'weak' };
+    expect(timedOut(off)).toEqual({ kind: 'timedOut', over: off });
+    expect(timedOut(weak)).toEqual({ kind: 'timedOut', over: weak });
+  });
+
+  test('leaves a running lockout, a block or a store failure as it was', () => {
+    const view: PromptView = { kind: 'lockout', until: 5_000 };
     const blocked: PromptView = { kind: 'blocked', since: 0 };
+    expect(timedOut(view)).toBe(view);
     expect(timedOut(blocked)).toBe(blocked);
+  });
+
+  test('after a lockout has ended says so, and a lockout then still escalates to the block', () => {
+    const ended: PromptView = { kind: 'lockout', until: 1_000 };
+    const view = timedOut(ended, 40_000);
+    expect(view.kind).toBe('timedOut');
+    expect(lockout(view, 41_000)).toEqual({ kind: 'blocked', since: 41_000 });
   });
 });

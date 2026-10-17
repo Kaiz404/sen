@@ -19,11 +19,18 @@ import {
   clock,
   STORE_COPY,
   WEAK_BIOMETRIC,
+  TIMED_OUT_SETUP,
   timedOutText,
   triesLeftText,
 } from '../copy';
 import type { Biometric } from '../prompt';
-import { afterRecheck, afterUnlock, initialView, type PromptView } from '../prompt-view';
+import {
+  afterRecheck,
+  afterUnlock,
+  initialView,
+  isSetupView,
+  type PromptView,
+} from '../prompt-view';
 import { unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings, openLockScreenSettings } from './device-settings';
 import { Notice } from './parts';
@@ -104,7 +111,8 @@ export function PrimerView({
   const shown: PrimerState =
     state.kind === 'lockout' && secondsLeft === 0 ? { kind: 'idle' } : state;
   const notice = noticeOf(shown, copy, secondsLeft);
-  const settings = shown.kind === 'noLock' || (shown.kind === 'off' && shown.canOpenSettings);
+  const view = shown.kind === 'timedOut' && isSetupView(shown.over) ? shown.over : shown;
+  const settings = view.kind === 'noLock' || (view.kind === 'off' && view.canOpenSettings);
   const unlocked = shown.kind === 'unlocked';
 
   return (
@@ -149,8 +157,7 @@ export function PrimerView({
           {"Let Sen check\nit's you."}
         </Text>
         <Text style={styles.body}>
-          Your phone checks your face or fingerprint. Sen only hears yes or no.{' '}
-          {AMOUNTS_NOTE}
+          Your phone checks your face or fingerprint. Sen only hears yes or no. {AMOUNTS_NOTE}
         </Text>
       </View>
       <View style={styles.points}>
@@ -168,8 +175,8 @@ export function PrimerView({
             tone="lemon"
             size="xlarge"
             icon="cog"
-            label={shown.kind === 'noLock' ? 'Open lock-screen settings' : 'Open device settings'}
-            onPress={shown.kind === 'noLock' ? onOpenLockSettings : onOpenSettings}
+            label={view.kind === 'noLock' ? 'Open lock-screen settings' : 'Open device settings'}
+            onPress={view.kind === 'noLock' ? onOpenLockSettings : onOpenSettings}
           />
         ) : (
           <Key
@@ -182,7 +189,7 @@ export function PrimerView({
                 ? "Checking it's you"
                 : unlocked
                   ? `${copy.title} is on`
-                  : shown.kind === 'weak'
+                  : view.kind === 'weak'
                     ? 'Use device passcode'
                     : `Turn on ${name}`
             }
@@ -207,11 +214,8 @@ export function PrimerView({
   );
 }
 
-function noticeOf(
-  state: PrimerState,
-  { name, title }: BiometricCopy,
-  secondsLeft: number,
-): string | null {
+function noticeOf(state: PrimerState, copy: BiometricCopy, secondsLeft: number): string | null {
+  const { name, title } = copy;
   switch (state.kind) {
     case 'idle':
     case 'checking':
@@ -220,7 +224,9 @@ function noticeOf(
     case 'mismatch':
       return triesLeftText(state.triesLeft, name);
     case 'timedOut':
-      return timedOutText(name);
+      return isSetupView(state.over)
+        ? `${TIMED_OUT_SETUP} ${noticeOf(state.over, copy, secondsLeft)}`
+        : timedOutText(name);
     case 'blocked':
       return `Too many tries. Your phone paused ${name}. Use your device passcode now.`;
     case 'lockout':

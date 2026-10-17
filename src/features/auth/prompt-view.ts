@@ -3,11 +3,9 @@ import type { StoreCause } from '@/services/store-fault';
 import type { AuthFailure, EnrolledLevel } from './prompt';
 import type { UnlockOutcome } from './session';
 
-export type PromptView =
+type BaseView =
   | { readonly kind: 'idle' }
   | { readonly kind: 'mismatch'; readonly triesLeft: number }
-  /** The prompt went unanswered for 60 s. Lock says so and keeps the key ready. It is not a failed try. */
-  | { readonly kind: 'timedOut' }
   | { readonly kind: 'lockout'; readonly until: number }
   /**
    * A conservative steer to the passcode after repeated lockouts. Android's real lockout length is not visible to the
@@ -31,6 +29,18 @@ export type PromptView =
       readonly firstAt: number;
       readonly lastAt: number;
     };
+
+/**
+ * The prompt went unanswered for 60 s. Lock says so and keeps the key ready. It is not a failed try, so `over` is the
+ * view it replaced: its tries still count, its setup keys (off, weak) still show, and an ended lockout still escalates.
+ */
+export type PromptView = BaseView | { readonly kind: 'timedOut'; readonly over: BaseView };
+
+const under = (view: PromptView): BaseView => (view.kind === 'timedOut' ? view.over : view);
+
+/** The views whose own keys a timeout must not hide. */
+export const isSetupView = (view: BaseView): view is Extract<BaseView, { kind: 'off' | 'weak' }> =>
+  view.kind === 'off' || view.kind === 'weak';
 
 export const TRIES = 3;
 /** Android's biometric lockout lasts 30 s. */
@@ -73,21 +83,27 @@ export function afterPrompt(prev: PromptView, failure: AuthFailure, now: number)
   switch (failure) {
     case 'cancelled':
       return prev;
-    case 'timedOut':
-      return prev.kind === 'lockout' || prev.kind === 'blocked' || prev.kind === 'store'
+    case 'timedOut': {
+      const over = under(prev);
+      const running = over.kind === 'lockout' && over.until > now;
+      return running || over.kind === 'blocked' || over.kind === 'store' || over.kind === 'noLock'
         ? prev
-        : { kind: 'timedOut' };
+        : { kind: 'timedOut', over };
+    }
     case 'mismatch': {
-      const before = prev.kind === 'mismatch' ? prev.triesLeft : TRIES;
+      const tried = under(prev);
+      const before = tried.kind === 'mismatch' ? tried.triesLeft : TRIES;
       return { kind: 'mismatch', triesLeft: Math.max(0, before - 1) };
     }
-    case 'lockout':
-      if (prev.kind === 'blocked' && now - prev.since >= BLOCKED_FOR_MS)
+    case 'lockout': {
+      const before = under(prev);
+      if (before.kind === 'blocked' && now - before.since >= BLOCKED_FOR_MS)
         return { kind: 'lockout', until: now + LOCKOUT_MS };
-      if (prev.kind === 'blocked') return prev;
-      return prev.kind === 'lockout'
+      if (before.kind === 'blocked') return before;
+      return before.kind === 'lockout'
         ? { kind: 'blocked', since: now }
         : { kind: 'lockout', until: now + LOCKOUT_MS };
+    }
     case 'not_set_up':
       return { kind: 'off', canOpenSettings: true };
     case 'unavailable':

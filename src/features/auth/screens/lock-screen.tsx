@@ -18,12 +18,20 @@ import {
   RESET_COST,
   WEAK_BIOMETRIC,
   STORE_COPY,
+  TIMED_OUT_SETUP,
   timedOutText,
   triesLeftText,
 } from '../copy';
 import type { Session } from '../machine';
 import type { Biometric } from '../prompt';
-import { afterRecheck, afterUnlock, canReset, initialView, type PromptView } from '../prompt-view';
+import {
+  afterRecheck,
+  afterUnlock,
+  canReset,
+  initialView,
+  isSetupView,
+  type PromptView,
+} from '../prompt-view';
 import { reportLaunchTarget } from '../launch';
 import { signOut, unlock, useBiometric, useSessionStatus } from '../session';
 import { openDeviceSettings, openLockScreenSettings } from './device-settings';
@@ -170,8 +178,11 @@ export function LockView({
     />
   );
 
+  const setup = shown.kind === 'timedOut' && isSetupView(shown.over) ? shown.over : null;
+  const view = setup ?? shown;
+  const timedOutNote = setup && <Notice text={TIMED_OUT_SETUP} />;
   const body = (() => {
-    switch (shown.kind) {
+    switch (view.kind) {
       case 'idle':
       case 'checking':
       case 'signingOut':
@@ -179,7 +190,7 @@ export function LockView({
         return (
           <>
             <ProfileRow />
-            {unlockKey(UNLOCK_LABEL[shown.kind] ?? `Unlock with ${name}`)}
+            {unlockKey(UNLOCK_LABEL[view.kind] ?? `Unlock with ${name}`)}
             {passcode}
             <Note text={AMOUNTS_NOTE} />
           </>
@@ -188,7 +199,7 @@ export function LockView({
         return (
           <>
             <ProfileRow />
-            <Notice text={triesLeftText(shown.triesLeft, name)} />
+            <Notice text={triesLeftText(view.triesLeft, name)} />
             {unlockKey(`Try ${name} again`)}
             {passcode}
           </>
@@ -206,7 +217,8 @@ export function LockView({
         return (
           <>
             <ProfileRow />
-            {shown.canOpenSettings ? (
+            {timedOutNote}
+            {view.canOpenSettings ? (
               <>
                 {unlockKey('Open device settings', 'cog', onOpenSettings)}
                 {passcode}
@@ -235,6 +247,7 @@ export function LockView({
         return (
           <>
             <ProfileRow />
+            {timedOutNote}
             {unlockKey('Use device passcode', 'lock-outline')}
             <Key
               tone="outline"
@@ -249,9 +262,9 @@ export function LockView({
         return (
           <>
             <ProfileRow />
-            {canReset(shown) && <Notice text={RESET_COST} />}
+            {canReset(view) && <Notice text={RESET_COST} />}
             {unlockKey('Try again')}
-            {canReset(shown) && (
+            {canReset(view) && (
               <Key
                 tone="outline"
                 size="medium"
@@ -274,7 +287,7 @@ export function LockView({
     }
   })();
 
-  const hero = shown.kind === 'store' ? storeHero(shown.cause) : HERO[shown.kind](copy);
+  const hero = view.kind === 'store' ? storeHero(view.cause) : HERO[view.kind](copy);
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />

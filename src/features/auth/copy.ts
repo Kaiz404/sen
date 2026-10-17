@@ -26,6 +26,9 @@ export function clock(seconds: number): string {
 export const timedOutText = (name: string) =>
   `The check timed out. Try ${name} again, or use your device passcode.`;
 
+/** Over the off and weak views, whose keys stay. Only the passcode can be tried again there. */
+export const TIMED_OUT_SETUP = 'The check timed out. Try your device passcode again.';
+
 export function triesLeftText(triesLeft: number, name: string): string {
   if (triesLeft === 0) return "Didn't match. Use your device passcode.";
   return `Didn't match. ${triesLeft} more ${triesLeft === 1 ? 'try' : 'tries'} before ${name} locks.`;

@@ -593,6 +593,4 @@ The phases are in [PLAN.md](PLAN.md).
 - A longer fixed timeout only delays the stuck state for everyone who is stuck. A minute is long for a fingerprint or a PIN.
 - The owner confirmed 60 s.
 
-**Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. Lock shows it over a mismatch view, so the tries line gives way to the timeout line, and a lockout, block or store view stays as it was.
-
-**Cost.** A timeout after one wrong finger forgets that mismatch on screen, so the next miss shows two tries left again. The phone's own lockout still counts the real misses.
+**Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. The view it replaces is kept underneath, so a cancel's rules hold: tries left after a wrong finger still count, an ended lockout still escalates to the block, and the off and weak views keep their settings key with the timeout line above. A running lockout, a block and a store failure stay as they were.
