@@ -50,8 +50,11 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D33 | Adding a transaction | A floating Add key on History, no bar |
 | D34 | Catching up | History finishes only a cut-short first sync, so ordinary unlocks send nothing |
 | D35 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
-| D38 | Bottom sheets | Keep the expo-router native formSheet and tune it: 30 corners, iOS grabber, a drawn handle on Android |
+| D36 | Unlock timeout | The unlock prompt times out at 60 s, and says so |
 | D37 | Date picker | The system calendar from `@react-native-community/datetimepicker`, not a drawer of 91 rows |
+| D38 | Bottom sheets | Keep the expo-router native formSheet and tune it: 30 corners, iOS grabber, a drawn handle on Android |
+| D39 | Pending rows | They post on a later refresh |
+| D40 | Unlock keys | One Unlock key (biometric only), a separate Use screen lock key (credential only), and Sen picks the route |
 
 ---
 
@@ -314,6 +317,8 @@ The implementation is D23 to D26 and ARCHITECTURE.md › Motion.
 - **Raw adb.** It covers fingerprint taps, deep links and logs.
 - **Real prompt.** Agents use the real biometric prompt. A bypass is the first thing a security reviewer looks for.
 - **Screen guard.** It is off in dev builds and forced on in release, so screenshots aren't black.
+
+**Clarification (2026-10-17).** "No bypass" means no bypass in a release build. The Maestro flows use a dev-only `?auth=` override on `sen://dev/states`, which is compiled out of release builds; `scripts/check-release-auth.sh` fails the build if it survives.
 
 **Note.** This replaces the earlier "no Maestro" rule. The flows in `.maestro/` are how agents verify their work. They are not a shipped E2E suite, and the README says so.
 

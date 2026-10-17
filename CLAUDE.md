@@ -43,7 +43,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
   - `components/` are design-system primitives.
   - `app/` routes stay thin.
 - **Money.** Integer sen (`amountMinor`), never floats. Format with `Intl` and add the sign by hand.
-- **Mask at the source.** Masked view models carry `amount: null`. Components never receive a raw `Transaction`.
+- **Mask at the source.** Masked view models have no amount field at all (`MaskedRowSchema` is strict and omits `amountMinor`). Components never receive a raw `Transaction`.
 - **Never log amounts.** All logging goes through `services/logger.ts` using event codes. No `console.` anywhere else.
 - **Writes need step-up.** Add, delete, clear log and erase go through `useStepUp`, every time, never cached.
 - **Never auto-prompt biometrics on resume.** Guard every prompt with `isAuthenticatingRef`. Lock only on `background`.
