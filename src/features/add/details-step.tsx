@@ -4,18 +4,15 @@ import { type ReactNode, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { Amount } from '@/components/amount';
 import { type IconName, Key } from '@/components/key';
-import { ReceiptSlip } from '@/components/receipt-slip';
-import { Tag } from '@/components/tag';
 import { ADD_CATEGORIES, type AddCategoryId, CATEGORY_LABEL } from '@/models/category';
 import { addDays, type DayKey } from '@/models/day';
 import { DRAFT_LIMITS } from '@/models/draft';
-import { minor, moneyText, signed, signedMinor } from '@/models/money';
+import { moneyText, signedMinor } from '@/models/money';
 import { type } from '@/theme/type';
 
 import { todayInMalaysia, useDraft } from './add-layout';
-import { CATEGORY_ICON, dayText, nearDayText } from './copy';
+import { CATEGORY_ICON, dayText } from './copy';
 import { cleanDescription, type DraftInput, descriptionTooShort } from './draft';
 import { useDayPicker } from './day-picker';
 import { DiscardDialog, FieldError, StepHeader } from './parts';
@@ -52,7 +49,6 @@ export type DetailsViewProps = {
 
 export function DetailsView(props: DetailsViewProps): ReactNode {
   const { draft, today, showProblems } = props;
-  const { theme } = useUnistyles();
   const length = cleanDescription(draft).length;
   const tooShort = showProblems && descriptionTooShort(draft);
   const noCategory = showProblems && draft.category === null;
@@ -77,7 +73,6 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
         <View style={styles.field}>
           <View style={styles.fieldTop}>
             <Text style={styles.label}>Description</Text>
-            <Text style={styles.caption}>AUTOCORRECT · AUTOFILL OFF</Text>
           </View>
           <TextInput
             {...PRIVATE_INPUT}
@@ -86,17 +81,11 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
             onChangeText={props.onDescription}
             onEndEditing={props.onDescriptionDone}
             maxLength={DRAFT_LIMITS.descriptionMax}
-            placeholder="Lunch with Hafiz, cash"
-            placeholderTextColor={theme.colors.inkMuted}
             returnKeyType="done"
             style={[styles.input, tooShort && styles.inputError]}
           />
           <View style={styles.fieldTop}>
-            {tooShort ? (
-              <FieldError text="Add at least 2 characters, like “Lunch with Hafiz”." />
-            ) : (
-              <Text style={styles.hint}>2 to 60 characters</Text>
-            )}
+            {tooShort && <FieldError text="Add at least 2 characters, like “Lunch with Hafiz”." />}
             <Text style={styles.counter}>{`${length}/${DRAFT_LIMITS.descriptionMax}`}</Text>
           </View>
         </View>
@@ -119,12 +108,7 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
         <View style={styles.field}>
           <Text style={styles.label}>Date</Text>
           <DateChips day={draft.day} today={today} onDay={props.onDay} onPick={props.onPick} />
-          <Text style={styles.hint}>
-            {`Today is ${dayText(today)}. Any day in the last 90 days, never the future.`}
-          </Text>
         </View>
-
-        <Preview draft={draft} today={today} />
       </ScrollView>
       <View style={styles.pad}>
         <Key
@@ -240,34 +224,6 @@ function DayChip({
   );
 }
 
-function Preview({ draft, today }: { draft: DraftInput; today: DayKey }) {
-  const description = cleanDescription(draft);
-  const category = draft.category === null ? 'No category yet' : CATEGORY_LABEL[draft.category];
-  return (
-    <View accessibilityLabel="Live preview" style={styles.preview}>
-      <Text style={styles.caption}>LIVE PREVIEW</Text>
-      <ReceiptSlip>
-        <View style={styles.previewBody}>
-          <Text style={styles.caption}>SEN · SAVINGS ·· 4821 · DRAFT</Text>
-          <View style={styles.previewRow}>
-            <View style={styles.previewText}>
-              <Text numberOfLines={1} style={styles.previewTitle}>
-                {description === '' ? 'Description' : description}
-              </Text>
-              <Text style={styles.hint}>{`${category} · ${nearDayText(draft.day, today)}`}</Text>
-            </View>
-            <Amount value={signed(minor(draft.amountMinor), draft.direction)} size="row" />
-          </View>
-          <View style={styles.previewTags}>
-            <Tag kind="added" />
-            <Text style={styles.caption}>NOT SAVED YET</Text>
-          </View>
-        </View>
-      </ReceiptSlip>
-    </View>
-  );
-}
-
 export function DetailsStep(): ReactNode {
   const { draft, dispatch } = useDraft();
   const router = useRouter();
@@ -327,7 +283,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   label: { fontSize: 17, fontWeight: '700', color: theme.colors.ink },
   caption: { ...type.caption(11), color: theme.colors.inkMuted },
   hint: { flex: 1, fontSize: 13, lineHeight: 18, color: theme.colors.inkMuted },
-  counter: { ...type.mono(12, 600), color: theme.colors.inkMuted },
+  counter: { ...type.mono(12, 600), marginLeft: 'auto', color: theme.colors.inkMuted },
   input: {
     minHeight: 56,
     paddingHorizontal: 16,
@@ -374,10 +330,4 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontWeight: '700',
     color: selected ? theme.colors.canvas : theme.colors.ink,
   }),
-  preview: { gap: 8 },
-  previewBody: { gap: 10, paddingVertical: 4 },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  previewText: { flex: 1, gap: 2 },
-  previewTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.ink },
-  previewTags: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 }));

@@ -177,6 +177,23 @@ type PickerOptions = {
 const lastPicker = (): PickerOptions =>
   jest.mocked(DateTimePickerAndroid.open).mock.lastCall![0] as unknown as PickerOptions;
 
+test('the details page carries no sample text, helper lines or live preview', async () => {
+  await renderStep(<DetailsStep />, FILLED);
+
+  expect(screen.getByLabelText('Description').props.placeholder).toBeUndefined();
+  expect(screen.getByText('22/60')).toBeOnTheScreen();
+  for (const gone of [
+    '2 to 60 characters',
+    'AUTOCORRECT · AUTOFILL OFF',
+    'LIVE PREVIEW',
+    'NOT SAVED YET',
+    'Today is Thu 15 Oct. Any day in the last 90 days, never the future.',
+  ]) {
+    expect(screen.queryByText(gone)).toBeNull();
+  }
+  expect(screen.queryByLabelText('Live preview')).toBeNull();
+});
+
 test('Pick a date opens the system calendar on today, limited to the last 90 days', async () => {
   await renderStep(<DetailsStep />, FILLED);
   await fireEvent.press(screen.getByRole('radio', { name: 'Pick a date' }));

@@ -524,7 +524,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Amount | Integer sen, 1 to 5,000,000 (RM 0.01 to RM 50,000.00) | `models/draft.ts` |
 | Keypad | Digits shift in from the right. Keys 1 to 9, 00, 0 and delete. A key that would make an eighth digit does nothing. No decimal key | `features/add/keypad-reducer.ts` |
 | Direction | `'debit' \| 'credit'`. The sign is never typed | `models/draft.ts` |
-| Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed. The draft keeps the text as typed. The counter, the preview, the review and the stored row read it through the sanitiser, and the field shows the cleaned text when editing ends | `services/sanitize.ts`, `features/add/draft.ts` |
+| Description | Cleaned, then 2 to 60 characters. NFC, control, zero-width and bidi characters removed, spaces collapsed, trimmed. The draft keeps the text as typed. The counter, the review and the stored row read it through the sanitiser, and the field shows the cleaned text when editing ends | `services/sanitize.ts`, `features/add/draft.ts` |
 | Description input | `autoCorrect={false}`, `autoComplete="off"`, `spellCheck={false}`, `textContentType="none"`, `importantForAutofill="no"`, `maxLength={60}` | `features/add/details-step.tsx` |
 | Category | Enum of eight | `models/category.ts` |
 | Date | Today, Yesterday, or the system calendar limited to the last 90 days (D37). Never future. A picked day is checked with `isInAddWindow` again before it reaches the draft | `models/draft.ts`, `features/add/day-picker.tsx` |

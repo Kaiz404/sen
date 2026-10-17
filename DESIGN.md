@@ -14,6 +14,7 @@ Other directions were tried and dropped. They stay on the canvas above round 5 f
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
+| 2026-10-17 | `SF-AddDetails` | The page is bare. The description field has no placeholder, no "2 to 60 characters" line and no "AUTOCORRECT · AUTOFILL OFF" caption, and the "n/60" counter is the only limit cue. The live mini receipt and the date helper line are gone. The 90-day and no-future rule lives in the calendar's limits. Autocorrect and autofill stay off in the input. The label "Description" stays for screen readers |
 | `canvas` | `#F6F2E9` cream | `#121315` | Screen background |
 | `paper` | `#FFFDF8` | `#1E2023` | Cards, receipt slips, inputs |
 | `ink` | `#17181A` | `#F3EEE3` | Text, key borders and shadows |
@@ -317,7 +318,7 @@ One haptic per moment, fired from the named step, not at gesture start.
 | `SF-DetailStates` | Detail states | Skeleton, share text preview, not found, error with Retry |
 | `SF-DetailManual` | Detail, added by you | ADDED BY YOU stamp, "Added on this phone" source row, "Delete transaction". Bank rows read "From your bank · read only" |
 | `SF-AddAmount` | Add 1/3, amount | Money out or in. Huge amount. Custom 3 × 4 keypad. Sen watching |
-| `SF-AddDetails` | Add 2/3, details | Description with counter, 8 category chips, Today / Yesterday / Pick a date, live mini receipt. Pick a date opens the system calendar (Android dialog, iOS inline calendar), not the board's drawer; see below |
+| `SF-AddDetails` | Add 2/3, details | Description with counter, 8 category chips, Today / Yesterday / Pick a date. Pick a date opens the system calendar (Android dialog, iOS inline calendar), not the board's drawer; see below |
 | `SF-AddReview` | Add 3/3, review | Full draft receipt with reference, Sen peeking, "Save with Face ID". Screenshots blocked |
 | `SF-AddStates` | Add states | Validation errors, Face ID checking, cancelled, couldn't save securely, discard draft, saved with Undo |
 | `SF-DeleteStates` | Delete states | Confirm sheet, Face ID step-up, deleted with Undo, Face ID failed |
