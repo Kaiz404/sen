@@ -641,6 +641,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
     height,
     paddingHorizontal: 14,
     borderRadius: 18,
@@ -648,7 +649,8 @@ const styles = StyleSheet.create((theme, rt) => ({
   }),
   moneyInLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   moneyInText: { fontSize: 14, fontWeight: '600' },
-  plateCaption: type.caption(10),
+  // Wraps beside a long "12 payments out" under large text instead of running into it.
+  plateCaption: { ...type.caption(10), flexShrink: 1, textAlign: 'right' },
   resultLine: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2 },
   caption: type.caption(11),
   edge: { height: 8, overflow: 'hidden' },
