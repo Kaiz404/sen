@@ -13,10 +13,7 @@ import { pullDown } from './pull/testing';
 let mockDb: OpenDb;
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  useIsFocused: () => true,
-}));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }), useIsFocused: () => true }));
 jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
@@ -35,11 +32,7 @@ beforeEach(async () => {
 afterEach(() => jest.useRealTimers());
 
 test('a bank reset while a slow pull runs does not leave the gap loading', async () => {
-  await render(
-    <QueryClientProvider client={queryClient}>
-      <HistoryScreen />
-    </QueryClientProvider>,
-  );
+  await render(<QueryClientProvider client={queryClient}><HistoryScreen /></QueryClientProvider>);
   expect(await screen.findByText('Tealive', undefined, { timeout: 4000 })).toBeOnTheScreen();
   writePref('demo.slow', true);
   await act(() => pullDown());
@@ -54,11 +47,7 @@ test('a bank reset while a slow pull runs does not leave the gap loading', async
 });
 
 test('control: the same slow pull without a reset lands and closes', async () => {
-  await render(
-    <QueryClientProvider client={queryClient}>
-      <HistoryScreen />
-    </QueryClientProvider>,
-  );
+  await render(<QueryClientProvider client={queryClient}><HistoryScreen /></QueryClientProvider>);
   expect(await screen.findByText('Tealive', undefined, { timeout: 4000 })).toBeOnTheScreen();
   writePref('demo.slow', true);
   await act(() => pullDown());
@@ -72,11 +61,7 @@ test('control: the same slow pull without a reset lands and closes', async () =>
 
 test('after the reset, a fresh pull asks the bank', async () => {
   const { bank } = jest.requireActual('./data');
-  await render(
-    <QueryClientProvider client={queryClient}>
-      <HistoryScreen />
-    </QueryClientProvider>,
-  );
+  await render(<QueryClientProvider client={queryClient}><HistoryScreen /></QueryClientProvider>);
   expect(await screen.findByText('Tealive', undefined, { timeout: 4000 })).toBeOnTheScreen();
   writePref('demo.slow', true);
   await act(() => pullDown());

@@ -1,13 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { memo, type ReactNode, useEffect, useEffectEvent, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  Pressable,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { StyleSheet, useUnistyles, withUnistyles } from 'react-native-unistyles';
 
@@ -146,17 +139,15 @@ export function SearchAndFilter({
   flow,
   onSearch,
   onFlow,
-  onLayout,
 }: {
   readonly search: string;
   readonly flow: Flow;
   readonly onSearch: (text: string) => void;
   readonly onFlow: (flow: Flow) => void;
-  readonly onLayout?: (e: LayoutChangeEvent) => void;
 }): ReactNode {
   const { theme } = useUnistyles();
   return (
-    <View testID="history-filters" style={styles.filters} onLayout={onLayout}>
+    <View style={styles.filters}>
       <View style={styles.search}>
         <MaterialCommunityIcons
           name="magnify"
@@ -286,10 +277,7 @@ export function MonthCard({
             {flow === 'in' ? 'OUT HIDDEN BY FILTER' : 'IN HIDDEN BY FILTER'}
           </Text>
         ) : (
-          <RollAmount
-            value={inMinor}
-            size="card"
-            surface="plate"
+          <RollAmount value={inMinor} size="card" surface="plate"
             direction="credit"
             fit={{ maxHeight: moneyInHeight - SLOT_MARGIN }}
           />

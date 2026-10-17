@@ -162,8 +162,7 @@ test('a History that unmounts mid-fling leaves Sen free to move on the next scre
   expect(face()).toEqual([18, -10]);
 });
 
-const landedBuzzes = () =>
-  jest.mocked(playHaptic).mock.calls.filter(([h]) => h === 'refreshLanded');
+const landedBuzzes = () => jest.mocked(playHaptic).mock.calls.filter(([h]) => h === 'refreshLanded');
 
 test('a pull buzzes once at the touchdown of the landing', async () => {
   await renderHistory();
