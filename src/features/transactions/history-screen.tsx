@@ -1,5 +1,5 @@
 import { useIsFocused, useRouter } from 'expo-router';
-import { type ReactNode, useDeferredValue, useEffect, useState } from 'react';
+import { type ReactNode, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 import { useStore } from 'zustand';
 
@@ -89,6 +89,15 @@ export function HistoryScreen(): ReactNode {
   useEffect(() => {
     if (unsynced) mutate('first');
   }, [unsynced, epoch, mutate]);
+
+  const opened = useRef(false);
+  // A first sync cut short leaves a cursor, so only a pull would finish it. Like a bank app refreshing on
+  // open, History catches up once per mount, and the cursor and upsert make the rerun safe.
+  useEffect(() => {
+    if (data.synced === undefined || opened.current) return;
+    opened.current = true;
+    if (data.synced) mutate('catchup');
+  }, [data.synced, mutate]);
 
   useEffect(() => {
     if (takeDraftDropped())

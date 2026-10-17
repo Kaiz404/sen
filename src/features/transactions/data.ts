@@ -107,7 +107,8 @@ export function useHistoryPrefetch(): void {
   useEffect(() => onArrive((db) => prefetchHistory(db, new Date())), []);
 }
 
-export type SyncTrigger = 'first' | 'pull' | 'retry';
+/** `catchup` is the quiet sync on open. It slides nothing in and shows nothing unless it fails. */
+export type SyncTrigger = 'first' | 'catchup' | 'pull' | 'retry';
 
 /**
  * Rows that slide in once: those newer than `after`, and the row `added`. The list reads this one store, so a
@@ -193,7 +194,8 @@ export function useSync(db: Db, newest: MaskedRow | undefined) {
     },
     onSuccess: async (summary, trigger) => {
       const before = cursorOf(newest);
-      const slides = trigger !== 'first' && summary.received > 0 && before !== null;
+      const slides =
+        (trigger === 'pull' || trigger === 'retry') && summary.received > 0 && before !== null;
       if (slides) arrivals.setState({ after: before });
       await client.invalidateQueries({ queryKey: QK.tx });
       if (slides) setTimeout(() => arrivals.setState({ after: null }), DUR.enter);

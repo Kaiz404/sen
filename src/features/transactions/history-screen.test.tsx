@@ -10,7 +10,7 @@ import { toast } from '@/components/toast';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
-import { readSyncState } from '@/services/sync';
+import { readSyncState, sync } from '@/services/sync';
 import * as syncService from '@/services/sync';
 import * as txRepo from '@/services/tx-repo';
 
@@ -386,4 +386,28 @@ test('a refresh that throws over a list is a banner with its own copy and no rev
   expect(screen.queryByText('Simulated · Change in Settings')).not.toBeOnTheScreen();
   expect(screen.getByText('Tealive')).toBeOnTheScreen();
   run.mockRestore();
+});
+
+const loadedRows = () =>
+  queryClient
+    .getQueriesData<{ pages: { rows: unknown[] }[] }>({ queryKey: ['tx', 'pages'] })
+    .flatMap(([, data]) => data?.pages ?? [])
+    .reduce((n, page) => n + page.rows.length, 0);
+
+test('opening History after an interrupted first sync quietly pulls the rest', async () => {
+  const real = bank.under({ next: 'normal', size: 20, slow: false, newOnRefresh: false });
+  let pages = 0;
+  const interrupted = {
+    fetchPage: async (request: Parameters<typeof real.fetchPage>[0]) =>
+      ++pages > 1 ? ({ ok: false, error: { kind: 'offline' } } as const) : real.fetchPage(request),
+  };
+  await sync(mockDb, interrupted, { pageSize: 5 });
+  expect((await readSyncState(mockDb)).cursor).toBe(5);
+
+  await renderHistory();
+
+  await waitFor(async () => expect((await readSyncState(mockDb)).cursor).toBe(20), LONG);
+  await waitFor(() => expect(loadedRows()).toBe(20), LONG);
+  expect(screen.queryByTestId('sync-banner')).not.toBeOnTheScreen();
+  expect(screen.queryByText(/Updated just now/)).not.toBeOnTheScreen();
 });
