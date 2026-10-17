@@ -203,7 +203,10 @@ export function PullGap({
     if (status === 'loading') {
       releaseSenScroll();
       playMoment(SEN, 'refreshSpin');
-    } else if (status === 'landed') playMoment(SEN, 'refreshLand');
+    } else if (status === 'landed') {
+      // The moment buzzes at the touchdown. Without one, the landing still buzzes, once.
+      if (!playMoment(SEN, 'refreshLand')) playHaptic('refreshLanded');
+    }
     return () => stopMoment(SEN);
   }, [status]);
 

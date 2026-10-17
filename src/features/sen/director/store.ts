@@ -26,10 +26,11 @@ function run(c: Command): void {
   else rig.settle();
 }
 
-function dispatch(e: DirectorEvent): void {
+function dispatch(e: DirectorEvent): readonly Command[] {
   const [next, commands] = direct(state, e, (id) => MOMENTS[id]);
   state = next;
   commands.forEach(run);
+  return commands;
 }
 
 export function registerSen(sen: SenId, rig: RigHandle): () => void {
@@ -42,9 +43,18 @@ export function registerSen(sen: SenId, rig: RigHandle): () => void {
   };
 }
 
-/** Asks the director to play a moment on the Sen rendered with this `id`. */
-export function playMoment(sen: SenId, moment: MomentId): void {
-  dispatch({ type: 'request', sen, moment });
+/**
+ * Asks the director to play a moment on the Sen rendered with this `id`. Returns whether it plays, now or from
+ * the queue. When it doesn't (a closed gate, a higher priority, no such Sen), the moment's own haptic marks
+ * never fire, so a caller that needs one plays it itself.
+ */
+export function playMoment(sen: SenId, moment: MomentId): boolean {
+  const commands = dispatch({ type: 'request', sen, moment });
+  const queued = state.queued;
+  return (
+    commands.some((c) => c.type === 'play' && c.sen === sen && c.moment === moment) ||
+    (queued?.sen === sen && queued.moment === moment)
+  );
 }
 
 /** Stops what this Sen plays or waits to play, such as a loop whose screen state has moved on. */

@@ -11,6 +11,7 @@ import { clearPrefs, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 
 import { HistoryScreen } from './history-screen';
+import { pullDown } from './pull/testing';
 
 let mockDb: OpenDb;
 
@@ -158,4 +159,25 @@ test('a History that unmounts mid-fling leaves Sen free to move on the next scre
   await at(780);
 
   expect(face()).toEqual([18, -10]);
+});
+
+const landedBuzzes = () => jest.mocked(playHaptic).mock.calls.filter(([h]) => h === 'refreshLanded');
+
+test('a pull buzzes once at the touchdown of the landing', async () => {
+  await renderHistory();
+  await act(() => pullDown());
+  await at(1500);
+
+  expect(landedBuzzes()).toHaveLength(1);
+});
+
+test('a pull whose landing is held by a scroll still buzzes once', async () => {
+  await renderHistory();
+  writePref('demo.slow', true);
+  await act(() => pullDown());
+  await fireEvent(screen.getByTestId('history-list'), 'scrollBeginDrag');
+  writePref('demo.slow', false);
+  for (let i = 0; i < 20; i++) await act(() => jest.advanceTimersByTime(1000));
+
+  expect(landedBuzzes()).toHaveLength(1);
 });
