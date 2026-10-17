@@ -310,9 +310,10 @@ function Source({ row }: { readonly row: MaskedRow }) {
     <View style={styles.source}>
       <View style={styles.sourceIcon(manual)}>
         <MaterialCommunityIcons
+          testID="source-icon"
           name={manual ? 'cellphone-lock' : 'bank-outline'}
           size={19}
-          color={theme.colors.onPastel}
+          color={manual ? theme.colors.onPastel : theme.colors.ink}
         />
       </View>
       <View style={styles.sourceText}>
