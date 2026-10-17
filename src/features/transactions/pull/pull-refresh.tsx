@@ -5,6 +5,7 @@ import {
   type RefObject,
   use,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -140,11 +141,15 @@ export function PullToRefresh({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idle, level]);
 
+  const settled = useRef(onSettled);
+  useEffect(() => {
+    settled.current = onSettled;
+  });
   useEffect(() => {
     if (status !== 'landed') return;
-    const timer = setTimeout(onSettled, LAND_MS);
+    const timer = setTimeout(() => settled.current(), LAND_MS);
     return () => clearTimeout(timer);
-  }, [status, onSettled]);
+  }, [status]);
 
   return (
     <PanRef value={panRef}>

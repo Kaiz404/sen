@@ -81,3 +81,14 @@ test('a pull is ignored while a refresh runs', async () => {
 
   expect(onRefresh).not.toHaveBeenCalled();
 });
+
+test('a re-render with a new onSettled does not restart the landing', async () => {
+  const onSettled = jest.fn();
+  const { rerender } = await render(<Pull status="landed" onSettled={() => onSettled()} />);
+
+  await act(() => jest.advanceTimersByTime(900));
+  await rerender(<Pull status="landed" onSettled={() => onSettled()} />);
+  await act(() => jest.advanceTimersByTime(LAND_MS - 900));
+
+  expect(onSettled).toHaveBeenCalledTimes(1);
+});
