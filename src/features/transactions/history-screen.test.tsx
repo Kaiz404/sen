@@ -124,6 +124,8 @@ test('bad rows are counted and never retried, and the good rows show', async () 
 
   expect(await screen.findByText("2 items couldn't be read", undefined, LONG)).toBeOnTheScreen();
   expect(screen.getByText('Tealive')).toBeOnTheScreen();
+  expect(requests).toHaveBeenCalledTimes(1);
+  requests.mockRestore();
 });
 
 test('an offline fault covers one refresh: the banner shows, the fault turns itself off, and Retry recovers', async () => {
@@ -175,7 +177,11 @@ test('a bank reset runs the first sync again, even after a first sync that faile
   await act(() => resetBank(mockDb));
 
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
-  expect(await readSyncState(mockDb)).toEqual({ cursor: 1000, syncedAt: expect.any(String) });
+  expect(await readSyncState(mockDb)).toEqual({
+    cursor: 1000,
+    syncedAt: expect.any(String),
+    complete: true,
+  });
 });
 
 test('a bank reset in the middle of a slow sync leaves only the new dataset, and History syncs it afresh', async () => {
@@ -431,6 +437,7 @@ test('opening History after an interrupted first sync quietly pulls the rest', a
   };
   await sync(mockDb, interrupted, { pageSize: 5 });
   expect((await readSyncState(mockDb)).cursor).toBe(5);
+  const requests = jest.spyOn(bank, 'under');
 
   await renderHistory();
 
@@ -438,4 +445,21 @@ test('opening History after an interrupted first sync quietly pulls the rest', a
   await waitFor(() => expect(loadedRows()).toBe(20), LONG);
   expect(screen.queryByTestId('sync-banner')).not.toBeOnTheScreen();
   expect(screen.queryByText(/Updated just now/)).not.toBeOnTheScreen();
+  expect(requests).toHaveBeenCalledTimes(1);
+  requests.mockRestore();
+});
+
+test('unlocking a finished history sends no bank request and leaves an armed fault armed', async () => {
+  await sync(mockDb, bank.under({ next: 'normal', size: 20, slow: false, newOnRefresh: false }));
+  writePref('demo.next', 'offline');
+  const requests = jest.spyOn(bank, 'under');
+
+  await renderHistory();
+
+  expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
+  await act(() => Promise.resolve());
+  expect(requests).not.toHaveBeenCalled();
+  expect(readPref('demo.next')).toBe('offline');
+  expect(screen.queryByTestId('sync-banner')).not.toBeOnTheScreen();
+  requests.mockRestore();
 });

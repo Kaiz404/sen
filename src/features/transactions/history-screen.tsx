@@ -91,13 +91,14 @@ export function HistoryScreen(): ReactNode {
   }, [unsynced, epoch, mutate]);
 
   const opened = useRef(false);
-  // A first sync cut short leaves a cursor, so only a pull would finish it. Like a bank app refreshing on
-  // open, History catches up once per mount, and the cursor and upsert make the rerun safe.
+  // A first sync cut short leaves a cursor but no end of feed, so only a pull would finish it. History
+  // catches up once per mount, and only then: an ordinary unlock sends no request. The cursor and upsert make
+  // the rerun safe.
   useEffect(() => {
-    if (data.synced === undefined || opened.current) return;
+    if (data.interrupted === undefined || opened.current) return;
     opened.current = true;
-    if (data.synced) mutate('catchup');
-  }, [data.synced, mutate]);
+    if (data.interrupted) mutate('catchup');
+  }, [data.interrupted, mutate]);
 
   useEffect(() => {
     if (takeDraftDropped())

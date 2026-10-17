@@ -88,15 +88,31 @@ function readItems(items: readonly unknown[]): ReadPage {
   return { rows, skipped: items.length - rows.length, lastSeq };
 }
 
+/** Set in the transaction that commits the feed's last page, and cleared by `resetBankRows`. */
+const FEED_END_KEY = 'bank.feedEnd';
+
 const SyncStateRows = z.tuple([
-  z.object({ cursor: z.number().int().nonnegative(), synced_at: InstantSchema.nullable() }),
+  z.object({
+    cursor: z.number().int().nonnegative(),
+    synced_at: InstantSchema.nullable(),
+    feed_end: z.union([z.literal(0), z.literal(1)]),
+  }),
 ]);
 
-export type SyncState = { readonly cursor: number; readonly syncedAt: Instant | null };
+export type SyncState = {
+  readonly cursor: number;
+  readonly syncedAt: Instant | null;
+  /** A sync has read the feed to its last page since the last reset. A cursor without this is a cut-short first sync. */
+  readonly complete: boolean;
+};
 
 export async function readSyncState(db: Db): Promise<SyncState> {
-  const [row] = SyncStateRows.parse(await db.all('SELECT cursor, synced_at FROM sync_state'));
-  return { cursor: row.cursor, syncedAt: row.synced_at };
+  const [row] = SyncStateRows.parse(
+    await db.all(
+      `SELECT cursor, synced_at, EXISTS (SELECT 1 FROM meta WHERE key = '${FEED_END_KEY}') AS feed_end FROM sync_state`,
+    ),
+  );
+  return { cursor: row.cursor, syncedAt: row.synced_at, complete: row.feed_end === 1 };
 }
 
 /** Bumped by every `resetBankRows`. A sync commits a page only while it still reads the value it started with. */
@@ -162,6 +178,8 @@ export async function sync(
       if ((await readGeneration(tx)) !== generation) return false;
       await upsertBankRows(tx, read.rows);
       await tx.run('UPDATE sync_state SET cursor = ?, synced_at = ? WHERE id = 1', [next, now()]);
+      if (page.data.nextSeq === null)
+        await tx.run(`INSERT OR IGNORE INTO meta (key, value) VALUES ('${FEED_END_KEY}', '1')`);
       return true;
     });
     if (!committed) {
@@ -192,6 +210,7 @@ export async function resetBankRows(db: Db): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.run("DELETE FROM tx WHERE source = 'bank'");
     await tx.run('UPDATE sync_state SET cursor = 0, synced_at = NULL WHERE id = 1');
+    await tx.run(`DELETE FROM meta WHERE key = '${FEED_END_KEY}'`);
     await tx.run(
       `INSERT INTO meta (key, value) VALUES ('${GENERATION_KEY}', '1')
         ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)`,

@@ -512,6 +512,20 @@ The phases are in [PLAN.md](PLAN.md).
 - **The owner's change.** The key stays a loud 60 × 60 "+" at every scroll position, with no "Add" word. The board's grow and shrink on scroll is dropped. The label "Add a transaction" is the name TalkBack and the flows use.
 - **With the toast.** Material lifts a FAB above a snackbar, so the key rises with the undo toast on the toast's own timing instead of hiding under it. A toast is one line plus a bar, so the lift is a fixed 92 pt. A two-line detail would still clear it by about 6 pt (inferred from the font sizes).
 
+## D34. History catches up only a cut-short first sync
+
+**Compared.**
+- Catch up on every History mount that has a cursor.
+- Catch up when the cursor is above 0 and the feed's end was never reached.
+- Add a `first_sync_done` column to `sync_state`.
+
+**Chosen.** The second, with the end of the feed kept as a `meta` key (`bank.feedEnd`).
+- **Why not every mount.** Every unlock then sent a bank request. That used up a reviewer's armed one-shot fault early, added a `newOnRefresh` row with no slide-in, and held Settings on "Syncing…". The gap the audit named is an interrupted first sync that never resumes, and only that needs a request.
+- **Why a `meta` key.** The sync commits the key in the same transaction as the last page and its cursor, so the flag and the data cannot disagree. `resetBankRows` deletes it with the rows. A column would need a migration for one boolean.
+- **Existing installs.** A database that finished before this change has a cursor and no key. It catches up once, the feed's last page sets the key, and later unlocks send nothing.
+
+**Cost.** A feed that grows after the last page leaves the key set, so only a pull fetches the new rows, as before.
+
 ## D35. Pull to refresh: a custom pan, with the platform control as the fallback
 
 **Compared.**

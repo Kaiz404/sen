@@ -70,7 +70,27 @@ test('a full sync stores every row once and saves the cursor and time', async ()
   expect(result).toEqual(ok({ received: 1000, cursor: 1000 }));
   expect(progress).toEqual([500, 1000]);
   expect(await count(db)).toBe(1000);
-  expect(await readSyncState(db)).toEqual({ cursor: 1000, syncedAt: LATER });
+  expect(await readSyncState(db)).toEqual({ cursor: 1000, syncedAt: LATER, complete: true });
+});
+
+test('a sync that stops short leaves the feed incomplete, the next one finishes it, and a reset clears it', async () => {
+  const db = await freshDb();
+  const real = mockBank({ size: 20 });
+  let pages = 0;
+  const interrupted: BankApi = {
+    fetchPage: async (request) =>
+      ++pages > 1 ? { ok: false, error: { kind: 'offline' } } : real.fetchPage(request),
+  };
+
+  await sync(db, interrupted, { ...options, pageSize: 5 });
+  const cut = await readSyncState(db);
+  await sync(db, real, options);
+  const done = await readSyncState(db);
+  await resetBankRows(db);
+
+  expect([cut.cursor, cut.complete]).toEqual([5, false]);
+  expect([done.cursor, done.complete]).toEqual([20, true]);
+  expect((await readSyncState(db)).complete).toBe(false);
 });
 
 test('sync twice and sync interrupted end with the same table hash', async () => {
@@ -234,7 +254,7 @@ test('a dataset switch drops bank rows and the cursor, keeps added rows, and syn
   const emptied = [await count(db), await readSyncState(db)];
   const result = await sync(db, mockBank({ size: 20 }), options);
 
-  expect(emptied).toEqual([1, { cursor: 0, syncedAt: null }]);
+  expect(emptied).toEqual([1, { cursor: 0, syncedAt: null, complete: false }]);
   expect(result).toEqual(ok({ received: 20, cursor: 20 }));
   expect([await count(db, "source = 'bank'"), await count(db, "source = 'manual'")]).toEqual([
     20, 1,
@@ -257,7 +277,10 @@ test('a reset that lands while the first page is in flight keeps that page out o
   await resetting;
 
   expect(stale).toEqual(ok({ received: 0, cursor: 0 }));
-  expect([await count(db), await readSyncState(db)]).toEqual([0, { cursor: 0, syncedAt: null }]);
+  expect([await count(db), await readSyncState(db)]).toEqual([
+    0,
+    { cursor: 0, syncedAt: null, complete: false },
+  ]);
   expect(await sync(db, mockBank({ size: 20 }), options)).toEqual(ok({ received: 20, cursor: 20 }));
 });
 

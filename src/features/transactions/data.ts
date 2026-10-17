@@ -307,6 +307,10 @@ export function useHistoryData(db: Db, { filter, month, today, hidden }: History
       void syncState.refetch();
     },
     synced: syncState.data === undefined ? undefined : syncState.data.cursor > 0,
+    interrupted:
+      syncState.data === undefined
+        ? undefined
+        : syncState.data.cursor > 0 && !syncState.data.complete,
     syncedAt: syncState.data?.syncedAt ?? null,
     monthTotals: monthTotals.data,
     results: searching ? results.data : undefined,
