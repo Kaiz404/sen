@@ -13,7 +13,7 @@ Expo SDK 57 (`expo@57.0.28`), React Native 0.86.3 on the New Architecture, React
 
 | Need | Package | Version | Notes |
 | --- | --- | --- | --- |
-| Navigation | `expo-router` | ~57.0.26 | Native stack, `Stack.Protected`, form sheets as routes (D9) |
+| Navigation | `expo-router` | ~57.0.26 | Native stack, `Stack.Protected`, form sheets as routes (D9), styled by `sheetOptions` in the root layout (D38) |
 | Database | `expo-sqlite` with `useSQLCipher` | ~57.0.4 | Encrypted at rest (D1) |
 | Preferences | `react-native-mmkv` + `react-native-nitro-modules` | 4.3.x / ≥ 0.37.1 | Not sensitive. Synchronous read for the theme |
 | Styling | `react-native-unistyles` | 3.x | Typed tokens, theme switch without re-renders (D8) |
@@ -775,7 +775,7 @@ Sen has no server. Everything it protects is on the phone.
 | --- | --- | --- | --- | --- |
 | T1 | Someone holding the unlocked phone | Lock on launch, protected routes, step-up for every write, idle lock, re-lock after background | `app/_layout.tsx`, `features/auth/` | Kill and reopen: Lock. Delete: Face ID every time |
 | T2 | Shoulder surfing | Masked by default. Showing needs biometrics. Idle and re-lock windows still lock the app | `features/transactions/` | Coins until a biometric check |
-| T3 | App switcher snapshot | iOS: the privacy cover on `inactive` (not while the Face ID sheet is up) and on `background`, over the secure canvas from T4. The delete sheet and the add flow carry their own cover. Android: FLAG_SECURE blanks recents, so no JS cover | `features/security/privacy-cover.tsx` | Open recents |
+| T3 | App switcher snapshot | iOS: the privacy cover on `inactive` (not while the Face ID sheet is up) and on `background`, over the secure canvas from T4. The delete sheet and the add flow carry their own cover. Android: FLAG_SECURE blanks recents, so no JS cover. A formSheet shares the activity window on react-native-screens 4.26.2, so it inherits the flag (D30 finding, release-APK check pending) | `features/security/privacy-cover.tsx` | Open recents |
 | T4 | Screenshots and recording | `preventScreenCaptureAsync` for the whole app in release builds: FLAG_SECURE (Android), secure canvas (iOS 13+). Retried on foreground after a native failure. An Activity recreation re-engages it through unmount and remount. Off in dev builds so agents can screenshot | `features/security/screen-guard.ts` | Screenshot in the release APK: blocked |
 | T5 | Malicious or malformed input | Custom keypad, integer sen, zod limits, sanitiser | `features/add/`, `models/draft.ts`, `services/sanitize.ts` | Paste RTL marks: stripped |
 | T6 | Tampered or corrupt data | zod on every read, drop and count, reset on an unreadable database | `services/tx-repo.ts` | Reviewer control "Bad data" |

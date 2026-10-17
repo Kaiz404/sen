@@ -50,6 +50,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D33 | Adding a transaction | A floating Add key on History, no bar |
 | D34 | Catching up | History finishes only a cut-short first sync, so ordinary unlocks send nothing |
 | D35 | Pull to refresh | A custom pan with Sen in the gap. `RefreshControl` is the fallback |
+| D38 | Bottom sheets | Keep the expo-router native formSheet and tune it: 30 corners, iOS grabber, a drawn handle on Android |
 
 ---
 
@@ -509,6 +510,8 @@ The phases are in [PLAN.md](PLAN.md).
 
 **Watch out.** react-native-screens presents formSheet and fullScreenModal above the root view, so the root cover does not hide them. The delete sheet and the add flow show amounts, so each mounts its own `PrivacyCover`. The other sheets show no amounts. Changing the plugin needs `expo prebuild` and a native build.
 
+**Finding 2026-10-17: sheet windows.** On react-native-screens 4.26.2 a formSheet is a `ScreenStackFragment` (`ScreenStack.kt:60-64`) that builds the sheet as a `CoordinatorLayout` with `BottomSheetBehavior` inside the activity's own window (`ScreenStackFragment.kt:186-238`). Only `ScreenModalFragment.kt:199` creates a `BottomSheetDialog`, and nothing creates that fragment. So the sheets share the activity window and inherit its FLAG_SECURE, and no patch is needed. To be verified by a release-APK screenshot with the Delete sheet open. `scripts/check-release-guard.sh` fails if `ScreenStack.kt` stops mapping FORM_SHEET to `ScreenStackFragment`, because the sheets may then be a separate window and the FLAG_SECURE question must be rechecked.
+
 ## D31. Security activity log and erase
 
 **Compared.**
@@ -594,3 +597,16 @@ The phases are in [PLAN.md](PLAN.md).
 - The owner confirmed 60 s.
 
 **Not a failed try.** `timedOut` is not `mismatch` or `lockout`. It adds no "Too many tries" count, logs no `auth.failed`, never raises the blocked steer and never counts as a store fault, the same as a cancel. The view it replaces is kept underneath, so a cancel's rules hold: tries left after a wrong finger still count, an ended lockout still escalates to the block, and the off and weak views keep their settings key with the timeout line above. A running lockout, a block and a store failure stay as they were.
+
+## D38. Bottom sheets: keep the native formSheet and polish it
+
+**Found.** The sheets (Delete, Erase, Privacy, Sign out, Reset demo) already are native: expo-router `formSheet` routes (D9) on react-native-screens, a UISheetPresentationController on iOS and a `BottomSheetBehavior` in the activity window on Android (so they inherit FLAG_SECURE, see the D30 finding). The ask was a native look in the app's style.
+
+**Compared.**
+- **(a) `@expo/ui` BottomSheet.** First party, and `RNHostView` can host our views. But it is a component, not a route, so keeping D9's lock-closes-everything needs a wrapper route per sheet. The 57.0.23 and 57.0.24 changelogs still fix `RNHostView` touch and reanimated crashes, there is no corner-radius prop on Android, and it needs a Jest mock and a rebuild.
+- **(b) `@lodev09/react-native-true-sheet` 3.11.** In-window on Android, so it inherits FLAG_SECURE. Also a component (wrapper route), third-party, and a rebuild.
+- **(c) Keep the formSheet and tune it.** Chosen.
+
+**Chosen (c).** It is Expo's documented route, already a route under `Stack.Protected`, hardware back pops it, the labels reach Maestro as before, and it adds no dependency. The shared `sheetOptions` in `src/app/_layout.tsx` set 30 corners on both platforms (`sheetCornerRadius`, read by iOS and by Android in `ScreenStackFragment.kt:415-427`), an Android `sheetElevation`, the native grabber on iOS, and a `contentStyle` surface from the theme's `canvas` token. Android never reads `sheetGrabberVisible`, so `SheetSurface` (`src/components/sheet-surface.tsx`) draws a decorative Material 3 handle (32 x 4 dp, 22 dp top area, `inkMuted`, hidden from accessibility) on Android only. It also replaces the surface style each view repeated.
+
+**Watch out.** `SheetSurface` paints the `canvas` surface itself because the gallery and tests render the views outside the route. The board draws the sheet on `paper` with `canvas` rows, while the app has `canvas` sheets with `paper` rows, and this change keeps the app's version. Research and the constraint grid: `~/sen-pickup/p5/sheets-research.md`.

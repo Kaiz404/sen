@@ -395,6 +395,10 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - Returning after the "Lock again" window goes to Lock.
 - Idle past "Lock when idle" also goes to Lock.
 
+## Sheets
+
+Delete, Erase, Privacy, Sign out and Reset demo are native form sheets (D38), sized to content, with 30 corners on both platforms. iOS shows the native grabber. Android shows a drawn Material 3 handle (32 x 4 dp, decorative), because the native sheet has none. The surface is the theme's `canvas`, so dark mode follows the tokens. Hardware back and a drag down close a sheet.
+
 ## Settings
 
 Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The screen follows `SF-Settings`, with the changes listed under the table.
