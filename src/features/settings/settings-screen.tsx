@@ -295,6 +295,11 @@ function Reviewers({
           value={values['demo.next']}
           onChange={(v) => onPref('demo.next', v)}
         />
+        {values['demo.next'] === 'bad_data' && (
+          <Text style={styles.reviewersSub}>
+            Mixes 2 broken rows into the next request. Sen skips them and says so.
+          </Text>
+        )}
         <Text style={styles.note}>BACK TO NORMAL AFTER ONE REQUEST</Text>
         <Dash inset={false} />
         <View style={styles.dataset}>
@@ -310,6 +315,7 @@ function Reviewers({
         <SwitchRow
           compact
           title="Slow network, add 3 s"
+          sub="Once per refresh, so loading shows"
           value={values['demo.slow']}
           onChange={(v) => onPref('demo.slow', v)}
         />

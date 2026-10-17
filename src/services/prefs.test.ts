@@ -57,14 +57,14 @@ test('subscribers hear each write until they unsubscribe', () => {
 
 test('clearPrefs restores every default and tells subscribers about every key', () => {
   writePref('theme', 'dark');
-  writePref('demo.slow', true);
+  writePref('demo.slow', false);
   const heard: PrefKey[] = [];
   const stop = subscribePrefs((key) => heard.push(key));
 
   clearPrefs();
   stop();
 
-  expect([readPref('theme'), readPref('demo.slow')]).toEqual(['system', false]);
+  expect([readPref('theme'), readPref('demo.slow')]).toEqual(['system', true]);
   expect(heard).toEqual([
     'theme',
     'idleLock',

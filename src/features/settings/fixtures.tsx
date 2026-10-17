@@ -50,6 +50,13 @@ export const SETTINGS_STATES = {
       values={{ ...DEFAULTS, 'demo.next': 'offline', 'demo.slow': true }}
     />
   ),
+  'reviewers-bad-data': () => (
+    <SettingsView
+      {...BASE}
+      focus="reviewers"
+      values={{ ...DEFAULTS, 'demo.next': 'bad_data' }}
+    />
+  ),
   'reviewers-loading': () => (
     <SettingsView
       {...BASE}

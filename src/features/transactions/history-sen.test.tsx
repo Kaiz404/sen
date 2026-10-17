@@ -49,6 +49,7 @@ beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   jest.mocked(playHaptic).mockClear();
   clearPrefs();
+  writePref('demo.slow', false);
   sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);

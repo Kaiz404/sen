@@ -9,6 +9,7 @@ import { Text } from 'react-native';
 
 import { lockNow, showAmounts } from '@/features/auth';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { writePref } from '@/services/prefs';
 import * as Vault from '@/services/vault';
 
 jest.mock('react-native-gesture-handler', () => ({
@@ -49,6 +50,7 @@ const routes = Object.fromEntries(
 const rootLayout = jest.requireActual<typeof import('@/app/_layout')>('@/app/_layout');
 
 beforeEach(() => {
+  writePref('demo.slow', false);
   mockBroken = 'always';
   jest.spyOn(console, 'error').mockImplementation(() => undefined);
 });

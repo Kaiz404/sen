@@ -4,11 +4,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
-import { HistoryScreen } from '@/features/transactions';
+import { bank, HistoryScreen } from '@/features/transactions';
 import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
+import { holdLaterPages } from '@/services/testing/hold-later-pages';
 import { readSyncState } from '@/services/sync';
 
 import { SettingsScreen } from './settings-screen';
@@ -34,6 +35,7 @@ const LONG = { timeout: 4000 };
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   clearPrefs();
+  writePref('demo.slow', false);
   writePref('demo.datasetSize', 20);
   queryClient.clear();
   mockDb = await openTestDb();
@@ -107,6 +109,50 @@ test('Bad data: a pull keeps the good rows and counts two bad ones, and the next
   expect(screen.queryByText("2 items couldn't be read")).not.toBeOnTheScreen();
 });
 
+const SKIPPED_TWO = "2 items couldn't be read and were skipped. The rest is fine.";
+
+test('Bad data: the pull raises a dismissible notice at the top with the count, and it hides itself', async () => {
+  await renderBoth();
+  await pick('Bad data');
+  expect(screen.queryByTestId('skipped-notice')).not.toBeOnTheScreen();
+
+  await pull();
+
+  expect(await screen.findByText(SKIPPED_TWO, undefined, LONG)).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Got it' }));
+  expect(screen.queryByText(SKIPPED_TWO)).not.toBeOnTheScreen();
+
+  await act(() => jest.advanceTimersByTime(60_000));
+  await pick('Bad data');
+  await pull();
+  expect(await screen.findByText(SKIPPED_TWO, undefined, LONG)).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(8000));
+  expect(screen.queryByText(SKIPPED_TWO)).not.toBeOnTheScreen();
+});
+
+test('a normal pull shows no skipped notice', async () => {
+  await renderBoth();
+
+  await pull();
+
+  expect(await screen.findAllByText('1 new', { exact: false }, LONG)).not.toHaveLength(0);
+  expect(screen.queryByTestId('skipped-notice')).not.toBeOnTheScreen();
+});
+
+test('Bad data on a first load raises the notice too, with one request carrying two bad rows', async () => {
+  writePref('demo.next', 'bad_data');
+  writePref('demo.datasetSize', 1000);
+
+  await render(
+    <QueryClientProvider client={queryClient}>
+      <HistoryScreen />
+    </QueryClientProvider>,
+  );
+
+  expect(await screen.findByText(SKIPPED_TWO, undefined, LONG)).toBeOnTheScreen();
+  expect((await readSyncState(mockDb)).cursor).toBe(1000);
+});
+
 test('Slow network holds a pull for 3 s, and turning it off lands the next pull at once', async () => {
   await renderBoth();
   await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
@@ -154,6 +200,7 @@ test('Offline before a dataset switch fails the first load full screen, and Retr
 });
 
 test('a dataset switch shows its progress line until the new rows are in', async () => {
+  const hold = holdLaterPages(bank);
   await renderBoth();
   await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
 
@@ -162,7 +209,7 @@ test('a dataset switch shows its progress line until the new rows are in', async
   expect(await screen.findByText('Loading 0 of 1,000 rows…', undefined, LONG)).toBeOnTheScreen();
   await act(() => jest.advanceTimersByTime(3000));
   expect(await screen.findByText('Loading 500 of 1,000 rows…', undefined, LONG)).toBeOnTheScreen();
-  await act(() => jest.advanceTimersByTime(3000));
+  hold.release();
 
   expect(
     await screen.findByText('Reloads the bank rows. Rows you added stay.', undefined, LONG),
@@ -171,6 +218,7 @@ test('a dataset switch shows its progress line until the new rows are in', async
 });
 
 test('a fault picked while a two-page load runs leaves that load whole, and the next pull takes it', async () => {
+  const hold = holdLaterPages(bank);
   await renderBoth();
   await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
   await fireEvent.press(screen.getByRole('radio', { name: '1k' }));
@@ -179,7 +227,7 @@ test('a fault picked while a two-page load runs leaves that load whole, and the 
   await pick('Server error 500');
   await act(() => jest.advanceTimersByTime(3000));
   expect(await screen.findByText('Loading 500 of 1,000 rows…', undefined, LONG)).toBeOnTheScreen();
-  await act(() => jest.advanceTimersByTime(3000));
+  hold.release();
 
   expect(
     await screen.findByText('Reloads the bank rows. Rows you added stay.', undefined, LONG),

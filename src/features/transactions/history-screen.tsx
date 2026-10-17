@@ -17,7 +17,7 @@ import {
   useDbResetNotice,
 } from '@/features/auth';
 import { senGate } from '@/features/sen';
-import { toAppError } from '@/models/errors';
+import { type AppError, toAppError } from '@/models/errors';
 import { malaysiaDay, toInstant } from '@/models/day';
 import { DUR } from '@/motion/tokens';
 import { playHaptic } from '@/services/haptics';
@@ -47,6 +47,7 @@ import { clockText } from './rows';
 import { HISTORY_SENS } from './sens';
 
 const PILL_MS = 2500;
+const SKIPPED_NOTICE_MS = 8000;
 
 const showsList = (body: HistoryBody) => body.kind === 'list' || body.kind === 'no-results';
 
@@ -131,6 +132,18 @@ export function HistoryScreen(): ReactNode {
     return () => clearTimeout(timer);
   }, [updated]);
 
+  // Any sync that skipped rows raises the notice: the first sync, a pull and a retry alike. Each failed sync
+  // is its own error object, so closing one notice leaves the next sync's notice to show.
+  const syncError = syncing.error;
+  const [closedError, setClosedError] = useState<AppError | null>(null);
+  const skippedNotice =
+    syncError?.kind === 'invalid_data' && syncError !== closedError ? syncError.skipped : null;
+  useEffect(() => {
+    if (skippedNotice === null) return;
+    const timer = setTimeout(() => setClosedError(syncError), SKIPPED_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [skippedNotice, syncError]);
+
   // The promise belongs to this call's own mutation, so a later `mutate` (the first sync after a bank reset)
   // cannot orphan it the way per-call callbacks are.
   const refresh = (trigger: 'pull' | 'retry') => {
@@ -203,6 +216,7 @@ export function HistoryScreen(): ReactNode {
       retrying={holding}
       retryFailures={retryFailures}
       skipped={notes.skipped + data.skipped}
+      skippedNotice={skippedNotice}
       notice={notice}
       pull={shownPull}
       arrival={arrival}
@@ -246,6 +260,7 @@ export function HistoryScreen(): ReactNode {
         onLock: lockNow,
         onOpen: (id) => router.push(`/transaction/${id}`),
         onDismissNotice: dismissDbResetNotice,
+        onDismissSkipped: () => setClosedError(syncError),
       }}
     />
   );

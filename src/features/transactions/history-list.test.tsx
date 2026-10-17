@@ -32,6 +32,7 @@ function List(props: Partial<HistoryViewProps>) {
       resultCounts={undefined}
       banner={null}
       skipped={0}
+      skippedNotice={null}
       notice={null}
       pull="idle"
       arrival={NO_ARRIVAL}

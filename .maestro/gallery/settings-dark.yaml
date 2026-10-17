@@ -25,6 +25,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: settings-reviewers-set-dark
+- openLink: "sen://dev/states?screen=settings&state=reviewers-bad-data&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-reviewers-bad-data-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-reviewers-bad-data-dark
 - openLink: "sen://dev/states?screen=settings&state=reviewers-loading&theme=dark"
 - extendedWaitUntil:
     visible:

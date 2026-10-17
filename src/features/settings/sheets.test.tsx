@@ -45,7 +45,7 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
   await sync(mockDb, createMockBank().under(size));
   writePref('demo.next', 'server');
   writePref('demo.datasetSize', 10000);
-  writePref('demo.slow', true);
+  writePref('demo.slow', false);
   writePref('demo.newOnRefresh', false);
   writePref('relockAfter', 0);
   await render(<ResetDemoSheet />);
@@ -59,7 +59,7 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
     readPref('demo.slow'),
     readPref('demo.newOnRefresh'),
     readPref('relockAfter'),
-  ]).toEqual(['normal', 1000, false, true, 0]);
+  ]).toEqual(['normal', 1000, true, true, 0]);
   expect(await bankRows()).toBe(0);
   expect((await readSyncState(mockDb)).cursor).toBe(0);
   expect(mockRouter.dismissTo).toHaveBeenCalledWith('/');
@@ -68,7 +68,7 @@ test('reset demo data puts every reviewer control back, keeps security choices, 
 test('a reset that fails changes nothing, says so, stays open, and can be tried again', async () => {
   writePref('demo.next', 'server');
   writePref('demo.datasetSize', 10000);
-  writePref('demo.slow', true);
+  writePref('demo.slow', false);
   await render(<ResetDemoSheet />);
   await mockDb.close();
 
@@ -80,7 +80,7 @@ test('a reset that fails changes nothing, says so, stays open, and can be tried 
   expect([readPref('demo.next'), readPref('demo.datasetSize'), readPref('demo.slow')]).toEqual([
     'server',
     10000,
-    true,
+    false,
   ]);
   expect(mockRouter.dismissTo).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Reset demo data' })).toBeEnabled();

@@ -30,7 +30,7 @@ const TABLE = {
   haptics: pref(z.boolean(), true),
   'demo.next': pref(z.enum(['normal', 'offline', 'timeout', 'server', 'bad_data']), 'normal'),
   'demo.datasetSize': pref(z.union([z.literal(20), z.literal(1000), z.literal(10000)]), 1000),
-  'demo.slow': pref(z.boolean(), false),
+  'demo.slow': pref(z.boolean(), true),
   'demo.newOnRefresh': pref(z.boolean(), true),
 } as const;
 

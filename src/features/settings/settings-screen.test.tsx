@@ -75,6 +75,7 @@ const checked = (role: 'radio' | 'switch', name: string) =>
 
 test('each reviewer control writes its pref, and the screen shows the new value', async () => {
   await renderSettings();
+  expect(checked('switch', 'Slow network, add 3 s')).toBe(true);
 
   await fireEvent.press(screen.getByRole('radio', { name: 'Server error 500' }));
   await fireEvent.press(screen.getByRole('switch', { name: 'Slow network, add 3 s' }));
@@ -82,12 +83,12 @@ test('each reviewer control writes its pref, and the screen shows the new value'
 
   expect([readPref('demo.next'), readPref('demo.slow'), readPref('demo.newOnRefresh')]).toEqual([
     'server',
-    true,
+    false,
     false,
   ]);
   expect(checked('radio', 'Server error 500')).toBe(true);
   expect(checked('radio', 'Normal')).toBe(false);
-  expect(checked('switch', 'Slow network, add 3 s')).toBe(true);
+  expect(checked('switch', 'Slow network, add 3 s')).toBe(false);
 });
 
 test('a dataset switch that fails keeps the old size and says the rows are as they were', async () => {

@@ -390,7 +390,7 @@ Sample data used on the boards: Everyday Savings ·· 4821, 1 to 15 October. Row
 - **First load fails.** Full-screen error with Sen and the plug, and Retry.
 - **Refresh fails.** The cached list stays, with an offline banner.
 - **Timeout and server errors.** Each has its own copy.
-- **Bad data.** Valid rows stay, with a skipped count.
+- **Bad data.** Valid rows stay. After a sync that skipped rows, a notice floats over the top of the list, where the Updated pill shows: "2 items couldn't be read and were skipped. The rest is fine." with a Got it key. It hides itself after 8 s and never blocks. The skipped count also stays as a note under the filters until the next sync.
 - **Stale detail.** "This transaction isn't here any more."
 - **Simulated.** Every bank failure comes from a reviewer control, because the in-app bank never fails on its own. The banner's second line reads "Simulated · Change in Settings", and the full error's caption ends in "· SIMULATED" above its "Reviewer settings" link. Both open Settings at the reviewer controls. A fault lasts one request, so Retry recovers.
 
@@ -416,9 +416,9 @@ Preferences live in plain MMKV (`prefs`). Nothing sensitive is stored there. The
 | Security | Fingerprint (or the phone's own biometric) for adding and deleting | Always on (info row) | | |
 | Sen | Sen's animations | Full · Calm · Off, with a still Sen and one line for each. System Reduce Motion forces Calm | Full | `senMotion` |
 | Sen | Haptics | Switch | On | `haptics` |
-| For reviewers | Next history request | Normal · Offline · Timeout (8 s) · Server error 500 · Bad data. One-shot: back to Normal after one request | Normal | `demo.next` |
+| For reviewers | Next history request | Normal · Offline · Timeout (8 s) · Server error 500 · Bad data. One-shot: back to Normal after one request. With Bad data picked, the line "Mixes 2 broken rows into the next request. Sen skips them and says so." shows | Normal | `demo.next` |
 | For reviewers | Dataset size | 20 · 1k · 10k. Reloads bank rows only. The second line reads "Loading 1,500 of 10,000 rows…" while they load | 1k | `demo.datasetSize` |
-| For reviewers | Slow network, add 3 s | Switch | Off | `demo.slow` |
+| For reviewers | Slow network, add 3 s | Switch, with the line "Once per refresh, so loading shows". The 3 s is added once per sync or refresh, not per page. Owner override 2026-10-17: on by default, for the demo | On | `demo.slow` |
 | For reviewers | New transaction on refresh | Switch | On | `demo.newOnRefresh` |
 | For reviewers | Reset demo data | Sheet with confirm | | |
 | Account | Lock now | Key | | |

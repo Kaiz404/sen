@@ -49,6 +49,7 @@ const SEEDED = generateBankRows(20, NOW.toISOString() as never);
 beforeEach(async () => {
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   clearPrefs();
+  writePref('demo.slow', false);
   sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);

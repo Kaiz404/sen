@@ -538,7 +538,47 @@ export function NoteLine({
   );
 }
 
+/**
+ * Floats over the top of the list after a sync that skipped rows it couldn't read, so the reviewer sees it
+ * where the sync ran. Informational: the rest of the data is fine, and it dismisses itself.
+ */
+export function SkippedNotice({
+  count,
+  onDismiss,
+}: {
+  readonly count: number;
+  readonly onDismiss: () => void;
+}): ReactNode {
+  const { theme } = useUnistyles();
+  const text =
+    count === 1
+      ? "1 item couldn't be read and was skipped. The rest is fine."
+      : `${count} items couldn't be read and were skipped. The rest is fine.`;
+  return (
+    <View testID="skipped-notice" accessibilityLiveRegion="polite" style={styles.skipped}>
+      <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.colors.inkMuted} />
+      <Text style={[styles.skippedText, { color: theme.colors.ink }]}>{text}</Text>
+      <Key tone="outline" label="Got it" onPress={onDismiss} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create((theme, rt) => ({
+  skipped: {
+    position: 'absolute',
+    top: 10,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: theme.colors.rule,
+    backgroundColor: theme.colors.paper,
+  },
+  skippedText: { flex: 1, fontSize: 13, fontWeight: '600' },
   header: (inset: boolean) => ({
     flexDirection: 'row',
     alignItems: 'center',

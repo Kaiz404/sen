@@ -26,6 +26,7 @@ import {
   NoteLine,
   ResultLine,
   SearchAndFilter,
+  SkippedNotice,
   SyncBanner,
   TxRow,
 } from './parts';
@@ -52,6 +53,7 @@ export type HistoryActions = {
   readonly onLock: () => void;
   readonly onOpen: (id: TxId) => void;
   readonly onDismissNotice: () => void;
+  readonly onDismissSkipped: () => void;
 };
 
 export type HistoryViewProps = {
@@ -68,6 +70,8 @@ export type HistoryViewProps = {
   /** Retries from the full error that have failed. */
   readonly retryFailures?: number;
   readonly skipped: number;
+  /** How many rows the sync just finished couldn't read, while its notice shows. */
+  readonly skippedNotice: number | null;
   readonly notice: DbResetReason | null;
   /** The pull gesture's state: the bank being asked, or its data back. */
   readonly pull: PullStatus;
@@ -245,6 +249,9 @@ export function HistoryView(props: HistoryViewProps): ReactNode {
                 />
               )}
             </PullToRefresh>
+            {props.skippedNotice !== null && (
+              <SkippedNotice count={props.skippedNotice} onDismiss={actions.onDismissSkipped} />
+            )}
             {props.updated !== null && (
               <View pointerEvents="none" accessibilityLiveRegion="polite" style={styles.pill}>
                 <Sen pose="happy" size={22} />

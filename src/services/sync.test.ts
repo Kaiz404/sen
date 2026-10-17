@@ -201,6 +201,18 @@ test('bad rows are dropped and counted, and the good rows are kept', async () =>
   expect([await count(db), (await readSyncState(db)).cursor]).toEqual([20, 20]);
 });
 
+test('a paged sync under bad data counts the two bad rows once', async () => {
+  const db = await freshDb();
+
+  const result = await sync(db, mockBank({ next: 'bad_data', size: 1000 }), {
+    ...options,
+    pageSize: 500,
+  });
+
+  expect(result).toEqual({ ok: false, error: { kind: 'invalid_data', skipped: 2 } });
+  expect(await count(db)).toBe(1000);
+});
+
 test('a body that is not a page, or a page that never moves the cursor, is a server error', async () => {
   const db = await freshDb();
   const garbage: BankApi = { fetchPage: async () => ok('<html>502</html>') };

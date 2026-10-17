@@ -1,4 +1,4 @@
-# Reset demo data: arm a fault and slow mode, then reset. The sheet confirms, History reloads the sample
+# Reset demo data: arm a fault and switch slow mode off, then reset. The sheet confirms, History reloads the sample
 # rows, and every reviewer control reads its default again.
 appId: com.kaiz404.sen
 ---
@@ -34,4 +34,7 @@ appId: com.kaiz404.sen
       checked: true
     direction: DOWN
     centerElement: true
+- assertVisible:
+    text: Slow network, add 3 s
+    checked: true
 - takeScreenshot: reviewer-reset-controls

@@ -1,6 +1,7 @@
 export { HISTORY_STATES } from './fixtures';
 export {
   arrivals,
+  bank,
   markArrival,
   resetBank,
   type SyncProgress,

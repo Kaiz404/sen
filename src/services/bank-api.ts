@@ -126,30 +126,45 @@ export function createMockBank(
     (state.read().minted[String(size)] ?? []).map((m) => mintRow(m.seq, m.postedAt, seed));
 
   return {
-    under: ({ next, size, slow, newOnRefresh }) => ({
-      async fetchPage({ since, limit }) {
-        if (slow) await wait(SLOW_MS);
-        const failure = FAILURE[next];
-        if (failure !== null) {
-          if (failure.afterMs > 0) await wait(failure.afterMs);
-          return err(failure.error);
-        }
+    under: ({ next, size, slow, newOnRefresh }) => {
+      // One `under` is one request, however many pages it takes. Slow mode and bad data act on its first page only,
+      // so a 1,000-row sync waits 3 s once and carries two broken rows once, not once per page.
+      let opening = true;
+      return {
+        async fetchPage({ since, limit }) {
+          const first = opening;
+          opening = false;
+          if (slow && first) await wait(SLOW_MS);
+          const failure = FAILURE[next];
+          if (failure !== null) {
+            if (failure.afterMs > 0) await wait(failure.afterMs);
+            return err(failure.error);
+          }
 
-        const rows = feed(size);
-        const refresh = since >= rows.length;
-        const fresh = refresh && newOnRefresh ? mintRow(since + 1, now(), seed) : null;
-        if (fresh !== null) remember(size, fresh);
-        const served = refresh ? (fresh === null ? [] : [fresh]) : rows.slice(since, since + limit);
-        const items = next === 'bad_data' ? [...served, ...BAD_ROWS] : served;
-        // Only a refresh reports postings, so a first sync shows the board's pending rows as sent.
-        const modified = refresh
-          ? settledBy(
-              [...rows.filter((row) => row.status === 'pending'), ...mintedRows(size)],
-              now(),
-            )
-          : [];
-        return ok({ items, modified, nextSeq: since + limit < rows.length ? since + limit : null });
-      },
-    }),
+          const rows = feed(size);
+          const refresh = since >= rows.length;
+          const fresh = refresh && newOnRefresh ? mintRow(since + 1, now(), seed) : null;
+          if (fresh !== null) remember(size, fresh);
+          const served = refresh
+            ? fresh === null
+              ? []
+              : [fresh]
+            : rows.slice(since, since + limit);
+          const items = next === 'bad_data' && first ? [...served, ...BAD_ROWS] : served;
+          // Only a refresh reports postings, so a first sync shows the board's pending rows as sent.
+          const modified = refresh
+            ? settledBy(
+                [...rows.filter((row) => row.status === 'pending'), ...mintedRows(size)],
+                now(),
+              )
+            : [];
+          return ok({
+            items,
+            modified,
+            nextSeq: since + limit < rows.length ? since + limit : null,
+          });
+        },
+      };
+    },
   };
 }

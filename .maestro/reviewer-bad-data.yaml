@@ -1,4 +1,4 @@
-# Reviewer control "Bad data": a pull keeps the good rows and says two couldn't be read. The next pull is
+# Reviewer control "Bad data": a pull keeps the good rows and says at the top that two couldn't be read. The next pull is
 # clean again and Settings reads Normal.
 appId: com.kaiz404.sen
 ---
@@ -15,6 +15,7 @@ appId: com.kaiz404.sen
 - extendedWaitUntil:
     visible: 2 items couldn't be read
     timeout: 15000
+- assertVisible: 2 items couldn't be read and were skipped. The rest is fine.
 - takeScreenshot: reviewer-bad-data
 - swipe:
     start: 50%, 35%

@@ -29,6 +29,7 @@ export const NO_ACTIONS: HistoryActions = {
   onLock: noop,
   onOpen: noop,
   onDismissNotice: noop,
+  onDismissSkipped: noop,
 };
 
 const list = (rows: readonly MaskedRow[]): HistoryBody => ({
@@ -46,6 +47,7 @@ const BASE: HistoryViewProps = {
   resultCounts: undefined,
   banner: null,
   skipped: 0,
+  skippedNotice: null,
   notice: null,
   pull: 'idle',
   arrival: NO_ARRIVAL,
@@ -137,7 +139,7 @@ export const HISTORY_STATES = {
   unreadable: () => (
     <HistoryView {...BASE} body={{ kind: 'failed', error: { kind: 'unreadable' } }} />
   ),
-  'bad-data': () => <HistoryView {...BASE} skipped={2} />,
+  'bad-data': () => <HistoryView {...BASE} skipped={2} skippedNotice={2} />,
   'db-reset': () => <HistoryView {...BASE} notice="missing_key" />,
   refreshing: () => <HistoryView {...BASE} pull="loading" pullStill />,
   updated: () => <HistoryView {...BASE} updated={1} />,

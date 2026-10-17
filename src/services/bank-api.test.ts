@@ -132,6 +132,25 @@ test('slow mode waits 3 s before answering', async () => {
   expect([slow.waits, fast.waits]).toEqual([[3000], []]);
 });
 
+test('"bad_data" mixes its two broken rows into the request once, not into every page', async () => {
+  const { api } = bank({ next: 'bad_data', size: 1000 });
+
+  const first = await page(api, 0, 500);
+  const second = await page(api, 500, 500);
+
+  expect([first.items.length, second.items.length]).toEqual([502, 500]);
+});
+
+test('slow mode adds its 3 s once per request, not once per page', async () => {
+  const slow = bank({ slow: true });
+
+  await slow.api.fetchPage({ since: 0, limit: 10 });
+  await slow.api.fetchPage({ since: 10, limit: 10 });
+  await slow.api.fetchPage({ since: 20, limit: 10 });
+
+  expect(slow.waits).toEqual([3000]);
+});
+
 test('the feed is generated once, so a page fetched a day later still matches', async () => {
   const clock = { now: NOW };
   const { api } = bank({ size: 20 }, clock);

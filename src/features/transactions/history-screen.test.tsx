@@ -12,6 +12,7 @@ import { openTestDb } from '@/services/db/testing/node-adapter';
 import { playHaptic } from '@/services/haptics';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
+import { holdLaterPages } from '@/services/testing/hold-later-pages';
 import { readSyncState, sync } from '@/services/sync';
 import * as syncService from '@/services/sync';
 import * as txRepo from '@/services/tx-repo';
@@ -57,6 +58,7 @@ beforeEach(async () => {
   mockNotice = null;
   mockDropped.length = 0;
   clearPrefs();
+  writePref('demo.slow', false);
   sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
   writePref('demo.newOnRefresh', false);
@@ -191,6 +193,7 @@ test('a bank reset in the middle of a slow sync leaves only the new dataset, and
   writePref('demo.datasetSize', 1000);
   writePref('demo.slow', true);
   writePref('demo.newOnRefresh', true);
+  const hold = holdLaterPages(bank);
   await renderHistory();
   await waitFor(async () => expect((await readSyncState(mockDb)).cursor).toBe(500), LONG);
 
@@ -198,7 +201,7 @@ test('a bank reset in the middle of a slow sync leaves only the new dataset, and
   writePref('demo.slow', false);
   await act(() => resetBank(mockDb));
   expect(await screen.findByText('Tealive', undefined, LONG)).toBeOnTheScreen();
-  await act(() => jest.advanceTimersByTime(3000));
+  await act(async () => hold.release());
   await waitFor(() => expect(syncProgress.getState().progress).toBeNull());
 
   const ids = await mockDb.all("SELECT id FROM tx WHERE source = 'bank' ORDER BY id");
