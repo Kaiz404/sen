@@ -2,12 +2,13 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Bone } from '@/components/bone';
 import { Key } from '@/components/key';
 import { ReceiptSlip, SlipRule } from '@/components/receipt-slip';
+import { ScrollView } from '@/components/scroll-view';
 import {
   type AuthFailure,
   BIOMETRIC,

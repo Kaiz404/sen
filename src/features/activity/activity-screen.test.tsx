@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import type { StepUpResult } from '@/features/auth';
 import { activity, readActivity } from '@/services/activity-log';
@@ -66,6 +67,14 @@ async function seed() {
   activity.record(mockDb, { code: 'auth.failed', reason: 'mismatch' });
   await activity.settled();
 }
+
+test('the log clears the status bar at the top and the gesture bar at the end', async () => {
+  await open();
+  expect(StyleSheet.flatten(screen.getByTestId('activity').props.contentContainerStyle)).toMatchObject({
+    paddingTop: 48 + 16,
+    paddingBottom: 34 + 24,
+  });
+});
 
 test('the log reads as day slips with the words, the description and the time, and no amount', async () => {
   await seed();

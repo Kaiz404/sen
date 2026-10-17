@@ -135,6 +135,31 @@ Placeholder screens render `StubScreen` from `src/features/stub/`, so no lane's 
 
 **Query client.** `services/query-client.ts` holds the one `QueryClient`, the `Register.defaultError = AppError` augmentation and the key roots `QK.tx` and `QK.revealed`.
 
+## Layout and insets
+
+Android draws every screen edge to edge from SDK 54 on, and apps that target Android 16 can't opt out ([Expo SDK 54](https://expo.dev/changelog/sdk-54-beta), [Android 16 changes](https://developer.android.com/about/versions/16/behavior-changes-16)). Each screen keeps its own content clear of the status bar, the display cutout, the gesture or three-button bar and the keyboard ([Expo › System bars](https://docs.expo.dev/develop/user-interface/system-bars/)).
+
+**The rule.** Insets come from Unistyles `rt.insets`, read inside `StyleSheet.create` and applied through a `style` prop or through `@/components/scroll-view`.
+- Unistyles updates a plain component's `style` natively. It doesn't update a plain ScrollView's `contentContainerStyle`, which keeps the value the sheet held when the bundle loaded ([Unistyles › Update 3rd party views](https://www.unistyl.es/v3/references/3rd-party-views/)). Settings, Activity and Detail lost their top and bottom insets that way on the phone. `ScrollView` from `@/components/scroll-view` is `withUnistyles(ScrollView)`, so its content padding follows the insets and the theme. Use it for any scroll screen whose content padding reads `rt`.
+- Insets are window-level. `rt.insets` reads `WindowInsetsCompat` on Android ([Unistyles › Edge to edge](https://www.unistyl.es/v3/references/edge-to-edge)).
+- Sen doesn't call `useSafeAreaInsets` or `SafeAreaView` from react-native-safe-area-context. expo-router still mounts its `SafeAreaProvider` for the libraries that need it. React Native's own `SafeAreaView` is iOS-only and deprecated since 0.81 ([RN 0.81](https://reactnative.dev/blog/2025/08/12/react-native-0.81)). One source of insets keeps every screen on the same numbers, and the stylesheet path needs no re-render.
+
+| Surface | Inset |
+| --- | --- |
+| A screen that draws its own header (History, Detail, Settings, Activity, the Add steps, Welcome, Lock, Primer, the error screen, the gallery) | `rt.insets.top` plus the board's gap on the header or scroll content |
+| A screen with keys or content at its foot | `rt.insets.bottom` plus the board's gap |
+| History's list end | `rt.insets.bottom + ADD_KEY_CLEARANCE` on the footer, so the last row clears the Add key and the bar |
+| The Add key, the toast | `bottom: rt.insets.bottom + 16` and `rt.insets.bottom + 24` |
+| The discard dialog, the iOS calendar sheet | `paddingBottom: rt.insets.bottom + 16` on the scrim |
+| Form sheets | `SheetSurface` pads `rt.insets.bottom + 20`. Android form sheets don't add the nav bar inset themselves ([react-native-screens #3580](https://github.com/software-mansion/react-native-screens/issues/3580)). Sheets take no top inset |
+| A form with a text field (Add details) | Adds `rt.insets.ime`. Edge to edge, the keyboard no longer shrinks the window (inferred from [Margelo › keyboard handling](https://margelo.com/blog/deep-dive-in-keyboard-handling)). On Android `ime` is the keyboard height less the nav bar ([Unistyles › Avoiding keyboard](https://www.unistyl.es/v3/guides/avoiding-keyboard)) |
+
+**Tests.** `jest.setup.ts` gives every test a 48 pt status bar and a 34 pt gesture bar, and models the device: a `style` prop and `withUnistyles` see the live insets, and a plain ScrollView's `contentContainerStyle` sees the zero insets of bundle start. `setInsets` from `src/theme/testing.ts` moves them, for example `ime` for a keyboard, for screens mounted after the call. `src/__tests__/safe-area.test.tsx` and the screen tests assert the offsets.
+
+**Open.**
+- History's search keyboard covers the last rows of a long result list until the keyboard closes.
+- No screen pads `rt.insets.left` or `right`. Sen is portrait only, but Android 16 ignores the orientation lock on large screens, where a side cutout can show (inferred).
+
 ## Models
 
 ```ts
@@ -826,6 +851,7 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | List `data` reference unchanged across reveal and hide | same |
 | Copy hands the reference, and only the reference, to the sensitive clipboard. A missing module or a native error reports a failed copy | `services/clipboard.test.ts`, `features/detail/detail-screen.test.tsx` |
 | Share receipt is offered only while shown and sends the board's plain text | `features/detail/detail-screen.test.tsx`, `features/detail/receipt.test.ts` |
+| Every screen and overlay clears the status bar, the gesture bar and, on Add details, the keyboard | `__tests__/safe-area.test.tsx`, `features/settings/settings-screen.test.tsx`, `features/activity/activity-screen.test.tsx`, `features/detail/detail-screen.test.tsx`, `features/add/day-picker.test.tsx` |
 | Detail: every field shows while hidden, and no amount is in the tree or the cache. A bad, missing or deleted id shows not found. A read that throws shows Retry | `features/detail/detail-screen.test.tsx`, `features/detail/receipt.test.ts` |
 | 10k rows mount fewer than 60 row components | `features/transactions/history-list.test.tsx` |
 | Every state and event pair, `signingOut` included. `LOCK` during `authenticating` is ignored, and during `stepUp` it waits for the prompt to end | `features/auth/machine.test.ts` |

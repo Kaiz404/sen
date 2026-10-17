@@ -49,6 +49,7 @@ Everything below is decided. Don't reopen it without the owner. Other options we
 - **Never auto-prompt biometrics on resume.** Guard every prompt with `isAuthenticatingRef`. Lock only on `background`.
 - **Randomness.** `expo-crypto` `getRandomValues` or `randomUUID`. Never `getRandomBytes` or `Math.random` for anything security-related.
 - **Styling.** Use semantic tokens from the Unistyles theme in `src/theme/`, never raw hex in screens. Touch targets are at least 44 pt.
+- **Safe areas.** Insets come from Unistyles `rt.insets` in `StyleSheet.create`, applied through a `style` prop. A scroll screen uses `ScrollView` from `@/components/scroll-view`, because Unistyles never updates a plain ScrollView's `contentContainerStyle`. Add `rt.insets.ime` under a text field. No `useSafeAreaInsets` (ARCHITECTURE › Layout and insets).
 - **Colours follow a live theme switch.** Text and icon colours come from `useUnistyles().theme` in render, as an inline style or `color` prop, never only from `StyleSheet.create`. Stylesheets hold type, layout and view fills. A stylesheet text colour under an animated view kept the old theme on the phone (ARCHITECTURE › Colours). Switch themes in tests with `applyTheme`.
 - **Motion.**
   - Reanimated on the UI thread.

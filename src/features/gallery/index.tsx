@@ -1,9 +1,10 @@
 import { Link, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useCallback, useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import { ScrollView } from '@/components/scroll-view';
 import { type AuthOverride, isAuthOverride, setAuthOverride } from '@/features/auth';
 import { Sen } from '@/features/sen';
 import { FrozenMotion } from '@/motion/policy';

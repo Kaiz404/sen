@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { Share } from 'react-native';
+import { Share, StyleSheet } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import { DayKeySchema, InstantSchema } from '@/models/day';
@@ -113,6 +113,15 @@ const cache = () =>
   );
 
 const fact = (label: string) => screen.getByText(label).parent;
+
+test('the receipt clears the status bar at the top and the gesture bar at the end', async () => {
+  await renderDetail(tnb);
+  expect(await screen.findByText('TNB electricity')).toBeOnTheScreen();
+  expect(StyleSheet.flatten(screen.getByTestId('detail').props.contentContainerStyle)).toMatchObject({
+    paddingTop: 48 + 18,
+    paddingBottom: 34 + 28,
+  });
+});
 
 test('while hidden the receipt shows every field but the amount, and no amount is in the tree or the cache', async () => {
   await renderDetail(tnb);

@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
-import { Platform, ScrollView } from 'react-native';
+import { Platform, ScrollView, StyleSheet } from 'react-native';
 
 import { toast, ToastHost } from '@/components/toast';
 import type { OpenDb } from '@/services/db';
@@ -146,6 +146,14 @@ test('Lock now locks through the session, which session.test covers', async () =
   await fireEvent.press(screen.getByRole('button', { name: 'Lock now' }));
 
   expect(mockLock).toHaveBeenCalledTimes(1);
+});
+
+test('the content clears the status bar at the top and the gesture bar at the end', async () => {
+  await renderSettings();
+  expect(StyleSheet.flatten(screen.getByTestId('settings').props.contentContainerStyle)).toMatchObject({
+    paddingTop: 48 + 16,
+    paddingBottom: 34 + 24,
+  });
 });
 
 test('opened at the reviewer controls, the screen scrolls there once and then leaves the scroll alone', async () => {

@@ -118,7 +118,7 @@ export function DiscardDialog({
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
   headerBlock: { gap: 14 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   spacer: { width: 46 },
@@ -148,6 +148,7 @@ const styles = StyleSheet.create((theme) => ({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
     padding: 16,
+    paddingBottom: rt.insets.bottom + 16,
   },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.colors.hero, opacity: 0.5 },
   dialog: {

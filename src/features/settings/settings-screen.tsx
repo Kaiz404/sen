@@ -1,11 +1,12 @@
 import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useRef } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { Platform, type ScrollView as NativeScrollView, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Key } from '@/components/key';
 import { ReceiptSlip } from '@/components/receipt-slip';
+import { ScrollView } from '@/components/scroll-view';
 import { toast } from '@/components/toast';
 import {
   type Biometric,
@@ -95,7 +96,7 @@ const CAPTURE_ROW = {
 const VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export function SettingsView({ values, actions, focus }: SettingsViewProps): ReactNode {
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<NativeScrollView>(null);
   const focused = useRef(false);
   const name = BIOMETRIC_NAME[values.biometric];
   const motion = MOTION_CHOICES.find((c) => c.id === values.senMotion) ?? MOTION_CHOICES[0]!;

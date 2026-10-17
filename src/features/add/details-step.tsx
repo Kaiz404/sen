@@ -53,7 +53,7 @@ export function DetailsView(props: DetailsViewProps): ReactNode {
   const tooShort = showProblems && descriptionTooShort(draft);
   const noCategory = showProblems && draft.category === null;
   return (
-    <View style={styles.screen}>
+    <View testID="add-details" style={styles.screen}>
       <View style={styles.pad}>
         <StepHeader step={2} onBack={props.onBack} onClose={props.onClose} />
       </View>
@@ -266,7 +266,8 @@ const styles = StyleSheet.create((theme, rt) => ({
   screen: {
     flex: 1,
     paddingTop: rt.insets.top + 18,
-    paddingBottom: rt.insets.bottom + 24,
+    // Edge to edge, the keyboard no longer shrinks the window, so the form ends above it.
+    paddingBottom: rt.insets.bottom + rt.insets.ime + 24,
     gap: 14,
     backgroundColor: theme.colors.canvas,
   },

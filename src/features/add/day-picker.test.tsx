@@ -39,6 +39,11 @@ test('the iOS panel shows the inline calendar over the same 90-day range, and a 
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
+test('the iOS panel sits above the home indicator', async () => {
+  await render(<InlineDayPanel day={TODAY} today={TODAY} onDay={jest.fn()} onClose={jest.fn()} />);
+  expect(screen.root).toHaveStyle({ paddingBottom: 34 + 16 });
+});
+
 test('a local date becomes the day with the same year, month and day', () => {
   expect(localDateToDay(new Date(2026, 0, 3, 23, 59))).toBe('2026-01-03');
   expect(localDateToDay(new Date(NaN))).toBeNull();

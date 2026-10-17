@@ -1,11 +1,12 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Bone } from '@/components/bone';
 import { Key } from '@/components/key';
 import { Leader, ReceiptSlip, SlipRule } from '@/components/receipt-slip';
+import { ScrollView } from '@/components/scroll-view';
 import { Stamp } from '@/components/stamp';
 import { BIOMETRIC, type Biometric } from '@/features/auth';
 import { Sen } from '@/features/sen';
@@ -71,7 +72,7 @@ export function DetailView({
   const found = body.kind === 'found';
   return (
     <RevealedAmounts value={revealed}>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView testID="detail" style={styles.screen} contentContainerStyle={styles.content}>
         <Header
           shown={found && !hidden}
           onBack={actions.onBack}

@@ -139,8 +139,13 @@ export function InlineDayPanel({
   );
 }
 
-const styles = StyleSheet.create((theme) => ({
-  scrim: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', padding: 16 },
+const styles = StyleSheet.create((theme, rt) => ({
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    padding: 16,
+    paddingBottom: rt.insets.bottom + 16,
+  },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.colors.hero, opacity: 0.5 },
   panel: { gap: 12, padding: 20, borderRadius: 24, backgroundColor: theme.colors.canvas },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
