@@ -12,6 +12,7 @@ const fonts = {
 const config: ExpoConfig = {
   name: 'Sen',
   slug: 'sen',
+  owner: 'kaiz404',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
@@ -102,6 +103,9 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
+  },
+  extra: {
+    eas: { projectId: '7e499749-53df-4928-ae6a-38af453b3809' },
   },
 };
 
