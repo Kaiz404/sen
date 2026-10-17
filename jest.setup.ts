@@ -44,6 +44,87 @@ configureThemes('system');
   beforeEach(() => set('light'));
 }
 
+// Tests run on a phone with a 48 pt status bar and a 34 pt gesture bar. On the device Unistyles keeps an inset live
+// only through a `style` prop or `withUnistyles`. A plain ScrollView's `contentContainerStyle` keeps what the sheet
+// held at bundle start, before the window reported its insets (ARCHITECTURE › Layout and insets). Here every sheet
+// resolves with the phone's insets, and a plain ScrollView swaps its content style for the bundle-start copy.
+{
+  const React = jest.requireActual<typeof import('react')>('react');
+  const unistyles = jest.requireMock<Record<string, any>>('react-native-unistyles');
+  const insets = { top: 48, bottom: 34, left: 0, right: 0, ime: 0 };
+  const AT_START = Symbol('style at bundle start');
+  const tag = (live: unknown, atStart: unknown) =>
+    live !== null && typeof live === 'object'
+      ? Object.defineProperty({ ...live }, AT_START, { value: atStart })
+      : live;
+  const create = unistyles.StyleSheet.create;
+  unistyles.UnistylesRuntime.insets = insets;
+  unistyles.StyleSheet.create = (sheet: unknown) => {
+    if (typeof sheet !== 'function') return create(sheet);
+    const atStart = create(sheet);
+    // Resolved again when a test moves the insets (`setInsets` in src/theme/testing.ts), as the device does.
+    let seen = '';
+    let live: Record<string, any> = {};
+    const current = () => {
+      const now = JSON.stringify(unistyles.UnistylesRuntime.insets);
+      if (now !== seen) {
+        seen = now;
+        live = create((theme: object, rt: object) =>
+          sheet(theme, { ...rt, insets: { ...unistyles.UnistylesRuntime.insets } }),
+        );
+      }
+      return live;
+    };
+    return Object.defineProperties(
+      {},
+      Object.fromEntries(
+        Object.keys(atStart).map((key) => [
+          key,
+          {
+            enumerable: true,
+            get: () => {
+              const value = current()[key];
+              return typeof value === 'function'
+                ? (...args: unknown[]) => tag(value(...args), atStart[key](...args))
+                : tag(value, atStart[key]);
+            },
+          },
+        ]),
+      ),
+    );
+  };
+  beforeEach(() => {
+    unistyles.UnistylesRuntime.insets = insets;
+  });
+
+  type Style = unknown;
+  const pick = (style: Style, frozen: boolean): Style => {
+    if (Array.isArray(style)) return style.map((s) => pick(s, frozen));
+    if (style === null || typeof style !== 'object') return style;
+    return frozen ? ((style as Record<symbol, Style>)[AT_START] ?? style) : { ...style };
+  };
+  const rn = jest.requireActual<Record<string, any>>('react-native');
+  class PlainScroll extends rn.ScrollView {
+    render() {
+      const props = (this as unknown as { props: { contentContainerStyle?: Style } }).props;
+      return React.cloneElement(super.render(), {
+        contentContainerStyle: pick(props.contentContainerStyle, true),
+      });
+    }
+  }
+  Object.defineProperty(rn, 'ScrollView', { get: () => PlainScroll, configurable: true });
+  unistyles.withUnistyles =
+    (Component: React.ComponentType<object>) =>
+    ({ style, contentContainerStyle, ...props }: { style?: Style; contentContainerStyle?: Style }) =>
+      React.createElement(Component, {
+        ...props,
+        ...(style === undefined ? {} : { style: pick(style, false) }),
+        ...(contentContainerStyle === undefined
+          ? {}
+          : { contentContainerStyle: pick(contentContainerStyle, false) }),
+      });
+}
+
 // jest-expo leaves the Android API level undefined. Tests run on a current phone, and the ones that care pick their own.
 Object.defineProperty(Platform, 'Version', { get: () => 36, configurable: true });
 setUpTests();

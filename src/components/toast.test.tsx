@@ -84,3 +84,9 @@ test('useToastShowing is true from show until hide', async () => {
   await act(async () => toast.hide());
   expect(screen.getByText('down')).toBeOnTheScreen();
 });
+
+test('a toast sits 24 above the gesture bar', async () => {
+  await render(<ToastHost />);
+  await act(async () => toast.show({ title: 'Reference copied' }));
+  expect(screen.root).toHaveStyle({ bottom: 34 + 24 });
+});

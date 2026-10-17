@@ -3,7 +3,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 import type { Minor } from '@/models/money';
 
-import { Header, MonthCard } from './parts';
+import { Header, MonthCard, SyncBanner } from './parts';
 import { type Revealed, RevealedAmounts } from './reveal';
 
 const setFontScale = (fontScale: number) =>
@@ -159,4 +159,19 @@ test('the header keys read privacy, lock, settings', async () => {
     'Lock Sen now',
     'Settings',
   ]);
+});
+
+test('the header starts below the status bar, and under the sync banner leaves it to the banner', async () => {
+  const noop = () => {};
+  await render(<Header inset onPrivacy={noop} onSettings={noop} onLock={noop} />);
+  expect(screen.root).toHaveStyle({ paddingTop: 48 + 12 });
+
+  await render(
+    <>
+      <SyncBanner banner={{ kind: 'offline', since: null }} onRetry={noop} onSettings={noop} />
+      <Header inset={false} onPrivacy={noop} onSettings={noop} onLock={noop} />
+    </>,
+  );
+  expect(screen.getByTestId('sync-banner')).toHaveStyle({ marginTop: 48 });
+  expect(screen.getByText('Sen').parent?.parent).toHaveStyle({ paddingTop: 12 });
 });

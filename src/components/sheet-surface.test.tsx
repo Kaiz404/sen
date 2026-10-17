@@ -30,4 +30,9 @@ describe('SheetSurface', () => {
     expect(screen.getByText('Keep it')).toBeOnTheScreen();
     expect(screen.queryByTestId('sheet-handle', { includeHiddenElements: true })).toBeNull();
   });
+
+  it('keeps its last key 20 above the gesture bar', async () => {
+    await renderOn('android');
+    expect(screen.root).toHaveStyle({ paddingBottom: 34 + 20 });
+  });
 });

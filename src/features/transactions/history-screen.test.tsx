@@ -399,19 +399,19 @@ test('a screen reader can refresh without the pull gesture', async () => {
   expect(await screen.findAllByText('1 new', { exact: false }, LONG)).not.toHaveLength(0);
 });
 
-test('while the undo toast shows, the list ends above the lifted Add key', async () => {
+test('the list ends above the Add key and the gesture bar, and above the lifted key while the undo toast shows', async () => {
   await renderHistory();
   expect(await screen.findByText('Tealive')).toBeOnTheScreen();
   const footer = () => screen.getByTestId('history-footer');
-  expect(footer()).toHaveStyle({ paddingBottom: 104 });
+  expect(footer()).toHaveStyle({ paddingBottom: 34 + 104 });
 
   await act(async () => {
     toast.show({ title: 'Added', detail: 'Lunch with Hafiz, cash · stored encrypted' });
   });
-  expect(footer()).toHaveStyle({ paddingBottom: 196 });
+  expect(footer()).toHaveStyle({ paddingBottom: 34 + 196 });
 
   await act(async () => toast.hide());
-  expect(footer()).toHaveStyle({ paddingBottom: 104 });
+  expect(footer()).toHaveStyle({ paddingBottom: 34 + 104 });
 });
 
 test('a slide-in marked before a lock does not wait to play after the unlock', async () => {

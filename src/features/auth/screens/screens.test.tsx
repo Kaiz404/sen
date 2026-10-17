@@ -48,6 +48,11 @@ test('Lock promises hidden amounts, and no longer offers to keep them shown', as
   expect(screen.queryByText(/until you hide them/)).not.toBeOnTheScreen();
 });
 
+test('Lock’s hero starts below the status bar', async () => {
+  await render(<LockScreen />);
+  expect(screen.getByTestId('hero')).toHaveStyle({ paddingTop: 48 + 26 });
+});
+
 describe('a vault that will not open', () => {
   const press = (name: string) => fireEvent.press(screen.getByRole('button', { name }));
 

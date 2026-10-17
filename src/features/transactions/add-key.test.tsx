@@ -50,3 +50,8 @@ test('it gets out of the way of the search keyboard and returns with it gone', a
   await act(async () => DeviceEventEmitter.emit('keyboardDidHide', {}));
   expect(screen.getByRole('button', { name: 'Add a transaction' })).toBeOnTheScreen();
 });
+
+test('it floats 16 above the gesture bar', async () => {
+  await render(<AddKey onPress={jest.fn()} />);
+  expect(dock()).toHaveStyle({ bottom: 34 + 16 });
+});
