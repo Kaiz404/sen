@@ -4,6 +4,7 @@ import {
   type ActivityEvent,
   ActivityEventSchema,
   ACTIVITY_CAP,
+  ACTIVITY_LABEL_MAX,
 } from '@/models/activity';
 import { type Instant, toInstant } from '@/models/day';
 
@@ -16,8 +17,15 @@ export const codesAreLogged: CodesAreLogged = true;
 
 type Stamped = { readonly id: string; readonly at: Instant; readonly event: ActivityEvent };
 
+/** A description longer than a label may be is cut, so a long one never costs the whole event. */
+function fitLabel(event: ActivityEvent): ActivityEvent {
+  return 'label' in event && event.label !== undefined
+    ? { ...event, label: event.label.slice(0, ACTIVITY_LABEL_MAX) }
+    : event;
+}
+
 async function insert(db: Db, entry: Stamped): Promise<void> {
-  const { code, ...meta } = ActivityEventSchema.parse(entry.event);
+  const { code, ...meta } = ActivityEventSchema.parse(fitLabel(entry.event));
   await db.run('INSERT INTO activity_log (id, at, code, meta) VALUES (?, ?, ?, ?)', [
     entry.id,
     entry.at,
@@ -72,12 +80,16 @@ export function createActivityRecorder(clock: () => Instant = () => toInstant(ne
   const inflight = new Set<Promise<void>>();
   let sequence = 0;
 
-  function write(db: Db, entry: Stamped): void {
-    logEvent(entry.event.code);
-    const job: Promise<void> = insert(db, entry)
+  function track(work: Promise<void>): void {
+    const job: Promise<void> = work
       .catch(() => logEvent('activity.write_failed'))
       .finally(() => inflight.delete(job));
     inflight.add(job);
+  }
+
+  function write(db: Db, entry: Stamped): void {
+    logEvent(entry.event.code);
+    track(insert(db, entry));
   }
 
   return {
@@ -89,10 +101,23 @@ export function createActivityRecorder(clock: () => Instant = () => toInstant(ne
       waiting.push(entry);
       if (waiting.length > ACTIVITY_CAP) waiting.shift();
     },
+    /** Writes the held events in one transaction, so a failure keeps none of them half-written. */
     flush(db: Db): void {
-      for (const entry of waiting.splice(0)) write(db, entry);
+      const held = waiting.splice(0);
+      if (held.length === 0) return;
+      for (const entry of held) logEvent(entry.event.code);
+      track(
+        (async () => {
+          await db.transaction(async (tx) => {
+            for (const entry of held) await insert(tx, entry);
+          });
+        })(),
+      );
     },
-    /** Resolves once every write started so far has settled. Close the database after this. */
+    /**
+     * For tests: resolves once every write started so far has finished. The app doesn't wait on it. A lock closes
+     * the database through the same first-in, first-out queue the writes joined, so the close runs after them.
+     */
     settled: async (): Promise<void> => {
       await Promise.all([...inflight]);
     },

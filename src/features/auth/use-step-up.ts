@@ -9,7 +9,7 @@ const PROMPT: Readonly<Record<StepUpAction, string>> = {
   add: 'Save this transaction',
   delete: 'Delete this transaction',
   clearLog: 'Clear security activity',
-  erase: 'Erase everything on this phone',
+  erase: 'Erase transactions I added',
 };
 
 const CANCELLED: StepUpResult = { ok: false, reason: 'cancelled' };

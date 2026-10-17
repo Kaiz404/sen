@@ -1,15 +1,21 @@
 import { readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-import { act, fireEvent } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { router } from 'expo-router';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import type { ComponentType } from 'react';
+import { Linking } from 'react-native';
 
-import { signOut } from '@/features/auth';
 import { sessionStore } from '../features/auth/session';
+import { DayKeySchema, toInstant } from '@/models/day';
+import { draftSchema } from '@/models/draft';
+import { activity, readActivity } from '@/services/activity-log';
+import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
+import { queryClient, QK } from '@/services/query-client';
+import { insertManual } from '@/services/tx-repo';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import type { VaultPorts } from '@/services/vault';
 
@@ -24,7 +30,7 @@ jest.mock('@/services/logger');
 jest.setTimeout(30_000);
 
 const KEY = 'c'.repeat(64);
-const phone = { key: null as string | null, file: false, diskFails: false };
+const phone = { key: null as string | null, file: false, db: null as OpenDb | null };
 const mockPorts: VaultPorts = {
   keys: {
     read: async () => phone.key,
@@ -38,10 +44,10 @@ const mockPorts: VaultPorts = {
   database: {
     open: async () => {
       phone.file = true;
-      return openTestDb();
+      phone.db = await openTestDb();
+      return phone.db;
     },
     remove: async () => {
-      if (phone.diskFails) throw new Error('disk busy');
       phone.file = false;
     },
     exists: () => phone.file,
@@ -70,11 +76,26 @@ const routes = Object.fromEntries(
 );
 
 const MISMATCH = { success: false, error: 'authentication_failed' } as const;
+const TODAY = DayKeySchema.parse('2026-10-15');
+const lunch = (n: number) =>
+  draftSchema(TODAY).parse({
+    idemKey: `0b6f1c39-7f43-4b6e-9a43-58a2f6c0d5a${n}`,
+    amountMinor: 4250 + n,
+    direction: 'debit',
+    description: `Lunch number ${n}`,
+    category: 'food',
+    day: '2026-10-15',
+  });
 
-async function openEraseSheet() {
+const db = () => phone.db!;
+const countBySource = () =>
+  db()
+    .all('SELECT source, count(*) AS n FROM tx GROUP BY source ORDER BY source')
+    .then((rows) => Object.fromEntries(rows.map((r) => [r.source, r.n])));
+
+async function unlock() {
   phone.key = KEY;
   phone.file = true;
-  phone.diskFails = false;
   clearPrefs();
   await renderRouter(routes, { initialUrl: '/' });
   expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
@@ -85,10 +106,16 @@ async function openEraseSheet() {
   ).toBeOnTheScreen();
   writePref('theme', 'dark');
   await act(async () => sessionStore.setState({ amountsHidden: false }));
+}
+
+async function addRows(n: number) {
+  for (let i = 1; i <= n; i++) await insertManual(db(), lunch(i), toInstant(new Date()));
+  await act(() => queryClient.invalidateQueries({ queryKey: QK.tx }));
+}
+
+async function openEraseSheet(title = 'Erase transactions I added?') {
   await act(() => router.push('/settings/erase'));
-  expect(
-    await screen.findByRole('header', { name: 'Erase everything on this phone?' }),
-  ).toBeOnTheScreen();
+  expect(await screen.findByRole('header', { name: title })).toBeOnTheScreen();
 }
 
 const press = (name: string) => fireEvent.press(screen.getByRole('button', { name }));
@@ -99,26 +126,37 @@ beforeEach(() => {
   sessionStore.setState(sessionStore.getInitialState());
 });
 
-test('erase asks for the check, then leaves no vault key, no database file and no prefs, and shows Welcome', async () => {
+test('erase deletes only the rows the user added, and leaves bank rows, the vault, the prefs and History in step', async () => {
+  await unlock();
+  await addRows(2);
+  expect(await screen.findByText('Lunch number 1')).toBeOnTheScreen();
+  const bank = (await countBySource()).bank;
   await openEraseSheet();
+  expect(
+    await screen.findByText(/Sen deletes the 2 transactions you added on this phone\. This can’t be undone\./),
+  ).toBeOnTheScreen();
 
   authenticate.mockResolvedValueOnce({ success: true });
   await press('Erase with fingerprint');
 
-  expect(
-    await screen.findByRole('header', { name: 'THREE THINGS SEN PROMISES' }),
-  ).toBeOnTheScreen();
+  expect(await screen.findByText('Erased 2 transactions')).toBeOnTheScreen();
+  await waitFor(() => expect(screen.queryByText('Lunch number 1')).not.toBeOnTheScreen());
   expect(authenticate).toHaveBeenLastCalledWith({
-    promptMessage: 'Erase everything on this phone',
+    promptMessage: 'Erase transactions I added',
     biometricsSecurityLevel: 'strong',
     disableDeviceFallback: false,
   });
-  expect(phone).toMatchObject({ key: null, file: false });
-  expect(readPref('theme')).toBe('system');
-  expect(sessionStore.getState().amountsHidden).toBe(true);
+  expect(await countBySource()).toEqual({ bank });
+  expect(phone).toMatchObject({ key: KEY, file: true });
+  expect(readPref('theme')).toBe('dark');
+  expect(sessionStore.getState().amountsHidden).toBe(false);
+  await activity.settled();
+  expect((await readActivity(db())).entries[0]?.event).toEqual({ code: 'tx.erased', count: 2 });
 });
 
 test('a finger that does not match erases nothing, says so, and the next try can erase', async () => {
+  await unlock();
+  await addRows(1);
   await openEraseSheet();
 
   authenticate.mockResolvedValueOnce(MISMATCH);
@@ -127,18 +165,17 @@ test('a finger that does not match erases nothing, says so, and the next try can
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Fingerprint didn’t match. Nothing was erased.',
   );
-  expect(phone).toMatchObject({ key: KEY, file: true });
-  expect(readPref('theme')).toBe('dark');
+  expect((await countBySource()).manual).toBe(1);
 
   authenticate.mockResolvedValueOnce({ success: true });
   await press('Try again with fingerprint');
-  expect(
-    await screen.findByRole('header', { name: 'THREE THINGS SEN PROMISES' }),
-  ).toBeOnTheScreen();
-  expect(phone).toMatchObject({ key: null, file: false });
+  expect(await screen.findByText('Erased 1 transaction')).toBeOnTheScreen();
+  expect((await countBySource()).manual).toBeUndefined();
 });
 
 test('a cancelled check leaves everything and the sheet as it was', async () => {
+  await unlock();
+  await addRows(1);
   await openEraseSheet();
 
   authenticate.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
@@ -147,26 +184,61 @@ test('a cancelled check leaves everything and the sheet as it was', async () => 
 
   expect(screen.queryByRole('alert')).not.toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Erase with fingerprint' })).toBeEnabled();
-  expect(phone).toMatchObject({ key: KEY, file: true });
+  expect((await countBySource()).manual).toBe(1);
 });
 
-test('a disk that fails mid-wipe lands on Lock with a message, the key already gone, and the wipe can finish', async () => {
+test('a delete that fails changes nothing, says so, and Try again can finish', async () => {
+  await unlock();
+  await addRows(2);
   await openEraseSheet();
-  phone.diskFails = true;
+  await db().run(
+    "CREATE TRIGGER block_second BEFORE DELETE ON tx WHEN old.id LIKE '%5a2' BEGIN SELECT RAISE(ABORT, 'disk busy'); END",
+  );
+  const before = await db().all('SELECT * FROM tx ORDER BY id');
 
   authenticate.mockResolvedValueOnce({ success: true });
   await press('Erase with fingerprint');
 
-  expect(await screen.findByRole('header', { name: 'Welcome back.' })).toBeOnTheScreen();
-  expect(await screen.findByText('Couldn’t finish erasing')).toBeOnTheScreen();
-  expect(screen.getByText('On the lock screen, tap Start again to finish.')).toBeOnTheScreen();
-  expect(phone.key).toBeNull();
-  expect(phone.file).toBe(true);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t erase them. Nothing was changed.');
+  expect(await db().all('SELECT * FROM tx ORDER BY id')).toEqual(before);
+  await activity.settled();
+  expect((await readActivity(db())).entries.map((e) => e.event.code)).not.toContain('tx.erased');
 
-  phone.diskFails = false;
-  await act(() => signOut());
+  await db().run('DROP TRIGGER block_second');
+  authenticate.mockResolvedValueOnce({ success: true });
+  await press('Try again with fingerprint');
+  expect(await screen.findByText('Erased 2 transactions')).toBeOnTheScreen();
+  expect((await countBySource()).manual).toBeUndefined();
+});
+
+test('with nothing added, the sheet says there is nothing to erase and the Settings row is off', async () => {
+  await unlock();
+  await openEraseSheet('Nothing to erase');
+  expect(screen.queryByRole('button', { name: /Erase with/ })).not.toBeOnTheScreen();
+
+  await press('Close');
+  await act(() => router.push('/settings'));
   expect(
-    await screen.findByRole('header', { name: 'THREE THINGS SEN PROMISES' }),
-  ).toBeOnTheScreen();
-  expect(phone).toMatchObject({ key: null, file: false });
+    await screen.findByRole('button', { name: 'Erase transactions I added' }),
+  ).toBeDisabled();
+});
+
+test('a phone with the check turned off gets a way to its security settings', async () => {
+  const opened = [
+    jest.spyOn(Linking, 'openSettings').mockResolvedValue(),
+    jest.spyOn(Linking, 'sendIntent').mockResolvedValue(),
+  ];
+  await unlock();
+  await addRows(1);
+  await openEraseSheet();
+
+  authenticate.mockResolvedValueOnce({ success: false, error: 'not_enrolled' });
+  await press('Erase with fingerprint');
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Fingerprint is off. Nothing was erased. Turn it on in your phone’s security settings, then try again.',
+  );
+  await press('Open device settings');
+  expect(opened.map((spy) => spy.mock.calls.length)).toContain(1);
+  expect((await countBySource()).manual).toBe(1);
 });

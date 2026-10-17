@@ -125,7 +125,7 @@ Every route file is one line that re-exports a screen from a feature index, such
 | --- | --- | --- |
 | `RouteGate`, `useRouteGate`, `SessionRoot`, `LockScreen`, `WelcomeScreen`, `PrimerScreen` | `@/features/auth` | A module store that starts `'locked'`. The stub Lock calls `authenticateAsync` and unlocks. `SessionRoot` mounts the `QueryClientProvider` |
 | `useSenMotionPreference` and the settings screens | `@/features/settings` | Returns `'full'` |
-| `useScreenGuard`, `EraseSheet` | `@/features/security` | Does nothing |
+| `useScreenGuard` | `@/features/security` | Does nothing |
 | `ToastHost` | `@/components/toast` | Renders nothing |
 | `StatesScreen` | `@/features/gallery` | `screen=db` runs the database smoke. Any other query is echoed |
 | `hasVault`, `openVault`, `destroyVault`, `VaultOpened` | `@/services/vault` | Rejects. Lane 2b owns the body |
@@ -236,7 +236,7 @@ Indexes: `tx_by_time (posted_at DESC, id DESC)`, which the keyset page query sea
 - **Payment timeline.** `paymentSteps(row)` in `features/detail/receipt.ts` gives Authorised (done, at `postedAt`), Pending (now) and Posted (next) for a pending bank row, and null for a posted or added row. It shows while amounts show, as on SF-DetailRevealed. The bank sends no settle date, so Posted reads "NEXT" instead of the board's "BY FRI 16 OCT".
 - **Share receipt.** The key shows only once the amount is in JS, and it hands React Native's `Share.share` the plain text from `shareText(row, amount)`: no image, no link, no balance. `shareText` takes the amount, so a hidden receipt has nothing to share. While hidden the footer says "Show amounts to share this receipt."
 - **Writes.** `insertManual(db, draft, now)` stores a draft as `m-<idemKey>` with a `SEN-M-` reference made from the key, at the current Malaysia time of day on the chosen day. A repeated `idemKey` writes nothing and returns the stored row with `created: false`. `deleteManual` returns `deleted`, `missing` or `read_only` (bank rows).
-- **Undo.** `deleteManual` keeps the deleted row as JSON in `meta` (`undo.deleted`), and `restoreDeleted` moves it back. Both run in SQL, so undo never brings the amount into JS. `eraseManual` deletes every added row and the undo copy.
+- **Undo.** `deleteManual` keeps the deleted row as JSON in `meta` (`undo.deleted`), and `restoreDeleted` moves it back. Both run in SQL, so undo never brings the amount into JS. `eraseManual` deletes every added row and the undo copy in one transaction, and `countManual` counts them for the Erase sheet and the Settings row.
 - **Freshness.** The one write module calls `invalidateQueries(['tx'])` after every commit.
 - **History.** `features/transactions/data.ts` holds every History read under `QK.tx`: the pages per filter, `sync-state`, and counts per filter and day range. `placeholderData: keepPreviousData` keeps the last list on screen while a new filter loads, so typing never flashes the skeleton.
 - **Rows as data.** `buildHistoryRows(rows, { today, complete })` turns the loaded rows into one flat list of `day`, `tx` and `net` items, a discriminated union, with every `day` index sticky. A day's slip closes with its `net` only when all its rows are loaded: an older day follows it, or no page is left. Order alone proves that, so the masked day counts are not read. `toRowView` caches one view per row object in a `WeakMap`, so a row the query cache hands back unchanged keeps its view and its memoised row skips the render (`rows.test.ts`).
@@ -354,7 +354,7 @@ Every other pair returns the state unchanged. `machine.test.ts` checks all 120 p
 | `add` | "Save this transaction" | DB write, then a `tx.added` entry (only for a new row, not a repeated save) | "Not saved. Your draft is still here." |
 | `delete` | "Delete this transaction" | DB delete, then a `tx.deleted` entry | Sheet stays, silently. Any other failure says "Nothing was deleted." |
 | `clearLog` | "Clear security activity" | Log cleared, one `log.cleared` entry left | Nothing. A mismatch says "The log is as it was." |
-| `erase` | "Erase everything on this phone" | The sign-out wipe: database closed, key, file and prefs deleted, Welcome shown | The sheet stays. A mismatch says "Nothing was erased." |
+| `erase` | "Erase transactions I added" | Every added row and the undo copy deleted in one transaction, a `tx.erased` entry with the count, History refreshed. Bank rows, vault, key and prefs stay | The sheet stays. A mismatch says "Nothing was erased." A check that is off or unavailable offers "Open device settings". A failed delete says "Nothing was changed." |
 
 The writes and logs belong to the callers. Undo inside the 6 s toast skips the prompt. It only reverts what the user just authorised, and it logs `tx.undone`. A step-up that reads `mismatch` or `lockout` logs `auth.failed`. A cancel logs nothing. A step-up that ends in a lock that arrived during the prompt returns `cancelled` and logs no failed check, whatever the prompt answered. The lock is the event, and it logs `lock.locked` when it applies.
 
@@ -491,7 +491,7 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 | Unlock | Read the key, open the database |
 | Lock | Close the database. Clear the query cache |
 | Sign out | The caller closes the database. A close that rejects is logged and does not stop sign-out, because the key goes first. `destroyVault()` deletes the key first, so the file is unreadable even if deleting it fails, then deletes the file (one already gone is fine) and clears prefs |
-| Erase | Step-up, then the sign-out wipe. The vault, key and prefs are gone, and Welcome shows (D31) |
+| Erase | Step-up, then `eraseManual` deletes the added rows. The vault, key and prefs stay (D31) |
 | Key present, database missing | An iOS reinstall, because Keychain items survive app deletion. The key is an orphan. `hasVault()` and `openVault()` delete it, so launch shows Welcome and the next open creates a fresh database with a new key. The file check is `File(Paths.document, 'SQLite', 'sen.db').exists` from `expo-file-system`, the directory expo-sqlite uses on both platforms (V, native source) |
 | Key missing, database present | Backup restore or reinstall. Unreadable by design. Delete it, start clean, show `db_reset` (`missing_key`) |
 | Database unreadable or newer than the app | Same, as `corrupt` |
@@ -500,11 +500,12 @@ The biometric gate is therefore the JS step-up. The README states this limit.
 **Activity log (D31).**
 - **Rows.** At most 50 `{ id, at, code, meta }`, kept by the `activity_log_cap` trigger. `id` is the time plus a counter, so events that share a millisecond keep their order.
 - **The shape.** `models/activity.ts` holds `ActivityEventSchema`, a strict union per `code`. No code has a numeric amount field and an extra key is refused on write and on read. A row that no longer parses is skipped and counted.
-- **Codes.** `auth.unlocked`, `auth.failed` (`mismatch` or `lockout`), `lock.locked` (`idle`, `background` or `manual`), `amounts.revealed`, `amounts.hidden`, `tx.added`, `tx.deleted`, `tx.undone` (`add` or `delete`), `settings.weakened` (the idle or leave window got longer), `demo.reset` and `log.cleared`. Each is also a logger code, checked by a type.
-- **Writing.** `services/activity-log.ts` holds `insert`, `readActivity`, `clearActivity` and a recorder. `record(db, event)` writes at once. `record(null, event)` holds the event (at most 50) for `flush(db)`, which `unlock()` runs after the vault opens. `settled()` resolves when every write has finished, and a lock waits for it before it closes the database. A failed write logs `activity.write_failed` and never throws to the caller.
+- **Codes.** `auth.unlocked`, `auth.failed` (`mismatch` or `lockout`), `lock.locked` (`idle`, `background` or `manual`), `amounts.revealed`, `amounts.hidden`, `tx.added`, `tx.deleted`, `tx.erased` (a row count), `tx.undone` (`add` or `delete`), `settings.weakened` (the idle or leave window got longer), `demo.reset` and `log.cleared`. Each is also a logger code, checked by a type.
+- **Writing.** `services/activity-log.ts` holds `insert`, `readActivity`, `clearActivity` and a recorder. `record(db, event)` writes at once. `record(null, event)` holds the event (at most 50) for `flush(db)`, which `unlock()` runs after the vault opens. `flush` writes the held events in one transaction. A lock closes the database through the same first-in, first-out queue the writes joined, so the close runs after every write already started. `settled()` is for tests, which wait on it before they read. A failed write logs `activity.write_failed` and never throws to the caller.
 - **Callers.** The session store records unlocks, failed checks, locks and holds. A lock is recorded in `dispatch`'s close path when it applies, so a lock that waited for a step-up prompt logs once, after the prompt. `showAmounts` and `hideAmounts` record reveals and hides (a hide only when amounts were showing). The add actions record add, delete and both undos with the description. Settings records a longer idle or leave window and a demo reset.
 - **Reading.** `ActivityScreen` reads the log with TanStack Query (`['activity']`, refetched on mount), groups it by Malaysia day, and clears it behind `clearLog` step-up.
-- **Gone with the vault.** Sign-out and erase destroy the log and drop any held events.
+- **Gone with the vault.** Sign-out destroys the log and drops any held events. Erase leaves the log and adds one `tx.erased` entry.
+- **Descriptions stay.** A deleted or erased row's description stays in its `tx.added` and `tx.deleted` events until the 50-event cap drops them or the log is cleared. A label is cut to the description limit (`ACTIVITY_LABEL_MAX`, from `DRAFT_LIMITS`), so a long one never costs the event.
 
 **Backups.**
 - **Android.** `android.allowBackup: false` (its default is `true`, V). On Android 12+ some devices still run device-to-device transfer with it, so `plugins/with-no-backup.js` also writes `sen_data_extraction_rules.xml` (`<cloud-backup>` and `<device-transfer>`) and `sen_backup_rules.xml` (Android 11 and lower), each excluding every domain, and points the manifest at them. `expo-secure-store` runs with `configureAndroidBackup: false` so its narrower rules don't compete. A native rebuild with prebuild applies it.
@@ -830,7 +831,8 @@ Unit and component tests with `jest-expo` and RNTL v14.
 | An unlock, a wrong finger, a lock, a reveal and a hide are logged. A failed unlock is held until the vault opens. A cancel logs nothing. Sign-out drops held events | `features/auth/activity.test.tsx` |
 | Add, delete and both undos log the description and no amount. A repeated save logs once. A refused action logs nothing | `features/add/actions.test.ts` |
 | The screen reads the log as day slips, clears it behind the check, and recovers from an unreadable log | `features/activity/activity-screen.test.tsx`, `features/activity/days.test.ts` |
-| Erase leaves no key, file or prefs and shows Welcome. A mismatch or cancel erases nothing. A disk that fails mid-wipe lands on Lock and the wipe can finish | `__tests__/erase-flow.test.tsx` |
+| Erase deletes only the added rows, logs the count and refreshes History, and leaves bank rows, the key, the file and the prefs. A mismatch or cancel erases nothing. A failing delete changes nothing and Try again finishes. With nothing added the row is off. A check that is off offers the device settings | `__tests__/erase-flow.test.tsx`, `features/settings/settings-screen.test.tsx` |
+| A label longer than the description limit is cut and the event kept. Held events are written in one transaction | `services/activity-log.test.ts`, `models/activity.test.ts` |
 | Input limits, keypad cap, sanitiser | `models/draft.test.ts`, `features/add/keypad-reducer.test.ts`, `features/add/draft.test.ts`, `services/sanitize.test.ts` |
 | A double tap on Save prompts once and stores one row. Cancel writes nothing. A write that committed but failed stores no second row on Retry. Undo of an add or a delete never prompts. Delete refuses bank rows before the prompt. The description field has the private input props and shows the cleaned text | `features/add/actions.test.ts`, `features/add/add-flow.test.tsx`, `features/add/delete-sheet.test.tsx` |
 | Money: sign, split numerals, spoken amounts | `models/money.test.ts` |

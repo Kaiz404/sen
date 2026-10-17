@@ -42,7 +42,7 @@ Versions and APIs were checked against npm, release notes and package source. Ti
 | D25 | Animated components | Shared primitives, shared values for anything Jest must prove, CSS transitions for simple presses |
 | D26 | Motion verification | The industry pattern: Jest values at chosen times, Maestro flows and settled screenshots, a release-build check on the phone |
 | D27 | Showing amounts | Session state. Shown until hidden or until the app locks. Every unlock and cold start lands masked. Showing asks for biometrics |
-| D31 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase is a full wipe behind step-up |
+| D31 | Security activity log and erase | A capped table in the vault. Failed unlocks wait in memory. Erase deletes only the rows the user added, behind step-up |
 | D29 | Copy reference | A local Expo module that marks the clip sensitive |
 | D30 | Screen guard and backups | FLAG_SECURE app-wide in release, a JS privacy cover on iOS, backup and device transfer excluded |
 | D32 | Release build size | R8 minify and resource shrinking through expo-build-properties |
@@ -463,15 +463,16 @@ The phases are in [PLAN.md](PLAN.md).
 **Compared.**
 - **Where the log lives.** The `activity_log` table in the SQLCipher file, a separate MMKV list, or nothing persisted.
 - **Failed unlocks.** The vault is closed when a finger fails, and opening it to log the miss would open the file without the check.
-- **What erase means.** Delete only the rows added on the phone (the earlier plan), or wipe the vault, key and prefs.
+- **What erase means.** Delete only the rows added on the phone (the board's plan), or wipe the vault, key and prefs. The first cut wiped everything. The owner chose the board's meaning on 2026-10-17.
 
 **Chosen.**
-- **The vault.** The log is one more table in the encrypted file, capped at 50 rows by a trigger (retention is the cap). Sign-out and erase destroy it with the file. The sample rows come from the bank, so a log kept outside the file would outlive the data it describes.
+- **The vault.** The log is one more table in the encrypted file, capped at 50 rows by a trigger (retention is the cap). Sign-out destroys it with the file. The sample rows come from the bank, so a log kept outside the file would outlive the data it describes.
 - **Held events.** A failed unlock or a lockout is kept in memory (at most 50) and written with its own time at the next successful unlock. The app never opens the vault without the check. A process killed before the next unlock loses the held events, which is the price of that rule.
 - **No amounts, by shape.** `ActivityEventSchema` is a strict union per code. No code has a number a transaction could fill, and an extra field is refused when the row is written and when it is read. Add, delete and undo carry the description, as the board shows, and never the amount.
 - **Errors never block.** A failed log write is counted by the logger and never reaches the add, delete or unlock that caused it.
-- **Erase is a wipe.** "Erase everything on this phone" asks for the check (`erase` step-up), then runs sign-out's wipe: close the database, delete the key, the file and every pref, show Welcome. The board's subtitle already said "Destroys the vault key", and deleting only added rows would leave Sign out and Erase one tap apart with the same result. Sign out stays a confirm sheet with no check, as before.
-- **Not logged.** Sign-out and erase destroy the log with the file, so neither can leave an entry. The board's "Signed out" line would need a marker outside the vault that survives the wipe, and a surviving marker contradicts "erase leaves nothing".
+- **Erase deletes what the user added.** "Erase transactions I added" asks for the check (`erase` step-up), then deletes every row with source `manual` and the undo copy in one transaction (`eraseManual`). Bank rows, the vault, the key and the prefs stay, so Sign out (which wipes the vault) and Erase are no longer one tap apart with the same result. The sheet says how many rows go and that it can't be undone. A failed delete rolls back and the sheet says nothing was changed, with Try again. With no added rows the Settings row is off and the sheet says there is nothing to erase. A phone whose check is off, unavailable or unknown gets "Open device settings", since a retry would fail again.
+- **Logged.** An erase records `tx.erased` with the row count, never what the rows held. Sign-out still leaves no entry, because it destroys the log with the file.
+- **Descriptions outlive their rows.** Add, delete and undo events carry the description. Deleting or erasing a row does not remove those events, so a description stays in the log until it ages out of the 50 events or the log is cleared.
 - **Logged settings.** Only the changes that leave the phone open longer: a longer idle lock or a longer leave window. Hiding amounts, a shorter window and cosmetic settings are not security events.
 
 **Cost.** One small module of SQL, a recorder with a hold list, and a few `record` calls at the places that already know the event.

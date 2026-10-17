@@ -1,4 +1,4 @@
-import type { ActivityEvent } from '@/models/activity';
+import { ACTIVITY_LABEL_MAX, type ActivityEvent } from '@/models/activity';
 import { InstantSchema } from '@/models/day';
 
 import { clearActivity, createActivityRecorder, readActivity } from './activity-log';
@@ -95,6 +95,27 @@ test('an amount forced into an event never reaches the table', async () => {
 
   const raw = await db.all('SELECT code, meta FROM activity_log');
   expect(raw).toEqual([{ code: 'tx.added', meta: '{"label":"Lunch"}' }]);
+  expect(logEvent).toHaveBeenCalledWith('activity.write_failed');
+});
+
+test('a description longer than a label may be is cut, and the event is still kept', async () => {
+  const log = createActivityRecorder(clock);
+  log.record(db, { code: 'tx.deleted', label: 'x'.repeat(ACTIVITY_LABEL_MAX + 40) });
+  await log.settled();
+
+  expect((await readActivity(db)).entries.map((e) => e.event)).toEqual([
+    { code: 'tx.deleted', label: 'x'.repeat(ACTIVITY_LABEL_MAX) },
+  ]);
+});
+
+test('held events are written together, so a bad one keeps all of them out', async () => {
+  const log = createActivityRecorder(clock);
+  log.record(null, { code: 'auth.failed', reason: 'mismatch' });
+  log.record(null, { code: 'nope' } as unknown as ActivityEvent);
+  log.flush(db);
+  await log.settled();
+
+  expect(await codes()).toEqual([]);
   expect(logEvent).toHaveBeenCalledWith('activity.write_failed');
 });
 

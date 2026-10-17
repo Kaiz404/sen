@@ -1,21 +1,34 @@
-# Not run yet: needs a device. Settings > Erase everything on this phone > Erase asks for the check, then
-# Welcome shows. A new set-up starts from nothing: History has the sample rows and the log has one unlock.
+# Not run yet: needs a device. Adds "Lunch with Hafiz, cash" (the pass override also answers each step-up), then
+# Settings > Erase transactions I added deletes it and nothing else. History loses the row and keeps its bank rows,
+# the app stays unlocked, and the row turns off because nothing is left to erase.
 appId: com.kaiz404.sen
 ---
-- runFlow: subflows/at-history.yaml
+- runFlow: add-save-prompt.yaml
+- extendedWaitUntil:
+    visible: Lunch with Hafiz, cash · stored encrypted
+    timeout: 10000
 - tapOn: Settings
 - scrollUntilVisible:
-    element: Erase everything on this phone
+    element: Erase transactions I added
     direction: DOWN
     centerElement: true
-- tapOn: Erase everything on this phone
+- tapOn: Erase transactions I added
 - extendedWaitUntil:
-    visible: Erase everything on this phone?
+    visible: Erase transactions I added?
     timeout: 10000
+- assertVisible: Sen deletes the 1 transaction you added on this phone.*
 - takeScreenshot: shots/activity/erase-sheet
 - tapOn: Erase with fingerprint
 - extendedWaitUntil:
-    visible:
-      id: continue
-    timeout: 30000
+    visible: Erased 1 transaction
+    timeout: 10000
 - takeScreenshot: shots/activity/erase-done
+- scrollUntilVisible:
+    element: Erase transactions I added
+    direction: DOWN
+    centerElement: true
+- assertVisible: You haven’t added any
+- back
+- assertNotVisible: Lunch with Hafiz, cash · stored encrypted
+- assertVisible:
+    id: tx-row

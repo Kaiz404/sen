@@ -21,6 +21,7 @@ import {
   useDb,
   useLockoutArmed,
 } from '@/features/auth';
+import { useAddedCount } from '@/features/security';
 import { Sen } from '@/features/sen';
 import { type SyncProgress, useSyncProgress } from '@/features/transactions';
 import type { PrefKey, Prefs, PrefValue } from '@/models/prefs';
@@ -62,6 +63,8 @@ export type SettingsValues = Pick<Prefs, PlainPref | 'demo.datasetSize'> & {
   readonly hideAmounts: boolean;
   readonly biometric: Biometric;
   readonly lockoutArmed: boolean;
+  /** How many rows the user added, or null while that loads. */
+  readonly added: number | null;
   readonly progress: SyncProgress;
 };
 
@@ -208,10 +211,15 @@ export function SettingsView({ values, actions, focus }: SettingsViewProps): Rea
           />
           <Dash />
           <NavRow
-            title="Erase everything on this phone"
-            sub={`${capital(name)} and confirm. Destroys the vault key`}
+            title="Erase transactions I added"
+            sub={
+              values.added === 0
+                ? 'You haven’t added any'
+                : `${capital(name)} and confirm. Bank transactions stay`
+            }
             chip={{ icon: 'delete-forever-outline', pastel: PASTEL.rose }}
             onPress={actions.onErase}
+            disabled={values.added === 0}
             danger
           />
         </Card>
@@ -382,9 +390,11 @@ export function SettingsScreen(): ReactNode {
   const biometric = useBiometric().kind;
   const progress = useSyncProgress();
   const lockoutArmed = useLockoutArmed();
+  const added = useAddedCount();
   const values: SettingsValues = {
     biometric,
     lockoutArmed,
+    added,
     progress,
     hideAmounts: useAmountsHidden(),
     theme: usePref('theme'),

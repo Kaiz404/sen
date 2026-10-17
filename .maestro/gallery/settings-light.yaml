@@ -41,6 +41,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: settings-calm-light
+- openLink: "sen://dev/states?screen=settings&state=nothing-added&theme=light"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-nothing-added-light
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-nothing-added-light
 - openLink: "sen://dev/states?screen=settings&state=privacy&theme=light"
 - extendedWaitUntil:
     visible:

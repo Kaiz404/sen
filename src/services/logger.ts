@@ -22,6 +22,7 @@ const EVENTS = {
   'tx.added': 'info',
   'tx.deleted': 'info',
   'tx.undone': 'info',
+  'tx.erased': 'info',
   'settings.weakened': 'info',
   'demo.reset': 'info',
   'log.cleared': 'info',

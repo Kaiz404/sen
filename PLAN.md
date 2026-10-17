@@ -80,7 +80,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Lane 2b. Data.** Owns `src/services/` except `db/`.
 - [x] The seeded generator (the first 20 rows match the boards), the mock bank with a `seq` cursor and fault injection, `sync()` with an idempotent upsert. Evidence: `services/seed.test.ts`, `services/bank-api.test.ts`, `services/sync.test.ts`.
 - [x] Masked and revealed queries, keyset pages, month and day sums, search. Evidence: `services/tx-repo.test.ts`.
-- [x] The vault seam (`services/vault.ts`). The database key in SecureStore, open, sign-out, erase and the missing-key reset. Evidence: `services/vault.test.ts` (reset table on fakes, key name and options on the SecureStore port, and a key without its database file counts as no vault and is deleted). Erase is `eraseManual` in `services/tx-repo.ts`. Device run pending with lane 2c.
+- [x] The vault seam (`services/vault.ts`). The database key in SecureStore, open, sign-out and the missing-key reset. Evidence: `services/vault.test.ts` (reset table on fakes, key name and options on the SecureStore port, and a key without its database file counts as no vault and is deleted). Erase is `eraseManual` in `services/tx-repo.ts`. Device run pending with lane 2c.
 - [x] The prefs seam (`services/prefs.ts`) on MMKV, plus `logger.ts`, `sanitize.ts` and `haptics.ts`. Evidence: `services/prefs.test.ts`, `services/logger.test.ts`, `services/sanitize.test.ts`, `services/haptics.test.ts`.
 - **Unit.** Sync twice and interrupted give the same table hash (`sync.test.ts`). Masked results hold no amounts (`tx-repo.test.ts`). Search "entral" matches a JS filter on 10k rows (`tx-repo.test.ts`, 416 rows).
 - **Perf.** Jest benches on 10k rows stay inside the D20 budgets (`services/tx-repo.bench.test.ts`, numbers in ARCHITECTURE.md › Data layer › Reads).
@@ -147,7 +147,7 @@ Screenshots go in `shots/`, which is git-ignored. Every perf number gets its see
 **Owns.** `src/features/security/`, `src/features/activity/`.
 
 - [x] The screen guard (off in dev builds, forced on in release, `screen-guard.test.tsx`), the privacy cover (`privacy-cover.test.tsx`) and the backup rules (`plugins/with-no-backup.test.ts`). Device checks are open.
-- [x] The activity log and erase (D31). Evidence: `models/activity.test.ts`, `services/activity-log.test.ts`, `features/auth/activity.test.tsx`, `features/add/actions.test.ts`, `features/activity/activity-screen.test.tsx`, `__tests__/erase-flow.test.tsx`. Device run pending.
+- [x] The activity log and erase (D31). Erase deletes only the rows the user added (owner decision 2026-10-17), behind the `erase` step-up, with a count in the log, an off row and a sheet note when nothing is added, and a way to the device settings when the check is off. Evidence: `models/activity.test.ts`, `services/activity-log.test.ts`, `features/auth/activity.test.tsx`, `features/add/actions.test.ts`, `features/activity/activity-screen.test.tsx`, `__tests__/erase-flow.test.tsx`, `features/settings/settings-screen.test.tsx`. `.maestro/erase.yaml` written. Device run pending.
 
 **Verify, unit.** The release config always guards. The log schema rejects amounts.
 **Verify, device.** The recents view shows the cover. A release build's screenshot of History is black.

@@ -18,7 +18,7 @@ Amounts are hidden until you prove it's you. Sen, a coin with a face, keeps its 
   - Idle lock and re-lock after leaving.
   - A privacy cover in the app switcher.
   - Screenshots blocked on sensitive screens.
-  - An encrypted local activity log.
+  - An encrypted local activity log of the last 50 events. A deleted transaction's description stays in it until it ages out or the log is cleared.
 - **Errors you can trigger.** A "For reviewers" section in Settings forces offline, timeout, server error, bad data, slow network and a Face ID lockout.
 - **Craft.** Light, dark and system themes, haptics, reduced-motion support, and screen reader labels such as "Amount hidden".
 

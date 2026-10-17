@@ -425,7 +425,7 @@ Footer: `SEN 1.0.0 · SIMULATED DATA`.
 - Dataset size joins the reviewer slip.
 - History's fault states open Settings scrolled to the reviewer slip.
 - Not built: the Source code and licences links (the README covers both). The app switcher and screenshot rows are built, as ALWAYS ON info rows.
-- Security activity and Erase are Security rows. Erase reads "Erase everything on this phone" (D31), not the board's "Erase transactions I added", because it wipes the vault, key and prefs.
+- Security activity and Erase are Security rows. Erase reads "Erase transactions I added", as the board does, and deletes only those rows (D31). The board's subtitle "Destroys the vault key" is dropped because Erase no longer touches the key. The row is off when nothing was added, and the sheet shows the count, "This can’t be undone" and, when the check is off or unavailable, an "Open device settings" key.
 - Security activity: "Reveal time changed" and "Amounts hidden (timeout)" become "Lock when idle changed to 10 min" and "Amounts hidden", because amounts stay shown until hidden (D27). "Signed out" is not logged (D31).
 
 ## Copy and accessibility

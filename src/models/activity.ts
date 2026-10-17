@@ -1,15 +1,19 @@
 import { z } from 'zod';
 
 import { InstantSchema } from './day';
+import { DRAFT_LIMITS } from './draft';
 
 const event = <C extends string, S extends z.ZodRawShape>(code: C, meta: S) =>
   z.strictObject({ code: z.literal(code), ...meta });
 
-const LABEL = z.string().min(1).max(60).optional();
+/** A label is a transaction description, so it can be as long as one. */
+export const ACTIVITY_LABEL_MAX = DRAFT_LIMITS.descriptionMax;
+
+const LABEL = z.string().min(1).max(ACTIVITY_LABEL_MAX).optional();
 
 /**
  * One security event. Every shape is strict, so an extra field such as an amount is refused, and no shape has a
- * number a transaction could put there.
+ * number a transaction could put there. `tx.erased` carries how many rows went, never what they held.
  */
 export const ActivityEventSchema = z.discriminatedUnion('code', [
   event('auth.unlocked', {}),
@@ -19,6 +23,7 @@ export const ActivityEventSchema = z.discriminatedUnion('code', [
   event('amounts.hidden', {}),
   event('tx.added', { label: LABEL }),
   event('tx.deleted', { label: LABEL }),
+  event('tx.erased', { count: z.number().int().min(1) }),
   event('tx.undone', { of: z.enum(['add', 'delete']), label: LABEL }),
   event('settings.weakened', {
     setting: z.enum(['idleLock', 'relockAfter']),

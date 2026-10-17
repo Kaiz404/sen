@@ -29,6 +29,7 @@ const NO_ACTIONS: SettingsActions = {
 const DEFAULTS: SettingsValues = {
   biometric: 'fingerprint',
   lockoutArmed: false,
+  added: 3,
   progress: null,
   hideAmounts: true,
   theme: PREFS.theme.default,
@@ -68,6 +69,7 @@ export const SETTINGS_STATES = {
   calm: () => (
     <SettingsView {...BASE} values={{ ...DEFAULTS, senMotion: 'calm', hideAmounts: false }} />
   ),
+  'nothing-added': () => <SettingsView {...BASE} values={{ ...DEFAULTS, added: 0 }} />,
   privacy: () => <PrivacyView biometric="fingerprint" onClose={noop} />,
   'sign-out': () => <SignOutView onSignOut={noop} onCancel={noop} />,
   'reset-demo': () => <ResetDemoView phase="ready" onReset={noop} onCancel={noop} />,

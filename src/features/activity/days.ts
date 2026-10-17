@@ -63,6 +63,11 @@ const DESCRIBE: Describe = {
     icon: 'trash-can-outline',
     tint: 4,
   }),
+  'tx.erased': (e) => ({
+    title: `Erased ${e.count} ${e.count === 1 ? 'transaction' : 'transactions'} you added`,
+    icon: 'delete-forever-outline',
+    tint: 4,
+  }),
   'tx.undone': (e) => ({
     title: e.of === 'add' ? 'Undid an add' : 'Undid a delete',
     detail: quoted(e.label),

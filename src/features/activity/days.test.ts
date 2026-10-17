@@ -45,6 +45,8 @@ test('every event reads in plain words', () => {
       entry('2026-10-15T05:07:00.000Z', { code: 'lock.locked', reason: 'background' }),
       entry('2026-10-15T05:06:00.000Z', { code: 'auth.failed', reason: 'lockout' }),
       entry('2026-10-15T05:05:00.000Z', { code: 'tx.undone', of: 'delete' }),
+      entry('2026-10-15T05:04:00.000Z', { code: 'tx.erased', count: 3 }),
+      entry('2026-10-15T05:03:00.000Z', { code: 'tx.erased', count: 1 }),
     ],
     TODAY,
     BIOMETRIC.fingerprint,
@@ -56,5 +58,7 @@ test('every event reads in plain words', () => {
     ['Locked (left the app)', null, '1:07 pm'],
     ['Too many tries, locked out', null, '1:06 pm'],
     ['Undid a delete', null, '1:05 pm'],
+    ['Erased 3 transactions you added', null, '1:04 pm'],
+    ['Erased 1 transaction you added', null, '1:03 pm'],
   ]);
 });

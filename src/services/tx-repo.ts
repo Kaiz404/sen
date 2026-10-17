@@ -330,7 +330,15 @@ export async function restoreDeleted(db: Db, id: TxId): Promise<boolean> {
   });
 }
 
-/** Erases every row added on the phone and the undo copy. Bank rows stay. Returns how many rows went. */
+export async function countManual(db: Db): Promise<number> {
+  const rows = await db.all("SELECT count(*) AS n FROM tx WHERE source = 'manual'");
+  return Count.parse(rows[0]?.n);
+}
+
+/**
+ * Erases every row added on the phone and the undo copy, in one transaction, so a failure leaves all of them.
+ * Bank rows stay. Returns how many rows went.
+ */
 export async function eraseManual(db: Db): Promise<number> {
   return db.transaction(async (tx) => {
     const { changes } = await tx.run("DELETE FROM tx WHERE source = 'manual'");

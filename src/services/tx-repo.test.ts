@@ -9,6 +9,7 @@ import { generateBankRows } from './seed';
 import { sync } from './sync';
 import {
   deleteManual,
+  countManual,
   eraseManual,
   getRevealedTransaction,
   getTransaction,
@@ -291,6 +292,7 @@ describe('writes', () => {
     await insertManual(db, draft({ idemKey: '1b6f1c39-7f43-4b6e-9a43-58a2f6c0d5a1' }), NOW);
     await deleteManual(db, row.id);
 
+    expect(await countManual(db)).toBe(1);
     expect(await eraseManual(db)).toBe(1);
     expect(await restoreDeleted(db, row.id)).toBe(false);
     expect(await db.all('SELECT source, count(*) AS n FROM tx GROUP BY source')).toEqual([

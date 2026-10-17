@@ -1,3 +1,4 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
 import { Platform, ScrollView } from 'react-native';
 
@@ -8,6 +9,10 @@ import type { OpenDb } from '@/services/db';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { activity, readActivity } from '@/services/activity-log';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
+import { queryClient } from '@/services/query-client';
+import { insertManual } from '@/services/tx-repo';
+import { DayKeySchema, toInstant } from '@/models/day';
+import { draftSchema } from '@/models/draft';
 
 import { weakening } from './actions';
 import { useSenMotionPreference } from './index';
@@ -43,6 +48,7 @@ beforeEach(async () => {
   disarmLockout();
   mockParams = {};
   mockDb = await openTestDb();
+  queryClient.clear();
 });
 afterEach(async () => {
   await act(async () => toast.hide());
@@ -51,10 +57,24 @@ afterEach(async () => {
 
 const renderSettings = () =>
   render(
-    <>
+    <QueryClientProvider client={queryClient}>
       <SettingsScreen />
       <ToastHost />
-    </>,
+    </QueryClientProvider>,
+  );
+
+const addOne = () =>
+  insertManual(
+    mockDb,
+    draftSchema(DayKeySchema.parse('2026-10-15')).parse({
+      idemKey: '0b6f1c39-7f43-4b6e-9a43-58a2f6c0d5a1',
+      amountMinor: 4250,
+      direction: 'debit',
+      description: 'Lunch with Hafiz, cash',
+      category: 'food',
+      day: '2026-10-15',
+    }),
+    toInstant(new Date()),
   );
 
 const checked = (role: 'radio' | 'switch', name: string) =>
@@ -260,16 +280,24 @@ test('on iOS the security card says a cover with Sen asleep draws in the app swi
   ).toBeOnTheScreen();
 });
 
-test('Security has rows for the activity log and for erasing everything, each opening its screen', async () => {
+test('Security has rows for the activity log and for erasing the added rows, each opening its screen', async () => {
+  await addOne();
   await renderSettings();
 
   await fireEvent.press(screen.getByRole('button', { name: 'Security activity' }));
   expect(mockPush).toHaveBeenLastCalledWith('/settings/activity');
   expect(screen.getByText('Last 50 events, on this phone')).toBeOnTheScreen();
 
-  await fireEvent.press(screen.getByRole('button', { name: 'Erase everything on this phone' }));
+  expect(await screen.findByText('Fingerprint and confirm. Bank transactions stay')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Erase transactions I added' }));
   expect(mockPush).toHaveBeenLastCalledWith('/settings/erase');
-  expect(screen.getByText('Fingerprint and confirm. Destroys the vault key')).toBeOnTheScreen();
+});
+
+test('with no added rows the erase row says so and is off', async () => {
+  await renderSettings();
+
+  expect(await screen.findByText('You haven’t added any')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Erase transactions I added' })).toBeDisabled();
 });
 
 describe('a security setting that gets weaker', () => {

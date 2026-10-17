@@ -84,6 +84,7 @@ export {
   useRouteGate,
 } from './session';
 export { type StepUpResult, useStepUp } from './use-step-up';
+export { openDeviceSettings } from './screens/device-settings';
 export { LockScreen, type LockState, LockView, type LockViewProps } from './screens/lock-screen';
 export {
   type PrimerState,

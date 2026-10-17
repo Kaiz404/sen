@@ -248,6 +248,7 @@ export function NavRow({
   onPress,
   framed = false,
   danger = false,
+  disabled = false,
   trailing,
   testID,
 }: {
@@ -259,6 +260,8 @@ export function NavRow({
   readonly framed?: boolean;
   /** A destructive action, in the danger ink. */
   readonly danger?: boolean;
+  /** Nothing to act on: dimmed, and a press does nothing. */
+  readonly disabled?: boolean;
   readonly trailing?: ReactNode;
   readonly testID?: string;
 }): ReactNode {
@@ -268,9 +271,11 @@ export function NavRow({
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={sub}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       testID={testID}
-      style={framed ? styles.framed : styles.row(false)}
+      style={[framed ? styles.framed : styles.row(false), disabled && styles.disabled]}
     >
       <Chip icon={chip.icon} pastel={chip.pastel} />
       <Titles title={title} sub={sub} danger={danger} />
@@ -282,6 +287,7 @@ export function NavRow({
 }
 
 const styles = StyleSheet.create((theme) => ({
+  disabled: { opacity: 0.5 },
   section: { gap: 8 },
   sectionTitle: { ...type.caption(11), color: theme.colors.inkMuted },
   card: { borderRadius: 22, backgroundColor: theme.colors.paper, overflow: 'hidden' },

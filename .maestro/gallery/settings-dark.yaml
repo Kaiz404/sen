@@ -41,6 +41,14 @@ appId: com.kaiz404.sen
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: settings-calm-dark
+- openLink: "sen://dev/states?screen=settings&state=nothing-added&theme=dark"
+- extendedWaitUntil:
+    visible:
+      id: shot-settings-nothing-added-dark
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: settings-nothing-added-dark
 - openLink: "sen://dev/states?screen=settings&state=privacy&theme=dark"
 - extendedWaitUntil:
     visible:

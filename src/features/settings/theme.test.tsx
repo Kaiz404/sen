@@ -1,8 +1,10 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
 
 import type * as Prefs from '@/services/prefs';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
+import { queryClient } from '@/services/query-client';
 
 import { SettingsScreen } from './settings-screen';
 import './theme';
@@ -41,12 +43,19 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
+const renderSettings = () =>
+  render(
+    <QueryClientProvider client={queryClient}>
+      <SettingsScreen />
+    </QueryClientProvider>,
+  );
+
 const choose = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
 const checked = (name: string) =>
   screen.getByRole('radio', { name }).props.accessibilityState.checked as boolean;
 
 test('choosing Dark switches the live theme at once and saves the choice', async () => {
-  await render(<SettingsScreen />);
+  await renderSettings();
 
   await choose('Dark');
 
@@ -56,7 +65,7 @@ test('choosing Dark switches the live theme at once and saves the choice', async
 });
 
 test('System follows the phone, light or dark, and Light holds against a dark phone', async () => {
-  await render(<SettingsScreen />);
+  await renderSettings();
   phone.scheme = 'dark';
 
   await choose('Light');
