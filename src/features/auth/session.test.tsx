@@ -14,8 +14,10 @@ import {
   dismissDbResetNotice,
   launch,
   lockNow,
+  noteDraftDroppedByLock,
   sessionStore,
   signOut,
+  takeDraftDropped,
   unlock,
   useDb,
   useDbResetNotice,
@@ -248,6 +250,18 @@ test('a database that fails to close does not stop sign-out', async () => {
 
   expect(destroyVault).toHaveBeenCalledTimes(1);
   expect(session()).toEqual({ status: 'welcome' });
+});
+
+test('a draft dropped by a lock is noted once, and a draft closed while unlocked is not', async () => {
+  await unlockInto(await openTestDb());
+  noteDraftDroppedByLock();
+  expect(takeDraftDropped()).toBe(false);
+
+  lockNow();
+  noteDraftDroppedByLock();
+
+  expect(takeDraftDropped()).toBe(true);
+  expect(takeDraftDropped()).toBe(false);
 });
 
 test('an armed lockout reports lockout once without prompting', async () => {

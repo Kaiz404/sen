@@ -3,10 +3,10 @@ import '@shopify/flash-list/jestSetup';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+import { toast } from '@/components/toast';
 import { sessionStore } from '@/features/auth/session';
 import { TxIdSchema } from '@/models/transaction';
 import type { OpenDb } from '@/services/db';
-import { toast } from '@/components/toast';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import { clearPrefs, readPref, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
@@ -25,6 +25,8 @@ let mockFocused = true;
 jest.mock('@/services/logger', () => ({ logEvent: jest.fn() }));
 jest.mock('@/services/haptics', () => ({ playHaptic: jest.fn() }));
 const mockPush = jest.fn();
+let mockNotice: 'missing_key' | 'corrupt' | null = null;
+const mockDropped: boolean[] = [];
 const mockShowAmounts = jest.fn(async () => {
   jest.requireActual('@/features/auth/session').sessionStore.setState({ amountsHidden: false });
   return { ok: true };
@@ -37,6 +39,8 @@ jest.mock('@/features/auth', () => ({
   ...jest.requireActual('@/features/auth'),
   useDb: () => mockDb,
   useBiometric: () => ({ kind: 'fingerprint', ready: true }),
+  useDbResetNotice: () => mockNotice,
+  takeDraftDropped: () => mockDropped.shift() ?? false,
   showAmounts: () => mockShowAmounts(),
 }));
 
@@ -47,6 +51,8 @@ beforeEach(async () => {
   arrivals.setState({ after: null, added: null });
   jest.useFakeTimers({ now: NOW, doNotFake: ['setImmediate', 'nextTick', 'queueMicrotask'] });
   mockPush.mockClear();
+  mockNotice = null;
+  mockDropped.length = 0;
   clearPrefs();
   sessionStore.setState({ amountsHidden: true });
   writePref('demo.datasetSize', 20);
@@ -301,7 +307,7 @@ test.each([
   ['missing_key', "Sen couldn't find its key on this phone, so it started a fresh, empty store."],
   ['corrupt', "Sen couldn't read its saved data, so it started a fresh store."],
 ] as const)('the %s reset notice says rows added on this phone are lost', async (reason, lead) => {
-  sessionStore.setState({ dbReset: reason });
+  mockNotice = reason;
 
   await renderHistory();
 
@@ -310,7 +316,7 @@ test.each([
       `${lead} Your bank history syncs back. Transactions you added here couldn't be recovered.`,
     ),
   ).toBeOnTheScreen();
-  sessionStore.setState({ dbReset: null });
+  mockNotice = null;
 });
 
 test.each([
@@ -340,7 +346,7 @@ test('Show amounts cancelled stays silent', async () => {
 
 test('History says once that a lock dropped the add draft', async () => {
   const shown = jest.spyOn(toast, 'show');
-  sessionStore.setState({ draftDropped: true });
+  mockDropped.push(true);
 
   await renderHistory();
 
@@ -348,7 +354,6 @@ test('History says once that a lock dropped the add draft', async () => {
     title: 'Sen locked while you were adding.',
     detail: 'Nothing was saved.',
   });
-  expect(sessionStore.getState().draftDropped).toBe(false);
   shown.mockRestore();
 });
 
