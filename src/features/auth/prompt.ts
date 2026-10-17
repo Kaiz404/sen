@@ -95,9 +95,9 @@ const BUSY: AuthOutcome = { ok: false, reason: 'cancelled' };
 
 /**
  * A prompt the OS never answers, such as one the app was backgrounded under, would leave Lock on "Checking it's
- * you" with every key disabled. After this long in the foreground the prompt is cancelled and ends as `timedOut`, which
- * screens explain, where a user cancel is silent. Time away from `active` does not count. iOS cannot cancel its sheet, and the Face ID and passcode sheets make the
- * app `inactive`, so an answer entered late must still land.
+ * you" with every key disabled. After this long in the foreground the prompt is cancelled and ends as `timedOut`,
+ * which screens explain, where a user cancel is silent. Time away from `active` does not count. iOS cannot cancel
+ * its sheet, and the Face ID and passcode sheets make the app `inactive`, so an answer entered late must still land.
  */
 export const PROMPT_TIMEOUT_MS = 60_000;
 
