@@ -3,7 +3,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { openTestDb } from '@/services/db/testing/node-adapter';
 import type { OpenDb } from '@/services/db';
-import { clearPrefs, writePref } from '@/services/prefs';
+import { InstantSchema } from '@/models/day';
+import { clearPrefs, readBankState, writeBankState, writePref } from '@/services/prefs';
 import { queryClient } from '@/services/query-client';
 import { arrivals, resetBank, syncProgress } from './data';
 import { HistoryScreen } from './history-screen';
@@ -72,4 +73,15 @@ test('after the reset, a fresh pull asks the bank', async () => {
   await act(() => pullDown());
   for (let i = 0; i < 5; i++) await act(() => jest.advanceTimersByTime(1000));
   expect(requests).toHaveBeenCalledTimes(1);
+});
+
+test('a bank reset clears what the mock bank remembers, so the next feed starts fresh', async () => {
+  const at = InstantSchema.parse('2026-10-15T06:00:00.000Z');
+  const kept = { anchor: at, minted: { '20': [{ seq: 21, postedAt: at }] } };
+  writeBankState(kept);
+  expect(readBankState()).toEqual(kept);
+
+  await act(() => resetBank(mockDb));
+
+  expect(readBankState()).toEqual({ anchor: null, minted: {} });
 });

@@ -60,7 +60,9 @@ describe('migrations', () => {
 
   test('a failing step rolls back its statements and its version', async () => {
     db = createNodeDb();
-    const broken = [{ version: 1, statements: ['CREATE TABLE half (x INTEGER)', 'NOT SQL'] }];
+    const broken = [
+      { version: 1, minReader: 1, statements: ['CREATE TABLE half (x INTEGER)', 'NOT SQL'] },
+    ];
 
     await expect(migrate(db, broken)).rejects.toThrow();
     expect(await userVersion(db)).toBe(0);
@@ -91,6 +93,39 @@ describe('migrations', () => {
     expect(await db.all('SELECT settled_at FROM tx')).toEqual([
       { settled_at: '2026-10-15T08:02:00.000Z' },
     ]);
+  });
+
+  test('every step records the oldest app that can still read the file', async () => {
+    db = await openTestDb();
+
+    expect(await db.all("SELECT value FROM meta WHERE key = 'schema.minReader'")).toEqual([
+      { value: '1' },
+    ]);
+  });
+
+  test('a file one version ahead still opens when its minimum reader is this app, and is left alone', async () => {
+    db = await openTestDb();
+    await db.run('PRAGMA user_version = 3');
+    await db.run("UPDATE meta SET value = '2' WHERE key = 'schema.minReader'");
+
+    expect(await migrate(db)).toEqual({ from: 3, to: 3 });
+    expect(await userVersion(db)).toBe(3);
+  });
+
+  test('a file whose minimum reader is newer than this app is refused', async () => {
+    db = await openTestDb();
+    await db.run('PRAGMA user_version = 3');
+    await db.run("UPDATE meta SET value = '3' WHERE key = 'schema.minReader'");
+
+    await expect(migrate(db)).rejects.toBeInstanceOf(SchemaTooNewError);
+  });
+
+  test('a newer file with no recorded minimum reader is refused', async () => {
+    db = await openTestDb();
+    await db.run('PRAGMA user_version = 3');
+    await db.run("DELETE FROM meta WHERE key = 'schema.minReader'");
+
+    await expect(migrate(db)).rejects.toBeInstanceOf(SchemaTooNewError);
   });
 
   test('a database newer than the app is refused', async () => {

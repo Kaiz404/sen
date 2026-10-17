@@ -62,10 +62,14 @@ function bankParams(row: Transaction): SqlValue[] {
   ];
 }
 
+/** A bank that re-sends a row as pending never undoes a posting. */
+const POSTED_STAYS =
+  "status = CASE WHEN tx.status = 'posted' THEN 'posted' ELSE excluded.status END";
+
 function upsertSql(rows: number): string {
   const tuple = `(${COLUMNS.map(() => '?').join(', ')})`;
   return `INSERT INTO tx (${COLUMNS.join(', ')}) VALUES ${Array.from({ length: rows }, () => tuple).join(', ')}
-    ON CONFLICT(id) DO UPDATE SET ${UPDATABLE.map((c) => `${c} = excluded.${c}`).join(', ')}
+    ON CONFLICT(id) DO UPDATE SET ${UPDATABLE.map((c) => (c === 'status' ? POSTED_STAYS : `${c} = excluded.${c}`)).join(', ')}
     WHERE tx.source = 'bank'`;
 }
 
@@ -77,13 +81,13 @@ async function upsertBankRows(db: Db, rows: readonly Transaction[]): Promise<voi
 }
 
 /**
- * Posts pending bank rows. An update, not an insert: a row this phone doesn't hold (after a reset, say) stays absent,
+ * Posts pending bank rows, never before they were authorised. An update, not an insert: a row this phone doesn't hold (after a reset, say) stays absent,
  * and a row already posted, or added on the phone, is left as it is.
  */
 async function settleBankRows(db: Db, settled: readonly Settled[]): Promise<void> {
   for (const { id, settledAt } of settled) {
     await db.run(
-      `UPDATE tx SET status = 'posted', settled_at = ? WHERE id = ? AND source = 'bank' AND status = 'pending'`,
+      `UPDATE tx SET status = 'posted', settled_at = max(?, posted_at) WHERE id = ? AND source = 'bank' AND status = 'pending'`,
       [settledAt, id],
     );
   }

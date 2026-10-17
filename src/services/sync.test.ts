@@ -93,30 +93,43 @@ test('a sync that stops short leaves the feed incomplete, the next one finishes 
   expect((await readSyncState(db)).complete).toBe(false);
 });
 
-test('sync twice and sync interrupted end with the same table hash', async () => {
+test('an interrupted sync ends with the same table as a clean one, and a refresh changes only status and settled_at', async () => {
   const once = await freshDb();
   const clean = mockBank();
-  await sync(once, clean, options);
   await sync(once, clean, options);
 
   const twice = await freshDb();
   const bank = mockBank();
   await sync(twice, bank, options);
-  await sync(twice, bank, options);
+  const refresh = await sync(twice, bank, options);
   const again = await sync(twice, bank, options);
+  const refreshed = await tableHash(twice);
 
   const interrupted = await freshDb();
   const dropped = await sync(interrupted, dropsAfter(mockBank(), 1), options);
   const halfway = [(await readSyncState(interrupted)).cursor, await count(interrupted)];
   const resumed = await sync(interrupted, mockBank(), options);
-  await sync(interrupted, mockBank(), options);
 
+  const body = (db: Db) =>
+    db.all(
+      `SELECT id, amount_minor, currency, type, description, merchant, category, posted_at, reference, source
+        FROM tx ORDER BY id`,
+    );
+  const differing = await twice.all(
+    `SELECT id, status, settled_at FROM tx WHERE status = 'posted' AND settled_at IS NOT NULL ORDER BY id`,
+  );
+
+  expect(refresh).toEqual(ok({ received: 0, cursor: 1000 }));
   expect(again).toEqual(ok({ received: 0, cursor: 1000 }));
+  expect(await tableHash(twice)).toBe(refreshed);
   expect(dropped).toEqual({ ok: false, error: { kind: 'offline' } });
   expect(halfway).toEqual([500, 500]);
   expect(resumed).toEqual(ok({ received: 500, cursor: 1000 }));
-  expect(await tableHash(twice)).toBe(await tableHash(once));
   expect(await tableHash(interrupted)).toBe(await tableHash(once));
+  expect(await body(twice)).toEqual(await body(once));
+  expect(differing.map((r) => r.id)).toEqual(['bk-1000', 'bk-997', 'bk-998']);
+  expect(await count(twice, "status = 'pending'")).toBe(0);
+  expect(await count(once, "status = 'pending'")).toBe(3);
 });
 
 test('a write that fails halfway through a page keeps none of that page', async () => {
@@ -464,4 +477,47 @@ describe('pending rows post on a later refresh', () => {
       ['pending', null],
     ]);
   });
+});
+
+test('a bank that re-sends a posted row as pending does not undo the posting', async () => {
+  const db = await freshDb();
+  const bank = createMockBank({ now: () => LATER, wait: async () => {} }).under({
+    ...NORMAL,
+    size: 20,
+  });
+  await sync(db, bank, options);
+  await sync(db, bank, options);
+  const page = await bank.fetchPage({ since: 0, limit: 20 });
+  const tealive = page.ok
+    ? (page.data as { items: Record<string, unknown>[] }).items.find((i) => i.id === 'bk-20')
+    : null;
+  const resend: BankApi = {
+    fetchPage: async () =>
+      ok({ items: [{ ...tealive, seq: 21, status: 'pending' }], nextSeq: null }),
+  };
+
+  await sync(db, resend, options);
+
+  expect(await db.all("SELECT status, settled_at FROM tx WHERE id = 'bk-20'")).toEqual([
+    { status: 'posted', settled_at: '2026-10-15T05:17:00.000Z' },
+  ]);
+});
+
+test('a posting is never dated before the row was authorised', async () => {
+  const db = await freshDb();
+  await sync(db, mockBank({ size: 20 }), options);
+  const early: BankApi = {
+    fetchPage: async () =>
+      ok({
+        items: [],
+        modified: [{ id: 'bk-20', settledAt: '2020-01-01T00:00:00.000Z' }],
+        nextSeq: null,
+      }),
+  };
+
+  await sync(db, early, options);
+
+  expect(await db.all("SELECT posted_at, settled_at FROM tx WHERE id = 'bk-20'")).toEqual([
+    { posted_at: '2026-10-15T05:15:00.000Z', settled_at: '2026-10-15T05:15:00.000Z' },
+  ]);
 });

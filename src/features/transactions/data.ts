@@ -13,12 +13,12 @@ import { create } from 'zustand';
 import { onArrive } from '@/features/auth';
 import { type DayKey, DayKeySchema, malaysiaDay, toInstant } from '@/models/day';
 import { type AppError, isAppError, isRetryable, toAppError } from '@/models/errors';
-import type { PrefValue } from '@/models/prefs';
+import { NO_BANK_STATE, type PrefValue } from '@/models/prefs';
 import type { MaskedRow, TxId } from '@/models/transaction';
 import { type BankScenario, createMockBank } from '@/services/bank-api';
 import type { Db } from '@/services/db';
 import { logEvent } from '@/services/logger';
-import { readPref, writePref } from '@/services/prefs';
+import { readBankState, readPref, writeBankState, writePref } from '@/services/prefs';
 import { QK, queryClient } from '@/services/query-client';
 import { readSyncState, resetBankRows, sync, type SyncSummary } from '@/services/sync';
 import {
@@ -38,7 +38,9 @@ import type { Revealed } from './reveal';
 import { type Arrival, buildHistoryRows, type HistoryRows, NO_ARRIVAL } from './rows';
 
 /** The in-app bank. Each sync reads the reviewer's `demo.*` settings once, in `readScenario`. */
-export const bank = createMockBank();
+export const bank = createMockBank({
+  state: { read: readBankState, write: writeBankState },
+});
 
 function readScenario(): BankScenario {
   return {
@@ -148,6 +150,7 @@ export const bankEpoch = create<{ readonly epoch: number }>(() => ({ epoch: 0 })
  */
 export async function resetBank(db: Db, afterRows?: () => void): Promise<void> {
   await resetBankRows(db);
+  writeBankState(NO_BANK_STATE);
   afterRows?.();
   bankEpoch.setState((s) => ({ epoch: s.epoch + 1 }));
   await queryClient.invalidateQueries({ queryKey: QK.tx });

@@ -44,15 +44,24 @@ test('pages walk the feed in seq order and the last page says there is no more',
   expect([seqs(second)[0], seqs(second).at(-1), second.nextSeq]).toEqual([501, 1000, null]);
 });
 
+const BOARD_POSTED = [
+  { id: 'bk-997', settledAt: '2026-10-14T10:22:00.000Z' },
+  { id: 'bk-998', settledAt: '2026-10-15T00:44:00.000Z' },
+  { id: 'bk-1000', settledAt: '2026-10-15T05:17:00.000Z' },
+];
+
 test('past the end, a refresh mints one pending row at now, only when asked', async () => {
   const minted = await page(bank({ newOnRefresh: true }).api, 1000);
   const quiet = await page(bank({ newOnRefresh: false }).api, 1000);
 
-  expect(minted.items).toEqual([
-    expect.objectContaining({ seq: 1001, id: 'bk-1001', status: 'pending', postedAt: NOW }),
-  ]);
-  expect(minted.nextSeq).toBeNull();
-  expect(quiet.items).toEqual([]);
+  expect(minted).toEqual({
+    items: [
+      expect.objectContaining({ seq: 1001, id: 'bk-1001', status: 'pending', postedAt: NOW }),
+    ],
+    modified: BOARD_POSTED,
+    nextSeq: null,
+  });
+  expect(quiet).toEqual({ items: [], modified: BOARD_POSTED, nextSeq: null });
 });
 
 test('a refresh reports pending rows that are two minutes old as posted, at their authorised time plus two minutes', async () => {
@@ -133,4 +142,52 @@ test('the feed is generated once, so a page fetched a day later still matches', 
 
   expect(after).toEqual(before);
   expect(before.items.at(-1)?.postedAt).toBe('2026-10-15T05:15:00.000Z');
+});
+
+test('a bank that restarts finds the row it minted and still posts it', async () => {
+  const clock = { now: NOW };
+  const saved = { anchor: null as Instant | null, minted: {} as Record<string, never[]> };
+  const store = {
+    read: () => saved,
+    write: (next: typeof saved) => void Object.assign(saved, next),
+  };
+  const open = () =>
+    createMockBank({ now: () => clock.now, wait: async () => {}, state: store }).under({
+      ...NORMAL,
+      newOnRefresh: true,
+    });
+  await page(open(), 1000);
+
+  clock.now = InstantSchema.parse('2026-10-15T08:03:00.000Z');
+  const restarted = await page(open(), 1001);
+
+  expect(restarted.modified.filter((m) => m.id === 'bk-1001')).toEqual([
+    { id: 'bk-1001', settledAt: '2026-10-15T08:02:00.000Z' },
+  ]);
+});
+
+test('a bank that restarts on another day keeps the feed it had, so board rows keep their authorised times', async () => {
+  const clock = { now: NOW };
+  const saved = { anchor: null as Instant | null, minted: {} as Record<string, never[]> };
+  const store = {
+    read: () => saved,
+    write: (next: typeof saved) => void Object.assign(saved, next),
+  };
+  const open = () =>
+    createMockBank({ now: () => clock.now, wait: async () => {}, state: store }).under({
+      ...NORMAL,
+      size: 20,
+    });
+  const before = await page(open(), 0);
+
+  clock.now = InstantSchema.parse('2026-10-18T08:00:00.000Z');
+  const after = await page(open(), 0);
+  const refresh = await page(open(), 20);
+
+  expect(after).toEqual(before);
+  expect(refresh.modified.map((m) => m.settledAt)).toEqual([
+    '2026-10-14T10:22:00.000Z',
+    '2026-10-15T00:44:00.000Z',
+    '2026-10-15T05:17:00.000Z',
+  ]);
 });

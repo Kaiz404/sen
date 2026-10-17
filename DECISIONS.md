@@ -651,5 +651,9 @@ The phases are in [PLAN.md](PLAN.md).
 - **Reads.** `settled_at` is selected by the masked and revealed reads. It is a time, so masking is unchanged: posting never touches `amount_minor`, and the masked cache still holds no amount.
 - **Look.** Detail's timeline shows all three steps done for a posted row, Pending as "CLEARED" and Posted at its time. The History PENDING tag follows `status`, so it drops off on its own. Reset demo data restores the pending board.
 
+**The bank's own state survives a restart.** The mock bank keeps a small state in an MMKV key beside the demo prefs (`bank.state`, outside the settings table): the instant its feed was generated (the anchor) and the `{ seq, postedAt }` of each row it minted, per dataset size. MMKV is the repo's store for demo state and already has a reset path, and the bank has no database handle. Without it, a restart left a minted row pending for ever and re-anchored the feed to the new day, which gave the board rows the wrong `settledAt`. `resetBank` writes the default, so Reset demo data and a dataset switch start a fresh feed. The posting is also clamped in SQL, `settled_at = max(?, posted_at)`, so a backwards clock never makes Posted earlier than Authorised. The upsert never turns a posted row back to pending.
+
+**A newer file is not always unreadable.** Each migration step records `schema.minReader` in `meta`: the oldest app schema that can still read the file. v1 and v2 are 1, because v2 only adds a nullable column. On open, `migrate` throws `SchemaTooNewError` only when that number is above the app's version, not whenever `user_version` is. A newer file with no recorded number is still refused. A build that predates this check still resets a v2 file, which no code here can change.
+
 **Cost.** The bank keeps the rows it minted so it can post them later, and sends every aged pending-origin row on each refresh. The phone ignores the ones already posted. For a demo that is a handful of ids.
 

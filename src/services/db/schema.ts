@@ -3,10 +3,19 @@ import { z } from 'zod';
 import type { Db } from './port';
 
 /** One statement per entry, because node:sqlite prepares one statement at a time. */
-export type Migration = { readonly version: number; readonly statements: readonly string[] };
+export type Migration = {
+  readonly version: number;
+  readonly statements: readonly string[];
+  /**
+   * The oldest app schema that can still read a file at this version. A step that only adds things keeps the number
+   * of the step before it. A step that changes what an old app reads raises it to its own version.
+   */
+  readonly minReader: number;
+};
 
 const V1: Migration = {
   version: 1,
+  minReader: 1,
   statements: [
     `CREATE TABLE tx (
       id            TEXT PRIMARY KEY NOT NULL,
@@ -55,6 +64,7 @@ const V1: Migration = {
 /** When the bank reported a pending row as posted. Existing rows keep every value and read as never settled. */
 const V2: Migration = {
   version: 2,
+  minReader: 1,
   statements: [
     `ALTER TABLE tx ADD COLUMN settled_at TEXT CHECK (settled_at IS NULL OR settled_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z')`,
   ],
@@ -62,6 +72,9 @@ const V2: Migration = {
 
 export const MIGRATIONS: readonly Migration[] = [V1, V2];
 export const SCHEMA_VERSION = MIGRATIONS.length;
+
+/** `meta` key holding the oldest schema that can read this file, written by every migration step. */
+const MIN_READER_KEY = 'schema.minReader';
 
 export class SchemaTooNewError extends Error {
   constructor(readonly found: number) {
@@ -78,16 +91,43 @@ export async function userVersion(db: Db): Promise<number> {
 
 export type MigrateOutcome = { readonly from: number; readonly to: number };
 
+const MinReaderRows = z.array(z.object({ reader: z.string() }));
+
+/** A file with no recorded minimum reader (or no `meta` at all) is read as needing the version it is at. */
+async function minReader(db: Db, found: number): Promise<number> {
+  const [table] = await db.all(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'meta'",
+  );
+  if (table === undefined) return found;
+  const [row] = MinReaderRows.parse(
+    await db.all('SELECT value AS reader FROM meta WHERE key = ?', [MIN_READER_KEY]),
+  );
+  const parsed = Number(row?.reader);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : found;
+}
+
+/**
+ * Brings the file up to the ladder. A file newer than the app still opens when its recorded minimum reader is not
+ * newer than the app, because a newer step that only added things leaves what this app reads intact. Only a file this
+ * app cannot read throws `SchemaTooNewError`.
+ */
 export async function migrate(
   db: Db,
   ladder: readonly Migration[] = MIGRATIONS,
 ): Promise<MigrateOutcome> {
   const from = await userVersion(db);
   const to = ladder.length;
-  if (from > to) throw new SchemaTooNewError(from);
+  if (from > to) {
+    if ((await minReader(db, from)) > to) throw new SchemaTooNewError(from);
+    return { from, to: from };
+  }
   for (const step of ladder.slice(from)) {
     await db.transaction(async (tx) => {
       for (const sql of step.statements) await tx.run(sql);
+      await tx.run(
+        `INSERT INTO meta (key, value) VALUES ('${MIN_READER_KEY}', '${step.minReader}')
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      );
       await tx.run(`PRAGMA user_version = ${step.version}`);
     });
   }

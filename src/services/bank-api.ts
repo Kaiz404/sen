@@ -1,6 +1,6 @@
-import { type Instant, toInstant } from '@/models/day';
+import { type Instant, InstantSchema, toInstant } from '@/models/day';
 import { type AppError, err, ok, type Result } from '@/models/errors';
-import type { PrefValue } from '@/models/prefs';
+import type { BankState, PrefValue } from '@/models/prefs';
 
 import { type BankRow, type DatasetSize, generateBankRows, mintRow, SEED } from './seed';
 
@@ -45,10 +45,7 @@ function settledBy(pending: Iterable<BankRow>, now: Instant) {
 
 /** A failure answers after `afterMs`. A timeout waits out its deadline first, as a real one would. */
 const FAILURE: {
-  readonly [K in BankScenario['next']]: {
-    readonly error: BankFailure;
-    readonly afterMs: number;
-  } | null;
+  readonly [K in BankScenario['next']]: { readonly error: BankFailure; readonly afterMs: number } | null;
 } = {
   normal: null,
   bad_data: null,
@@ -79,6 +76,14 @@ const BAD_ROWS: readonly unknown[] = [
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Where the bank keeps its own state. The app backs it with a pref, so a restart finds it again. */
+export type BankStateStore = { read(): BankState; write(state: BankState): void };
+
+function memoryState(): BankStateStore {
+  let state: BankState = { anchor: null, minted: {} };
+  return { read: () => state, write: (next) => void (state = next) };
+}
+
 export type MockBank = {
   /** The bank as one request sees it. Every page answers under `scenario`, so a sync is one scenario throughout. */
   under(scenario: BankScenario): BankApi;
@@ -89,18 +94,36 @@ export function createMockBank(
     readonly now?: () => Instant;
     readonly wait?: (ms: number) => Promise<void>;
     readonly seed?: number;
+    readonly state?: BankStateStore;
   } = {},
 ): MockBank {
-  const { now = () => toInstant(new Date()), wait = sleep, seed = SEED } = options;
-  const feeds = new Map<DatasetSize, readonly BankRow[]>();
-  const minted = new Map<DatasetSize, Map<string, BankRow>>();
+  const {
+    now = () => toInstant(new Date()),
+    wait = sleep,
+    seed = SEED,
+    state = memoryState(),
+  } = options;
+  const feeds = new Map<string, readonly BankRow[]>();
+  /** The feed is generated from one anchor instant that the bank keeps, so it is the same feed after a restart. */
   const feed = (size: DatasetSize) => {
-    const known = feeds.get(size);
+    const saved = state.read();
+    const anchor = saved.anchor ?? now();
+    if (saved.anchor === null) state.write({ ...saved, anchor });
+    const key = `${size}@${anchor}`;
+    const known = feeds.get(key);
     if (known !== undefined) return known;
-    const rows = generateBankRows(size, now(), seed);
-    feeds.set(size, rows);
+    const rows = generateBankRows(size, anchor, seed);
+    feeds.set(key, rows);
     return rows;
   };
+  const remember = (size: DatasetSize, row: BankRow) => {
+    const saved = state.read();
+    const sent = (saved.minted[String(size)] ?? []).filter((m) => m.seq !== row.seq);
+    sent.push({ seq: row.seq, postedAt: InstantSchema.parse(row.postedAt) });
+    state.write({ ...saved, minted: { ...saved.minted, [String(size)]: sent } });
+  };
+  const mintedRows = (size: DatasetSize) =>
+    (state.read().minted[String(size)] ?? []).map((m) => mintRow(m.seq, m.postedAt, seed));
 
   return {
     under: ({ next, size, slow, newOnRefresh }) => ({
@@ -115,20 +138,13 @@ export function createMockBank(
         const rows = feed(size);
         const refresh = since >= rows.length;
         const fresh = refresh && newOnRefresh ? mintRow(since + 1, now(), seed) : null;
-        if (fresh !== null) {
-          const sent = minted.get(size) ?? new Map<string, BankRow>();
-          sent.set(fresh.id, fresh);
-          minted.set(size, sent);
-        }
+        if (fresh !== null) remember(size, fresh);
         const served = refresh ? (fresh === null ? [] : [fresh]) : rows.slice(since, since + limit);
         const items = next === 'bad_data' ? [...served, ...BAD_ROWS] : served;
         // Only a refresh reports postings, so a first sync shows the board's pending rows as sent.
         const modified = refresh
           ? settledBy(
-              [
-                ...rows.filter((row) => row.status === 'pending'),
-                ...(minted.get(size)?.values() ?? []),
-              ],
+              [...rows.filter((row) => row.status === 'pending'), ...mintedRows(size)],
               now(),
             )
           : [];

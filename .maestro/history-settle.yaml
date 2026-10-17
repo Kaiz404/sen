@@ -1,0 +1,36 @@
+# Pending rows post on a later refresh. The first open shows the sample's pending rows with their PENDING tag.
+# Pulling History down once makes the bank report them posted, so the tags go. TNB electricity then shows all three
+# payment steps done, with Pending as CLEARED.
+appId: com.kaiz404.sen
+---
+- runFlow: subflows/at-history.yaml
+# Turn the new-row-on-refresh control off, so the pull brings no new pending row of its own.
+- runFlow:
+    file: subflows/reviewer-control.yaml
+    env:
+      CONTROL: New transaction on refresh
+      SHOT: settle-new-row-off
+- assertVisible: PENDING
+- takeScreenshot: shots/p3/flow-settle-before
+- swipe:
+    start: 50%, 35%
+    end: 50%, 85%
+    duration: 600
+- extendedWaitUntil:
+    notVisible: PENDING
+    timeout: 20000
+- takeScreenshot: shots/p3/flow-settle-after
+- tapOn: Show amounts
+- extendedWaitUntil:
+    visible: Hide amounts
+    timeout: 10000
+- scrollUntilVisible:
+    element: TNB electricity
+    direction: DOWN
+- tapOn: TNB electricity
+- extendedWaitUntil:
+    visible: Payment progress, step 3 of 3
+    timeout: 10000
+- assertVisible: CLEARED
+- assertNotVisible: NEXT
+- takeScreenshot: shots/p3/flow-settle-detail
