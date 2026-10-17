@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Bone } from '@/components/bone';
 import { Key } from '@/components/key';
-import { Sen } from '@/features/sen';
+import { playMoment, Sen } from '@/features/sen';
 import { type } from '@/theme/type';
 
 import type { ReadFailure, SyncFailure } from './body';
@@ -52,6 +52,8 @@ export function EmptyHistory(): ReactNode {
   );
 }
 
+const NO_RESULTS_SEN = 'no-results';
+
 export function NoResults({
   search,
   onClear,
@@ -60,9 +62,19 @@ export function NoResults({
   readonly onClear: () => void;
 }): ReactNode {
   const term = search.trim();
+  // The rig registers in its own effect, which runs before this one.
+  useEffect(() => {
+    playMoment(NO_RESULTS_SEN, 'emptySearch');
+  }, []);
   return (
     <View testID="history-no-results" style={styles.state}>
-      <Sen pose="shrug" prop="magnifier" size={140} label="Sen, shrugging with a magnifier" />
+      <Sen
+        id={NO_RESULTS_SEN}
+        pose="shrug"
+        prop="magnifier"
+        size={140}
+        label="Sen, shrugging with a magnifier"
+      />
       <Text accessibilityRole="header" style={styles.title}>
         {term === '' ? 'Nothing in this view' : `No “${term}” here`}
       </Text>
