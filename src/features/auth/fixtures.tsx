@@ -55,7 +55,13 @@ export const AUTH_STATES = {
   'lock-weak': () => <Lock state={{ kind: 'weak' }} />,
   'lock-unavailable': () => <Lock state={{ kind: 'off', canOpenSettings: false }} />,
   'lock-error': () => <Lock state={{ kind: 'error' }} />,
-  'lock-store': () => <Lock state={{ kind: 'store', cause: 'store', failures: 1 }} />,
-  'lock-store-reset': () => <Lock state={{ kind: 'store', cause: 'store', failures: 2 }} />,
-  'lock-full': () => <Lock state={{ kind: 'store', cause: 'full', failures: 2 }} />,
+  'lock-store': () => (
+    <Lock state={{ kind: 'store', cause: 'store', failures: 1, firstAt: 0, lastAt: 0 }} />
+  ),
+  'lock-store-reset': () => (
+    <Lock state={{ kind: 'store', cause: 'store', failures: 2, firstAt: 0, lastAt: 0 }} />
+  ),
+  'lock-full': () => (
+    <Lock state={{ kind: 'store', cause: 'full', failures: 2, firstAt: 0, lastAt: 0 }} />
+  ),
 } satisfies Record<string, () => ReactNode>;

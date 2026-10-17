@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert, Linking } from 'react-native';
 
 import { clearPrefs } from '@/services/prefs';
+import { KeyUnreadableError } from '@/services/store-fault';
 import * as Vault from '@/services/vault';
 
 import { sessionStore } from '../session';
@@ -128,6 +129,13 @@ describe('a vault that will not open', () => {
 
     expect(Vault.destroyVault).toHaveBeenCalledTimes(1);
     expect(session()).toEqual({ status: 'welcome' });
+  });
+
+  test('two quick failures to read the key offer no reset, since a busy keystore clears by itself', async () => {
+    await failOpens(new KeyUnreadableError({ cause: new Error('keystore busy') }), 2);
+
+    expect(screen.queryByRole('button', { name: 'Reset Sen on this phone' })).not.toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled();
   });
 
   test('a full disk says so and never offers to wipe the store', async () => {
