@@ -8,14 +8,14 @@
 
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000020)
-![Platform Android](https://img.shields.io/badge/platform-Android-3ddc84)
-![1,802 tests](https://img.shields.io/badge/tests-1%2C802%20passing-2e7d32)
 
-[![Watch the demo on YouTube](https://img.shields.io/badge/Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/1sL0TQZxvww)
+## Demo
+
+<a href="https://youtu.be/1sL0TQZxvww"><img src="https://i.ytimg.com/vi/1sL0TQZxvww/maxresdefault.jpg" alt="Sen demo video on YouTube: authentication, masked amounts, refresh, errors, adding a transaction and security" width="100%"></a>
 
 ## Try it
 
-**[Download the Android APK](https://expo.dev/artifacts/eas/27U6_Mper8bHbHwOf95tv0uP4rUh3N59eTAdzd3DpRc.apk)** (EAS preview build, about 135 MB). Allow installs from your browser when Android asks.
+**[Install the Android build from Expo](https://expo.dev/accounts/kaiz404/projects/sen/builds/4a40a408-cbdb-4362-a1d1-1f0e7f15d904)** (EAS preview build, about 135 MB). Open the link on your phone and tap **Install**. Allow installs from your browser when Android asks.
 
 **You need** an Android phone with a screen lock (PIN, pattern or password). Sen refuses to run without one. A fingerprint or face unlock is better but optional. There is no account and no backend: the bank is a mock inside the app, so it works offline.
 
@@ -24,9 +24,6 @@
 3. **Pull to refresh.** Open Settings (the cog) › **For reviewers** and switch on **New transaction on refresh**. Go back and pull down: a PENDING row arrives. Pull again two minutes later and it posts.
 4. **Detail and errors.** Tap a row for every field and its status timeline. Then in **For reviewers** pick **Offline** under **Next history request**, pull to refresh, and tap **Retry**. Timeout, 500 and bad data work the same way.
 5. **Add.** Tap **+**, enter an amount on Sen's own keypad, pick a date and save. Saving asks for biometrics, and the new row has Undo.
-
-> [!NOTE]
-> The **For reviewers** controls only shape the fake bank's answers. They cannot skip a biometric check or show an amount (threat T13 in [ARCHITECTURE.md](ARCHITECTURE.md#threat-model)).
 
 ## How the brief maps to the code
 
@@ -58,9 +55,6 @@ Dark theme, the Add flow and Sen's other moments are in [DESIGN.md](DESIGN.md).
 - **Encrypted at rest.** SQLCipher database, key in `expo-secure-store`, excluded from Android backup.
 - **Release builds** block screenshots and recording and cover the app switcher (D30). A dev-only auth override compiles out, and `npm run release:auth-check` verifies it.
 - **Untrusted input.** Integer sen, a custom keypad, zod parsing on every read and every bank row.
-
-> [!IMPORTANT]
-> The vault key is not bound to biometrics. The check is a JavaScript step-up in front of it, so a rooted or instrumented device can skip it (D14). Shown amounts sit in JavaScript memory. There is no root detection or certificate pinning, and nobody has run the iOS build. See the [threat model](ARCHITECTURE.md#threat-model).
 
 ## Tech stack
 
