@@ -29,7 +29,7 @@ export function ErrorView({ onRetry, onHome }: ErrorViewProps): ReactNode {
         Something went wrong.
       </Text>
       <Text style={styles.body}>
-        Sen hit a snag on this screen. Amounts are still hidden. Try again, or go back to History.
+        Sen hit a snag on this screen, so it locked to keep your money private. Try again, or go back to History.
       </Text>
       <View style={styles.keys}>
         <Key
