@@ -412,6 +412,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   profileName: { ...type.words(36), lineHeight: 34, color: theme.colors.ink },
   profileLine: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
