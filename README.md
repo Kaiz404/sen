@@ -13,7 +13,7 @@
 
 ## Try it
 
-<!-- EAS_APK_LINK -->
+**[Download the Android APK](https://expo.dev/artifacts/eas/TUTHE0mXzWeY1vqpsMw0MrUT1oPHnsCMuq4UPKUpIy4.apk)** (EAS preview build, about 135 MB). Allow installs from your browser when Android asks.
 
 **You need** an Android phone with a screen lock (PIN, pattern or password). Sen refuses to run without one. A fingerprint or face unlock is better but optional. There is no account and no backend: the bank is a mock inside the app, so it works offline.
 
