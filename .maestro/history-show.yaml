@@ -11,11 +11,6 @@ appId: com.kaiz404.sen
     visible:
       id: tx-row
     timeout: 30000
-- runFlow:
-    when:
-      visible: Hide amounts
-    commands:
-      - tapOn: Hide amounts
 - extendedWaitUntil:
     visible: Show amounts
     timeout: 5000
