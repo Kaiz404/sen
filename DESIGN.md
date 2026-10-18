@@ -1,6 +1,6 @@
 # Sen design
 
-The visual and interaction spec for Sen. It is locked as of 2026-10-15. Every screen, state and flow below is drawn on the design canvas, on the "Take-home: Transaction history" page under "Round 5: Sen final": https://claude.ai/artifact/8d2qRf6GtxCL9bog1E41fF. Boards there are named `SF-*`.
+The visual and interaction spec for Sen. It is locked as of 2026-10-15. Every screen, state and flow below is drawn on the design canvas, on the "Take-home: Transaction history" page under https://claude.ai/artifact/8d2qRf6GtxCL9bog1E41fF#page-ed6c1ad30e96. Boards there are named `SF-*`.
 
 Other directions were tried and dropped. They stay on the canvas above round 5 for reference only. Build from round 5 and this file.
 
